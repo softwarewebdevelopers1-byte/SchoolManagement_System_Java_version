@@ -33,7 +33,6 @@ public class SignUp {
         }
         studentSave.setStudentAdm(studentDto.adm());
         studentSave.setFullName(studentDto.fullName());
-        studentSave.setDate(studentDto.Registration());
         studentSave.setStatus(studentDto.status());
         studentSave.setPhoneNumber(studentDto.PhoneNumber());
         return studentSave;

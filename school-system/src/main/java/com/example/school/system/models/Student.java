@@ -1,6 +1,8 @@
 package com.example.school.system.models;
 
-import java.util.Date;
+import java.time.LocalDate;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +27,8 @@ public class Student {
     String fullName;
 
     @Column(name = "registration_date")
-    Date date;
+    @CreationTimestamp
+    LocalDate date;
 
     @Column(name = "status")
     String status;
@@ -64,11 +67,11 @@ public class Student {
     }
 
     // for student registration date
-    public void setDate(Date registrationDate) {
+    public void setDate(LocalDate registrationDate) {
         this.date = registrationDate;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return this.date;
     }
 
@@ -93,10 +96,9 @@ public class Student {
     public Student() {
     }
 
-    public Student(Long studentAdm, String fullName, Date registrationDate, String status, String phoneNumber) {
+    public Student(Long studentAdm, String fullName, String status, String phoneNumber) {
         this.studentAdm = studentAdm;
         this.fullName = fullName;
-        this.date = registrationDate;
         this.status = status;
         this.phoneNumber = phoneNumber;
     }
