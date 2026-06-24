@@ -31,7 +31,7 @@ public class Student {
     String status;
 
     @Column(name = "phone_number")
-    int phoneNumber;
+    String phoneNumber;
 
     // getters and setters
 
@@ -82,18 +82,18 @@ public class Student {
     }
 
     // for phone number
-    public void setPhoneNumber(int phoneNumber) {
+    public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 
-    public int getPhoneNumber() {
+    public String getPhoneNumber() {
         return this.phoneNumber;
     }
 
     public Student() {
     }
 
-    public Student(Long studentAdm, String fullName, Date registrationDate, String status, int phoneNumber) {
+    public Student(Long studentAdm, String fullName, Date registrationDate, String status, String phoneNumber) {
         this.studentAdm = studentAdm;
         this.fullName = fullName;
         this.date = registrationDate;
