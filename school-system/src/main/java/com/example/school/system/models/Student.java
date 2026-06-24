@@ -36,6 +36,8 @@ public class Student {
     @Column(name = "phone_number")
     String phoneNumber;
 
+    @Column(name = "password")
+    String password;
     // getters and setters
 
     // for student student id
@@ -91,6 +93,15 @@ public class Student {
 
     public String getPhoneNumber() {
         return this.phoneNumber;
+    }
+
+    // for hashed passowrd
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return this.password;
     }
 
     public Student() {
