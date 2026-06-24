@@ -33,6 +33,10 @@ public class Student {
     @Column(name = "phone_number")
     int phoneNumber;
 
+    // getters and setters
+
+    // for student student id
+
     public void setStudentId(Long id) {
         this.studentId = id;
     }
@@ -41,12 +45,49 @@ public class Student {
         return this.studentId;
     }
 
+    // for student admission
+    public void setStudentAdm(Long adm) {
+        this.studentAdm = adm;
+    }
+
+    public Long getStudentAdm() {
+        return this.studentAdm;
+    }
+
+    // for student full name
     public void setFullName(String name) {
         this.fullName = name;
     }
 
     public String getFullName() {
         return this.fullName;
+    }
+
+    // for student registration date
+    public void setDate(Date registrationDate) {
+        this.date = registrationDate;
+    }
+
+    public Date getDate() {
+        return this.date;
+    }
+
+    // for student account status
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStatus() {
+        return this.status;
+    }
+
+    // for phone number
+    public void setPhoneNumber(int phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public int getPhoneNumber() {
+        return this.phoneNumber;
     }
 
     public Student() {
