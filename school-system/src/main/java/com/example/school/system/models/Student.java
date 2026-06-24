@@ -8,13 +8,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
 @Entity
 @Table(name = "student")
-@Getter
-@Setter
 // student entity
 public class Student {
     @Id
@@ -36,4 +32,31 @@ public class Student {
 
     @Column(name = "phone_number")
     int phoneNumber;
+
+    public void setStudentId(Long id) {
+        this.studentId = id;
+    }
+
+    public Long getStudentId() {
+        return this.studentId;
+    }
+
+    public void setFullName(String name) {
+        this.fullName = name;
+    }
+
+    public String getFullName() {
+        return this.fullName;
+    }
+
+    public Student() {
+    }
+
+    public Student(Long studentAdm, String fullName, Date registrationDate, String status, int phoneNumber) {
+        this.studentAdm = studentAdm;
+        this.fullName = fullName;
+        this.date = registrationDate;
+        this.status = status;
+        this.phoneNumber = phoneNumber;
+    }
 }
