@@ -24,6 +24,9 @@ public class SignUp {
 
     @PostMapping("/create/account")
     public Student CreateAccount(@Valid @RequestBody RegisterStudentDTO studentDto) {
+        if (studentRepository.existsByStudentAdm(studentDto.adm())) {
+            throw new DuplicateStudent("Student with this admission exists");
+        }
         Student studentSaved = toStudent(studentDto);
         studentRepository.save(studentSaved);
         return studentSaved;
@@ -31,9 +34,6 @@ public class SignUp {
 
     public Student toStudent(RegisterStudentDTO studentDto) {
         Student studentSave = new Student();
-        if (studentRepository.existsByStudentAdm(studentDto.adm())) {
-            throw new DuplicateStudent("Student with this admission exists");
-        }
         studentSave.setStudentAdm(studentDto.adm());
         studentSave.setPassword(passwordHashing.passwordEncoder().encode(studentDto.password()));
         studentSave.setFullName(studentDto.fullName());
