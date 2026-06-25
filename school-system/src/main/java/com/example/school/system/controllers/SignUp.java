@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.configs.PasswordHashing;
 import com.example.school.system.error.DuplicateStudent;
+import com.example.school.system.error.ExistingSchoolError;
+import com.example.school.system.models.School;
 import com.example.school.system.models.Student;
+import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 
 import jakarta.validation.Valid;
@@ -16,24 +19,31 @@ import jakarta.validation.Valid;
 public class SignUp {
     private final StudentRepository studentRepository;
     private final PasswordHashing passwordHashing;
+    private final SchoolRepository schoolRepository;
 
-    public SignUp(StudentRepository studentRepository, PasswordHashing passwordHashing) {
+    public SignUp(StudentRepository studentRepository, PasswordHashing passwordHashing,
+            SchoolRepository schoolRepository) {
         this.studentRepository = studentRepository;
         this.passwordHashing = passwordHashing;
+        this.schoolRepository = schoolRepository;
     }
 
     @PostMapping("/create/account")
-    public Student CreateAccount(@Valid @RequestBody RegisterStudentDTO studentDto) {
+    public RegisterStudentDTO CreateAccount(@Valid @RequestBody RegisterStudentDTO studentDto) {
         if (studentRepository.existsByStudentAdm(studentDto.adm())) {
             throw new DuplicateStudent("Student with this admission exists");
         }
         Student studentSaved = toStudent(studentDto);
         studentRepository.save(studentSaved);
-        return studentSaved;
+        return studentDto;
     }
 
     public Student toStudent(RegisterStudentDTO studentDto) {
         Student studentSave = new Student();
+        School school = schoolRepository.findById(studentDto.schoolId())
+                .orElseThrow(() -> new ExistingSchoolError(
+                        "School Not Found"));
+        studentSave.setSchool(school);
         studentSave.setStudentAdm(studentDto.adm());
         studentSave.setPassword(passwordHashing.passwordEncoder().encode(studentDto.password()));
         studentSave.setFullName(studentDto.fullName());

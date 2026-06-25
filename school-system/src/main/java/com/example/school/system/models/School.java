@@ -1,6 +1,7 @@
 package com.example.school.system.models;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -9,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,12 +25,16 @@ public class School {
     @Column(name = "school_id")
     Long schoolId;
 
-    @Column(name = "school_name",unique = true)
+    @Column(name = "school_name", unique = true)
     String schoolName;
 
     @Column(name = "registration_date")
     @CreationTimestamp
     LocalDate schoolRegistrationDate;
+
+    // creating relationship
+    @OneToMany(mappedBy = "school")
+    List<Student> students;
 
     public School() {
 

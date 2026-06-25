@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +44,12 @@ public class Student {
 
     @Column(name = "password")
     String password;
+
+    // creating relationship between student and school(one school has many students
+    // ...one to many)
+    @ManyToOne
+    @JoinColumn(name = "school_id")
+    School school;
 
     public Student() {
     }
