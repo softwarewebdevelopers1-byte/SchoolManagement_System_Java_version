@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.RegisterSchoolDTO;
-import com.example.school.system.error.NonExistingSchool;
+import com.example.school.system.error.ExistingSchoolError;
 import com.example.school.system.models.School;
 import com.example.school.system.repository.SchoolRepository;
 
@@ -20,7 +20,7 @@ public class RegisterSchool {
     @PostMapping("/create-school")
     public School createSchool(@RequestBody RegisterSchoolDTO schoolDTO) {
         if (schoolRepository.existsBySchoolName(schoolDTO.schoolName())) {
-            throw new NonExistingSchool("School with this name already exists");
+            throw new ExistingSchoolError("School with this name already exists");
         }
         return schoolRepository.save(toSchool(schoolDTO));
     }
