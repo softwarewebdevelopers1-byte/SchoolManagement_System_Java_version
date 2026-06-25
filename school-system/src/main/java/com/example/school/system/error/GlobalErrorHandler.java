@@ -10,4 +10,10 @@ public class GlobalErrorHandler {
     public ResponseEntity<?> DuplicateStudentErrorHandler(DuplicateStudent duplicateStudent) {
         return ResponseEntity.status(409).body(duplicateStudent.getMessage());
     }
+
+    @ExceptionHandler(NonExistingSchool.class)
+    public ResponseEntity<?> NonExistingSchoolErrorHandler(NonExistingSchool nonExistingSchool) {
+        return ResponseEntity.status(404).body(nonExistingSchool.getMessage());
+    }
 }
+
