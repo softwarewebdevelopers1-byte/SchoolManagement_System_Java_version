@@ -31,11 +31,14 @@ public class Student {
     @Column(name = "student_name")
     String studentFullName;
 
+    @Column(name = "student_adm", unique = true)
+    String studentAdm;
+
     @Column(name = "phone_number")
     String phoneNumber;
 
     @Column(name = "student_status")
-    String status;
+    String status = "active";
 
     // relationship between student and school
     @ManyToOne
