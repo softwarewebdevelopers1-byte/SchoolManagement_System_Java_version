@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -39,4 +40,7 @@ public class SchoolClass {
     @ManyToOne
     @JoinColumn(name = "school")
     School school;
+    // relationship between class and student
+    @OneToOne(mappedBy = "schoolClass")
+    Student student;
 }
