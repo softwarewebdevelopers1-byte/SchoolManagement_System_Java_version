@@ -46,7 +46,7 @@ public class Student {
     School school;
 
     // relationship between student and marks
-    @OneToMany
+    @OneToMany(mappedBy = "student")
     List<Marks> marks;
 
     // relationship between student and class
