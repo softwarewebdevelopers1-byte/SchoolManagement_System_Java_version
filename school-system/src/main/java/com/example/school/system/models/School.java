@@ -2,9 +2,7 @@ package com.example.school.system.models;
 
 import java.time.LocalDate;
 import java.util.List;
-
 import org.hibernate.annotations.CreationTimestamp;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,37 +11,36 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "school")
+@Table(name = "schools")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class School {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "school_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long schoolId;
 
     @Column(name = "school_name", unique = true)
-    @NotBlank(message = "School name field is missing")
+    @NotBlank(message = "school name must be provided")
     String schoolName;
 
-    @Column(name = "registration_date")
+    @Column(name = "registered_date")
     @CreationTimestamp
-    LocalDate schoolRegistrationDate;
+    LocalDate date;
 
-    // creating relationship
+    // creating relationship between school and teacher
+    @OneToMany(mappedBy = "school")
+    List<Teacher> teachers;
+    // creating relationship between school and students
     @OneToMany(mappedBy = "school")
     List<Student> students;
 
-    public School() {
-
-    }
-
-    public School(Long schoolId, String schoolName) {
-        this.schoolId = schoolId;
-        this.schoolName = schoolName;
-    }
 }
