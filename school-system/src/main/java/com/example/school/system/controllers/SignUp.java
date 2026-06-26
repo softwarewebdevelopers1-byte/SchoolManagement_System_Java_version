@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.RegisterStudentDTO;
+import com.example.school.system.DTO.StudentResponse;
 import com.example.school.system.configs.PasswordHashing;
 import com.example.school.system.error.DuplicateStudent;
 import com.example.school.system.error.ExistingSchoolError;
@@ -29,13 +30,17 @@ public class SignUp {
     }
 
     @PostMapping("/create/account")
-    public RegisterStudentDTO CreateAccount(@Valid @RequestBody RegisterStudentDTO studentDto) {
+    public StudentResponse CreateAccount(@Valid @RequestBody RegisterStudentDTO studentDto) {
         if (studentRepository.existsByStudentAdm(studentDto.adm())) {
             throw new DuplicateStudent("Student with this admission exists");
         }
         Student studentSaved = toStudent(studentDto);
         studentRepository.save(studentSaved);
-        return studentDto;
+        return toStudentResponse(studentDto);
+    }
+
+    private StudentResponse toStudentResponse(RegisterStudentDTO registerStudentDTO) {
+        return new StudentResponse(registerStudentDTO.fullName(), registerStudentDTO.adm());
     }
 
     public Student toStudent(RegisterStudentDTO studentDto) {
