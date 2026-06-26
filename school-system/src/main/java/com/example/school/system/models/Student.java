@@ -12,6 +12,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,9 +30,11 @@ public class Student {
     Long studentId;
 
     @Column(name = "adm", unique = true)
+    @NotNull(message = "student admission is missing")
     Long studentAdm;
 
     @Column(name = "full_name")
+    @NotBlank(message = "student name field should not be empty")
     String fullName;
 
     @Column(name = "registration_date")
@@ -40,6 +45,7 @@ public class Student {
     String status;
 
     @Column(name = "phone_number")
+    @Size(min = 10, max = 13)
     String phoneNumber;
 
     @Column(name = "password")

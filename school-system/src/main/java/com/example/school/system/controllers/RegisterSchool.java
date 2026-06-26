@@ -9,6 +9,8 @@ import com.example.school.system.error.ExistingSchoolError;
 import com.example.school.system.models.School;
 import com.example.school.system.repository.SchoolRepository;
 
+import jakarta.validation.Valid;
+
 @RestController
 public class RegisterSchool {
     private final SchoolRepository schoolRepository;
@@ -18,7 +20,7 @@ public class RegisterSchool {
     }
 
     @PostMapping("/create-school")
-    public School createSchool(@RequestBody RegisterSchoolDTO schoolDTO) {
+    public School createSchool(@Valid @RequestBody RegisterSchoolDTO schoolDTO) {
         if (schoolRepository.existsBySchoolName(schoolDTO.schoolName())) {
             throw new ExistingSchoolError("School with this name already exists");
         }

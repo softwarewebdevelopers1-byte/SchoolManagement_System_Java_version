@@ -10,6 +10,8 @@ import com.example.school.system.error.UnauthorizedUser;
 import com.example.school.system.models.Student;
 import com.example.school.system.repository.StudentRepository;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PostMapping;
 
 @RestController
@@ -23,7 +25,7 @@ public class Login {
     }
 
     @PostMapping("/login/user")
-    private StudentResponse LoginUser(@RequestBody LoggingUserDTO loggingUserDTO) {
+    private StudentResponse LoginUser(@Valid @RequestBody LoggingUserDTO loggingUserDTO) {
         String errorMessage = "Invalid credentials";
         Student student = studentRepository.findByStudentAdm(loggingUserDTO.adm())
                 .orElseThrow(() -> new UnauthorizedUser("User not found !"));

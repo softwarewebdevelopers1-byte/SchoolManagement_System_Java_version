@@ -3,7 +3,6 @@ package com.example.school.system.controllers;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.StudentResponse;
 import com.example.school.system.configs.PasswordHashing;
@@ -13,7 +12,6 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.Student;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
-
 import jakarta.validation.Valid;
 
 @RestController

@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +27,7 @@ public class School {
     Long schoolId;
 
     @Column(name = "school_name", unique = true)
+    @NotBlank(message = "School name field is missing")
     String schoolName;
 
     @Column(name = "registration_date")
