@@ -68,4 +68,8 @@ public class Teacher {
     @OneToMany(mappedBy = "teacher")
     List<TeacherSubject> teacherSubjects;
 
+    // create relationship between and marks teacher
+    @OneToMany(mappedBy = "teacher")
+    List<Marks> marks;
+
 }

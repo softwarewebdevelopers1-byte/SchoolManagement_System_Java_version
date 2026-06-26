@@ -48,4 +48,8 @@ public class Marks {
     @JoinColumn(name = "school_settings_id")
     SchoolSettings schoolSettings;
 
+    // creating relation ship between marks and teacher
+    @ManyToOne
+    @JoinColumn(name = "students_marks_id")
+    Teacher teacher;
 }
