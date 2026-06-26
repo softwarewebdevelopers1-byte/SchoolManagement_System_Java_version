@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,10 +29,12 @@ public class SchoolClass {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "class_id")
     Integer classId;
+
     // class as integer for example grade 7
     @NotNull(message = "Grade is missing")
     @Column(name = "grade")
     Integer classGrade;
+
     // class stream for example North
     @NotBlank(message = "Stream is missing")
     @Column(name = "stream")
@@ -43,14 +44,17 @@ public class SchoolClass {
     @ManyToOne
     @JoinColumn(name = "school")
     School school;
+
     // relationship between class and student
-    @OneToOne(mappedBy = "schoolClass")
-    Student student;
+    @OneToMany(mappedBy = "schoolClass")
+    List<Student> student;
+
     // relationship between class and school settings
     @ManyToOne
     @JoinColumn(name = "school_settings_id")
     SchoolSettings schoolSettings;
+
     // relationship between class and marks
-    @OneToMany(mappedBy="schoolClass")
+    @OneToMany(mappedBy = "schoolClass")
     List<Marks> marks;
 }

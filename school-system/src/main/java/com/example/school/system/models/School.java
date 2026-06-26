@@ -41,9 +41,11 @@ public class School {
     // creating relationship between school and teacher
     @OneToMany(mappedBy = "school")
     List<Teacher> teachers;
+
     // creating relationship between school and students
     @OneToMany(mappedBy = "school")
     List<Student> students;
+
     // creating relationship between school and school settings
     @OneToOne
     @JoinColumn(name = "school_settings_id")

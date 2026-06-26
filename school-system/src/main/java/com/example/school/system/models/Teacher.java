@@ -11,8 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -54,17 +54,18 @@ public class Teacher {
     @Column(name = "registration_date")
     @CreationTimestamp
     LocalDate date;
+
     // create relationship between school and teacher
     @ManyToOne
     @JoinColumn(name = "school_id")
     School school;
 
     // create relationship between subject and teacher
-    @OneToMany(mappedBy = "teacher")
+    @ManyToMany
     List<Subject> subject;
 
     // create relationship between school settings and teacher
     @ManyToOne
-    @JoinColumn(name="scool_settings_id")
+    @JoinColumn(name = "scool_settings_id")
     SchoolSettings schoolSettings;
 }

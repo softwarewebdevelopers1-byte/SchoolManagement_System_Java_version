@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -45,11 +44,13 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "school_id")
     School school;
+
     // relationship between student and marks
     @OneToMany
     List<Marks> marks;
+
     // relationship between student and class
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "class_id")
     SchoolClass schoolClass;
 

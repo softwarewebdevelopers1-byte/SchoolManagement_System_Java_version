@@ -26,6 +26,7 @@ public class SchoolSettings {
     @Column(name = "settings_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer settingsId;
+
     // for example term one
     @Column(name = "term")
     Integer schoolTerm = 1;
@@ -45,9 +46,11 @@ public class SchoolSettings {
     // relationship between setings and marks
     @OneToMany(mappedBy = "schoolSettings")
     List<Marks> marks;
+
     // relationship between settings and teacher
     @OneToMany(mappedBy = "schoolSettings")
     List<Teacher> teachers;
+
     // relationship between settings and students
     @OneToMany(mappedBy = "schoolSettings")
     List<Student> students;

@@ -7,8 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -35,10 +34,10 @@ public class Subject {
 
     @Column(name = "subject_type")
     String subjectType = "compulsory";
+
     // relationship between teacher and subjects
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    Teacher teacher;
+    @ManyToMany
+    List<Teacher> teacher;
 
     // relationship between subject and marks
     @OneToMany(mappedBy = "subject")

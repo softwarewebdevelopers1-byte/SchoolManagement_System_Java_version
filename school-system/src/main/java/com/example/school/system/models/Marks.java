@@ -27,6 +27,7 @@ public class Marks {
 
     @Column(name = "total_marks")
     Integer totalMarks = 0;
+
     // relationship between marks and subject
     @ManyToOne
     @JoinColumn(name = "subject_id")
