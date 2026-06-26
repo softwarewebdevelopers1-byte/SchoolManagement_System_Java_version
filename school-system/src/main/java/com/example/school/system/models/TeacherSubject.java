@@ -19,8 +19,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TeacherSubject {
     @Id
-    Integer Id;
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Integer Id;
 
     // relationship btwn teachersubject and teacher entities
     @ManyToOne
