@@ -7,10 +7,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "teacher_subject")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class TeacherSubject {
