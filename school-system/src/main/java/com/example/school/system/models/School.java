@@ -8,7 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -42,5 +44,9 @@ public class School {
     // creating relationship between school and students
     @OneToMany(mappedBy = "school")
     List<Student> students;
+    // creating relationship between school and school settings
+    @OneToOne
+    @JoinColumn(name = "school_settings_id")
+    SchoolSettings schoolSettings;
 
 }

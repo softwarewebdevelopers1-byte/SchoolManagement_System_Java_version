@@ -1,5 +1,7 @@
 package com.example.school.system.models;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -43,4 +46,11 @@ public class SchoolClass {
     // relationship between class and student
     @OneToOne(mappedBy = "schoolClass")
     Student student;
+    // relationship between class and school settings
+    @ManyToOne
+    @JoinColumn(name = "school_settings_id")
+    SchoolSettings schoolSettings;
+    // relationship between class and marks
+    @OneToMany(mappedBy="schoolClass")
+    List<Marks> marks;
 }

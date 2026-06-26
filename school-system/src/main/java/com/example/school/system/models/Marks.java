@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -28,8 +27,8 @@ public class Marks {
 
     @Column(name = "total_marks")
     Integer totalMarks = 0;
-    // relationship between subject and marks
-    @OneToOne
+    // relationship between marks and subject
+    @ManyToOne
     @JoinColumn(name = "subject_id")
     Subject subject;
 
@@ -37,4 +36,15 @@ public class Marks {
     @ManyToOne
     @JoinColumn(name = "student_id")
     Student student;
+
+    // relationship between marks and class
+    @ManyToOne
+    @JoinColumn(name = "class_id")
+    SchoolClass schoolClass;
+
+    // relationship between marks and school settings
+    @ManyToOne
+    @JoinColumn(name = "school_settings_id")
+    SchoolSettings schoolSettings;
+
 }

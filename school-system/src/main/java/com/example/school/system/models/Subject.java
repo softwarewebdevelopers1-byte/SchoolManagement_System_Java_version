@@ -1,12 +1,15 @@
 package com.example.school.system.models;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -33,7 +36,11 @@ public class Subject {
     @Column(name = "subject_type")
     String subjectType = "compulsory";
     // relationship between teacher and subjects
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "teacher_id")
     Teacher teacher;
+
+    // relationship between subject and marks
+    @OneToMany(mappedBy = "subject")
+    List<Marks> marks;
 }
