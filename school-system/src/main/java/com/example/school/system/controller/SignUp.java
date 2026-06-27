@@ -3,8 +3,8 @@ package com.example.school.system.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.CreateTeacherDTO;
-import com.example.school.system.error.SchoolNotFoundException;
-import com.example.school.system.error.UserExistsException;
+import com.example.school.system.error.SchoolNotFoundExceptionHandler;
+import com.example.school.system.error.UserExistsExceptionHandler;
 import com.example.school.system.models.School;
 import com.example.school.system.models.Teacher;
 import com.example.school.system.repository.SchoolRepository;
@@ -35,11 +35,11 @@ public class SignUp {
         Teacher teacher = new Teacher();
         // check if teacher exists
         if (teacherRepository.existsByEmail(teacherCreateTeacherDTO.email())) {
-            throw new UserExistsException("User already exists");
+            throw new UserExistsExceptionHandler("User already exists");
         }
         // check if school exists
         School findSchool = schoolRepository.findBySchoolName(teacherCreateTeacherDTO.schoolName())
-                .orElseThrow(() -> new SchoolNotFoundException("School Not Found"));
+                .orElseThrow(() -> new SchoolNotFoundExceptionHandler("School Not Found"));
 
         teacher.setFirstName(teacherCreateTeacherDTO.firstName());
         teacher.setLastName(teacherCreateTeacherDTO.lastName());
