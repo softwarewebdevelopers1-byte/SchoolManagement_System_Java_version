@@ -1,4 +1,4 @@
-package com.example.school.system.DTO;
+package com.example.school.system.DTO.DTOResponse;
 
 import org.springframework.stereotype.Component;
 
