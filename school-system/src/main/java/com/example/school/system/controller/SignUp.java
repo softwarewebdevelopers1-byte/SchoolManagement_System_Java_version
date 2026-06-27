@@ -10,6 +10,7 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.Teacher;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.TeacherRepository;
+import com.example.school.system.security.PasswordHashing;
 
 import jakarta.validation.Valid;
 
@@ -21,12 +22,14 @@ public class SignUp {
     private final TeacherRepository teacherRepository;
     private final SchoolRepository schoolRepository;
     private final TeacherResponse teacherResponse;
+    private final PasswordHashing passwordHashing;
 
     public SignUp(TeacherRepository teacherRepository, SchoolRepository schoolRepository,
-            TeacherResponse teacherResponse) {
+            TeacherResponse teacherResponse, PasswordHashing passwordHashing) {
         this.teacherRepository = teacherRepository;
         this.schoolRepository = schoolRepository;
         this.teacherResponse = teacherResponse;
+        this.passwordHashing = passwordHashing;
     }
 
     @PostMapping("/api/create-account")
@@ -48,9 +51,8 @@ public class SignUp {
         teacher.setFirstName(teacherCreateTeacherDTO.firstName());
         teacher.setLastName(teacherCreateTeacherDTO.lastName());
         teacher.setEmail(teacherCreateTeacherDTO.email());
-        teacher.setPassword(teacherCreateTeacherDTO.password());
+        teacher.setPassword(passwordHashing.PasswordEncoder().encode(teacherCreateTeacherDTO.password()));
         teacher.setSchool(findSchool);
         return teacher;
     }
-
 }
