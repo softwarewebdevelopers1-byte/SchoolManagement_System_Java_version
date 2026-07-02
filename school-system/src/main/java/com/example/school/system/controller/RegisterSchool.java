@@ -25,7 +25,7 @@ public class RegisterSchool {
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
             throw new SchoolExistsExceptionHandler("school with that name already exists");
         schoolService.registerSchool(schoolDto);
-        return SchoolApiResponse.success("Success", "School registered successfully");
+        return SchoolApiResponse.success("School registered successfully");
     }
 
 }

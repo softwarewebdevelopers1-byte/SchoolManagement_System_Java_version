@@ -30,7 +30,7 @@ public class SignUp {
     @PostMapping("/api/create-account")
     public SchoolApiResponse<?> createAccount(@Valid @RequestBody CreateTeacherDTO teacherDto) {
         teacherRepository.save(toTeacher(teacherDto));
-        return SchoolApiResponse.success("Success", "Registration successful");
+        return SchoolApiResponse.success( "Teacher registration successful");
     }
 
     private Teacher toTeacher(CreateTeacherDTO teacherCreateTeacherDTO) {
