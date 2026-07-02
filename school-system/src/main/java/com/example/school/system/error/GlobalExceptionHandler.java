@@ -11,8 +11,8 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(SchoolNotFoundExceptionHandler.class)
-    public ResponseEntity<?> SchoolNotFoundError(SchoolNotFoundExceptionHandler schoolNotFoundException) {
+    @ExceptionHandler(SchoolResourceNotFoundExceptionHandler.class)
+    public ResponseEntity<?> SchoolNotFoundError(SchoolResourceNotFoundExceptionHandler schoolNotFoundException) {
         return ResponseEntity.status(404).body(SchoolApiResponse.error(schoolNotFoundException.getMessage()));
     }
 
@@ -37,6 +37,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
      public ResponseEntity<?> RouteNotFound(NoResourceFoundException noResourceFoundException) {
-        return ResponseEntity.status(409).body(SchoolApiResponse.error(noResourceFoundException.getMessage()));
+        return ResponseEntity.status(404).body(SchoolApiResponse.error(noResourceFoundException.getMessage()));
     }
 }
