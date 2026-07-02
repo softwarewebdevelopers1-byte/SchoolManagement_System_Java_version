@@ -1,35 +1,42 @@
 package com.example.school.system.error;
 
-import java.util.HashMap;
-
+import java.util.HashSet;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(SchoolNotFoundExceptionHandler.class)
     public ResponseEntity<?> SchoolNotFoundError(SchoolNotFoundExceptionHandler schoolNotFoundException) {
-        return ResponseEntity.status(404).body(schoolNotFoundException.getMessage());
+        return ResponseEntity.status(404).body(SchoolApiResponse.error(schoolNotFoundException.getMessage()));
     }
 
     @ExceptionHandler(UserExistsExceptionHandler.class)
     public ResponseEntity<?> UserExistsError(UserExistsExceptionHandler userExistsException) {
-        return ResponseEntity.status(409).body(userExistsException.getMessage());
+        return ResponseEntity.status(409).body(SchoolApiResponse.error(userExistsException.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> BadRequestError(MethodArgumentNotValidException badRequesException) {
-        var badRequest = new HashMap<>();
+        var badRequest = new HashSet<>();
         badRequesException.getBindingResult().getFieldErrors().forEach((e) -> {
-            badRequest.put(e.getField(), e.getDefaultMessage());
+            badRequest.add(e.getDefaultMessage());
         });
-        return ResponseEntity.status(400).body(badRequest);
+        return ResponseEntity.status(400).body(SchoolApiResponse.error(badRequest.toString()));
     }
 
     @ExceptionHandler(SchoolExistsExceptionHandler.class)
     public ResponseEntity<?> BadRequestError(SchoolExistsExceptionHandler existsExceptionHandler) {
-        return ResponseEntity.status(409).body(existsExceptionHandler.getMessage());
+        return ResponseEntity.status(409).body(SchoolApiResponse.error(existsExceptionHandler.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+     public ResponseEntity<?> RouteNotFound(NoResourceFoundException noResourceFoundException) {
+        return ResponseEntity.status(409).body(SchoolApiResponse.error(noResourceFoundException.getMessage()));
     }
 }
