@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(SchoolApiResponse.error(badRequest.toString()));
     }
 
-    @ExceptionHandler(SchoolExistsExceptionHandler.class)
-    public ResponseEntity<?> BadRequestError(SchoolExistsExceptionHandler existsExceptionHandler) {
+    @ExceptionHandler(SchoolResourceExistsExceptionHandler.class)
+    public ResponseEntity<?> BadRequestError(SchoolResourceExistsExceptionHandler existsExceptionHandler) {
         return ResponseEntity.status(409).body(SchoolApiResponse.error(existsExceptionHandler.getMessage()));
     }
 

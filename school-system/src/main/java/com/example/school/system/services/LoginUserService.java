@@ -2,7 +2,6 @@ package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
 import com.example.school.system.DTO.LoginTeacherDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.Teacher;

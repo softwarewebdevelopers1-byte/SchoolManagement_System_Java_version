@@ -1,9 +1,7 @@
 package com.example.school.system.repository;
 
 import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 
