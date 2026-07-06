@@ -58,8 +58,4 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "school_settings")
     SchoolSettings schoolSettings;
-    // relationship between class teacher and students of that class
-    @ManyToOne
-    @JoinColumn(name = "classTeacher")
-    Teacher classTeacher;
 }

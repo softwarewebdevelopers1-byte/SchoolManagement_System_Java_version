@@ -76,7 +76,4 @@ public class Teacher {
     @OneToOne
     @JoinColumn(name = "classAssigned")
     SchoolClass classAssigned;
-    // relationship between class teacher and students of that class
-    @OneToMany(mappedBy = "classTeacher")
-    List<Student> students;
 }
