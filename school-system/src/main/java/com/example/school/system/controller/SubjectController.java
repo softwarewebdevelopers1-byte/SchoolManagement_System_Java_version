@@ -16,18 +16,17 @@ public class SubjectController {
         this.subjectService = subjectService;
     }
 
-    @PostMapping("/create/subject")
+    @PostMapping("api/create/subject")
     public SchoolApiResponse<?> CreateSingleSubject(@RequestBody SingleSubjectCreationDTO subjectCreationDTO) {
         return subjectService.createSingleSubject(subjectCreationDTO);
     }
 
-    @PostMapping("/create/multiple/subjects")
+    @PostMapping("api/create/multiple/subjects")
     public String createMultipleSubjects(@RequestBody String entity) {
 
         return entity;
     }
-
-    @GetMapping("/getAll/subjects")
+    @GetMapping("api/getAll/subjects")
     public String getSubjects(@RequestBody String entity) {
 
         return entity;

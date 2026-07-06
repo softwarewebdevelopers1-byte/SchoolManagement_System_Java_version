@@ -15,7 +15,7 @@ public class Login {
         this.loginUserService = loginUserService;
     }
 
-    @PostMapping("/login-user")
+    @PostMapping("/api/login-user")
     public SchoolApiResponse<?> LoginTeacher(@RequestBody LoginTeacherDTO teacherDTO) {
         var userData = loginUserService.LoginUser(teacherDTO);
         return SchoolApiResponse.success(userData, "User logged in");
