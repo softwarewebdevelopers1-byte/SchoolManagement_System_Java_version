@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -57,4 +58,8 @@ public class SchoolClass {
     // relationship between class and marks
     @OneToMany(mappedBy = "schoolClass")
     List<Marks> marks;
+    // relationship between class and class teacher
+    @OneToOne(mappedBy = "classAssigned")
+    Teacher teacher;
+
 }

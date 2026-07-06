@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -71,5 +72,9 @@ public class Teacher {
     // create relationship between and marks teacher
     @OneToMany(mappedBy = "teacher")
     List<Marks> marks;
+    // relationship of class teacher with a class
+    @OneToOne
+    @JoinColumn(name = "classAssigned")
+    SchoolClass classAssigned;
 
 }
