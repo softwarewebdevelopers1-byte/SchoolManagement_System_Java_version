@@ -7,6 +7,8 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.Teacher;
 import com.example.school.system.repository.TeacherRepository;
 import com.example.school.system.security.PasswordHashing;
+import com.example.school.system.security.jwt.JwtService;
+
 import jakarta.validation.Valid;
 
 @Service
@@ -14,10 +16,12 @@ import jakarta.validation.Valid;
 public class LoginUserService {
     private final TeacherRepository teacherRepository;
     private final PasswordHashing passwordHashing;
+    private JwtService jwtService;
 
-    public LoginUserService(TeacherRepository teacherRepo, PasswordHashing passwordHashing) {
+    public LoginUserService(TeacherRepository teacherRepo, PasswordHashing passwordHashing, JwtService JwtService) {
         this.teacherRepository = teacherRepo;
         this.passwordHashing = passwordHashing;
+        this.jwtService = JwtService;
     }
 
     public String LoginUser(@Valid LoginTeacherDTO teacherDTO) {
@@ -26,11 +30,12 @@ public class LoginUserService {
             throw new SchoolResourceNotFoundExceptionHandler(message);
         }
         Teacher teacherFound = teacherRepository.findByEmail(teacherDTO.email());
-        if (!passwordHashing.PasswordEncoder().matches( teacherDTO.password(),teacherFound.getPassword())) {
+        if (!passwordHashing.PasswordEncoder().matches(teacherDTO.password(), teacherFound.getPassword())) {
             throw new SchoolResourceNotFoundExceptionHandler(message);
 
         }
-        return teacherDTO.email();
+        var token = jwtService.GenerateToken(teacherFound);
+        return token;
 
     }
 }

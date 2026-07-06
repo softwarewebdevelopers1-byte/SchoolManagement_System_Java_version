@@ -11,6 +11,7 @@ public class SchoolApiResponse<T> {
     private T data;
     private String message;
     private String timeStamp;
+    private String token;
 
     private SchoolApiResponse(
             String status,
@@ -30,6 +31,13 @@ public class SchoolApiResponse<T> {
         this.status = status;
         this.message = message;
         this.timeStamp = timeStamp;
+    }
+
+    private SchoolApiResponse(String time, String token, String message, String status) {
+        this.token = token;
+        this.message = message;
+        this.timeStamp = time;
+        this.status = status;
     }
 
     private SchoolApiResponse(
@@ -67,6 +75,10 @@ public class SchoolApiResponse<T> {
 
     public static <T> SchoolApiResponse<T> success(String message) {
         return new SchoolApiResponse<>(SuccessMessage(), message, Instant.now().toString());
+    }
+
+    public static <T> SchoolApiResponse<T> success(String token, String message) {
+        return new SchoolApiResponse<>(Instant.now().toString(), token, message, "Success");
     }
 
     public static <T> SchoolApiResponse<T> success() {

@@ -3,11 +3,12 @@ package com.example.school.system.error;
 import java.util.HashSet;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.error.jwt.JwtNotMatchingExceptionHandler;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,7 +37,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-     public ResponseEntity<?> RouteNotFound(NoResourceFoundException noResourceFoundException) {
+    public ResponseEntity<?> RouteNotFound(NoResourceFoundException noResourceFoundException) {
         return ResponseEntity.status(404).body(SchoolApiResponse.error(noResourceFoundException.getMessage()));
+    }
+
+    // JWT exception handling
+    @ExceptionHandler(JwtNotMatchingExceptionHandler.class)
+    public ResponseEntity<?> JwtTokenNotMatchingException(
+            JwtNotMatchingExceptionHandler jwtNotMatchingExceptionHandler) {
+        return ResponseEntity.status(401).body(SchoolApiResponse.error(jwtNotMatchingExceptionHandler.getMessage()));
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<?> MissingRequestHeaderException() {
+        return ResponseEntity.status(401).body(SchoolApiResponse.error("Unauthorized"));
     }
 }
