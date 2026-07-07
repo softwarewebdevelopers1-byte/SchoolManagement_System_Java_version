@@ -9,11 +9,11 @@ import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 
 @Service
-public class CreateSchoolService {
+public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolRepository schoolRepository;
 
-    public CreateSchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository) {
+    public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository) {
         this.schoolSettingsRepository = schoolSettingsRepository;
         this.schoolRepository = schoolRepository;
 

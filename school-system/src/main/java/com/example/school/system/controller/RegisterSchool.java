@@ -5,7 +5,7 @@ import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.repository.SchoolRepository;
-import com.example.school.system.services.CreateSchoolService;
+import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 public class RegisterSchool {
     private final SchoolRepository schoolRepository;
-    private final CreateSchoolService schoolService;
+    private final SchoolService schoolService;
 
-    public RegisterSchool(SchoolRepository schoolRepository, CreateSchoolService schoolService) {
+    public RegisterSchool(SchoolRepository schoolRepository, SchoolService schoolService) {
         this.schoolRepository = schoolRepository;
         this.schoolService = schoolService;
     }
