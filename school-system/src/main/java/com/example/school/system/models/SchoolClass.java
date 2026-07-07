@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -62,4 +64,9 @@ public class SchoolClass {
     @OneToOne(mappedBy = "classAssigned")
     Teacher teacher;
 
+    @PrePersist
+    @PreUpdate
+    private void normalze() {
+        classStream = classStream.trim().toLowerCase();
+    }
 }

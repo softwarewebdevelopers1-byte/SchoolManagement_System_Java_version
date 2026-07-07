@@ -10,6 +10,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -48,5 +50,11 @@ public class School {
     // creating relationship between school and school settings
     @OneToOne(mappedBy = "school")
     SchoolSettings schoolSettings;
+
+    @PreUpdate
+    @PrePersist
+    private void normalze() {
+        schoolName = schoolName.trim().toLowerCase();
+    }
 
 }

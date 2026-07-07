@@ -2,7 +2,6 @@ package com.example.school.system.models;
 
 import java.time.LocalDate;
 import java.util.List;
-
 import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +12,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -76,4 +77,12 @@ public class Teacher {
     @OneToOne
     @JoinColumn(name = "classAssigned")
     SchoolClass classAssigned;
+
+    @PreUpdate
+    @PrePersist
+      private void normalze() {
+        firstName = firstName.trim().toLowerCase();
+        lastName=lastName.trim().toLowerCase();
+        email=email.trim().toLowerCase();
+    }
 }

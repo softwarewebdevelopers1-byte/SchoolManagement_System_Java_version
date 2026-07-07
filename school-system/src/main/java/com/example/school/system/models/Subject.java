@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -40,4 +42,11 @@ public class Subject {
     // create relationship between subject and TeacherSubject entity
     @OneToMany(mappedBy = "subject")
     List<TeacherSubject> teacherSubjects;
+
+    @PrePersist
+    @PreUpdate
+    private void normalze() {
+        subjectName = subjectName.trim().toLowerCase();
+        subjectType=subjectType.trim().toLowerCase();
+    }
 }
