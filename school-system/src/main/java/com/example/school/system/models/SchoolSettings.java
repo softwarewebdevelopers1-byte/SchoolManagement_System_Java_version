@@ -25,43 +25,45 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SchoolSettings {
-    @Id
-    @Column(name = "settings_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer settingsId;
+  @Id
+  @Column(name = "settings_id")
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  Integer settingsId;
 
-    // for example term one
-    @Column(name = "term")
-    Integer schoolTerm = 1;
+  // for example term one
+  @Column(name = "term")
+  Integer schoolTerm = 1;
 
-    // for example term one opener
-    @Column(name = "sub_term")
-    String subTerm = "opener";
+  // for example term one opener
+  @Column(name = "sub_term")
+  String subTerm = "opener";
 
-    // relationship between settings and school
-    @OneToOne
-    @JoinColumn(name = "school_id")
-    School school;
+  // relationship between settings and school
+  @OneToOne
+  @JoinColumn(name = "school_id")
+  School school;
 
-    // relationship between settings and class
-    @OneToMany(mappedBy = "schoolSettings")
-    List<SchoolClass> schoolClasses;
+  // relationship between settings and class
+  @OneToMany(mappedBy = "schoolSettings")
+  List<SchoolClass> schoolClasses;
 
-    // relationship between setings and marks
-    @OneToMany(mappedBy = "schoolSettings")
-    List<Marks> marks;
+  // relationship between setings and marks
+  @OneToMany(mappedBy = "schoolSettings")
+  List<Marks> marks;
 
-    // relationship between settings and teacher
-    @OneToMany(mappedBy = "schoolSettings")
-    List<Teacher> teachers;
+  // relationship between settings and teacher
+  @OneToMany(mappedBy = "schoolSettings")
+  List<Teacher> teachers;
 
-    // relationship between settings and students
-    @OneToMany(mappedBy = "schoolSettings")
-    List<Student> students;
+  // relationship between settings and students
+  @OneToMany(mappedBy = "schoolSettings")
+  List<Student> students;
 
-    @PrePersist
-    @PreUpdate
-      private void normalze() {
-        subTerm = subTerm.trim().toLowerCase();
+  @PrePersist
+  @PreUpdate
+  private void normalze() {
+    if (subTerm != null) {
+      subTerm = subTerm.trim().toLowerCase();
     }
+  }
 }

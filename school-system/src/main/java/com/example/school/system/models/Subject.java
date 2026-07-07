@@ -46,7 +46,11 @@ public class Subject {
     @PrePersist
     @PreUpdate
     private void normalze() {
-        subjectName = subjectName.trim().toLowerCase();
-        subjectType=subjectType.trim().toLowerCase();
+        if (subjectName != null) {
+            subjectName = subjectName.trim().toLowerCase();
+        }
+        if (subjectType != null) {
+            subjectType = subjectType.trim().toLowerCase();
+        }
     }
 }

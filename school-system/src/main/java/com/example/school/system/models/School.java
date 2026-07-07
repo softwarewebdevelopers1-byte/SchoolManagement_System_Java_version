@@ -54,7 +54,9 @@ public class School {
     @PreUpdate
     @PrePersist
     private void normalze() {
-        schoolName = schoolName.trim().toLowerCase();
+        if (schoolName != null) {
+            schoolName = schoolName.trim().toLowerCase();
+        }
     }
 
 }

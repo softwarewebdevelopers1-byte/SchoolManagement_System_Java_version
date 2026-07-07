@@ -64,9 +64,18 @@ public class Student {
     @PrePersist
     @PreUpdate
     private void normalze() {
-        studentFullName = studentFullName.trim().toLowerCase();
-        studentAdm = studentAdm.trim();
-        phoneNumber = phoneNumber.trim();
-        status=status.trim();
+        if (studentFullName != null) {
+            studentFullName = studentFullName.trim().toLowerCase();
+        }
+        if (studentAdm != null) {
+            studentAdm = studentAdm.trim();
+        }
+        if (phoneNumber != null) {
+            phoneNumber = phoneNumber.trim();
+
+        }
+        if (status != null) {
+            status = status.trim().toLowerCase();
+        }
     }
 }

@@ -67,6 +67,8 @@ public class SchoolClass {
     @PrePersist
     @PreUpdate
     private void normalze() {
-        classStream = classStream.trim().toLowerCase();
+        if (classStream != null) {
+            classStream = classStream.trim().toLowerCase();
+        }
     }
 }
