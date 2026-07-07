@@ -1,7 +1,10 @@
 package com.example.school.system.error;
 
 import java.util.HashSet;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,5 +54,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<?> MissingRequestHeaderException() {
         return ResponseEntity.status(401).body(SchoolApiResponse.error("Unauthorized"));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<?> httpMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException httpMediaTypeNotSupportedException) {
+        return ResponseEntity.status(415)
+                .body(SchoolApiResponse.error(httpMediaTypeNotSupportedException.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> DataIntegrityViolationException(
+            DataIntegrityViolationException dataIntegrityViolationException) {
+        return ResponseEntity.status(500).body(SchoolApiResponse.error("Duplicate entry"));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> HttpMessageNotReadableException(
+            HttpMessageNotReadableException httpMessageNotReadableException) {
+        return ResponseEntity.status(500).body(SchoolApiResponse.error("Unreadable JSON format"));
     }
 }

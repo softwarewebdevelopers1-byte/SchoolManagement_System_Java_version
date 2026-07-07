@@ -4,12 +4,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.SingleSubjectCreationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SubjectService;
-
 import jakarta.validation.Valid;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
@@ -28,9 +27,9 @@ public class SubjectController {
     }
 
     @PostMapping("api/create/multiple/subjects")
-    public String createMultipleSubjects(@RequestBody String entity) {
-
-        return entity;
+    public SchoolApiResponse<?> createMultipleSubjects(@RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody List<SingleSubjectCreationDTO> subjects) {
+        return subjectService.createMultipleSubject(subjects, authHeader);
     }
 
     @GetMapping("/getAll/subjects")
