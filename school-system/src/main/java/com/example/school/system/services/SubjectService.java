@@ -69,6 +69,6 @@ public class SubjectService {
             savedSubjects.add(toSubject(subjectCreationDTO));
         }
         subjectRepository.saveAll(savedSubjects);
-        return SchoolApiResponse.success(skipped, "ckeckout the skipped subjects in data object above");
+        return SchoolApiResponse.success(skipped, "checkout the skipped subjects in data object above");
     }
 }
