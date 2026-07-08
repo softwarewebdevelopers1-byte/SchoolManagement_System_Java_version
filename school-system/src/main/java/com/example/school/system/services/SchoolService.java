@@ -44,7 +44,11 @@ public class SchoolService {
         return school;
     }
 
-    public SchoolApiResponse<?> UpdateExistingSchool(Long id, CreateSchoolDTO schoolData) {
+    public SchoolApiResponse<?> UpdateExistingSchool(Long id, CreateSchoolDTO schoolData, String token) {
+        jwtValidation.validateTokenIssued(token);
+        if (!schoolRepository.existsById(id)) {
+            throw new SchoolResourceNotFoundExceptionHandler("School with that Id does not exist");
+        }
         if (schoolRepository.existsBySchoolName(schoolData.schoolName())) {
             throw new SchoolResourceExistsExceptionHandler("School with that name already exists");
         }
@@ -58,5 +62,13 @@ public class SchoolService {
         return SchoolApiResponse
                 .success("Changed from" + " " + previousSchoolName + " " + "to" + " "
                         + schoolData.schoolName());
+    }
+
+    public SchoolApiResponse<?> DeleteSchool(Long id, String token) {
+        jwtValidation.validateTokenIssued(token);
+        School schoolFound = schoolRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
+        schoolRepository.delete(schoolFound);
+        return SchoolApiResponse.success();
     }
 }

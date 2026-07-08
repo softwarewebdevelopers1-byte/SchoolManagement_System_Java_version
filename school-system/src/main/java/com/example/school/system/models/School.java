@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,15 +42,15 @@ public class School {
     LocalDate date;
 
     // creating relationship between school and teacher
-    @OneToMany(mappedBy = "school")
+    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
     List<Teacher> teachers;
 
     // creating relationship between school and students
-    @OneToMany(mappedBy = "school")
+    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
     List<Student> students;
 
     // creating relationship between school and school settings
-    @OneToOne(mappedBy = "school")
+    @OneToOne(mappedBy = "school", cascade = CascadeType.ALL)
     SchoolSettings schoolSettings;
 
     @PreUpdate

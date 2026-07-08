@@ -9,7 +9,6 @@ public class ClassController {
     @PostMapping("/create-class")
     public String postMethodName(@RequestBody String entity) {
         
-        // TODO: process POST request
 
         return entity;
     }

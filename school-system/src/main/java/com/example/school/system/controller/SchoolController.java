@@ -11,14 +11,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-public class RegisterSchool {
+public class SchoolController {
     private final SchoolRepository schoolRepository;
     private final SchoolService schoolService;
 
-    public RegisterSchool(SchoolRepository schoolRepository, SchoolService schoolService) {
+    public SchoolController(SchoolRepository schoolRepository, SchoolService schoolService) {
         this.schoolRepository = schoolRepository;
         this.schoolService = schoolService;
     }
@@ -34,8 +35,15 @@ public class RegisterSchool {
     }
 
     @PutMapping("/api/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@PathVariable String id, @RequestBody CreateSchoolDTO schoolData) {
+    public SchoolApiResponse<?> updateSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
+            @RequestBody CreateSchoolDTO schoolData) {
         Long schoolId = Long.parseLong(id);
-        return schoolService.UpdateExistingSchool(schoolId, schoolData);
+        return schoolService.UpdateExistingSchool(schoolId, schoolData, token);
+    }
+
+    @DeleteMapping("/api/delete/school/{id}")
+    public SchoolApiResponse<?> DeleteSchool(@PathVariable String id, @RequestHeader("Authorization") String token) {
+        Long schoolId = Long.parseLong(id);
+        return schoolService.DeleteSchool(schoolId, token);
     }
 }
