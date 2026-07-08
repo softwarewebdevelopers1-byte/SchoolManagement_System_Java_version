@@ -2,6 +2,7 @@ package com.example.school.system.models;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -49,7 +50,7 @@ public class SchoolClass {
     School school;
 
     // relationship between class and student
-    @OneToMany(mappedBy = "schoolClass")
+    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Student> student;
 
     // relationship between class and school settings
@@ -58,10 +59,10 @@ public class SchoolClass {
     SchoolSettings schoolSettings;
 
     // relationship between class and marks
-    @OneToMany(mappedBy = "schoolClass")
+    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Marks> marks;
     // relationship between class and class teacher
-    @OneToOne(mappedBy = "classAssigned")
+    @OneToOne(mappedBy = "classAssigned", cascade = CascadeType.ALL)
     Teacher teacher;
 
     @PrePersist

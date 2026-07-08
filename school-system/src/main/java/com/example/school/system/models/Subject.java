@@ -1,6 +1,8 @@
 package com.example.school.system.models;
 
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,11 +38,11 @@ public class Subject {
     String subjectType = "compulsory";
 
     // relationship between subject and marks
-    @OneToMany(mappedBy = "subject")
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
     List<Marks> marks;
 
     // create relationship between subject and TeacherSubject entity
-    @OneToMany(mappedBy = "subject")
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
     List<TeacherSubject> teacherSubjects;
 
     @PrePersist
