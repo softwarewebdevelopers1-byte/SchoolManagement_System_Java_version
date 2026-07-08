@@ -65,7 +65,7 @@ public class Teacher {
 
   // create relationship between school settings and teacher
   @ManyToOne
-  @JoinColumn(name = "scool_settings_id")
+  @JoinColumn(name = "school_settings_id")
   SchoolSettings schoolSettings;
 
   // create relationship between teacher subject and teacher
