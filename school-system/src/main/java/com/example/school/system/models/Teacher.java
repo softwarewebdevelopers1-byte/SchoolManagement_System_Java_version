@@ -69,10 +69,6 @@ public class Teacher {
   // create relationship between teacher subject and teacher
   @OneToMany(mappedBy = "teacher")
   List<TeacherSubject> teacherSubjects;
-
-  // create relationship between and marks teacher
-  @OneToMany(mappedBy = "teacher")
-  List<Marks> marks;
   // relationship of class teacher with a class
   @OneToOne
   @JoinColumn(name = "classAssigned")
