@@ -13,12 +13,12 @@ import jakarta.validation.Valid;
 
 @Service
 @Validated
-public class LoginUserService {
+public class UserAccountService {
     private final TeacherRepository teacherRepository;
     private final PasswordHashing passwordHashing;
     private JwtService jwtService;
 
-    public LoginUserService(TeacherRepository teacherRepo, PasswordHashing passwordHashing, JwtService JwtService) {
+    public UserAccountService(TeacherRepository teacherRepo, PasswordHashing passwordHashing, JwtService JwtService) {
         this.teacherRepository = teacherRepo;
         this.passwordHashing = passwordHashing;
         this.jwtService = JwtService;

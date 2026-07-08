@@ -3,15 +3,15 @@ package com.example.school.system.controller;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.LoginTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.services.LoginUserService;
+import com.example.school.system.services.UserAccountService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 public class Login {
-    private final LoginUserService loginUserService;
+    private final UserAccountService loginUserService;
 
-    public Login(LoginUserService loginUserService) {
+    public Login(UserAccountService loginUserService) {
         this.loginUserService = loginUserService;
     }
 
