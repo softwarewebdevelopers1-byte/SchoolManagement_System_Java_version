@@ -1,0 +1,41 @@
+package com.example.school.system.services;
+
+import org.springframework.stereotype.Service;
+import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
+import com.example.school.system.DTO.LoginUserDTO;
+import com.example.school.system.models.Users;
+import com.example.school.system.repository.UserRepository;
+import com.example.school.system.security.PasswordHashing;
+import jakarta.validation.Valid;
+
+@Service
+public class LoginService {
+    private JwtCreationService jwtService;
+    private final UserRepository userRepository;
+    private final PasswordHashing passwordHashing;
+
+    public LoginService(JwtCreationService jwtService, UserRepository userRepository, PasswordHashing passwordHashing) {
+        this.jwtService = jwtService;
+        this.passwordHashing = passwordHashing;
+        this.userRepository = userRepository;
+
+    }
+
+    // login user service
+    public String LoginUser(@Valid LoginUserDTO user) {
+        String message = "Invalid email or password";
+        Users userFound = userRepository.findByEmail(user.email())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
+        if (!userFound.getStatus().equals("active")) {
+            throw new SchoolResourceLockedExceptionHandler("Account is locked try again later");
+        }
+        if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
+            throw new SchoolResourceNotFoundExceptionHandler(message);
+
+        }
+        var token = jwtService.GenerateToken(userFound);
+        return token;
+
+    }
+}

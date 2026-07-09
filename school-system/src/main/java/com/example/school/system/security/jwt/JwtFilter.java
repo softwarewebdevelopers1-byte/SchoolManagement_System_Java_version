@@ -23,7 +23,7 @@ public class JwtFilter {
                 throw new JwtNotMatchingExceptionHandler(jwtError);
             }
             String authHeader = token.substring(7);
-            return jwtService.ValidateTeacherToken(authHeader);
+            return jwtService.ValidateToken(authHeader);
         } catch (JwtException e) {
             throw new JwtNotMatchingExceptionHandler(jwtError);
         }

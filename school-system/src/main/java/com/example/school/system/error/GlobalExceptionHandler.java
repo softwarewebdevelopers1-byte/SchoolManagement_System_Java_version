@@ -12,17 +12,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.jwt.JwtNotMatchingExceptionHandler;
+import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(SchoolResourceNotFoundExceptionHandler.class)
-    public ResponseEntity<?> SchoolNotFoundError(SchoolResourceNotFoundExceptionHandler schoolNotFoundException) {
+    public ResponseEntity<?> SchoolResourceNotFoundError(
+            SchoolResourceNotFoundExceptionHandler schoolNotFoundException) {
         return ResponseEntity.status(404).body(SchoolApiResponse.error(schoolNotFoundException.getMessage()));
-    }
-
-    @ExceptionHandler(UserExistsExceptionHandler.class)
-    public ResponseEntity<?> UserExistsError(UserExistsExceptionHandler userExistsException) {
-        return ResponseEntity.status(409).body(SchoolApiResponse.error(userExistsException.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -79,5 +76,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> OtpExceptionHandler(
             OtpExceptionHandler otpExceptionHandler) {
         return ResponseEntity.status(401).body(SchoolApiResponse.error(otpExceptionHandler.getMessage()));
+    }
+
+    @ExceptionHandler(SchoolResourceLockedExceptionHandler.class)
+    public ResponseEntity<?> SchoolResourceLockedExceptionHandler(
+            SchoolResourceLockedExceptionHandler schoolResourceLockedExceptionHandler) {
+        return ResponseEntity.status(423)
+                .body(SchoolApiResponse.error(schoolResourceLockedExceptionHandler.getMessage()));
     }
 }

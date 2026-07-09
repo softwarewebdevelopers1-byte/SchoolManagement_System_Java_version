@@ -1,5 +1,7 @@
 package com.example.school.system.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.school.system.models.Users;
@@ -7,5 +9,5 @@ import com.example.school.system.models.Users;
 public interface UserRepository extends JpaRepository<Users, Long> {
     boolean existsByEmail(String email);
 
-    Users findByEmail(String email);
+    Optional<Users> findByEmail(String email);
 }

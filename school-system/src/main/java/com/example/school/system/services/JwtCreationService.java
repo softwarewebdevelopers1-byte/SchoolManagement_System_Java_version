@@ -21,13 +21,13 @@ public class JwtCreationService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    public String GenerateTeacherToken(Users teacher) {
-        return Jwts.builder().subject(teacher.getEmail()).issuedAt(new Date())
+    public String GenerateToken(Users users) {
+        return Jwts.builder().subject(users.getEmail()).issuedAt(new Date())
                 .signWith(secretKeyBuilder(secret))
                 .compact();
     }
 
-    public Claims ValidateTeacherToken(String token) {
+    public Claims ValidateToken(String token) {
         return Jwts.parser().verifyWith(secretKeyBuilder(secret)).build().parseSignedClaims(token).getPayload();
     }
     

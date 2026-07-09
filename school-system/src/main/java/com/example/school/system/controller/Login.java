@@ -1,22 +1,22 @@
 package com.example.school.system.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import com.example.school.system.DTO.LoginUser;
+import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.services.UserAccountService;
+import com.example.school.system.services.LoginService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 public class Login {
-    private final UserAccountService loginUserService;
+    private final LoginService loginUserService;
 
-    public Login(UserAccountService loginUserService) {
+    public Login(LoginService loginUserService) {
         this.loginUserService = loginUserService;
     }
 
     @PostMapping("/api/login-user")
-    public SchoolApiResponse<?> LoginTeacher(@RequestBody LoginUser userLogin) {
+    public SchoolApiResponse<?> LoginTeacher(@RequestBody LoginUserDTO userLogin) {
         var token = loginUserService.LoginUser(userLogin);
         return SchoolApiResponse.success(token, "User logged in");
     }
