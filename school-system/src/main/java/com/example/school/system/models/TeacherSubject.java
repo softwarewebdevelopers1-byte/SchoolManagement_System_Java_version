@@ -26,7 +26,7 @@ public class TeacherSubject {
     // relationship btwn teachersubject and teacher entities
     @ManyToOne
     @JoinColumn(name = "teacher_id")
-    Teacher teacher;
+    UserProfile teacher;
 
     // relationship btwn teachersubject and subject entities
     @ManyToOne

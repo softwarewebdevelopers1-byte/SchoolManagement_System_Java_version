@@ -53,7 +53,7 @@ public class SchoolSettings {
 
   // relationship between settings and teacher
   @OneToMany(mappedBy = "schoolSettings")
-  List<Teacher> teachers;
+  List<UserProfile> teachers;
 
   // relationship between settings and students
   @OneToMany(mappedBy = "schoolSettings")

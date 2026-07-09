@@ -43,7 +43,7 @@ public class School {
 
     // creating relationship between school and teacher
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
-    List<Teacher> teachers;
+    List<UserProfile> teachers;
 
     // creating relationship between school and students
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)

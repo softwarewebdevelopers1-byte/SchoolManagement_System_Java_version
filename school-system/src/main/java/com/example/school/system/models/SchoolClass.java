@@ -63,7 +63,7 @@ public class SchoolClass {
     List<Marks> marks;
     // relationship between class and class teacher
     @OneToOne(mappedBy = "classAssigned", cascade = CascadeType.ALL)
-    Teacher teacher;
+    UserProfile teacher;
 
     @PrePersist
     @PreUpdate
