@@ -16,8 +16,8 @@ public class Login {
     }
 
     @PostMapping("/api/login-user")
-    public SchoolApiResponse<?> LoginTeacher(@RequestBody LoginUser teacherDTO) {
-        var token = loginUserService.LoginUser(teacherDTO);
+    public SchoolApiResponse<?> LoginTeacher(@RequestBody LoginUser userLogin) {
+        var token = loginUserService.LoginUser(userLogin);
         return SchoolApiResponse.success(token, "User logged in");
     }
 

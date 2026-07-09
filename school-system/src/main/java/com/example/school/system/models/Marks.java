@@ -38,7 +38,7 @@ public class Marks {
     // relationship between marks and student
     @ManyToOne
     @JoinColumn(name = "student_id")
-    private Student student;
+    private StudentProfile student;
 
     // relationship between marks and class
     @ManyToOne

@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -20,12 +21,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "students")
+@Table(name = "students_profile")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Student {
+public class StudentProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "student_id")
@@ -39,9 +40,6 @@ public class Student {
 
     @Column(name = "phone_number")
     String phoneNumber;
-
-    @Column(name = "student_status")
-    String status = "active";
 
     // relationship between student and school
     @ManyToOne
@@ -62,6 +60,10 @@ public class Student {
     @JoinColumn(name = "school_settings")
     SchoolSettings schoolSettings;
 
+    @OneToOne
+    @JoinColumn(name = "student_account")
+    Users student;
+
     @PrePersist
     @PreUpdate
     private void normalze() {
@@ -74,9 +76,6 @@ public class Student {
         if (phoneNumber != null) {
             phoneNumber = phoneNumber.trim();
 
-        }
-        if (status != null) {
-            status = status.trim().toLowerCase();
         }
     }
 }

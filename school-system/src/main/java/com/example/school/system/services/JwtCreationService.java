@@ -4,7 +4,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.example.school.system.models.UserProfile;
+import com.example.school.system.models.Users;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -21,7 +21,7 @@ public class JwtCreationService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    public String GenerateTeacherToken(UserProfile teacher) {
+    public String GenerateTeacherToken(Users teacher) {
         return Jwts.builder().subject(teacher.getEmail()).issuedAt(new Date())
                 .signWith(secretKeyBuilder(secret))
                 .compact();

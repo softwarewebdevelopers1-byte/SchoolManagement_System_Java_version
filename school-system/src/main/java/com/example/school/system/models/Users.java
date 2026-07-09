@@ -1,7 +1,9 @@
 package com.example.school.system.models;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.CascadeType;
@@ -10,9 +12,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -29,7 +28,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfile {
+public class Users {
   @Id
   @Column(name = "user_id")
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +36,9 @@ public class UserProfile {
   @Column(name = "email", unique = true)
   @NotBlank(message = "Email is missing")
   String email;
+
+  @Column(name = "roles")
+  Set<String> roles = new HashSet<>();
 
   @NotBlank(message = "password is missing")
   @Column(name = "password")
@@ -46,29 +48,23 @@ public class UserProfile {
   @CreationTimestamp
   LocalDate date;
 
-  // create relationship between school and user
-  @ManyToOne
-  @JoinColumn(name = "school_id")
-  School school;
+  @Column(name = "status")
+  String status = "active";
 
-  // create relationship between school settings and user
-  @ManyToOne
-  @JoinColumn(name = "school_settings_id")
-  SchoolSettings schoolSettings;
+  @OneToOne(mappedBy = "teacher", cascade = CascadeType.ALL)
+  TeacherProfile teacherProfile;
 
-  // create relationship between user subject and user
-  @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL)
-  List<TeacherSubject> teacherSubjects;
-  // relationship of class teacher with a class
-  @OneToOne
-  @JoinColumn(name = "classAssigned")
-  SchoolClass classAssigned;
+  @OneToOne(mappedBy = "student", cascade = CascadeType.ALL)
+  StudentProfile studentProfile;
 
   @PreUpdate
   @PrePersist
   private void normalze() {
     if (email != null) {
       email = email.trim().toLowerCase();
+    }
+    if (status != null) {
+      status = status.trim().toLowerCase();
     }
   }
 }

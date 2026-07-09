@@ -1,7 +1,7 @@
 package com.example.school.system.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import com.example.school.system.DTO.UserProfileDTO;
+import com.example.school.system.DTO.User;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.UserAccountService;
 
@@ -20,8 +20,8 @@ public class SignUp {
 
     @PostMapping("/api/create-account")
     public SchoolApiResponse<?> createAccount(@RequestHeader("Authorization") String userToken,
-            @Valid @RequestBody UserProfileDTO teacherDto) {
-        return accountService.SignUpUser(teacherDto,userToken);
+            @Valid @RequestBody User user) {
+        return accountService.SignUpUser(user,userToken);
 
     }
 

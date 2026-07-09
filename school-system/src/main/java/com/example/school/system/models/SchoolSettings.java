@@ -51,13 +51,9 @@ public class SchoolSettings {
   @OneToMany(mappedBy = "schoolSettings")
   List<Marks> marks;
 
-  // relationship between settings and teacher
-  @OneToMany(mappedBy = "schoolSettings")
-  List<UserProfile> teachers;
-
   // relationship between settings and students
   @OneToMany(mappedBy = "schoolSettings")
-  List<Student> students;
+  List<StudentProfile> students;
 
   @PrePersist
   @PreUpdate

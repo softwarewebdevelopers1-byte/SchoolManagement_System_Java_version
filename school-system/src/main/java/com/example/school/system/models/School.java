@@ -41,13 +41,9 @@ public class School {
     @CreationTimestamp
     LocalDate date;
 
-    // creating relationship between school and teacher
-    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
-    List<UserProfile> teachers;
-
     // creating relationship between school and students
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
-    List<Student> students;
+    List<StudentProfile> students;
 
     // creating relationship between school and school settings
     @OneToOne(mappedBy = "school", cascade = CascadeType.ALL)

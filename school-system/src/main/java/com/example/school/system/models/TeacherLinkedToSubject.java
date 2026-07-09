@@ -18,18 +18,18 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeacherSubject {
+public class TeacherLinkedToSubject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer Id;
-
-    // relationship btwn teachersubject and teacher entities
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    UserProfile teacher;
-
-    // relationship btwn teachersubject and subject entities
+    private Integer Id;
+    // relationship btwn teachersubjectLink and subject entities
     @ManyToOne
     @JoinColumn(name = "subject_id")
-    Subject subject;
+    private Subject subject;
+
+    // relationship btwn teachersubjectLink and subject entities
+    @ManyToOne
+    @JoinColumn(name = "teacher_link_subject")
+    private TeacherProfile link;
+
 }

@@ -43,7 +43,7 @@ public class Subject {
 
     // create relationship between subject and TeacherSubject entity
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
-    List<TeacherSubject> teacherSubjects;
+    List<TeacherLinkedToSubject> teacherSubjects;
 
     @PrePersist
     @PreUpdate

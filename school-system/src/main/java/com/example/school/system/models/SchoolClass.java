@@ -1,7 +1,6 @@
 package com.example.school.system.models;
 
 import java.util.List;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -51,7 +49,7 @@ public class SchoolClass {
 
     // relationship between class and student
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
-    List<Student> student;
+    List<StudentProfile> student;
 
     // relationship between class and school settings
     @ManyToOne
@@ -61,9 +59,6 @@ public class SchoolClass {
     // relationship between class and marks
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Marks> marks;
-    // relationship between class and class teacher
-    @OneToOne(mappedBy = "classAssigned", cascade = CascadeType.ALL)
-    UserProfile teacher;
 
     @PrePersist
     @PreUpdate
