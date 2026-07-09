@@ -8,7 +8,7 @@ import com.example.school.system.DTO.SingleSubjectCreationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.repository.SubjectRepository;
-import com.example.school.system.security.jwt.JwtValidation;
+import com.example.school.system.security.jwt.JwtFilter;
 import com.example.school.system.models.Subject;
 // import lombok.AllArgsConstructor;
 
@@ -16,9 +16,9 @@ import com.example.school.system.models.Subject;
 // @AllArgsConstructor
 public class SubjectService {
     private SubjectRepository subjectRepository;
-    private JwtValidation jwtValidation;
+    private JwtFilter jwtValidation;
 
-    public SubjectService(SubjectRepository subjectRepository, JwtValidation jwtValidation) {
+    public SubjectService(SubjectRepository subjectRepository, JwtFilter jwtValidation) {
         this.subjectRepository = subjectRepository;
         this.jwtValidation = jwtValidation;
     }

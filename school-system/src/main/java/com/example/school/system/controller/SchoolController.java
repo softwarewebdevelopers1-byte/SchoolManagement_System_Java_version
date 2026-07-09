@@ -2,9 +2,11 @@ package com.example.school.system.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.CreateSchoolDTO;
+import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.repository.SchoolRepository;
+import com.example.school.system.services.OtpService;
 import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +21,7 @@ public class SchoolController {
     private final SchoolRepository schoolRepository;
     private final SchoolService schoolService;
 
-    public SchoolController(SchoolRepository schoolRepository, SchoolService schoolService) {
+    public SchoolController(SchoolRepository schoolRepository, SchoolService schoolService, OtpService otpService) {
         this.schoolRepository = schoolRepository;
         this.schoolService = schoolService;
     }
@@ -42,8 +44,9 @@ public class SchoolController {
     }
 
     @DeleteMapping("/api/delete/school/{id}")
-    public SchoolApiResponse<?> DeleteSchool(@PathVariable String id, @RequestHeader("Authorization") String token) {
+    public SchoolApiResponse<?> deleteSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
+            @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
         Long schoolId = Long.parseLong(id);
-        return schoolService.DeleteSchool(schoolId, token);
+        return schoolService.deleteSchool(schoolId, token, otpValidationDTO);
     }
 }

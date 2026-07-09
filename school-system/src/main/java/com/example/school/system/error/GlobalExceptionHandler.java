@@ -66,12 +66,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> DataIntegrityViolationException(
             DataIntegrityViolationException dataIntegrityViolationException) {
-        return ResponseEntity.status(500).body(SchoolApiResponse.error("Duplicate entry"));
+        return ResponseEntity.status(500).body(SchoolApiResponse.error(dataIntegrityViolationException.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> HttpMessageNotReadableException(
             HttpMessageNotReadableException httpMessageNotReadableException) {
         return ResponseEntity.status(500).body(SchoolApiResponse.error("Unreadable JSON format"));
+    }
+
+    @ExceptionHandler(OtpExceptionHandler.class)
+    public ResponseEntity<?> OtpExceptionHandler(
+            OtpExceptionHandler otpExceptionHandler) {
+        return ResponseEntity.status(401).body(SchoolApiResponse.error(otpExceptionHandler.getMessage()));
     }
 }

@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
 import com.example.school.system.DTO.CreateSchoolDTO;
+import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -9,17 +10,19 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
-import com.example.school.system.security.jwt.JwtValidation;
+import com.example.school.system.security.jwt.JwtFilter;
 
 @Service
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolRepository schoolRepository;
-    private JwtValidation jwtValidation;
+    private JwtFilter jwtValidation;
+    private OtpService otpService;
 
     public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository,
-            JwtValidation jwtValidation) {
+            JwtFilter jwtValidation, OtpService otpService) {
         this.schoolSettingsRepository = schoolSettingsRepository;
+        this.otpService = otpService;
         this.schoolRepository = schoolRepository;
         this.jwtValidation = jwtValidation;
 
@@ -64,11 +67,12 @@ public class SchoolService {
                         + schoolData.schoolName());
     }
 
-    public SchoolApiResponse<?> DeleteSchool(Long id, String token) {
+    public SchoolApiResponse<?> deleteSchool(Long id, String token, OtpValidationDTO otpValidationDTO) {
         jwtValidation.validateTokenIssued(token);
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
+        String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);
         schoolRepository.delete(schoolFound);
-        return SchoolApiResponse.success();
+        return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }
 }
