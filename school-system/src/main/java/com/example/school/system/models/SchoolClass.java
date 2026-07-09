@@ -50,12 +50,6 @@ public class SchoolClass {
     // relationship between class and student
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<StudentProfile> student;
-
-    // relationship between class and school settings
-    @ManyToOne
-    @JoinColumn(name = "school_settings_id")
-    SchoolSettings schoolSettings;
-
     // relationship between class and marks
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Marks> marks;

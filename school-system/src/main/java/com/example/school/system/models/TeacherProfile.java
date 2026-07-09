@@ -48,11 +48,6 @@ public class TeacherProfile {
     @JoinColumn(name = "school_id")
     private School school;
 
-    // relationship between teacher and school settings
-    @ManyToOne
-    @JoinColumn(name = "school_settings")
-    private SchoolSettings schoolSettings;
-
     @OneToMany(mappedBy = "link")
     private List<TeacherLinkedToSubject> teacherLinkedToSubjects;
 }

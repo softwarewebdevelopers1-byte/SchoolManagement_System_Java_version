@@ -55,11 +55,6 @@ public class StudentProfile {
     @JoinColumn(name = "class_id")
     SchoolClass schoolClass;
 
-    // relationship between student and school settings
-    @ManyToOne
-    @JoinColumn(name = "school_settings")
-    SchoolSettings schoolSettings;
-
     @OneToOne
     @JoinColumn(name = "student_account")
     Users student;

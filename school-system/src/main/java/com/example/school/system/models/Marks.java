@@ -45,11 +45,6 @@ public class Marks {
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    // relationship between marks and school settings
-    @ManyToOne
-    @JoinColumn(name = "school_settings_id")
-    private SchoolSettings schoolSettings;
-
     @PreUpdate
     @PrePersist
     private void Normalize() {

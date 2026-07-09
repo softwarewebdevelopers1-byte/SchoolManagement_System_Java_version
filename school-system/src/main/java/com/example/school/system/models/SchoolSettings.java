@@ -1,14 +1,11 @@
 package com.example.school.system.models;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -42,19 +39,6 @@ public class SchoolSettings {
   @OneToOne
   @JoinColumn(name = "school_id")
   School school;
-
-  // relationship between settings and class
-  @OneToMany(mappedBy = "schoolSettings")
-  List<SchoolClass> schoolClasses;
-
-  // relationship between setings and marks
-  @OneToMany(mappedBy = "schoolSettings")
-  List<Marks> marks;
-
-  // relationship between settings and students
-  @OneToMany(mappedBy = "schoolSettings")
-  List<StudentProfile> students;
-
   @PrePersist
   @PreUpdate
   private void normalze() {
