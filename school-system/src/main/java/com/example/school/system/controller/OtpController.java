@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.OtpCreationDTO;
+import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.OtpService;
 
@@ -22,5 +23,10 @@ public class OtpController {
     public SchoolApiResponse<?> otpSender(@Valid @RequestBody OtpCreationDTO otpCreationDTO) {
         otpService.GenerateOtp(otpCreationDTO);
         return SchoolApiResponse.success("OTP sent successfully");
+    }
+
+    @PostMapping("/api/validate/otp")
+    public SchoolApiResponse<?> otpValidator(@Valid @RequestBody OtpValidationDTO otp) {
+        return SchoolApiResponse.success(otpService.ValidateOtp(otp));
     }
 }

@@ -14,8 +14,10 @@ import com.example.school.system.repository.OtpRepository;
 @Service
 public class OtpService {
     private OtpRepository otpRepository;
+    private EmailSender emailSender;
 
-    public OtpService(OtpRepository otpRepository) {
+    public OtpService(OtpRepository otpRepository, EmailSender emailSender) {
+        this.emailSender = emailSender;
         this.otpRepository = otpRepository;
     }
 
@@ -24,10 +26,15 @@ public class OtpService {
         if (otpDTO.email() != null) {
             otpRepository.deleteByEmail(otpDTO.email().trim().toLowerCase());
         }
+        String email = otpDTO.email().trim().toLowerCase();
         String randomValue = RandomValues();
-
         otpRepository.save(toOtp(otpDTO, randomValue));
+        otpEmailSender(email, randomValue);
         return randomValue;
+    }
+
+    private void otpEmailSender(String email, String data) {
+        emailSender.SendEmail(email, data);
     }
 
     private OTP toOtp(OtpCreationDTO otpDTO, String randomValue) {

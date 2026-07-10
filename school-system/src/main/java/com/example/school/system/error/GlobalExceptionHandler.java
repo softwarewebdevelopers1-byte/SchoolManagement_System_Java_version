@@ -84,4 +84,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(423)
                 .body(SchoolApiResponse.error(schoolResourceLockedExceptionHandler.getMessage()));
     }
+
+    @ExceptionHandler(MailExceptionHandler.class)
+    public ResponseEntity<?> MailExceptionHandler(
+            MailExceptionHandler mailExceptionHandler) {
+        return ResponseEntity.status(423)
+                .body(SchoolApiResponse.error(mailExceptionHandler.getMessage()));
+    }
 }
