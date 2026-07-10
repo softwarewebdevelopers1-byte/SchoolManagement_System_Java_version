@@ -24,10 +24,11 @@ public class TokenService {
         InviteLinks foundLink = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidTokenExceptionHandler(errorMessage));
 
-        if (foundLink.isUsed() || foundLink.getExpirationTime().isBefore(LocalDateTime.now())) {
+        if (foundLink.isUsed() || foundLink.getExpirationTime().isBefore(LocalDateTime.now().minusDays(7))) {
             throw new InvalidTokenExceptionHandler(errorMessage);
         }
         foundLink.setUsed(true);
+        tokenRepository.save(foundLink);
     }
 
     public String TokenGenerator() {
@@ -36,7 +37,7 @@ public class TokenService {
     }
 
     public void TokenSaver() {
-        String token=TokenGenerator();
+        String token = TokenGenerator();
         InviteLinks link = new InviteLinks();
         link.setExpirationTime(LocalDateTime.now().plusDays(7));
         link.setToken(token);
