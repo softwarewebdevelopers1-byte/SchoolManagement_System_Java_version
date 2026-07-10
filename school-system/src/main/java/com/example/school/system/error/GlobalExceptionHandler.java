@@ -72,10 +72,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500).body(SchoolApiResponse.error("Unreadable JSON format"));
     }
 
-    @ExceptionHandler(OtpExceptionHandler.class)
-    public ResponseEntity<?> OtpExceptionHandler(
-            OtpExceptionHandler otpExceptionHandler) {
-        return ResponseEntity.status(401).body(SchoolApiResponse.error(otpExceptionHandler.getMessage()));
+    @ExceptionHandler(InvalidTokenExceptionHandler.class)
+    public ResponseEntity<?> tokenExceptionHandler(
+            InvalidTokenExceptionHandler tokenExceptionHandler) {
+        return ResponseEntity.status(401).body(SchoolApiResponse.error(tokenExceptionHandler.getMessage()));
     }
 
     @ExceptionHandler(SchoolResourceLockedExceptionHandler.class)

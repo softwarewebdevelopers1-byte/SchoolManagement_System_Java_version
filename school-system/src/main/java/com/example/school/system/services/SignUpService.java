@@ -15,21 +15,24 @@ import com.example.school.system.security.PasswordHashing;
 public class SignUpService {
     private final UserRepository userRepository;
     private final PasswordHashing passwordHashing;
+    private TokenService tokenService;
 
     public SignUpService(UserRepository userRepo, PasswordHashing passwordHashing,
-            SchoolRepository schoolRepository) {
+            SchoolRepository schoolRepository, TokenService tokenService) {
         this.userRepository = userRepo;
+        this.tokenService = tokenService;
         this.passwordHashing = passwordHashing;
 
     }
 
     public SchoolApiResponse<?> SignUpUser(SignUpUserDTO User, String token) {
-        validateSignUp(User,token);
+        validateSignUp(User);
+        tokenService.validateTokenProvided(token);
         userRepository.save(toUser(User));
         return SchoolApiResponse.success("User " + " " + User.email() + " " + "registration successful");
     }
 
-    private void validateSignUp(SignUpUserDTO userProfileDTO, String token) {
+    private void validateSignUp(SignUpUserDTO userProfileDTO) {
         if (userRepository.existsByEmail(userProfileDTO.email())) {
             throw new SchoolResourceExistsExceptionHandler("User already exists");
         }

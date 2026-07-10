@@ -7,7 +7,6 @@ import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
-import jakarta.validation.Valid;
 
 @Service
 public class LoginService {
@@ -23,7 +22,7 @@ public class LoginService {
     }
 
     // login user service
-    public String LoginUser(@Valid LoginUserDTO user) {
+    public String LoginUser(LoginUserDTO user) {
         String message = "Invalid email or password";
         Users userFound = userRepository.findByEmail(user.email())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));

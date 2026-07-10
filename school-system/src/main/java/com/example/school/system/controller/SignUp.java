@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class SignUp {
-    private SignUpService accountService;
+    private SignUpService signUpService;
 
-    public SignUp(SignUpService userAccountService) {
-        this.accountService = userAccountService;
+    public SignUp() {
     }
+
 
     @PostMapping("/api/create-account")
     public SchoolApiResponse<?> createAccount(@RequestParam String token,
             @Valid @RequestBody SignUpUserDTO user) {
-        return accountService.SignUpUser(user, token);
+        return signUpService.SignUpUser(user, token);
 
     }
 

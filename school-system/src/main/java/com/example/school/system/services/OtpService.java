@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.OtpCreationDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
-import com.example.school.system.error.OtpExceptionHandler;
+import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.models.OTP;
 import com.example.school.system.repository.OtpRepository;
 
@@ -50,15 +50,15 @@ public class OtpService {
 
     public String ValidateOtp(OtpValidationDTO otpDTO) {
         OTP otpFound = otpRepository.findOneByEmail(otpDTO.email())
-                .orElseThrow(() -> new OtpExceptionHandler("Invalid Otp"));
+                .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid Otp"));
         System.out.println("the otp in the database" + otpFound.getValue());
         if (!otpFound.getValue().equals(otpDTO.value()) || otpFound.isUsed()) {
-            throw new OtpExceptionHandler("Invalid Otp");
+            throw new InvalidTokenExceptionHandler("Invalid Otp");
         }
         otpFound.setUsed(true);
         otpRepository.save(otpFound);
         if (otpFound.getExpirationTime().isBefore(LocalDateTime.now())) {
-            throw new OtpExceptionHandler("Invalid Otp");
+            throw new InvalidTokenExceptionHandler("Invalid Otp");
         }
         return "OTP verified successfully";
 
