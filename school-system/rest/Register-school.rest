@@ -1,0 +1,7 @@
+POST http://localhost:8000/api/create-school
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjYXJsb3NtYWluYTE5OEBnbWFpbC5jb20iLCJpYXQiOjE3ODM0OTMzODJ9.LKE_LWMMyvlNU0Ck40I3jnLvC8UtCXdnxpP-zr5fIXo
+Content-Type: application/json
+
+{
+    "schoolName":"JPA school"
+}
