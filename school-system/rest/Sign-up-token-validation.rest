@@ -1,2 +1,0 @@
-GET http://localhost:8000/api/token/validation/b21288ec-469c-43e3-861f-ac37d3692591
-Content-Type: application/json

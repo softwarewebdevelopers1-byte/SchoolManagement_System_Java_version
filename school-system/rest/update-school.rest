@@ -1,7 +1,0 @@
-PUT  http://localhost:8000/api/update/school/2
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjYXJsb3NtYWluYTE5OEBnbWFpbC5jb20iLCJpYXQiOjE3ODMzNDcwNzF9.qhd2BAWcgRr2wAxTwBH-d25T5ABGLMx2z3B9Dw8DLb4
-Content-Type: application/json
-
-{
-    "schoolName":"Mungai"
-}

@@ -1,8 +1,0 @@
-DELETE  http://localhost:8000/api/delete/school/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjYXJsb3NtYWluYTE5OEBnbWFpbC5jb20iLCJpYXQiOjE3ODMzNDcwNzF9.qhd2BAWcgRr2wAxTwBH-d25T5ABGLMx2z3B9Dw8DLb4
-Content-Type: application/json
-
-{
-    "email":"carlosmaina198@gmail.com",
-    "value":"8IHH"
-}
