@@ -11,15 +11,18 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.models.OTP;
 import com.example.school.system.repository.OtpRepository;
+import com.example.school.system.security.PasswordHashing;
 
 @Service
 public class OtpService {
     private OtpRepository otpRepository;
+    private PasswordHashing otpHashing;
     private EmailSender emailSender;
 
-    public OtpService(OtpRepository otpRepository, EmailSender emailSender) {
+    public OtpService(OtpRepository otpRepository, EmailSender emailSender, PasswordHashing otpHashing) {
         this.emailSender = emailSender;
         this.otpRepository = otpRepository;
+        this.otpHashing = otpHashing;
     }
 
     @Transactional
@@ -29,8 +32,9 @@ public class OtpService {
         }
         String email = otpDTO.email().trim().toLowerCase();
         String randomValue = RandomValues();
-        otpRepository.save(toOtp(otpDTO, randomValue));
-        otpEmailSender(email, randomValue);
+        otpRepository.save(toOtp(otpDTO, otpHashing.PasswordEncoder().encode(randomValue)));
+        // otpEmailSender(email, randomValue);
+        System.out.println(randomValue);
         return SchoolApiResponse.success("OTP sent successfully");
     }
 
@@ -60,7 +64,7 @@ public class OtpService {
         OTP otpFound = otpRepository.findOneByEmail(otpDTO.email())
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid Otp"));
         System.out.println("the otp in the database" + otpFound.getValue());
-        if (!otpFound.getValue().equals(otpDTO.value()) || otpFound.isUsed()) {
+        if (!otpHashing.PasswordEncoder().matches(otpDTO.value(), otpFound.getValue()) || otpFound.isUsed()) {
             throw new InvalidTokenExceptionHandler("Invalid Otp");
         }
         otpFound.setUsed(true);
