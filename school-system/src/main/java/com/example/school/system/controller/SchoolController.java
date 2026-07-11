@@ -4,8 +4,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
-import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.services.OtpService;
 import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
@@ -18,18 +16,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 public class SchoolController {
-    private final SchoolRepository schoolRepository;
+
     private final SchoolService schoolService;
 
-    public SchoolController(SchoolRepository schoolRepository, SchoolService schoolService, OtpService otpService) {
-        this.schoolRepository = schoolRepository;
+    public SchoolController(SchoolService schoolService, OtpService otpService) {
+
         this.schoolService = schoolService;
     }
 
     @PostMapping("/api/create-school")
     public SchoolApiResponse<?> createSchool(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        schoolService.registerSchool(schoolDto,authHeader);
+        schoolService.registerSchool(schoolDto, authHeader);
         return SchoolApiResponse.success("School registered successfully");
     }
 
