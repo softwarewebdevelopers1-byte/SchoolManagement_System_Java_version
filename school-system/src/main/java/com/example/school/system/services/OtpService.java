@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.OtpCreationDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.models.OTP;
 import com.example.school.system.repository.OtpRepository;
@@ -22,7 +23,7 @@ public class OtpService {
     }
 
     @Transactional
-    public String GenerateOtp(OtpCreationDTO otpDTO) {
+    public SchoolApiResponse<?> GenerateOtp(OtpCreationDTO otpDTO) {
         if (otpDTO.email() != null) {
             otpRepository.deleteByEmail(otpDTO.email().trim().toLowerCase());
         }
@@ -30,7 +31,7 @@ public class OtpService {
         String randomValue = RandomValues();
         otpRepository.save(toOtp(otpDTO, randomValue));
         otpEmailSender(email, randomValue);
-        return randomValue;
+        return SchoolApiResponse.success("OTP sent successfully");
     }
 
     private void otpEmailSender(String email, String data) {

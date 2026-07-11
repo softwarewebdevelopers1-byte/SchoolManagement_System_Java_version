@@ -21,8 +21,7 @@ public class OtpController {
 
     @PostMapping("/api/send/otp")
     public SchoolApiResponse<?> otpSender(@Valid @RequestBody OtpCreationDTO otpCreationDTO) {
-        otpService.GenerateOtp(otpCreationDTO);
-        return SchoolApiResponse.success("OTP sent successfully");
+        return otpService.GenerateOtp(otpCreationDTO);
     }
 
     @PostMapping("/api/validate/otp")

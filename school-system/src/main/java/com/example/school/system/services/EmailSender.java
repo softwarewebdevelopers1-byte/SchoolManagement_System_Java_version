@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class EmailSender {
             emailMessage.setSubject("Elimu Pro");
             emailMessage.setText(message);
             javaMailSender.send(emailMessage);
-        } catch (Exception e) {
+        } catch (MailException e) {
             System.out.println(e.getMessage());
             throw new MailExceptionHandler("Unable to send email");
         }
