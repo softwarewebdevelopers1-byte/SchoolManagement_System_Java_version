@@ -25,7 +25,6 @@ public class EmailSender {
             helper.setText(buildHtmlContent(message.toString(), email), true);
             javaMailSender.send(mimeMessage);
         } catch (MailException | jakarta.mail.MessagingException e) {
-            System.out.println(e.getMessage());
             throw new MailExceptionHandler("Unable to send email");
         }
     }
