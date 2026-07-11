@@ -1,7 +1,7 @@
 package com.example.school.system.error;
 
 import java.util.HashSet;
-
+import org.hibernate.exception.SQLGrammarException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -94,11 +94,17 @@ public class GlobalExceptionHandler {
                 .body(SchoolApiResponse.error(mailExceptionHandler.getMessage()));
     }
 
+    // catch database timeout error
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<?> handleTimeOut() {
         return ResponseEntity.status(503).body(SchoolApiResponse.error("something went wrong"));
     }
 
+    // handle invalid db connection string
+    @ExceptionHandler(SQLGrammarException.class)
+     public ResponseEntity<?> handleDatabaseError() {
+        return ResponseEntity.status(501).body(SchoolApiResponse.error("something went wrong"));
+    }
     // getting all uncaught issues
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleServerError() {
