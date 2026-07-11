@@ -28,7 +28,11 @@ public class SchoolService {
 
     }
 
-    public void registerSchool(CreateSchoolDTO schoolDto) {
+    public void registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
+        validateSchoolToken(authHeader);
+        if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
+            throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
+
         School school = toSchool(schoolDto);
         school = schoolRepository.save(school);
 

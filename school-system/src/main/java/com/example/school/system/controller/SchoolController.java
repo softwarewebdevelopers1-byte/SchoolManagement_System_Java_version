@@ -29,10 +29,7 @@ public class SchoolController {
     @PostMapping("/api/create-school")
     public SchoolApiResponse<?> createSchool(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        schoolService.validateSchoolToken(authHeader);
-        if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
-            throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
-        schoolService.registerSchool(schoolDto);
+        schoolService.registerSchool(schoolDto,authHeader);
         return SchoolApiResponse.success("School registered successfully");
     }
 
