@@ -23,7 +23,7 @@ public class TokenService {
         InviteLinks foundLink = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidTokenExceptionHandler(errorMessage));
 
-        if (foundLink.isUsed() || foundLink.getExpirationTime().isBefore(LocalDateTime.now().minusDays(7))) {
+        if (foundLink.isUsed() || foundLink.getExpirationTime().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenExceptionHandler(errorMessage);
         }
         foundLink.setUsed(true);
