@@ -5,7 +5,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import com.example.school.system.error.MailExceptionHandler;
-
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -20,12 +19,10 @@ public class EmailSender {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-
             helper.setTo(email);
             helper.setFrom("carlosmaina198@gmail.com");
             helper.setSubject("Edunex");
             helper.setText(buildHtmlContent(message.toString(), email), true);
-
             javaMailSender.send(mimeMessage);
         } catch (MailException | jakarta.mail.MessagingException e) {
             System.out.println(e.getMessage());
@@ -38,42 +35,90 @@ public class EmailSender {
                 + "<html>"
                 + "<head>"
                 + "<meta charset='UTF-8'>"
+                + "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
                 + "<style>"
-                + "body{margin:0;padding:0;background:#f5f5f5;font-family:'Segoe UI',Arial,sans-serif;}"
-                + ".container{max-width:600px;margin:40px auto;background:#fff;border-radius:8px;border:1px solid #ddd;overflow:hidden;}"
-                + ".header{padding:28px 24px;text-align:center;border-bottom:2px solid #000;}"
-                + ".header h1{margin:0;font-size:24px;color:#000;letter-spacing:1px;}"
-                + ".header p{margin:4px 0 0;font-size:13px;color:#666;}"
-                + ".body{padding:32px;color:#222;font-size:15px;line-height:1.8;}"
-                + ".body .msg-box{background:#f7f7f7;padding:16px 20px;border-left:3px solid #000;margin:12px 0 20px;border-radius:4px;}"
-                + ".body .divider{border:none;border-top:1px solid #ddd;margin:20px 0;}"
-                + ".body .btn{display:inline-block;padding:10px 30px;background:#000;color:#fff;text-decoration:none;border-radius:30px;font-weight:600;font-size:14px;}"
-                + ".footer{padding:16px 24px;background:#f7f7f7;text-align:center;font-size:12px;color:#999;border-top:1px solid #ddd;}"
-                + "@media only screen and (max-width:480px){.container{margin:16px;}.body{padding:24px;}}"
+                + "body{margin:0;padding:0;background:#f4f7fb;font-family:Segoe UI,Arial,sans-serif;}"
+                + ".container{max-width:620px;margin:35px auto;background:#ffffff;border-radius:14px;overflow:hidden;"
+                + "box-shadow:0 8px 25px rgba(0,0,0,.08);}"
+                + ".header{padding:35px 30px;text-align:center;background:#ffffff;"
+                + "border-bottom:1px solid #ececec;}"
+                + ".body{padding:35px;color:#333;font-size:15px;line-height:1.8;}"
+                + ".msg-box{background:#f8fbff;border-left:5px solid #2E8BFF;padding:18px;"
+                + "border-radius:8px;margin:20px 0;}"
+                + ".btn{display:inline-block;padding:13px 34px;background:#1F6FFF;"
+                + "color:#fff !important;text-decoration:none;border-radius:30px;"
+                + "font-weight:600;margin-top:10px;}"
+                + ".footer{background:#f8f9fb;padding:20px;text-align:center;"
+                + "font-size:12px;color:#777;border-top:1px solid #ececec;}"
+                + "@media(max-width:600px){"
+                + ".container{margin:15px;}"
+                + ".body{padding:25px;}"
+                + "}"
                 + "</style>"
                 + "</head>"
+
                 + "<body>"
+
                 + "<div class='container'>"
+
                 + "<div class='header'>"
-                + "<h1>📚 Edunex</h1>"
-                + "<p>Empowering Education Through Technology</p>"
+
+                + "<img src='https://softwarewebdevelopers1-byte.github.io/Edunex-images/EdunexImage.png' "
+                + "alt='Edunex Logo' "
+                + "style='width:220px;"
+                + "max-width:90%;"
+                + "height:auto;"
+                + "display:block;"
+                + "margin:0 auto;"
+                + "border-radius:12px;'>"
+
+                + "<div style='margin-top:12px;"
+                + "font-size:15px;"
+                + "color:#666;"
+                + "letter-spacing:.5px;'>"
+                + "Smarter Schools, Better Futures"
                 + "</div>"
+
+                + "</div>"
+
                 + "<div class='body'>"
-                + "<p><strong>Dear " + " " + userEmail + ",</strong></p>"
-                + "<div class='msg-box'>" + message.replace("\n", "<br>") + "</div>"
-                + "<p>Thank you for being part of the Edunex community.</p>"
-                + "<hr class='divider'>"
-                + "<div style='text-align:center;margin:16px 0;'>"
-                + "<a href='https://elimupro.com' class='btn'>Visit Platform</a>"
+
+                + "<p style='margin-top:0;'>"
+                + "<strong>Hello " + userEmail + ",</strong>"
+                + "</p>"
+
+                + "<div class='msg-box'>"
+                + message.replace("\n", "<br>")
                 + "</div>"
-                + "<p style='font-size:13px;color:#666;text-align:center;'>Contact: softwarewebdevelopers1@gmail.com</p>"
+
+                + "<p>"
+                + "Thank you for choosing <strong>Edunex</strong>. "
+                + "We're committed to making school management smarter, simpler, and more connected."
+                + "</p>"
+
+                + "<div style='text-align:center;margin:35px 0;'>"
+                + "<a class='btn' href='https://elimupro.com'>Visit Edunex</a>"
                 + "</div>"
+
+                + "<hr style='border:none;border-top:1px solid #e5e5e5;'>"
+
+                + "<p style='font-size:13px;color:#666;text-align:center;'>"
+                + "Need help? Contact us at "
+                + "<strong>softwarewebdevelopers1@gmail.com</strong>"
+                + "</p>"
+
+                + "</div>"
+
                 + "<div class='footer'>"
-                + "© " + java.time.Year.now() + "Edunex · Nairobi, Kenya"
+                + "© " + java.time.Year.now()
+                + " Edunex • Nairobi, Kenya"
+                + "<br>"
+                + "Empowering Education Through Technology"
                 + "</div>"
+
                 + "</div>"
+
                 + "</body>"
                 + "</html>";
     }
 }
-
