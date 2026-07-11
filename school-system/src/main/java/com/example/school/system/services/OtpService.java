@@ -33,7 +33,7 @@ public class OtpService {
         String email = otpDTO.email().trim().toLowerCase();
         String randomValue = RandomValues();
         otpRepository.save(toOtp(otpDTO, otpHashing.PasswordEncoder().encode(randomValue)));
-        // otpEmailSender(email, randomValue);
+        otpEmailSender(email, randomValue);
         System.out.println(randomValue);
         return SchoolApiResponse.success("OTP sent successfully");
     }
