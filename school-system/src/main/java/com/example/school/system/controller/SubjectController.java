@@ -20,9 +20,8 @@ public class SubjectController {
     }
 
     @PostMapping("api/create/subject")
-    public SchoolApiResponse<?> CreateSingleSubject(@RequestHeader("Authorization") String header,
+    public SchoolApiResponse<?> CreateSingleSubject(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody SingleSubjectCreationDTO subjectCreationDTO) {
-        String authHeader = header;
         return subjectService.createSingleSubject(subjectCreationDTO, authHeader);
     }
 
