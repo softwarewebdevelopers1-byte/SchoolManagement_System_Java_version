@@ -2,7 +2,6 @@ package com.example.school.system.services;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.models.InviteLinks;

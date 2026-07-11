@@ -39,7 +39,13 @@ public class OtpService {
     }
 
     private void otpEmailSender(String email, String data) {
-        emailSender.SendEmail(email, data);
+        StringBuilder emailDetails = new StringBuilder();
+        emailDetails
+                .append("Your" + " " + "<strong style='font-size:18px;'>authentication</strong>" + " " + "code" + "\n");
+        emailDetails.append("<b style='font-size:20px;'>");
+        emailDetails.append(data);
+        emailDetails.append("</b>");
+        emailSender.SendEmail(email, emailDetails);
     }
 
     private OTP toOtp(OtpCreationDTO otpDTO, String randomValue) {
