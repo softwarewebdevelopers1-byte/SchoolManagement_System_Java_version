@@ -1,4 +1,4 @@
-package com.example.school.system.services;
+package com.example.school.system.services.email;
 
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;

@@ -12,6 +12,7 @@ import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.models.OTP;
 import com.example.school.system.repository.OtpRepository;
 import com.example.school.system.security.PasswordHashing;
+import com.example.school.system.services.email.EmailSender;
 
 @Service
 public class OtpService {

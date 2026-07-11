@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class SignUp {
     private SignUpService signUpService;
 
-    public SignUp() {
+    public SignUp(SignUpService signUpService) {
+        this.signUpService = signUpService;
     }
-
 
     @PostMapping("/api/create-account")
     public SchoolApiResponse<?> createAccount(@RequestParam String token,
