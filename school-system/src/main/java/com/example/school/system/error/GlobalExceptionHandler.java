@@ -1,6 +1,8 @@
 package com.example.school.system.error;
 
 import java.util.HashSet;
+
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -90,5 +92,16 @@ public class GlobalExceptionHandler {
             MailExceptionHandler mailExceptionHandler) {
         return ResponseEntity.status(423)
                 .body(SchoolApiResponse.error(mailExceptionHandler.getMessage()));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<?> handleTimeOut() {
+        return ResponseEntity.status(503).body(SchoolApiResponse.error("something went wrong"));
+    }
+
+    // getting all uncaught issues
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleServerError() {
+        return ResponseEntity.status(500).body(SchoolApiResponse.error("something went wrong"));
     }
 }
