@@ -4,6 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginUserDTO(@Email @NotBlank(message = "Email is required") String email,
-                @NotBlank(message = "password is required") String password) {
+        @NotBlank(message = "password is required") String password, String captchaToken) {
 
 }
