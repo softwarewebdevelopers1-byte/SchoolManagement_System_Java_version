@@ -26,7 +26,6 @@ public class RecaptchaService {
             var response = restClientConfig.restClient().post().uri("https://www.google.com/recaptcha/api/siteverify")
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(body).retrieve()
                     .body(RecaptchaDTO.class);
-            System.out.println(response.isSuccess());
             return response.isSuccess();
         } catch (Exception e) {
             e.printStackTrace();
