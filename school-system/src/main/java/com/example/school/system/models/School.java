@@ -37,6 +37,10 @@ public class School {
     @NotBlank(message = "school name must be provided")
     String schoolName;
 
+    @Column(name = "code", unique = true)
+    @NotBlank(message = "school code must be provided")
+    String schoolCode;
+
     @Column(name = "registered_date")
     @CreationTimestamp
     LocalDate date;

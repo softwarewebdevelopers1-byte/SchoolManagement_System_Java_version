@@ -1,6 +1,8 @@
 package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -18,22 +20,26 @@ public class SchoolService {
     private final SchoolRepository schoolRepository;
     private JwtFilter jwtValidation;
     private OtpService otpService;
+    private RandomValuesService randomValues;
 
     public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository,
-            JwtFilter jwtValidation, OtpService otpService) {
+            JwtFilter jwtValidation, OtpService otpService, RandomValuesService randomValues) {
         this.schoolSettingsRepository = schoolSettingsRepository;
         this.otpService = otpService;
         this.schoolRepository = schoolRepository;
         this.jwtValidation = jwtValidation;
+        this.randomValues = randomValues;
 
     }
 
+    @Transactional
     public void registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
         validateSchoolToken(authHeader);
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
             throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
 
         School school = toSchool(schoolDto);
+        school.setSchoolCode(randomValues.RandomValues(6, "Edunex-"));
         school = schoolRepository.save(school);
 
         SchoolSettings settings = new SchoolSettings();
