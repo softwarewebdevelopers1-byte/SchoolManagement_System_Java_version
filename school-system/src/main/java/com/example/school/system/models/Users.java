@@ -3,12 +3,13 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.hibernate.annotations.CreationTimestamp;
-
+import com.example.school.system.types.UserRoles;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,7 +39,8 @@ public class Users {
   String email;
 
   @Column(name = "roles")
-  Set<String> roles = new HashSet<>();
+  @Enumerated(EnumType.STRING)
+  Set<UserRoles> roles = new HashSet<>();
 
   @NotBlank(message = "password is missing")
   @Column(name = "password")
@@ -60,6 +62,12 @@ public class Users {
   @PreUpdate
   @PrePersist
   private void normalze() {
+    if (roles == null) {
+      roles.add(UserRoles.student);
+    }
+    if (roles != null) {
+
+    }
     if (email != null) {
       email = email.trim().toLowerCase();
     }
