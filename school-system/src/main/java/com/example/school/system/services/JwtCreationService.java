@@ -1,6 +1,10 @@
 package com.example.school.system.services;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,15 +18,16 @@ import io.jsonwebtoken.security.Keys;
 public class JwtCreationService {
     @Value("${jwt.secret}")
     private String secret;
-    @Value("${jwt.expiration}")
-    private long expiration;
+    private long expiration = TimeUnit.DAYS.toMillis(28);
+    private Date exipirationMill = new Date(expiration);
 
     private SecretKey secretKeyBuilder(String key) {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
     public String GenerateToken(Users users) {
-        return Jwts.builder().subject(users.getEmail()).issuedAt(new Date())
+        return Jwts.builder().subject(users.getEmail()).claim("Roles", users.getRoles()).issuedAt(new Date())
+                .expiration(exipirationMill)
                 .signWith(secretKeyBuilder(secret))
                 .compact();
     }
@@ -30,5 +35,5 @@ public class JwtCreationService {
     public Claims ValidateToken(String token) {
         return Jwts.parser().verifyWith(secretKeyBuilder(secret)).build().parseSignedClaims(token).getPayload();
     }
-    
+
 }
