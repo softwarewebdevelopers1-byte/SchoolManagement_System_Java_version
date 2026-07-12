@@ -3,31 +3,33 @@ package com.example.school.system.services;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 import com.example.school.system.DTO.DTOResponse.RecaptchaDTO;
+import com.example.school.system.configs.RestClientConfig;
 
 @Service
 public class RecaptchaService {
-    private RestClient restClient;
+    private RestClientConfig restClientConfig;
+
+    public RecaptchaService(RestClientConfig restClient) {
+        this.restClientConfig = restClient;
+    }
+
     @Value("${recaptcha.secret}")
     private String secret;
 
-    public RecaptchaService(RestClient restClient) {
-        this.restClient = restClient;
-
-    }
-
     public boolean validateRecaptchaToken(String token) {
-        String body = "secret=" + secret + "&response=" + token;
         if (token == null || token.isBlank()) {
             return false;
         }
+        String body = "secret=" + secret + "&response=" + token;
         try {
-            var response = restClient.post().uri("https://www.google.com/recaptcha/api/siteverify")
+            var response = restClientConfig.restClient().post().uri("https://www.google.com/recaptcha/api/siteverify")
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(body).retrieve()
                     .body(RecaptchaDTO.class);
-            return response.success();
+            System.out.println(response.isSuccess());
+            return response.isSuccess();
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

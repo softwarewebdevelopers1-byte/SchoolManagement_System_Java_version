@@ -1,6 +1,8 @@
 package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
+
+import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.DTO.LoginUserDTO;
@@ -13,11 +15,14 @@ public class LoginService {
     private JwtCreationService jwtService;
     private final UserRepository userRepository;
     private final PasswordHashing passwordHashing;
+    private RecaptchaService recaptchaService;
 
-    public LoginService(JwtCreationService jwtService, UserRepository userRepository, PasswordHashing passwordHashing) {
+    public LoginService(JwtCreationService jwtService, UserRepository userRepository, PasswordHashing passwordHashing,
+            RecaptchaService recaptchaService) {
         this.jwtService = jwtService;
         this.passwordHashing = passwordHashing;
         this.userRepository = userRepository;
+        this.recaptchaService = recaptchaService;
 
     }
 
@@ -33,8 +38,11 @@ public class LoginService {
             throw new SchoolResourceNotFoundExceptionHandler(message);
 
         }
+
+        if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
+            throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
+        }
         var token = jwtService.GenerateToken(userFound);
         return token;
-
     }
 }
