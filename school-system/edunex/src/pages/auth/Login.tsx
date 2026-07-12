@@ -20,8 +20,8 @@ const roles: Role[] = [
 ];
 
 export default function Login() {
-  const [role, setRole] = useState<Role>("admin");
-  const [email, setEmail] = useState("carlos@edunex.school");
+  const [role, setRole] = useState<Role>("student");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("••••••••");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,13 +30,16 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!captchaToken) {
-      alert("Please verify that you are not a robot.");
+  function handleSubmit(e: React.FormEvent) {
+    if (!password) {
       return;
     }
+    e.preventDefault();
+
+    // if (!captchaToken) {
+    //   alert("Please verify that you are not a robot.");
+    //   return;
+    // }
 
     setLoading(true);
 
@@ -48,21 +51,34 @@ export default function Login() {
         captchaToken,
       });
 
-      // Later:
-      // await axios.post("/api/auth/login", {
-      //   email,
-      //   password,
-      //   role,
-      //   captchaToken,
-      // });
+      (async () => {
+        try {
+          let res = await fetch("http://localhost:8000/api/login-user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+          console.log(await res.json());
 
-      login(role, email);
+          if (!res.ok) {
+            return;
+          } else {
+            login(role, email);
 
-      setLoading(false);
+            setLoading(false);
 
-      navigate(roleHome[role]);
+            navigate(roleHome[role]);
+          }
+        } catch (error) {
+          alert("login failed");
+        } finally {
+          setLoading(false);
+        }
+      })();
     }, 700);
-  };
+  }
 
   return (
     <AuthLayout
@@ -74,23 +90,6 @@ export default function Login() {
           <label className="mb-1.5 block text-xs font-medium text-ink-700 dark:text-slate-300">
             Sign in as
           </label>
-
-          <div className="grid grid-cols-2 gap-2">
-            {roles.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className={`rounded-lg border px-3 py-2 text-left text-xs font-medium transition-colors ${
-                  role === r
-                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
-                    : "border-ink-900/10 text-ink-700 hover:border-ink-900/20 dark:border-white/10 dark:text-slate-300"
-                }`}
-              >
-                {roleLabels[r]}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div>
@@ -103,6 +102,7 @@ export default function Login() {
 
             <Input
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
