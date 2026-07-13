@@ -6,6 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -115,5 +116,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AdminResourceException.class)
     public ResponseEntity<?> adminResources(AdminResourceException admException) {
         return ResponseEntity.status(403).body(SchoolApiResponse.error(admException.getMessage()));
+    }
+
+    // security exception
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<?> authorizationDeniedException() {
+        return ResponseEntity.status(403).body(SchoolApiResponse.error("Forbidden"));
     }
 }
