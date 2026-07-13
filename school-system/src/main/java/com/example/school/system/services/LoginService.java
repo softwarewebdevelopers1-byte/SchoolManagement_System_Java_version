@@ -2,7 +2,6 @@ package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
 
-import com.example.school.system.error.InvalidTokenExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.DTO.LoginUserDTO;
