@@ -16,7 +16,7 @@ public class JwtCreationService {
     @Value("${jwt.secret}")
     private String secret;
     private long expiration = TimeUnit.DAYS.toMillis(28);
-    private Date exipirationMill = new Date(expiration);
+    private Date exipirationMill = new Date(System.currentTimeMillis() + expiration);
 
     private SecretKey secretKeyBuilder(String key) {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));

@@ -14,6 +14,8 @@ import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtFilter;
 
+import io.jsonwebtoken.Claims;
+
 @Service
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
@@ -52,7 +54,8 @@ public class SchoolService {
     }
 
     public void validateSchoolToken(String token) {
-        jwtValidation.validateTokenIssued(token);
+        Claims userToken = jwtValidation.validateTokenIssued(token);
+        System.out.println(userToken);
     }
 
     private School toSchool(CreateSchoolDTO dto) {
@@ -90,4 +93,3 @@ public class SchoolService {
         return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }
 }
-

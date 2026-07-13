@@ -39,9 +39,9 @@ public class LoginService {
 
         }
 
-        if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
-            throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
-        }
+        // if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
+        //     throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
+        // }
         var token = jwtService.GenerateToken(userFound);
         return token;
     }
