@@ -63,7 +63,7 @@ public class Users {
   @PrePersist
   private void normalize() {
     if (roles.isEmpty()) {
-      roles.add(UserRoles.student);
+      roles.add(UserRoles.STUDENT);
     }
     if (email != null) {
       email = email.trim().toLowerCase();

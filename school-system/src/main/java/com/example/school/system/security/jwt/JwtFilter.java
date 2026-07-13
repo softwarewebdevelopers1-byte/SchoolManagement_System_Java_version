@@ -1,8 +1,13 @@
 package com.example.school.system.security.jwt;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -28,20 +33,23 @@ public class JwtFilter extends OncePerRequestFilter {
         this.userDetailsService = customUserDetailsService;
     }
 
-    // 1. Skip public endpoints
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // Allow OPTIONS requests (CORS preflight)
         if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
 
-        // Allow public endpoints
-
-        if (path.startsWith("/api/auth"))
+        // ✅ Better to specify exact endpoints
+        if (path.startsWith("/api/auth/login"))
+            return true;
+        if (path.startsWith("/api/auth/register"))
+            return true;
+        if (path.startsWith("/api/public"))
+            return true;
+        if (path.startsWith("/actuator"))
             return true;
 
         return false;
@@ -55,24 +63,33 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // 2. If no token, continue without authentication
         if (authHeader == null || authHeader.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // 3. Validate token only if present
-            Claims userToken = jwtValidator.validateTokenIssued(authHeader);
+            // ✅ Validate token and get claims
+            Claims claims = jwtValidator.validateTokenIssued(authHeader);
 
-            if (userToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String userEmail = userToken.getSubject();
-                UserDetails user = userDetailsService.loadUserByUsername(userEmail);
+            if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String userEmail = claims.getSubject();
 
+                // ✅ Extract roles from claims (they already have "ROLE_" prefix)
+                @SuppressWarnings("unchecked")
+                List<String> roles = claims.get("roles", List.class);
+                System.out.println(roles);
+                // ✅ Convert to Spring Security authorities
+                Collection<GrantedAuthority> authorities = roles.stream()
+                        .map(role -> new SimpleGrantedAuthority(role)) // ✅ Already has "ROLE_"
+                        .collect(Collectors.toList());
+
+                // ✅ Create authentication with authorities from JWT
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        user,
+                        userEmail,
                         null,
-                        user.getAuthorities());
+                        authorities // ✅ Use authorities from JWT
+                );
 
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
@@ -81,7 +98,6 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            // 4. Log error but continue (don't block requests)
             System.err.println("JWT validation error: " + e.getMessage());
             filterChain.doFilter(request, response);
         }

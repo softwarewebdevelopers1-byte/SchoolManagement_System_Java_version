@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-@PreAuthorize("hasAnyRole('admin')")
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("api/admin/schools")
 public class SchoolController {
 
