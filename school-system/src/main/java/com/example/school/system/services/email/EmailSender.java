@@ -1,6 +1,5 @@
 package com.example.school.system.services.email;
 
-import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,7 @@ public class EmailSender {
             helper.setSubject("Edunex");
             helper.setText(buildHtmlContent(message.toString(), email), true);
             javaMailSender.send(mimeMessage);
-        } catch (MailException | jakarta.mail.MessagingException e) {
+        } catch (MailExceptionHandler | jakarta.mail.MessagingException e) {
             throw new MailExceptionHandler("Unable to send email");
         }
     }
