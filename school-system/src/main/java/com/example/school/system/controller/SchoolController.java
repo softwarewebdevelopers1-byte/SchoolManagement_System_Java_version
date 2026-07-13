@@ -10,11 +10,13 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
+@RequestMapping("api/admin/schools")
 public class SchoolController {
 
     private final SchoolService schoolService;
@@ -24,20 +26,20 @@ public class SchoolController {
         this.schoolService = schoolService;
     }
 
-    @PostMapping("/api/create-school")
+    @PostMapping("/create-school")
     public SchoolApiResponse<?> createSchool(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
         return schoolService.registerSchool(schoolDto, authHeader);
     }
 
-    @PutMapping("/api/update/school/{id}")
+    @PutMapping("/update/school/{id}")
     public SchoolApiResponse<?> updateSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
             @RequestBody CreateSchoolDTO schoolData) {
         Long schoolId = Long.parseLong(id);
         return schoolService.UpdateExistingSchool(schoolId, schoolData, token);
     }
 
-    @DeleteMapping("/api/delete/school/{id}")
+    @DeleteMapping("/delete/school/{id}")
     public SchoolApiResponse<?> deleteSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
         Long schoolId = Long.parseLong(id);

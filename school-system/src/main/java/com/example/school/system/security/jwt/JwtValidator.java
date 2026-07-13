@@ -9,16 +9,15 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 
 @Component
-public class JwtFilter {
+public class JwtValidator {
     private JwtCreationService jwtService;
 
-    public JwtFilter(JwtCreationService jwtService) {
+    public JwtValidator(JwtCreationService jwtService) {
         this.jwtService = jwtService;
     }
 
     public Claims validateTokenIssued(String token) {
         String jwtError = "Unauthorized token";
-        System.out.println(token);
         try {
             if (!token.startsWith("Bearer") || token == null) {
                 throw new JwtNotMatchingExceptionHandler(jwtError);
@@ -26,7 +25,6 @@ public class JwtFilter {
             String authHeader = token.substring(7);
             return jwtService.ValidateToken(authHeader);
         } catch (JwtException e) {
-            e.printStackTrace();
             throw new JwtNotMatchingExceptionHandler(jwtError);
         }
     }

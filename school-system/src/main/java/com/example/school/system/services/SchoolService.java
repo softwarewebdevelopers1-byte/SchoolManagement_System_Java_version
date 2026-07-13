@@ -12,7 +12,7 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
-import com.example.school.system.security.jwt.JwtFilter;
+import com.example.school.system.security.jwt.JwtValidator;
 
 import io.jsonwebtoken.Claims;
 
@@ -20,12 +20,12 @@ import io.jsonwebtoken.Claims;
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolRepository schoolRepository;
-    private JwtFilter jwtValidation;
+    private JwtValidator jwtValidation;
     private OtpService otpService;
     private RandomValuesService randomValues;
 
     public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository,
-            JwtFilter jwtValidation, OtpService otpService, RandomValuesService randomValues) {
+            JwtValidator jwtValidation, OtpService otpService, RandomValuesService randomValues) {
         this.schoolSettingsRepository = schoolSettingsRepository;
         this.otpService = otpService;
         this.schoolRepository = schoolRepository;
