@@ -8,10 +8,16 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import java.util.List;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','SUBJECTTEACHER')")
+@RequestMapping("/api")
 public class SubjectController {
     private SubjectService subjectService;
 
@@ -19,13 +25,13 @@ public class SubjectController {
         this.subjectService = subjectService;
     }
 
-    @PostMapping("api/create/subject")
+    @PostMapping("/create/subject")
     public SchoolApiResponse<?> CreateSingleSubject(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody SingleSubjectCreationDTO subjectCreationDTO) {
         return subjectService.createSingleSubject(subjectCreationDTO, authHeader);
     }
 
-    @PostMapping("api/create/multiple/subjects")
+    @PostMapping("/create/multiple/subjects")
     public SchoolApiResponse<?> createMultipleSubjects(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody List<SingleSubjectCreationDTO> subjects) {
         return subjectService.createMultipleSubject(subjects, authHeader);
