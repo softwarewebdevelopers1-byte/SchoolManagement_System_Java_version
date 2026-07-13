@@ -13,20 +13,17 @@ import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.services.email.events.UserRegistrationEvent;
 
-
 @Service
 @Validated
 public class SignUpService {
     private final UserRepository userRepository;
     private final PasswordHashing passwordHashing;
-    private TokenService tokenService;
     private ApplicationEventPublisher applicationEventPublisher;
 
     public SignUpService(UserRepository userRepo, PasswordHashing passwordHashing,
-            SchoolRepository schoolRepository, TokenService tokenService,
+            SchoolRepository schoolRepository,
             ApplicationEventPublisher applicationEventPublisher) {
         this.userRepository = userRepo;
-        this.tokenService = tokenService;
         this.passwordHashing = passwordHashing;
         this.applicationEventPublisher = applicationEventPublisher;
 

@@ -1,6 +1,5 @@
 package com.example.school.system.services;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
