@@ -9,12 +9,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.example.school.system.services.CustomUserDetailsService;
+import com.example.school.system.error.InvalidTokenExceptionHandler;
+import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -25,12 +26,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final CustomUserDetailsService userDetailsService;
     private final JwtValidator jwtValidator;
+    private final UserRepository repository;
 
-    public JwtFilter(JwtValidator jwtValidator, CustomUserDetailsService customUserDetailsService) {
+    public JwtFilter(JwtValidator jwtValidator, UserRepository userRepository) {
         this.jwtValidator = jwtValidator;
-        this.userDetailsService = customUserDetailsService;
+        this.repository = userRepository;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return true;
         }
 
-        // ✅ Better to specify exact endpoints
+        // Better to specify exact endpoints
         if (path.startsWith("/api/auth/login"))
             return true;
         if (path.startsWith("/api/auth/register"))
@@ -69,26 +70,30 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
-            // ✅ Validate token and get claims
+            // Validate token and get claims
             Claims claims = jwtValidator.validateTokenIssued(authHeader);
 
             if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 String userEmail = claims.getSubject();
 
-                // ✅ Extract roles from claims (they already have "ROLE_" prefix)
+                if (!repository.existsByEmail(userEmail)) {
+                    throw new InvalidTokenExceptionHandler("Unauthorized");
+                }
+                // Extract roles from claims (they already have "ROLE_" prefix)
                 @SuppressWarnings("unchecked")
                 List<String> roles = claims.get("roles", List.class);
                 System.out.println(roles);
-                // ✅ Convert to Spring Security authorities
+                // Convert to Spring Security authorities
                 Collection<GrantedAuthority> authorities = roles.stream()
-                        .map(role -> new SimpleGrantedAuthority(role)) // ✅ Already has "ROLE_"
+                        .map(role -> new SimpleGrantedAuthority(role)) // Already has "ROLE_"
                         .collect(Collectors.toList());
 
-                // ✅ Create authentication with authorities from JWT
+                // Create authentication with authorities from JWT
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         userEmail,
                         null,
-                        authorities // ✅ Use authorities from JWT
+                        authorities // Use authorities from JWT
                 );
 
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -98,8 +103,10 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            System.err.println("JWT validation error: " + e.getMessage());
-            filterChain.doFilter(request, response);
+            response.setStatus(401);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+
         }
     }
 }
