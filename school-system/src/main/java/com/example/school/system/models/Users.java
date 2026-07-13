@@ -61,12 +61,9 @@ public class Users {
 
   @PreUpdate
   @PrePersist
-  private void normalze() {
-    if (roles == null) {
+  private void normalize() {
+    if (roles.isEmpty()) {
       roles.add(UserRoles.student);
-    }
-    if (roles != null) {
-
     }
     if (email != null) {
       email = email.trim().toLowerCase();
