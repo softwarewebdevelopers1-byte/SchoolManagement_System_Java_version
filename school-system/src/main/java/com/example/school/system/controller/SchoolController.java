@@ -27,8 +27,7 @@ public class SchoolController {
     @PostMapping("/api/create-school")
     public SchoolApiResponse<?> createSchool(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        schoolService.registerSchool(schoolDto, authHeader);
-        return SchoolApiResponse.success("School registered successfully");
+        return schoolService.registerSchool(schoolDto, authHeader);
     }
 
     @PutMapping("/api/update/school/{id}")

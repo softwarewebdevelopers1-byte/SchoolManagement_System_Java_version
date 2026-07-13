@@ -33,18 +33,21 @@ public class SchoolService {
     }
 
     @Transactional
-    public void registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
+    public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
         validateSchoolToken(authHeader);
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
             throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
 
         School school = toSchool(schoolDto);
-        school.setSchoolCode(randomValues.RandomValues(6, "Edunex-"));
+        StringBuilder code = new StringBuilder();
+        code.append(randomValues.RandomValues(7));
+        school.setSchoolCode(code.toString());
         school = schoolRepository.save(school);
 
         SchoolSettings settings = new SchoolSettings();
         settings.setSchool(school);
         schoolSettingsRepository.save(settings);
+        return SchoolApiResponse.success(code, "School registered successfully");
     }
 
     public void validateSchoolToken(String token) {
@@ -86,3 +89,4 @@ public class SchoolService {
         return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }
 }
+
