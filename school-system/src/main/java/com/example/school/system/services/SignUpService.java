@@ -32,7 +32,6 @@ public class SignUpService {
     @Transactional
     public SchoolApiResponse<?> SignUpUser(SignUpUserDTO User, String token) {
         validateSignUp(User);
-        // tokenService.validateTokenProvided(token);
         userRepository.save(toUser(User));
 
         applicationEventPublisher.publishEvent(new UserRegistrationEvent(User.email()));

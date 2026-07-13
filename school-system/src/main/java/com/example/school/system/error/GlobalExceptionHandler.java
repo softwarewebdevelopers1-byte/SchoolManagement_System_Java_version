@@ -102,12 +102,18 @@ public class GlobalExceptionHandler {
 
     // handle invalid db connection string
     @ExceptionHandler(SQLGrammarException.class)
-     public ResponseEntity<?> handleDatabaseError() {
+    public ResponseEntity<?> handleDatabaseError() {
         return ResponseEntity.status(501).body(SchoolApiResponse.error("something went wrong"));
     }
+
     // getting all uncaught issues
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleServerError() {
-        return ResponseEntity.status(500).body(SchoolApiResponse.error("something went wrong"));
+        return ResponseEntity.status(501).body(SchoolApiResponse.error("something went wrong"));
+    }
+
+    @ExceptionHandler(AdminResourceException.class)
+    public ResponseEntity<?> adminResources(AdminResourceException admException) {
+        return ResponseEntity.status(403).body(SchoolApiResponse.error(admException.getMessage()));
     }
 }

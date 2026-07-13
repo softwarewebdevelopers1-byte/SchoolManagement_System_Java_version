@@ -9,8 +9,10 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
+@RequestMapping("/api/auth/login")
 public class Login {
     private final LoginService loginUserService;
 
@@ -18,7 +20,7 @@ public class Login {
         this.loginUserService = loginUserService;
     }
 
-    @PostMapping("/api/login-user")
+    @PostMapping("/login-user")
     public SchoolApiResponse<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
         var token = loginUserService.LoginUser(userLogin);
         return SchoolApiResponse.success(token, "User logged in");

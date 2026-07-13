@@ -12,31 +12,25 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
-import com.example.school.system.security.jwt.JwtValidator;
-
-import io.jsonwebtoken.Claims;
 
 @Service
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolRepository schoolRepository;
-    private JwtValidator jwtValidation;
     private OtpService otpService;
     private RandomValuesService randomValues;
 
     public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository,
-            JwtValidator jwtValidation, OtpService otpService, RandomValuesService randomValues) {
+            OtpService otpService, RandomValuesService randomValues) {
         this.schoolSettingsRepository = schoolSettingsRepository;
         this.otpService = otpService;
         this.schoolRepository = schoolRepository;
-        this.jwtValidation = jwtValidation;
         this.randomValues = randomValues;
-
     }
 
     @Transactional
     public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
-        validateSchoolToken(authHeader);
+        // userRoleChecker.adminRoleChecker(authHeader);
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
             throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
 
@@ -53,11 +47,6 @@ public class SchoolService {
         return SchoolApiResponse.success(code, "School registered successfully");
     }
 
-    public void validateSchoolToken(String token) {
-        Claims userToken = jwtValidation.validateTokenIssued(token);
-        System.out.println(userToken);
-    }
-
     private School toSchool(CreateSchoolDTO dto) {
         School school = new School();
         school.setSchoolName(dto.schoolName());
@@ -65,7 +54,6 @@ public class SchoolService {
     }
 
     public SchoolApiResponse<?> UpdateExistingSchool(Long id, CreateSchoolDTO schoolData, String token) {
-        jwtValidation.validateTokenIssued(token);
         if (!schoolRepository.existsById(id)) {
             throw new SchoolResourceNotFoundExceptionHandler("School with that Id does not exist");
         }
@@ -85,7 +73,6 @@ public class SchoolService {
     }
 
     public SchoolApiResponse<?> deleteSchool(Long id, String token, OtpValidationDTO otpValidationDTO) {
-        jwtValidation.validateTokenIssued(token);
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
         String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);

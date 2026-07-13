@@ -19,12 +19,17 @@ public class JwtValidator {
     public Claims validateTokenIssued(String token) {
         String jwtError = "Unauthorized token";
         try {
-            if (!token.startsWith("Bearer") || token == null) {
+            if (token == null) {
+                throw new JwtNotMatchingExceptionHandler("No token provided");
+
+            }
+            if (!token.startsWith("Bearer")) {
                 throw new JwtNotMatchingExceptionHandler(jwtError);
             }
             String authHeader = token.substring(7);
             return jwtService.ValidateToken(authHeader);
         } catch (JwtException e) {
+            e.printStackTrace();
             throw new JwtNotMatchingExceptionHandler(jwtError);
         }
     }
