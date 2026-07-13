@@ -43,10 +43,11 @@ public class SchoolService {
         code.append(randomValues.RandomValues(7));
         school.setSchoolCode(code.toString());
         school = schoolRepository.save(school);
-
         SchoolSettings settings = new SchoolSettings();
         settings.setSchool(school);
         schoolSettingsRepository.save(settings);
+        code.insert(0, "Your school code:");
+        code.insert(17, " ");
         return SchoolApiResponse.success(code, "School registered successfully");
     }
 
