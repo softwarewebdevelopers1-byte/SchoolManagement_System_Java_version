@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 import com.github.f4b6a3.uuid.UuidCreator;
 
@@ -53,7 +55,8 @@ public class Users {
   LocalDate date;
 
   @Column(name = "status")
-  String status = "active";
+  @Enumerated(EnumType.STRING)
+  private AccountStatus status = AccountStatus.ACTIVE;
 
   @OneToOne(mappedBy = "teacher", cascade = CascadeType.ALL)
   TeacherProfile teacherProfile;
@@ -69,9 +72,6 @@ public class Users {
     if (email != null) {
       email = email.trim().toLowerCase();
     }
-    if (status != null) {
-      status = status.trim().toLowerCase();
-    }
   }
 
   @PrePersist
@@ -84,9 +84,6 @@ public class Users {
     }
     if (email != null) {
       email = email.trim().toLowerCase();
-    }
-    if (status != null) {
-      status = status.trim().toLowerCase();
     }
   }
 }

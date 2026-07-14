@@ -1,0 +1,26 @@
+package com.example.school.system.controller;
+
+import java.util.UUID;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.services.UserDeleteAccountService;
+
+import lombok.RequiredArgsConstructor;
+
+@RequestMapping("/api/danger-zone/delete")
+@RequiredArgsConstructor
+@RestController
+public class UserDeleteController {
+    private UserDeleteAccountService deleteAccountService;
+
+    @DeleteMapping("/account/{id}")
+    public SchoolApiResponse<?> deleteUser(@PathVariable UUID id) {
+        return deleteAccountService.deleteUser(id);
+    }
+}
+
