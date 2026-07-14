@@ -1,6 +1,5 @@
 package com.example.school.system.services;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -25,10 +24,6 @@ public class TeachersService {
     private final SchoolClassRepository gradeRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final PasswordHashing passwordHashing;
-
-    public List<Users> getStudents(UUID schoolId) {
-        return userRepository.findAllBySchool(schoolId);
-    }
 
     @Transactional
     public void EditTeacher(TeacherEditDTO editTeacher, UUID userId) {
