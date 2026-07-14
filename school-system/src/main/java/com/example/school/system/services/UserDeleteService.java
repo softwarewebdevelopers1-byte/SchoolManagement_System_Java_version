@@ -13,9 +13,8 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UserDeleteAccountService {
+public class UserDeleteService {
     private final UserRepository userRepository;
-
     public SchoolApiResponse<?> deleteUser(UUID id, String email) {
 
         var user = userRepository.findByIdAndEmail(id, email)

@@ -1,5 +1,6 @@
 package com.example.school.system.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +16,6 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByEmailAndStatus(String email, String status);
 
     Optional<Users> findByIdAndEmail(UUID id, String email);
+
+    List<Users> findAllBySchool(UUID id);
 }

@@ -1,15 +1,18 @@
 package com.example.school.system.models;
 
 import java.util.List;
+import java.util.UUID;
+
+import com.github.f4b6a3.uuid.UuidCreator;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -28,9 +31,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SchoolClass {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "class_id")
-    Integer classId;
+    @Column(name = "class_id", columnDefinition = "BINARY(16)")
+    UUID classId;
 
     // class as integer for example grade 7
     @NotNull(message = "Grade is missing")
@@ -47,6 +49,8 @@ public class SchoolClass {
     @JoinColumn(name = "school")
     School school;
 
+    @OneToOne
+    TeacherProfile teacher;
     // relationship between class and student
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<StudentProfile> student;
@@ -54,11 +58,21 @@ public class SchoolClass {
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Marks> marks;
 
-    @PrePersist
     @PreUpdate
-    private void normalze() {
+    private void normalize() {
         if (classStream != null) {
             classStream = classStream.trim().toLowerCase();
         }
+    }
+
+    @PrePersist
+    private void generateIdAndNormalize() {
+        if (classId == null) {
+            classId = UuidCreator.getTimeOrdered();
+        }
+        if (classStream != null) {
+            classStream = classStream.trim().toLowerCase();
+        }
+
     }
 }

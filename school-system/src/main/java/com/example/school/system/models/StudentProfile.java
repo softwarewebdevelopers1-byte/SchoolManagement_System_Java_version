@@ -1,12 +1,13 @@
 package com.example.school.system.models;
 
 import java.util.List;
+import java.util.UUID;
+
+import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,9 +29,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class StudentProfile {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "student_id")
-    Long studentId;
+    @Column(columnDefinition = "BINARY(16)", name = "student_id", nullable = false, updatable = false)
+    UUID id;
 
     @Column(name = "student_name")
     String studentFullName;
@@ -54,9 +54,25 @@ public class StudentProfile {
     @JoinColumn(name = "student_account")
     Users student;
 
-    @PrePersist
     @PreUpdate
     private void normalze() {
+        if (studentFullName != null) {
+            studentFullName = studentFullName.trim().toLowerCase();
+        }
+        if (studentAdm != null) {
+            studentAdm = studentAdm.trim();
+        }
+        if (phoneNumber != null) {
+            phoneNumber = phoneNumber.trim();
+
+        }
+    }
+
+    @PrePersist
+    private void generateIdAndNormalize() {
+        if (id == null) {
+            id = UuidCreator.getTimeOrdered();
+        }
         if (studentFullName != null) {
             studentFullName = studentFullName.trim().toLowerCase();
         }

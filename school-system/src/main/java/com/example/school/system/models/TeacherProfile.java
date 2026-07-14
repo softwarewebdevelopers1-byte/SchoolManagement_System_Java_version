@@ -49,6 +49,10 @@ public class TeacherProfile {
     @OneToMany(mappedBy = "link")
     private List<TeacherLinkedToSubject> teacherLinkedToSubjects;
 
+    @OneToOne
+    @JoinColumn(name = "class_id")
+    SchoolClass schoolClass;
+
     @PreUpdate
     private void normalize() {
         if (firstName != null) {

@@ -11,19 +11,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.DeleteAccountDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.services.UserDeleteAccountService;
+import com.example.school.system.services.UserDeleteService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@RequestMapping("/api/danger-zone/delete")
-@PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','HEADTEACHER','SUBJECTTEACHER')")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @RestController
 public class UserDeleteController {
-    private final UserDeleteAccountService deleteAccountService;
-
-    @DeleteMapping("/account/{id}")
+    private final UserDeleteService deleteAccountService;
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','HEADTEACHER','SUBJECTTEACHER')")
+    @DeleteMapping("/danger-zone/delete/account/{id}")
     public SchoolApiResponse<?> deleteUser(@PathVariable UUID id, @Valid @RequestBody DeleteAccountDTO dto) {
         System.out.println(id);
         return deleteAccountService.deleteUser(id, dto.email());
