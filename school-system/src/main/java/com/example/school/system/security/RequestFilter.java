@@ -12,7 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.example.school.system.security.jwt.JwtFilter;
 
 @Configuration
-@EnableMethodSecurity  //  This enables @PreAuthorize
+@EnableMethodSecurity // This enables @PreAuthorize
 public class RequestFilter {
 
     private final JwtFilter jwtFilter;
@@ -24,23 +24,24 @@ public class RequestFilter {
     @Bean
     public SecurityFilterChain RequestFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-            .cors(Customizer.withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                //  Public endpoints - no authentication required
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/debug/**").permitAll()
-                
-                //  All other requests require authentication
-                .anyRequest().authenticated()  // ← This is the key!
-            )
-            //  Add JWT filter before Spring Security's authentication
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        
+                .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - no authentication required
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/debug/**").permitAll()
+                        .requestMatchers("/api/schools/get/school/for/user").permitAll()
+
+                        // All other requests require authentication
+                        .anyRequest().authenticated() // ← This is the key!
+                )
+                // Add JWT filter before Spring Security's authentication
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return httpSecurity.build();
     }
 }

@@ -13,19 +13,23 @@ import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolRepository schoolRepository;
-    private OtpService otpService;
-    private RandomValuesService randomValues;
+    private final OtpService otpService;
+    private final RandomValuesService randomValues;
 
-    public SchoolService(SchoolSettingsRepository schoolSettingsRepository, SchoolRepository schoolRepository,
-            OtpService otpService, RandomValuesService randomValues) {
-        this.schoolSettingsRepository = schoolSettingsRepository;
-        this.otpService = otpService;
-        this.schoolRepository = schoolRepository;
-        this.randomValues = randomValues;
+    public SchoolApiResponse<?> getSchool(String code) {
+        School schoolName = schoolRepository.findBySchoolCode(code)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School not found"));
+        StringBuilder schoolFoundName = new StringBuilder();
+        schoolFoundName.append(schoolName.getSchoolName());
+        return SchoolApiResponse.success(schoolFoundName, "school found");
+
     }
 
     @Transactional

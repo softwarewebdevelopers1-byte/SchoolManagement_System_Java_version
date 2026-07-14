@@ -7,31 +7,29 @@ import org.springframework.validation.annotation.Validated;
 import com.example.school.system.DTO.SignUpUserDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
+import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.services.email.events.UserRegistrationEvent;
+import com.example.school.system.types.AccountStatus;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 @Validated
 public class SignUpService {
     private final UserRepository userRepository;
     private final PasswordHashing passwordHashing;
-    private ApplicationEventPublisher applicationEventPublisher;
-
-    public SignUpService(UserRepository userRepo, PasswordHashing passwordHashing,
-            SchoolRepository schoolRepository,
-            ApplicationEventPublisher applicationEventPublisher) {
-        this.userRepository = userRepo;
-        this.passwordHashing = passwordHashing;
-        this.applicationEventPublisher = applicationEventPublisher;
-
-    }
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final SchoolRepository schoolRepository;
 
     @Transactional
     public SchoolApiResponse<?> SignUpUser(SignUpUserDTO User, String token) {
         validateSignUp(User);
+
         userRepository.save(toUser(User));
 
         applicationEventPublisher.publishEvent(new UserRegistrationEvent(User.email()));
@@ -39,6 +37,8 @@ public class SignUpService {
     }
 
     private void validateSignUp(SignUpUserDTO userProfileDTO) {
+        schoolRepository.findBySchoolCode(userProfileDTO.schoolCode())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School with that code doesn't exist"));
         if (userRepository.existsByEmail(userProfileDTO.email())) {
             throw new SchoolResourceExistsExceptionHandler("User already exists");
         }
@@ -48,6 +48,7 @@ public class SignUpService {
         Users user = new Users();
         // check if user exists
         user.setEmail(userProfileDTO.email());
+        user.setStatus(AccountStatus.PENDING_VERIFICATION);
         user.setPassword(passwordHashing.PasswordEncoder().encode(userProfileDTO.password()));
         return user;
     }
