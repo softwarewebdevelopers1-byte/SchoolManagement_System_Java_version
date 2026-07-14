@@ -16,12 +16,11 @@ import lombok.RequiredArgsConstructor;
 public class UserDeleteAccountService {
     private final UserRepository userRepository;
 
-    public SchoolApiResponse<?> deleteUser(UUID id) {
+    public SchoolApiResponse<?> deleteUser(UUID id, String email) {
 
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User noy found"));
+        var user = userRepository.findByIdAndEmail(id, email)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
         user.setStatus(AccountStatus.DELETED);
-
         userRepository.save(user);
 
         return SchoolApiResponse.success("User deleted");

@@ -38,7 +38,7 @@ import lombok.Setter;
 public class Users {
   @Id
   @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
-  UUID userId;
+  UUID id;
 
   @Column(name = "email", unique = true)
   @NotBlank(message = "Email is missing")
@@ -82,8 +82,8 @@ public class Users {
 
   @PrePersist
   private void generateId() {
-    if (userId == null) {
-      userId = UuidCreator.getTimeOrdered();
+    if (id == null) {
+      id = UuidCreator.getTimeOrdered();
     }
     if (roles.isEmpty()) {
       roles.add(UserRoles.STUDENT);
