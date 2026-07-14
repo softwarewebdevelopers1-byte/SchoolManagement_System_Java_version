@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RestController
 public class UserDeleteController {
-    private UserDeleteAccountService deleteAccountService;
+    private final UserDeleteAccountService deleteAccountService;
 
     @DeleteMapping("/account/{id}")
     public SchoolApiResponse<?> deleteUser(@PathVariable UUID id) {

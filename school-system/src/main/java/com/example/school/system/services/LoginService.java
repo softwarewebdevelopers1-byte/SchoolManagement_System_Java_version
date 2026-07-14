@@ -8,6 +8,7 @@ import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
+import com.example.school.system.types.AccountStatus;
 
 @Service
 public class LoginService {
@@ -30,8 +31,9 @@ public class LoginService {
         String message = "Invalid email or password";
         Users userFound = userRepository.findByEmail(user.email())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
-        if (!userFound.getStatus().equals("active")) {
-            throw new SchoolResourceLockedExceptionHandler("Account is locked try again later");
+        AccountStatus userStatus = userFound.getStatus();
+        if (!userStatus.equals(AccountStatus.ACTIVE)) {
+            throw new SchoolResourceLockedExceptionHandler("Account is " + userStatus + " try again later");
         }
         if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
             throw new SchoolResourceNotFoundExceptionHandler(message);
@@ -39,9 +41,10 @@ public class LoginService {
         }
 
         // if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
-        //     throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
+        // throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
         // }
         var token = jwtService.GenerateToken(userFound);
         return token;
     }
 }
+
