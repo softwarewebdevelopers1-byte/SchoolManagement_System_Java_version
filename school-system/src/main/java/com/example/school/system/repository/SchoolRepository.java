@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.school.system.models.School;
+import com.example.school.system.types.SchoolStatus;
 
 public interface SchoolRepository extends JpaRepository<School, Long> {
     boolean existsBySchoolName(String schoolId);
@@ -11,4 +12,6 @@ public interface SchoolRepository extends JpaRepository<School, Long> {
     Optional<School> findBySchoolName(String schoolName);
 
     Optional<School> findBySchoolCode(String code);
+
+    Optional<School> findBySchoolCodeAndStatus(String code, SchoolStatus status);
 }

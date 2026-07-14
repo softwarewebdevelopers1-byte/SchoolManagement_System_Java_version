@@ -35,7 +35,7 @@ public class RequestFilter {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/debug/**").permitAll()
                         .requestMatchers("/api/schools/get/school/for/user").permitAll()
-
+                        .requestMatchers("/api/schools/create-school").permitAll()
                         // All other requests require authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )

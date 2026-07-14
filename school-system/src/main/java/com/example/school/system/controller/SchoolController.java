@@ -26,7 +26,6 @@ public class SchoolController {
 
     private final SchoolService schoolService;
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create-school")
     public SchoolApiResponse<?> createSchool(
             @Valid @RequestBody CreateSchoolDTO schoolDto) {

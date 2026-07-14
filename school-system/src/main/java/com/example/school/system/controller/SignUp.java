@@ -5,24 +5,22 @@ import com.example.school.system.DTO.SignUpUserDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SignUpService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class SignUp {
-    private SignUpService signUpService;
+    private final SignUpService signUpService;
 
-    public SignUp(SignUpService signUpService) {
-        this.signUpService = signUpService;
-    }
-
-    @PostMapping("/create-account")
-    public SchoolApiResponse<?> createAccount(@RequestParam String token,
+    @PostMapping("/teacher/create-account")
+    public SchoolApiResponse<?> createAccount(
             @Valid @RequestBody SignUpUserDTO user) {
-        return signUpService.SignUpUser(user, token);
+        return signUpService.SignUpUser(user);
 
     }
 

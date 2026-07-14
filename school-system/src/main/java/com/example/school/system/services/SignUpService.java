@@ -8,12 +8,14 @@ import com.example.school.system.DTO.SignUpUserDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.School;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.services.email.events.UserRegistrationEvent;
 import com.example.school.system.types.AccountStatus;
+import com.example.school.system.types.SchoolStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,29 +29,30 @@ public class SignUpService {
     private final SchoolRepository schoolRepository;
 
     @Transactional
-    public SchoolApiResponse<?> SignUpUser(SignUpUserDTO User, String token) {
+    public SchoolApiResponse<?> SignUpUser(SignUpUserDTO User) {
         validateSignUp(User);
-
-        userRepository.save(toUser(User));
-
+        SetUserFields(User);
         applicationEventPublisher.publishEvent(new UserRegistrationEvent(User.email()));
         return SchoolApiResponse.success("User " + " " + User.email() + " " + "registration successful");
     }
 
     private void validateSignUp(SignUpUserDTO userProfileDTO) {
-        schoolRepository.findBySchoolCode(userProfileDTO.schoolCode())
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School with that code doesn't exist"));
         if (userRepository.existsByEmail(userProfileDTO.email())) {
             throw new SchoolResourceExistsExceptionHandler("User already exists");
         }
     }
 
-    private Users toUser(SignUpUserDTO userProfileDTO) {
+    private void SetUserFields(SignUpUserDTO userProfileDTO) {
         Users user = new Users();
-        // check if user exists
+        School userSchool = schoolRepository
+                .findBySchoolCodeAndStatus(userProfileDTO.schoolCode(), SchoolStatus.ACTIVE)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found or is not active"));
+
+        // set all required values
         user.setEmail(userProfileDTO.email());
+        user.setSchool(userSchool);
         user.setStatus(AccountStatus.PENDING_VERIFICATION);
         user.setPassword(passwordHashing.PasswordEncoder().encode(userProfileDTO.password()));
-        return user;
+        userRepository.save(user);
     }
 }

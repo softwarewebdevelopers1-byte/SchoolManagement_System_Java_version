@@ -2,13 +2,18 @@ package com.example.school.system.models;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
+
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.example.school.system.types.SchoolStatus;
+import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -29,35 +34,49 @@ import lombok.Setter;
 @NoArgsConstructor
 public class School {
     @Id
-    @Column(name = "school_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long schoolId;
-
+    @Column(columnDefinition = "BINARY(16)", name = "id", updatable = false, nullable = false)
+    private UUID schoolId;
+    @Enumerated(EnumType.STRING)
+    private SchoolStatus status;
     @Column(name = "school_name", unique = true)
     @NotBlank(message = "school name must be provided")
-    String schoolName;
+    private String schoolName;
 
     @Column(name = "code", unique = true)
     @NotBlank(message = "school code must be provided")
-    String schoolCode;
+    private String schoolCode;
 
     @Column(name = "registered_date")
     @CreationTimestamp
-    LocalDate date;
+    private LocalDate date;
 
-    // creating relationship between school and students
+    // creating relationship between school and user
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
-    List<StudentProfile> students;
-
+    private List<Users>users;
     // creating relationship between school and school settings
     @OneToOne(mappedBy = "school", cascade = CascadeType.ALL)
-    SchoolSettings schoolSettings;
+    private SchoolSettings schoolSettings;
 
     @PreUpdate
-    @PrePersist
-    private void normalze() {
+    private void normalize() {
         if (schoolName != null) {
             schoolName = schoolName.trim().toLowerCase();
+        }
+        if (status == null) {
+            status = SchoolStatus.PENDING_VERIFICATION;
+        }
+    }
+
+    @PrePersist
+    private void generateIdAndNormalize() {
+        if (schoolId == null) {
+            schoolId = UuidCreator.getTimeOrdered();
+        }
+        if (schoolName != null) {
+            schoolName = schoolName.trim().toLowerCase();
+        }
+        if (status == null) {
+            status = SchoolStatus.PENDING_VERIFICATION;
         }
     }
 

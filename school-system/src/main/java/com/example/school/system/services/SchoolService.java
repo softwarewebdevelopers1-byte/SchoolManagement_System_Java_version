@@ -41,6 +41,7 @@ public class SchoolService {
         StringBuilder code = new StringBuilder();
         code.append(randomValues.RandomValues(7));
         school.setSchoolCode(code.toString());
+    
         school = schoolRepository.save(school);
         SchoolSettings settings = new SchoolSettings();
         settings.setSchool(school);
