@@ -13,6 +13,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,6 +47,7 @@ public class Users {
 
   @Column(name = "roles")
   @Enumerated(EnumType.STRING)
+  @ElementCollection
   Set<UserRoles> roles = new HashSet<>();
 
   @NotBlank(message = "password is missing")
