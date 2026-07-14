@@ -8,7 +8,6 @@ import com.example.school.system.DTO.SingleSubjectCreationDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.repository.SubjectRepository;
-import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.models.Subject;
 // import lombok.AllArgsConstructor;
 
@@ -16,22 +15,19 @@ import com.example.school.system.models.Subject;
 // @AllArgsConstructor
 public class SubjectService {
     private SubjectRepository subjectRepository;
-    private JwtValidator jwtValidation;
 
-    public SubjectService(SubjectRepository subjectRepository, JwtValidator jwtValidation) {
+    public SubjectService(SubjectRepository subjectRepository) {
         this.subjectRepository = subjectRepository;
-        this.jwtValidation = jwtValidation;
     }
 
-    public SchoolApiResponse<?> createSingleSubject(SingleSubjectCreationDTO subjectCreationDTO, String token) {
-        subjectValidation(subjectCreationDTO, token);
+    public SchoolApiResponse<?> createSingleSubject(SingleSubjectCreationDTO subjectCreationDTO) {
+        subjectValidation(subjectCreationDTO);
         subjectRepository.save(toSubject(subjectCreationDTO));
         return SchoolApiResponse.success(subjectCreationDTO, "Subject created successfully");
     }
 
-    public SchoolApiResponse<?> createMultipleSubject(List<SingleSubjectCreationDTO> multipleSubjectCreation,
-            String token) {
-        return multipleSubjectValidation(multipleSubjectCreation, token);
+    public SchoolApiResponse<?> createMultipleSubject(List<SingleSubjectCreationDTO> multipleSubjectCreation) {
+        return multipleSubjectValidation(multipleSubjectCreation);
     }
 
     private Subject toSubject(SingleSubjectCreationDTO subjectCreationDTO) {
@@ -41,20 +37,17 @@ public class SubjectService {
         return subject;
     }
 
-    private void subjectValidation(SingleSubjectCreationDTO subjectCreationDTO, String token) {
-        jwtValidation.validateTokenIssued(token);
+    private void subjectValidation(SingleSubjectCreationDTO subjectCreationDTO) {
         if (subjectRepository.existsBySubjectName(subjectCreationDTO.subjectName())) {
             throw new SchoolResourceExistsExceptionHandler("Subject with this name already exists");
         }
     }
 
-    private SchoolApiResponse<?> multipleSubjectValidation(List<SingleSubjectCreationDTO> subjects,
-            String token) {
+    private SchoolApiResponse<?> multipleSubjectValidation(List<SingleSubjectCreationDTO> subjects) {
         HashSet<String> seenInRequest = new HashSet<>();
         List<String> skipped = new ArrayList<>();
         List<Subject> savedSubjects = new ArrayList<>();
 
-        jwtValidation.validateTokenIssued(token);
         for (int i = 0; i < subjects.size(); i++) {
             String key = subjects.get(i).subjectName().toLowerCase();
             SingleSubjectCreationDTO subjectCreationDTO = subjects.get(i);

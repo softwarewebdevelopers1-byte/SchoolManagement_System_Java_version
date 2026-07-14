@@ -29,8 +29,7 @@ public class SchoolService {
     }
 
     @Transactional
-    public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto, String authHeader) {
-        // userRoleChecker.adminRoleChecker(authHeader);
+    public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto) {
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName()))
             throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
 
@@ -53,7 +52,7 @@ public class SchoolService {
         return school;
     }
 
-    public SchoolApiResponse<?> UpdateExistingSchool(Long id, CreateSchoolDTO schoolData, String token) {
+    public SchoolApiResponse<?> UpdateExistingSchool(Long id, CreateSchoolDTO schoolData) {
         if (!schoolRepository.existsById(id)) {
             throw new SchoolResourceNotFoundExceptionHandler("School with that Id does not exist");
         }
@@ -72,7 +71,7 @@ public class SchoolService {
                         + schoolData.schoolName());
     }
 
-    public SchoolApiResponse<?> deleteSchool(Long id, String token, OtpValidationDTO otpValidationDTO) {
+    public SchoolApiResponse<?> deleteSchool(Long id, OtpValidationDTO otpValidationDTO) {
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
         String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);

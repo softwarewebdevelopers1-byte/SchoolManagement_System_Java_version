@@ -9,7 +9,6 @@ import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,22 +28,22 @@ public class SchoolController {
     }
 
     @PostMapping("/create-school")
-    public SchoolApiResponse<?> createSchool(@RequestHeader("Authorization") String authHeader,
+    public SchoolApiResponse<?> createSchool(
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        return schoolService.registerSchool(schoolDto, authHeader);
+        return schoolService.registerSchool(schoolDto);
     }
 
     @PutMapping("/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
+    public SchoolApiResponse<?> updateSchool(@PathVariable String id,
             @RequestBody CreateSchoolDTO schoolData) {
         Long schoolId = Long.parseLong(id);
-        return schoolService.UpdateExistingSchool(schoolId, schoolData, token);
+        return schoolService.UpdateExistingSchool(schoolId, schoolData);
     }
 
     @DeleteMapping("/delete/school/{id}")
-    public SchoolApiResponse<?> deleteSchool(@PathVariable String id, @RequestHeader("Authorization") String token,
+    public SchoolApiResponse<?> deleteSchool(@PathVariable String id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
         Long schoolId = Long.parseLong(id);
-        return schoolService.deleteSchool(schoolId, token, otpValidationDTO);
+        return schoolService.deleteSchool(schoolId, otpValidationDTO);
     }
 }
