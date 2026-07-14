@@ -32,8 +32,18 @@ public class LoginService {
         Users userFound = userRepository.findByEmail(user.email())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
         AccountStatus userStatus = userFound.getStatus();
+        StringBuilder statusSender = new StringBuilder();
+        if (userStatus.toString().contains("_")) {
+            String[] userStatusSplitted = userStatus.toString().toLowerCase().split("_");
+            statusSender.append(userStatusSplitted[0]);
+            statusSender.append(" ");
+            statusSender.append(userStatusSplitted[1]);
+        } else {
+            statusSender.append(userStatus.toString().toLowerCase());
+        }
+
         if (!userStatus.equals(AccountStatus.ACTIVE)) {
-            throw new SchoolResourceLockedExceptionHandler("Account is " + userStatus + " try again later");
+            throw new SchoolResourceLockedExceptionHandler("Account is " + statusSender + " try again later");
         }
         if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
             throw new SchoolResourceNotFoundExceptionHandler(message);
@@ -47,4 +57,3 @@ public class LoginService {
         return token;
     }
 }
-
