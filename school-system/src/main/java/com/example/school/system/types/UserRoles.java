@@ -5,5 +5,6 @@ public enum UserRoles {
     ADMIN,
     CLASSTEACHER,
     HEADTEACHER,
-    SUBJECTTEACHER
+    SUBJECTTEACHER,
+    UNASSIGNED
 }

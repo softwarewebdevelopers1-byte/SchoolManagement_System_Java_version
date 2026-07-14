@@ -1,5 +1,8 @@
 package com.example.school.system.services;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,7 @@ import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.services.email.events.UserRegistrationEvent;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
+import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,10 +51,12 @@ public class SignUpService {
         School userSchool = schoolRepository
                 .findBySchoolCodeAndStatus(userProfileDTO.schoolCode(), SchoolStatus.ACTIVE)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found or is not active"));
-
+        Set<UserRoles> userFirstRole = new HashSet<>();
+        userFirstRole.add(UserRoles.UNASSIGNED);
         // set all required values
         user.setEmail(userProfileDTO.email());
         user.setSchool(userSchool);
+        user.setRoles(userFirstRole);
         user.setStatus(AccountStatus.PENDING_VERIFICATION);
         user.setPassword(passwordHashing.PasswordEncoder().encode(userProfileDTO.password()));
         userRepository.save(user);
