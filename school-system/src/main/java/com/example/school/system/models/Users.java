@@ -3,8 +3,12 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
+
 import org.hibernate.annotations.CreationTimestamp;
 import com.example.school.system.types.UserRoles;
+import com.github.f4b6a3.uuid.UuidCreator;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,9 +35,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Users {
   @Id
-  @Column(name = "user_id")
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Long user;
+  @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
+  UUID userId;
+
   @Column(name = "email", unique = true)
   @NotBlank(message = "Email is missing")
   String email;
@@ -60,8 +64,23 @@ public class Users {
   StudentProfile studentProfile;
 
   @PreUpdate
-  @PrePersist
   private void normalize() {
+    if (roles.isEmpty()) {
+      roles.add(UserRoles.STUDENT);
+    }
+    if (email != null) {
+      email = email.trim().toLowerCase();
+    }
+    if (status != null) {
+      status = status.trim().toLowerCase();
+    }
+  }
+
+  @PrePersist
+  private void generateId() {
+    if (userId == null) {
+      userId = UuidCreator.getTimeOrdered();
+    }
     if (roles.isEmpty()) {
       roles.add(UserRoles.STUDENT);
     }

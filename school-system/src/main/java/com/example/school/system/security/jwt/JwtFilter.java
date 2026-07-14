@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.school.system.error.InvalidTokenExceptionHandler;
-import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
