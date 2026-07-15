@@ -6,6 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -128,5 +129,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> schoolResourceRestricted(
             SchoolResourceRestrictedException schoolResourceRestrictedException) {
         return ResponseEntity.status(403).body(SchoolApiResponse.error(schoolResourceRestrictedException.getMessage()));
+    }
+
+    // email exception
+    @ExceptionHandler(MailSendException.class)
+    public ResponseEntity<?> MailSendException() {
+        return ResponseEntity.status(500).body(SchoolApiResponse.error("unable to send email"));
     }
 }
