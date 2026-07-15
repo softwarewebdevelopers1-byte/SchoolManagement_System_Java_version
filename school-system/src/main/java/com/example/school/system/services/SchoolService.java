@@ -16,8 +16,10 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
+import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.SchoolStatus;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -27,6 +29,7 @@ public class SchoolService {
     private final SchoolRepository schoolRepository;
     private final OtpService otpService;
     private final RandomValuesService randomValues;
+    private final JwtValidator jwtValidator;
 
     public SchoolApiResponse<?> getSchool(String code) {
         School schoolName = schoolRepository.findBySchoolCode(code)
@@ -70,7 +73,12 @@ public class SchoolService {
     }
 
     @Transactional
-    public SchoolApiResponse<?> UpdateExistingSchool(UUID id, UpdateSchoolDTO schoolData) {
+    public SchoolApiResponse<?> UpdateExistingSchool(UUID id, UpdateSchoolDTO schoolData, String authHeader) {
+        Claims userToken = jwtValidator.validateTokenIssued(authHeader);
+        if (!userToken.get("school").equals(id.toString())) {
+            throw new SchoolResourceRestrictedException("Forbidden");
+        }
+        System.out.println(userToken.get("school"));
         School schoolToUpdate = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that Id does not exists"));
         if (!schoolToUpdate.getStatus().equals(SchoolStatus.ACTIVE)) {
@@ -120,7 +128,8 @@ public class SchoolService {
                 .success("Saved");
     }
 
-    public SchoolApiResponse<?> deleteSchool(UUID id, OtpValidationDTO otpValidationDTO) {
+    public SchoolApiResponse<?> deleteSchool(UUID id, OtpValidationDTO otpValidationDTO, String authHeader) {
+        jwtValidator.validateTokenIssued(authHeader);
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
         String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);

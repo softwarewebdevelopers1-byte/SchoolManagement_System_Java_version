@@ -39,7 +39,7 @@ public class JwtCreationService {
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .subject(users.getEmail())
+                .subject(users.getEmail()).claim("school", users.getSchool().getId())
                 .claim("roles", rolesWithPrefix) // Now has "ROLE_ADMIN", "ROLE_USER"
                 .issuedAt(now)
                 .expiration(expirationDate)

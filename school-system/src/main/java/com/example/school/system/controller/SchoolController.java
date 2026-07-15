@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -37,17 +38,17 @@ public class SchoolController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@PathVariable UUID id,
+    public SchoolApiResponse<?> updateSchool(@RequestHeader("Authorization") String header, @PathVariable UUID id,
             @RequestBody UpdateSchoolDTO schoolData) {
 
-        return schoolService.UpdateExistingSchool(id, schoolData);
+        return schoolService.UpdateExistingSchool(id, schoolData, header);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/school/{id}")
-    public SchoolApiResponse<?> deleteSchool(@PathVariable UUID id,
+    public SchoolApiResponse<?> deleteSchool(@RequestHeader("Authorization") String header, @PathVariable UUID id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
-        return schoolService.deleteSchool(id, otpValidationDTO);
+        return schoolService.deleteSchool(id, otpValidationDTO, header);
     }
 
     @GetMapping("/get/school/for/user")
