@@ -35,7 +35,7 @@ public class OtpService {
             otpRepository.deleteByEmail(otpDTO.email().trim().toLowerCase());
         }
         String email = otpDTO.email().trim().toLowerCase();
-        String randomValue = randomValuesService.RandomValues(4);
+        String randomValue = randomValuesService.RandomValues();
         otpRepository.save(toOtp(otpDTO, otpHashing.PasswordEncoder().encode(randomValue), otpPurpose));
         otpEmailSender(email, randomValue, otpPurpose);
         System.out.println(randomValue);
@@ -45,7 +45,8 @@ public class OtpService {
     private void otpEmailSender(String email, String data, OtpPurpose otpPurpose) {
         StringBuilder emailDetails = new StringBuilder();
         if (otpPurpose == OtpPurpose.DELETE_SCHOOL) {
-            emailDetails.append("<div style='height:40px;width:40px; background-color:red'></div>");
+            emailDetails.append(
+                    "<div style='height:40px;width:40px; background-color:red;border-radius:50%;color:#fff;display:flex;justify-content:center;align-items:center;font-size:20px'><p><bold>!<bold></p></div>");
         }
         emailDetails
                 .append("Your" + " " + "<strong style='font-size:18px;'>authentication</strong>" + " " + "code" + "\n");
@@ -66,8 +67,9 @@ public class OtpService {
     public String ValidateOtp(OtpValidationDTO otpDTO) {
         OTP otpFound = otpRepository.findOneByEmail(otpDTO.email())
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid Otp"));
-        System.out.println("the otp in the database" + otpFound.getValue());
-        if (!otpHashing.PasswordEncoder().matches(otpDTO.value(), otpFound.getValue()) || otpFound.isUsed()) {
+
+        if (!otpHashing.PasswordEncoder().matches(otpDTO.value(), otpFound.getValue()) || otpFound.isUsed()
+                || otpFound.getPurpose().equals(OtpPurpose.UNDEFINED)) {
             throw new InvalidTokenExceptionHandler("Invalid Otp");
         }
         otpFound.setUsed(true);
