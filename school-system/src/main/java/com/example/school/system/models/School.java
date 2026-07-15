@@ -35,12 +35,26 @@ import lombok.Setter;
 public class School {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", updatable = false, nullable = false)
-    private UUID schoolId;
+    private UUID id;
+
     @Enumerated(EnumType.STRING)
     private SchoolStatus status;
+
     @Column(name = "school_name", unique = true)
     @NotBlank(message = "school name must be provided")
     private String schoolName;
+
+    @Column(name = "address")
+    String address;
+
+    @Column(name = "motto")
+    String schoolMotto;
+
+    @Column(name = "email", unique = true)
+    String email;
+
+    @Column(name = "phone")
+    String phoneNumber;
 
     @Column(name = "code", unique = true)
     @NotBlank(message = "school code must be provided")
@@ -52,7 +66,7 @@ public class School {
 
     // creating relationship between school and user
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
-    private List<Users>users;
+    private List<Users> users;
     // creating relationship between school and school settings
     @OneToOne(mappedBy = "school", cascade = CascadeType.ALL)
     private SchoolSettings schoolSettings;
@@ -62,6 +76,12 @@ public class School {
         if (schoolName != null) {
             schoolName = schoolName.trim().toLowerCase();
         }
+        if (email != null) {
+            email = email.trim().toLowerCase();
+        }
+        if (schoolMotto != null) {
+            schoolMotto = schoolMotto.trim().toLowerCase();
+        }
         if (status == null) {
             status = SchoolStatus.PENDING_VERIFICATION;
         }
@@ -69,14 +89,20 @@ public class School {
 
     @PrePersist
     private void generateIdAndNormalize() {
-        if (schoolId == null) {
-            schoolId = UuidCreator.getTimeOrdered();
+        if (id == null) {
+            id = UuidCreator.getTimeOrdered();
         }
         if (schoolName != null) {
             schoolName = schoolName.trim().toLowerCase();
         }
         if (status == null) {
             status = SchoolStatus.PENDING_VERIFICATION;
+        }
+        if (email != null) {
+            email = email.trim().toLowerCase();
+        }
+        if (schoolMotto != null) {
+            schoolMotto = schoolMotto.trim().toLowerCase();
         }
     }
 

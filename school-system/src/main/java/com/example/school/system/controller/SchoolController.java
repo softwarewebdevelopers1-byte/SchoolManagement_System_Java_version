@@ -4,8 +4,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.GetSchoolDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
+import com.example.school.system.DTO.UpdateSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.services.OtpService;
 import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+
+import java.util.UUID;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,18 +37,17 @@ public class SchoolController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@PathVariable String id,
-            @RequestBody CreateSchoolDTO schoolData) {
-        Long schoolId = Long.parseLong(id);
-        return schoolService.UpdateExistingSchool(schoolId, schoolData);
+    public SchoolApiResponse<?> updateSchool(@PathVariable UUID id,
+            @RequestBody UpdateSchoolDTO schoolData) {
+
+        return schoolService.UpdateExistingSchool(id, schoolData);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/school/{id}")
-    public SchoolApiResponse<?> deleteSchool(@PathVariable String id,
+    public SchoolApiResponse<?> deleteSchool(@PathVariable UUID id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
-        Long schoolId = Long.parseLong(id);
-        return schoolService.deleteSchool(schoolId, otpValidationDTO);
+        return schoolService.deleteSchool(id, otpValidationDTO);
     }
 
     @GetMapping("/get/school/for/user")
