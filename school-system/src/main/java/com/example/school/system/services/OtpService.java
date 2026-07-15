@@ -12,6 +12,7 @@ import com.example.school.system.models.OTP;
 import com.example.school.system.repository.OtpRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.services.email.EmailSender;
+import com.example.school.system.types.OtpPurpose;
 
 @Service
 public class OtpService {
@@ -29,20 +30,23 @@ public class OtpService {
     }
 
     @Transactional
-    public SchoolApiResponse<?> GenerateOtp(OtpCreationDTO otpDTO) {
+    public SchoolApiResponse<?> GenerateOtp(OtpCreationDTO otpDTO, OtpPurpose otpPurpose) {
         if (otpDTO.email() != null) {
             otpRepository.deleteByEmail(otpDTO.email().trim().toLowerCase());
         }
         String email = otpDTO.email().trim().toLowerCase();
         String randomValue = randomValuesService.RandomValues(4);
-        otpRepository.save(toOtp(otpDTO, otpHashing.PasswordEncoder().encode(randomValue)));
-        otpEmailSender(email, randomValue);
+        otpRepository.save(toOtp(otpDTO, otpHashing.PasswordEncoder().encode(randomValue), otpPurpose));
+        otpEmailSender(email, randomValue, otpPurpose);
         System.out.println(randomValue);
         return SchoolApiResponse.success("OTP sent successfully");
     }
 
-    private void otpEmailSender(String email, String data) {
+    private void otpEmailSender(String email, String data, OtpPurpose otpPurpose) {
         StringBuilder emailDetails = new StringBuilder();
+        if (otpPurpose == OtpPurpose.DELETE_SCHOOL) {
+            emailDetails.append("<div style='height:40px;width:40px; background-color:red'></div>");
+        }
         emailDetails
                 .append("Your" + " " + "<strong style='font-size:18px;'>authentication</strong>" + " " + "code" + "\n");
         emailDetails.append("<b style='font-size:20px;'>");
@@ -51,9 +55,10 @@ public class OtpService {
         emailSender.SendEmail(email, emailDetails);
     }
 
-    private OTP toOtp(OtpCreationDTO otpDTO, String randomValue) {
+    private OTP toOtp(OtpCreationDTO otpDTO, String randomValue, OtpPurpose otpPurpose) {
         OTP otp = new OTP();
         otp.setEmail(otpDTO.email());
+        otp.setPurpose(otpPurpose);
         otp.setValue(randomValue);
         return otp;
     }

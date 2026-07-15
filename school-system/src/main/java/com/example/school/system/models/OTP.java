@@ -2,6 +2,8 @@ package com.example.school.system.models;
 
 import java.time.LocalDateTime;
 
+import com.example.school.system.types.OtpPurpose;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,6 +29,7 @@ public class OTP {
 
     private String email;
 
+    private OtpPurpose purpose;
     private boolean used = false;
 
     @Column(name = "otp_values")
@@ -38,6 +41,12 @@ public class OTP {
     private void setExpiration() {
         if (expirationTime == null) {
             expirationTime = LocalDateTime.now().plusMinutes(5);
+        }
+        if (purpose == null) {
+            purpose = OtpPurpose.UNDEFINED;
+        }
+        if (email != null) {
+            email = email.trim().toLowerCase();
         }
     }
 }

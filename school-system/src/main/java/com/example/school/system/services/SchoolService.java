@@ -18,6 +18,7 @@ import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
+import com.example.school.system.types.OtpPurpose;
 import com.example.school.system.types.SchoolStatus;
 
 import io.jsonwebtoken.Claims;
@@ -141,7 +142,7 @@ public class SchoolService {
         School school = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         OtpCreationDTO otpEmail = new OtpCreationDTO(school.getEmail());
-        otpService.GenerateOtp(otpEmail);
+        otpService.GenerateOtp(otpEmail, OtpPurpose.DELETE_SCHOOL);
 
         return SchoolApiResponse.success("OTP sent successfully");
     }
