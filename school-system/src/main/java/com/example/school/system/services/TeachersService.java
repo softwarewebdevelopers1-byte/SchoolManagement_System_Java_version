@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import java.rmi.server.UID;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -60,12 +61,20 @@ public class TeachersService {
         }
     }
 
+    public UUID schoolUuid(String token) {
+        Claims userToken = jwtValidator.validateTokenIssued(token);
+        String school = userToken.get("school").toString();
+        return UUID.fromString(school);
+    }
+
     @Transactional
     public void EditTeacher(TeacherEditDTO editTeacher, UUID userId, String authHeader) {
         // 1. Find the user
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
-
+        if (!schoolUuid(authHeader).equals(user.getSchool().getId())) {
+            throw new SchoolResourceRestrictedException("unauthorized");
+        }
         // 2. Get the teacher profile - FIXED
         TeacherProfile teacher = user.getTeacherProfile(); // Direct access from user
 
