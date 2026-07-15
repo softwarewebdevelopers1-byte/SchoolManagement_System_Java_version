@@ -1,6 +1,7 @@
 package com.example.school.system.DTO.DTOResponse;
 
 import java.util.Set;
+import java.util.UUID;
 
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
@@ -17,4 +18,5 @@ public class GetTeachersDTO {
         private String lastName;
         private Set<UserRoles> roles;
         private String schoolClass;
+        private UUID usersId;
 }

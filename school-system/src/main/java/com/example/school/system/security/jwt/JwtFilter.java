@@ -3,6 +3,7 @@ package com.example.school.system.security.jwt;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -74,9 +75,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                String userEmail = claims.getSubject();
+                String userId = claims.getSubject();
 
-                if (!repository.existsByEmail(userEmail)) {
+                if (!repository.existsById(UUID.fromString(userId))) {
                     throw new InvalidTokenExceptionHandler("Unauthorized");
                 }
                 // Extract roles from claims (they already have "ROLE_" prefix)
@@ -90,7 +91,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 // Create authentication with authorities from JWT
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userEmail,
+                        userId,
                         null,
                         authorities // Use authorities from JWT
                 );

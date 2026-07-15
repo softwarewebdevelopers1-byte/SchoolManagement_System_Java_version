@@ -1,6 +1,7 @@
 package com.example.school.system.services;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -10,14 +11,17 @@ import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
+import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.UserRoles;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -27,24 +31,37 @@ public class TeachersService {
     private final SchoolClassRepository gradeRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final PasswordHashing passwordHashing;
+    private final JwtValidator jwtValidator;
 
-    public List<?> getTeachers(UUID id) {
+    public List<?> getTeachers(UUID id, String authHeader) {
+        tokenIssuedValidator(id, authHeader);
         List<Users> users = userRepository.findUsersBySchoolWithoutRole(id, UserRoles.STUDENT);
         return users.stream().map(user -> {
             GetTeachersDTO teachersDTO = new GetTeachersDTO();
             teachersDTO.setEmail(user.getEmail());
             teachersDTO.setStatus(user.getStatus());
             teachersDTO.setRoles(user.getRoles());
+            teachersDTO.setUsersId(user.getId());
             TeacherProfile profile = user.getTeacherProfile();
-            teachersDTO.setFirstName(profile.getFirstName());
-            teachersDTO.setLastName(profile.getLastName());
+            if (profile != null) {
+                teachersDTO.setFirstName(profile.getFirstName());
+                teachersDTO.setLastName(profile.getLastName());
+            }
+
             return teachersDTO;
 
         }).toList();
     }
 
+    private void tokenIssuedValidator(UUID id, String authHeader) {
+        Claims userToken = jwtValidator.validateTokenIssued(authHeader);
+        if (!userToken.get("school").equals(id.toString())) {
+            throw new SchoolResourceRestrictedException("Forbidden");
+        }
+    }
+
     @Transactional
-    public void EditTeacher(TeacherEditDTO editTeacher, UUID userId) {
+    public void EditTeacher(TeacherEditDTO editTeacher, UUID userId, String authHeader) {
         // 1. Find the user
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
@@ -52,21 +69,20 @@ public class TeachersService {
         // 2. Get the teacher profile - FIXED
         TeacherProfile teacher = user.getTeacherProfile(); // Direct access from user
 
-        // 3. Check if teacher profile exists
-        if (teacher == null) {
-            throw new SchoolResourceNotFoundExceptionHandler("Teacher profile not found for user");
-        }
-
         // 4. Update user fields
-        String newEmail = editTeacher.email().trim().toLowerCase();
 
+        String newEmail = editTeacher.email();
+        if (newEmail != null) {
+            newEmail = newEmail.trim().toLowerCase();
+            user.setEmail(newEmail);
+        }
         if (!user.getEmail().equals(newEmail)
                 && userRepository.existsByEmail(newEmail)) {
             throw new SchoolResourceExistsExceptionHandler("user already exists");
         }
 
-        user.setEmail(newEmail);
-        if (editTeacher.schoolClassId() != null) {
+        if (teacher != null && teacher.getSchoolClass().getClassId().equals(editTeacher.schoolClassId())
+                && editTeacher.schoolClassId() != null) {
             var classFound = gradeRepository.findById(editTeacher.schoolClassId())
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
             teacher.setSchoolClass(classFound);
@@ -77,24 +93,33 @@ public class TeachersService {
         }
 
         if (editTeacher.roles() != null && !editTeacher.roles().isEmpty()) {
-            user.setRoles(editTeacher.roles());
+            Set<UserRoles> currentRoles = user.getRoles();
+            Set<UserRoles> newRoles = editTeacher.roles();
+            if (!currentRoles.equals(newRoles)) {
+                user.getRoles().clear();
+                user.setRoles(editTeacher.roles());
+            }
         }
 
-        if (editTeacher.status() != null) {
+        if (!user.getStatus().equals(editTeacher.status()) && editTeacher.status() != null) {
             user.setStatus(editTeacher.status());
         }
 
         // 5. Update teacher profile fields
-        if (editTeacher.firstName() != null) {
+        if (teacher != null && !teacher.getFirstName().equals(editTeacher.firstName())
+                && editTeacher.firstName() != null
+                && teacher != null) {
             teacher.setFirstName(editTeacher.firstName().trim().toLowerCase());
         }
 
-        if (editTeacher.lastName() != null) {
+        if (teacher != null && !teacher.getLastName().equals(editTeacher.lastName()) && editTeacher.lastName() != null
+                && teacher != null) {
             teacher.setLastName(editTeacher.lastName().trim().toLowerCase());
         }
 
         // 6. Save both entities
         userRepository.save(user);
-        teacherProfileRepository.save(teacher);
+        if (teacher != null)
+            teacherProfileRepository.save(teacher);
     }
 };

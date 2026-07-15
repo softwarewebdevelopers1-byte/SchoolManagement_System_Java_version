@@ -6,7 +6,13 @@ import java.util.UUID;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 
-public record TeacherEditDTO(String email, String password, AccountStatus status, String firstName, String lastName,
-        Set<UserRoles> roles, UUID schoolClassId) {
+import jakarta.validation.constraints.Email;
+
+public record TeacherEditDTO(@Email String email,
+                String password, AccountStatus status, String firstName,
+                String lastName,
+                Set<UserRoles> roles,
+                UUID schoolClassId) {
 
 }
+
