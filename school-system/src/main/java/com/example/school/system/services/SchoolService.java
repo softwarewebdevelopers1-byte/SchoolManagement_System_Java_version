@@ -11,10 +11,12 @@ import com.example.school.system.DTO.UpdateSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
+import com.example.school.system.types.SchoolStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,7 +41,7 @@ public class SchoolService {
     public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto) {
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName())
                 || schoolRepository.existsByEmail(schoolDto.schoolEmail()))
-            throw new SchoolResourceExistsExceptionHandler("school with that name already exists");
+            throw new SchoolResourceExistsExceptionHandler("school with that name or email already exists");
 
         School school = toSchool(schoolDto);
         StringBuilder code = new StringBuilder();
@@ -71,6 +73,9 @@ public class SchoolService {
     public SchoolApiResponse<?> UpdateExistingSchool(UUID id, UpdateSchoolDTO schoolData) {
         School schoolToUpdate = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that Id does not exists"));
+        if (!schoolToUpdate.getStatus().equals(SchoolStatus.ACTIVE)) {
+            throw new SchoolResourceRestrictedException("school cannot be updated");
+        }
         String schoolEmail = schoolData.schoolEmail();
         String schoolName = schoolData.schoolName();
         String schoolAddress = schoolData.schoolAddress();

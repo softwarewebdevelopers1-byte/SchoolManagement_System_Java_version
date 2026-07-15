@@ -123,4 +123,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> authorizationDeniedException() {
         return ResponseEntity.status(403).body(SchoolApiResponse.error("Forbidden"));
     }
+
+    @ExceptionHandler(SchoolResourceRestrictedException.class)
+    public ResponseEntity<?> schoolResourceRestricted(
+            SchoolResourceRestrictedException schoolResourceRestrictedException) {
+        return ResponseEntity.status(403).body(SchoolApiResponse.error(schoolResourceRestrictedException.getMessage()));
+    }
 }
