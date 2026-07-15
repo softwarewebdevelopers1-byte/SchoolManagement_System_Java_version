@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.CreateSchoolDTO;
+import com.example.school.system.DTO.OtpCreationDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.UpdateSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -128,8 +129,26 @@ public class SchoolService {
                 .success("Saved");
     }
 
+    private void tokenValidator(UUID id, String authHeader) {
+        Claims userToken = jwtValidator.validateTokenIssued(authHeader);
+        if (!userToken.get("school").equals(id.toString())) {
+            throw new SchoolResourceRestrictedException("Forbidden");
+        }
+    }
+
+    public SchoolApiResponse<?> deleteRequestverifier(String authHeader, UUID id) {
+        tokenValidator(id, authHeader);
+        School school = schoolRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        OtpCreationDTO otpEmail = new OtpCreationDTO(school.getEmail());
+        otpService.GenerateOtp(otpEmail);
+
+        return SchoolApiResponse.success("OTP sent successfully");
+    }
+
+    // send otp first attach it to the frontend delete request
     public SchoolApiResponse<?> deleteSchool(UUID id, OtpValidationDTO otpValidationDTO, String authHeader) {
-        jwtValidator.validateTokenIssued(authHeader);
+        tokenValidator(id, authHeader);
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
         String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);

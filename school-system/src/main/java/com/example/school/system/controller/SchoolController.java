@@ -45,6 +45,13 @@ public class SchoolController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/delete/school/verification")
+    public SchoolApiResponse<?> schoolVerifier(@PathVariable UUID id,
+            @RequestHeader("Authorization") String authHeader) {
+        return schoolService.deleteRequestverifier(authHeader, id);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/school/{id}")
     public SchoolApiResponse<?> deleteSchool(@RequestHeader("Authorization") String header, @PathVariable UUID id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
