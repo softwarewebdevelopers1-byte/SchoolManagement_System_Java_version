@@ -1,0 +1,98 @@
+/* ==========================================================================
+   EduNex Design Tokens — Green palette
+   Growth, learning, trust, calm. Signature motif: "badge" corner-notch used
+   on stat cards & the report card, echoing a school ID / certificate seal.
+   ========================================================================== */
+
+:root {
+  /* Brand */
+  --brand-ink: #0b1f16;
+  --brand-ink-2: #123322;
+  --brand-blue: #16A34A;       /* primary */
+  --brand-blue-2: #22C55E;     /* bright accent (icons, links, chart bars) */
+  --brand-cyan: #4ADE80;       /* lightest accent, gradient end */
+  --brand-gradient: linear-gradient(120deg, var(--brand-blue) 0%, var(--brand-cyan) 100%);
+  --brand-gradient-soft: linear-gradient(120deg, rgba(22,163,74,0.14) 0%, rgba(74,222,128,0.14) 100%);
+
+  /* Type */
+  --font-display: 'Sora', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Semantic */
+  --success: #15803D;
+  --success-soft: #DCFCE7;
+  --warning: #d98c1f;
+  --warning-soft: rgba(217,140,31,0.12);
+  --danger: #e0445c;
+  --danger-soft: rgba(224,68,92,0.12);
+  --info: var(--brand-blue-2);
+  --info-soft: rgba(34,197,94,0.12);
+
+  /* Radii / shadow / motion */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --shadow-sm: 0 1px 2px rgba(11,31,22,0.06);
+  --shadow-md: 0 6px 20px rgba(11,31,22,0.08);
+  --shadow-lg: 0 20px 50px rgba(11,31,22,0.14);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 78px;
+  --topbar-h: 68px;
+}
+
+/* ---------------- Light theme (default) ---------------- */
+:root,
+[data-theme='light'] {
+  --bg: #F7FBF8;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #F0FDF4;
+  --surface: #ffffff;
+  --surface-hover: #EBF9EF;
+  --border: #DCEEE1;
+  --border-strong: #C4E3CC;
+  --text: #0f1c14;
+  --text-secondary: #4b5f52;
+  --text-muted: #7c8f81;
+  --text-inverse: #ffffff;
+  --sidebar-bg: var(--brand-ink);
+  --sidebar-text: rgba(255,255,255,0.72);
+  --sidebar-text-active: #ffffff;
+  --sidebar-hover: rgba(255,255,255,0.06);
+  --overlay: rgba(11,31,22,0.45);
+  --scrollbar: #C4E3CC;
+}
+
+/* ---------------- Dark theme ---------------- */
+[data-theme='dark'] {
+  --bg: #0a1712;
+  --bg-elevated: #0f2018a0;
+  --bg-subtle: #0d1f16;
+  --surface: #122419;
+  --surface-hover: #16301f;
+  --border: #1f3c2a;
+  --border-strong: #2a4f36;
+  --text: #ecf5ee;
+  --text-secondary: #a3bdac;
+  --text-muted: #6f8c7a;
+  --text-inverse: #0b1f16;
+  --sidebar-bg: #071510;
+  --sidebar-text: rgba(255,255,255,0.62);
+  --sidebar-text-active: #ffffff;
+  --sidebar-hover: rgba(255,255,255,0.05);
+  --overlay: rgba(2,10,6,0.6);
+  --scrollbar: #24462f;
+
+  /* Brighter greens for contrast against dark backgrounds */
+  --brand-blue: #22C55E;
+  --brand-blue-2: #4ADE80;
+  --brand-cyan: #86efac;
+  --brand-gradient: linear-gradient(120deg, #22C55E 0%, #86efac 100%);
+  --brand-gradient-soft: linear-gradient(120deg, rgba(34,197,94,0.2) 0%, rgba(134,239,172,0.14) 100%);
+  --success: #22C55E;
+  --success-soft: rgba(34,197,94,0.16);
+  --info: var(--brand-blue-2);
+  --info-soft: rgba(74,222,128,0.16);
+}
