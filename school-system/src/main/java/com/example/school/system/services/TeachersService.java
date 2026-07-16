@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -76,6 +77,16 @@ public class TeachersService {
         }
         // 2. Get the teacher profile - FIXED
         TeacherProfile teacher = user.getTeacherProfile(); // Direct access from user
+        String response = "Teacher profile doesn't exist";
+        if (editTeacher.schoolClassId() != null && teacher == null) {
+            throw new SchoolResourceNotFoundExceptionHandler(response);
+        }
+        if (editTeacher.firstName() != null && teacher == null) {
+            throw new SchoolResourceNotFoundExceptionHandler(response);
+        }
+        if (editTeacher.lastName() != null && teacher == null) {
+            throw new SchoolResourceNotFoundExceptionHandler(response);
+        }
 
         // 4. Update user fields
 
@@ -129,5 +140,9 @@ public class TeachersService {
         userRepository.save(user);
         if (teacher != null)
             teacherProfileRepository.save(teacher);
+    }
+
+    public SchoolApiResponse<?> addProfile() {
+        return SchoolApiResponse.success();
     }
 };
