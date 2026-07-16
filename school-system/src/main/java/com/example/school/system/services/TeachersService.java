@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.TeacherAddProfile;
 import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
@@ -45,10 +46,18 @@ public class TeachersService {
             teachersDTO.setUsersId(user.getId());
             TeacherProfile profile = user.getTeacherProfile();
             if (profile != null) {
+                StringBuilder userClass = new StringBuilder();
+                var teacherClass = profile.getSchoolClass();
+                if (teacherClass != null) {
+                    userClass.append(teacherClass.getClassGrade());
+                    userClass.append(" ");
+                    userClass.append(teacherClass.getClassStream());
+
+                    teachersDTO.setSchoolClass(userClass.toString());
+                }
                 teachersDTO.setFirstName(profile.getFirstName());
                 teachersDTO.setLastName(profile.getLastName());
             }
-
             return teachersDTO;
 
         }).toList();
@@ -100,11 +109,13 @@ public class TeachersService {
             throw new SchoolResourceExistsExceptionHandler("user already exists");
         }
 
-        if (teacher != null && teacher.getSchoolClass().getClassId().equals(editTeacher.schoolClassId())
-                && editTeacher.schoolClassId() != null) {
-            var classFound = gradeRepository.findById(editTeacher.schoolClassId())
-                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-            teacher.setSchoolClass(classFound);
+        if (teacher != null) {
+
+            if (editTeacher.schoolClassId() != null) {
+                var classFound = gradeRepository.findById(editTeacher.schoolClassId())
+                        .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+                teacher.setSchoolClass(classFound);
+            }
         }
 
         if (editTeacher.password() != null) {
@@ -142,7 +153,19 @@ public class TeachersService {
             teacherProfileRepository.save(teacher);
     }
 
-    public SchoolApiResponse<?> addProfile() {
-        return SchoolApiResponse.success();
+    public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile, UUID id) {
+        toTeacherProfile(teacherAddProfile, id);
+        return SchoolApiResponse.success("Teacher profile added");
+    }
+
+    @Transactional
+    private void toTeacherProfile(TeacherAddProfile teacherAddProfile, UUID id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
+        TeacherProfile profile = new TeacherProfile();
+        profile.setFirstName(teacherAddProfile.firstName());
+        profile.setLastName(teacherAddProfile.lastName());
+        profile.setTeacher(user);
+        teacherProfileRepository.save(profile);
     }
 };

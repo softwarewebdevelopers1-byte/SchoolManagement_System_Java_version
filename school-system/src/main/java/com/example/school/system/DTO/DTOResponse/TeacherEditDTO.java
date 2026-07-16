@@ -9,10 +9,10 @@ import com.example.school.system.types.UserRoles;
 import jakarta.validation.constraints.Email;
 
 public record TeacherEditDTO(@Email String email,
-                String password, AccountStatus status, String firstName,
-                String lastName,
-                Set<UserRoles> roles,
-                UUID schoolClassId) {
+        String password, AccountStatus status,
+        String firstName,
+        String lastName,
+        Set<UserRoles> roles,
+        UUID schoolClassId) {
 
 }
-

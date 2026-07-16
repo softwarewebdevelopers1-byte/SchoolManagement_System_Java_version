@@ -38,16 +38,16 @@ public class SchoolController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@RequestHeader("Authorization") String header, @PathVariable UUID id,
+    public SchoolApiResponse<?> updateSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
             @RequestBody UpdateSchoolDTO schoolData) {
 
-        return schoolService.UpdateExistingSchool(id, schoolData, header);
+        return schoolService.UpdateExistingSchool(id, schoolData, authHeader);
     }
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/school/{id}")
-    public SchoolApiResponse<?> deleteSchool(@RequestHeader("Authorization") String header, @PathVariable UUID id,
+    public SchoolApiResponse<?> deleteSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
-        return schoolService.deleteSchool(id, otpValidationDTO, header);
+        return schoolService.deleteSchool(id, otpValidationDTO, authHeader);
     }
 
     @GetMapping("/get/school/for/user")

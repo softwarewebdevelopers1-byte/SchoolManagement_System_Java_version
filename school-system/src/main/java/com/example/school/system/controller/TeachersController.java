@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.school.system.DTO.TeacherAddProfile;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.services.TeachersService;
@@ -23,6 +24,14 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/users")
 public class TeachersController {
     private final TeachersService teachersService;
+
+    @PostMapping("/teacher/add-profile/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','CLASSTEACHER','DEPUTYTEACHER','SUBJECTTEACHER')")
+    public SchoolApiResponse<?> addProfile(@RequestHeader("Authorization") String authHeader,
+            @RequestBody TeacherAddProfile teacherAddProfile, @PathVariable UUID id) {
+        return teachersService.addProfile(teacherAddProfile, id);
+
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}/teachers")
