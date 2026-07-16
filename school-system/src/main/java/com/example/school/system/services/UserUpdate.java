@@ -25,7 +25,7 @@ public class UserUpdate {
     private final JwtValidator jwtValidator;
 
     public SchoolApiResponse<?> updateUserDetails(UUID id, UserUpdateDTO userUpdate, String token) {
-        // validateToken(token, id.toString());
+        validateToken(token, id.toString());
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
         String email = userUpdate.email();
