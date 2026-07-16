@@ -1,5 +1,6 @@
 package com.example.school.system.models;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +45,10 @@ public class SchoolClass {
     @Column(name = "stream")
     String classStream;
 
+    LocalDate createdAt;
+
+    LocalDate updatedAt;
+
     // relationship between school and student
     @ManyToOne
     @JoinColumn(name = "school")
@@ -72,6 +77,12 @@ public class SchoolClass {
         }
         if (classStream != null) {
             classStream = classStream.trim().toLowerCase();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDate.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDate.now();
         }
 
     }

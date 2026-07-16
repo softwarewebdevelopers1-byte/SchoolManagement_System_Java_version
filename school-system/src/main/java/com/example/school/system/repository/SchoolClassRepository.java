@@ -11,4 +11,9 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     SchoolClass findByClassStream(String classStream);
 
     SchoolClass findByClassGrade(Integer classGrade);
+
+    SchoolClass findByClassGradeAndClassStream(Integer classGrade, String classStream);
+
+    
+    boolean existsByClassGradeAndClassStream(Integer classGrade, String classStream);
 }

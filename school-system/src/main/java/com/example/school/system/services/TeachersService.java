@@ -1,6 +1,5 @@
 package com.example.school.system.services;
 
-import java.rmi.server.UID;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -12,7 +11,6 @@ import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
-import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
@@ -33,6 +31,7 @@ public class TeachersService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
+    private String schoolNotFound = "school not found";
 
     public List<?> getTeachers(UUID id, String authHeader) {
         tokenIssuedValidator(id, authHeader);
@@ -57,7 +56,7 @@ public class TeachersService {
     private void tokenIssuedValidator(UUID id, String authHeader) {
         Claims userToken = jwtValidator.validateTokenIssued(authHeader);
         if (!userToken.get("school").equals(id.toString())) {
-            throw new SchoolResourceRestrictedException("Forbidden");
+            throw new SchoolResourceNotFoundExceptionHandler(schoolNotFound);
         }
     }
 
@@ -73,7 +72,7 @@ public class TeachersService {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
         if (!schoolUuid(authHeader).equals(user.getSchool().getId())) {
-            throw new SchoolResourceRestrictedException("unauthorized");
+            throw new SchoolResourceNotFoundExceptionHandler(schoolNotFound);
         }
         // 2. Get the teacher profile - FIXED
         TeacherProfile teacher = user.getTeacherProfile(); // Direct access from user

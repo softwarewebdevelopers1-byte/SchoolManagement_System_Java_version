@@ -64,6 +64,9 @@ public class School {
     @CreationTimestamp
     private LocalDate date;
 
+    // creating reltionship between school and class
+    @OneToMany(mappedBy = "school")
+    List<SchoolClass> classes;
     // creating relationship between school and user
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
     private List<Users> users;
