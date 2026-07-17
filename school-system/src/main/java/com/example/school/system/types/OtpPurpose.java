@@ -5,5 +5,6 @@ public enum OtpPurpose {
     DELETE_USER,
     DELETE_SCHOOL,
     REMINDER,
+    RESET_PASSWORD,
     UNDEFINED
 }

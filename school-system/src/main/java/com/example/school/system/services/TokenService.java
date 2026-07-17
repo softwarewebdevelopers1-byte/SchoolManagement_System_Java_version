@@ -4,14 +4,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import com.example.school.system.error.InvalidTokenExceptionHandler;
-import com.example.school.system.models.InviteLinks;
-import com.example.school.system.repository.TokenRepository;
+import com.example.school.system.models.ExpiryLinks;
+import com.example.school.system.repository.ExpiryLinksRepository;
 
 @Service
 public class TokenService {
-    private TokenRepository tokenRepository;
+    private ExpiryLinksRepository tokenRepository;
 
-    public TokenService(TokenRepository tokenRepository) {
+    public TokenService(ExpiryLinksRepository tokenRepository) {
         this.tokenRepository = tokenRepository;
     }
 
@@ -20,7 +20,7 @@ public class TokenService {
         if (token == null) {
             throw new InvalidTokenExceptionHandler("No token provided");
         }
-        InviteLinks foundLink = tokenRepository.findByToken(token)
+        ExpiryLinks foundLink = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidTokenExceptionHandler(errorMessage));
 
         if (foundLink.isUsed() || foundLink.getExpirationTime().isBefore(LocalDateTime.now())) {
@@ -37,7 +37,7 @@ public class TokenService {
 
     public void TokenSaver() {
         String token = TokenGenerator();
-        InviteLinks link = new InviteLinks();
+        ExpiryLinks link = new ExpiryLinks();
         link.setExpirationTime(LocalDateTime.now().plusDays(7));
         link.setToken(token);
         tokenRepository.save(link);

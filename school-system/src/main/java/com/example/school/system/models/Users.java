@@ -2,6 +2,7 @@ package com.example.school.system.models;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -71,6 +73,8 @@ public class Users {
   @ManyToOne
   @JoinColumn(name = "school_id")
   private School school;
+  @OneToMany(mappedBy = "users")
+  List<ExpiryLinks> expiryLinks;
 
   @PreUpdate
   private void normalize() {
@@ -95,3 +99,4 @@ public class Users {
     }
   }
 }
+

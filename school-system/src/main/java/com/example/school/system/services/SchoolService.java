@@ -152,7 +152,7 @@ public class SchoolService {
         tokenValidator(id, authHeader);
         School schoolFound = schoolRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
-        String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO);
+        String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO, OtpPurpose.DELETE_SCHOOL);
         schoolRepository.delete(schoolFound);
         return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }

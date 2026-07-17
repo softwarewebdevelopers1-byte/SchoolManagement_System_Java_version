@@ -64,8 +64,8 @@ public class OtpService {
         return otp;
     }
 
-    public String ValidateOtp(OtpValidationDTO otpDTO) {
-        OTP otpFound = otpRepository.findOneByEmail(otpDTO.email())
+    public String ValidateOtp(OtpValidationDTO otpDTO, OtpPurpose otpPurpose) {
+        OTP otpFound = otpRepository.findByEmailAndPurpose(otpDTO.email(), otpPurpose)
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid Otp"));
 
         if (!otpHashing.PasswordEncoder().matches(otpDTO.value(), otpFound.getValue()) || otpFound.isUsed()
@@ -77,6 +77,11 @@ public class OtpService {
         if (otpFound.getExpirationTime().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenExceptionHandler("Invalid Otp");
         }
+        return "OTP verified successfully";
+
+    }
+
+    public String ValidateOtp(String token, OtpPurpose otpPurpose) {
         return "OTP verified successfully";
 
     }

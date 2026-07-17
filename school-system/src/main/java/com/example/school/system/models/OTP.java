@@ -6,6 +6,8 @@ import com.example.school.system.types.OtpPurpose;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,6 +31,7 @@ public class OTP {
 
     private String email;
 
+    @Enumerated(EnumType.STRING)
     private OtpPurpose purpose;
     private boolean used = false;
 
