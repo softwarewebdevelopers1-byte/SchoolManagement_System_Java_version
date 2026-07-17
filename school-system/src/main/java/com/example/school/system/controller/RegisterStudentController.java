@@ -1,5 +1,6 @@
 package com.example.school.system.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
 public class RegisterStudentController {
     private final StudentRegistrationService studentRegistrationService;
 
