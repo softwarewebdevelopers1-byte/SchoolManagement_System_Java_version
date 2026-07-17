@@ -37,7 +37,7 @@ public class StudentProfile {
 
     @Column(name = "student_adm", unique = true)
     String studentAdm;
-        
+
     @Column(name = "phone_number")
     String phoneNumber;
 
@@ -53,6 +53,9 @@ public class StudentProfile {
     @OneToOne
     @JoinColumn(name = "student_account")
     Users student;
+
+    @OneToMany(mappedBy = "student")
+    List<AttendanceRecords> attendanceRecords;
 
     @PreUpdate
     private void normalze() {

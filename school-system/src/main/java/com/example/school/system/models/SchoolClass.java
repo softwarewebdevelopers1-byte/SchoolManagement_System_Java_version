@@ -63,6 +63,9 @@ public class SchoolClass {
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<Marks> marks;
 
+    @OneToMany(mappedBy = "schoolClass")
+    List<AttendanceSheet> attendanceSheets;
+
     @PreUpdate
     private void normalize() {
         if (classStream != null) {
