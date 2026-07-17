@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record RegisterStudentDTO(
                 @Email(message = "Invalid email format") String email,
@@ -13,6 +14,6 @@ public record RegisterStudentDTO(
                 String studentAdm,
 
                 String phoneNumber,
-
-                @NotBlank(message = "class is required") UUID classId) {
+        
+                @NotNull(message = "class is required") UUID classId) {
 }

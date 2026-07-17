@@ -10,6 +10,7 @@ import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.StudentRegistrationService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -20,7 +21,7 @@ public class RegisterStudentController {
     private final StudentRegistrationService studentRegistrationService;
 
     @PostMapping("/register/students")
-    public SchoolApiResponse<?> SchoolReg(@RequestBody RegisterStudentDTO registerStudentDTO) {
+    public SchoolApiResponse<?> SchoolReg(@Valid @RequestBody RegisterStudentDTO registerStudentDTO) {
         return studentRegistrationService.registerStudent(registerStudentDTO);
     }
 }

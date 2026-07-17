@@ -46,7 +46,7 @@ public class OtpService {
         StringBuilder emailDetails = new StringBuilder();
         if (otpPurpose == OtpPurpose.DELETE_SCHOOL) {
             emailDetails.append(
-                    "<div style='height:40px;width:40px; background-color:red;border-radius:50%;color:#fff;display:flex;justify-content:center;align-items:center;font-size:20px'><p><bold>!<bold></p></div>");
+                    "<div>⚠️</div>");
         }
         emailDetails
                 .append("Your" + " " + "<strong style='font-size:18px;'>authentication</strong>" + " " + "code" + "\n");
