@@ -13,26 +13,27 @@ import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 
 public interface UserRepository extends JpaRepository<Users, UUID> {
-        boolean existsByEmail(String email);
+  boolean existsByEmail(String email);
 
-        boolean existsByEmailAndStatus(String email, AccountStatus status);
+  boolean existsByEmailAndStatus(String email, AccountStatus status);
 
-        Optional<Users> findByEmail(String email);
+  Optional<Users> findByEmail(String email);
 
-        Optional<Users> findByEmailAndStatus(String email, String status);
+  Optional<Users> findByEmailAndStatus(String email, String status);
 
-        Optional<Users> findByIdAndEmail(UUID id, String email);
+  Optional<Users> findByIdAndEmail(UUID id, String email);
 
-        List<Users> findAllBySchool(UUID id);
+  List<Users> findAllBySchool(UUID id);
 
-        @Query("""
-                            SELECT u
-                            FROM Users u
-                            WHERE u.school.id = :schoolId
-                              AND :role NOT MEMBER OF u.roles
-                        """)
-        List<Users> findUsersBySchoolWithoutRole(
-                        @Param("schoolId") UUID schoolId,
-                        @Param("role") UserRoles role);
+  @Query("""
+          SELECT u
+          FROM Users u
+          WHERE u.school.id = :schoolId
+            AND :role NOT MEMBER OF u.roles
+      """)
+  List<Users> findUsersBySchoolWithoutRole(
+      @Param("schoolId") UUID schoolId,
+      @Param("role") UserRoles role);
+
+  Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
 }
-
