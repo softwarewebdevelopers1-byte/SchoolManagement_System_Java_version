@@ -37,7 +37,7 @@ public class StudentProfile {
 
     @Column(name = "student_adm", unique = true)
     String studentAdm;
-
+        
     @Column(name = "phone_number")
     String phoneNumber;
 

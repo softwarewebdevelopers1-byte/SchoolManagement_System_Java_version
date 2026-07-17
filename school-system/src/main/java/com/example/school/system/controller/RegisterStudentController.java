@@ -1,0 +1,24 @@
+package com.example.school.system.controller;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.school.system.DTO.RegisterStudentDTO;
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.services.StudentRegistrationService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api")
+public class RegisterStudentController {
+    private final StudentRegistrationService studentRegistrationService;
+
+    @PostMapping("/register/students")
+    public SchoolApiResponse<?> SchoolReg(@RequestBody RegisterStudentDTO registerStudentDTO) {
+        return studentRegistrationService.registerStudent(registerStudentDTO);
+    }
+}
