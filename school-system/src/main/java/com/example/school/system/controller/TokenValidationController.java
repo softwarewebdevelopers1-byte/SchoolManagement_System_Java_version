@@ -1,5 +1,6 @@
 package com.example.school.system.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,14 +17,14 @@ public class TokenValidationController {
     }
 
     @GetMapping("/api/token/validation/{token}")
-    public SchoolApiResponse<?> ValidateUserToken(@PathVariable String token) {
+    public ResponseEntity<?> ValidateUserToken(@PathVariable String token) {
         tokenService.validateTokenProvided(token);
-        return SchoolApiResponse.success("Token validation successful");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("Token validation successful"));
     }
 
     @PostMapping("/api/token/sender")
-    public SchoolApiResponse<?> TokenSender() {
+    public ResponseEntity<?> TokenSender() {
         tokenService.TokenSaver();
-        return SchoolApiResponse.success("Token generated successfully");
+        return ResponseEntity.status(201).body(SchoolApiResponse.success("Token generated successfully"));
     }
 }

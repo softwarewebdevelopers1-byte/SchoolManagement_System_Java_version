@@ -2,6 +2,7 @@ package com.example.school.system.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,10 +22,12 @@ import lombok.RequiredArgsConstructor;
 @RestController
 public class UserDeleteController {
     private final UserDeleteService deleteAccountService;
+
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','HEADTEACHER','SUBJECTTEACHER')")
     @DeleteMapping("/danger-zone/delete/account/{id}")
-    public SchoolApiResponse<?> deleteUser(@PathVariable UUID id, @Valid @RequestBody DeleteAccountDTO dto) {
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id, @Valid @RequestBody DeleteAccountDTO dto) {
         System.out.println(id);
-        return deleteAccountService.deleteUser(id, dto.email());
+        SchoolApiResponse<?> deleteAccRes = deleteAccountService.deleteUser(id, dto.email());
+        return ResponseEntity.status(204).body(deleteAccRes);
     }
 }

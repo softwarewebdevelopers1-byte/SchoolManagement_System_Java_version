@@ -14,13 +14,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
@@ -31,27 +32,32 @@ public class SchoolController {
     private final SchoolService schoolService;
 
     @PostMapping("/create-school")
-    public SchoolApiResponse<?> createSchool(
+    public ResponseEntity<?> createSchool(
             @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        return schoolService.registerSchool(schoolDto);
+        SchoolApiResponse<?> schoolCreationRes = schoolService.registerSchool(schoolDto);
+        return ResponseEntity.status(201).body(schoolCreationRes);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/update/school/{id}")
-    public SchoolApiResponse<?> updateSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
+    @PatchMapping("/update/school/{id}")
+    public ResponseEntity<?> updateSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
             @RequestBody UpdateSchoolDTO schoolData) {
 
-        return schoolService.UpdateExistingSchool(id, schoolData, authHeader);
+        var updateSchoolRes = schoolService.UpdateExistingSchool(id, schoolData, authHeader);
+        return ResponseEntity.status(200).body(updateSchoolRes);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/school/{id}")
-    public SchoolApiResponse<?> deleteSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
+    public ResponseEntity<?> deleteSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
-        return schoolService.deleteSchool(id, otpValidationDTO, authHeader);
+        SchoolApiResponse<?> deleteSchoolResponse = schoolService.deleteSchool(id, otpValidationDTO, authHeader);
+        return ResponseEntity.status(204).body(deleteSchoolResponse);
     }
 
     @GetMapping("/get/school/for/user")
-    public SchoolApiResponse<?> getSchool(@RequestBody GetSchoolDTO getSchoolDTO) {
-        return schoolService.getSchool(getSchoolDTO.schoolCode());
+    public ResponseEntity<?> getSchool(@RequestBody GetSchoolDTO getSchoolDTO) {
+        SchoolApiResponse<?> getSchoolResponse = schoolService.getSchool(getSchoolDTO.schoolCode());
+        return ResponseEntity.status(200).body(getSchoolResponse);
     }
 }

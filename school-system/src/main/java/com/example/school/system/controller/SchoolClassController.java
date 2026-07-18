@@ -2,7 +2,9 @@ package com.example.school.system.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,20 +27,23 @@ public class SchoolClassController {
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PostMapping("/create/school/class")
-    public SchoolApiResponse<?> createClass(@Valid @RequestBody SchoolClassCreateDTO classCreateDTO) {
-        return schoolClassService.createClass(classCreateDTO);
+    public ResponseEntity<?> createClass(@Valid @RequestBody SchoolClassCreateDTO classCreateDTO) {
+        var createClassRes = schoolClassService.createClass(classCreateDTO);
+        return ResponseEntity.status(201).body(createClassRes);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/update/{id}/school-cycle")
-    public SchoolApiResponse<?> updateSchoolYearCycle(@PathVariable UUID id) {
-        return schoolClassService.updateSchoolClassCycle(id);
+    @PatchMapping("/update/{id}/school-cycle")
+    public ResponseEntity<?> updateSchoolYearCycle(@PathVariable UUID id) {
+        SchoolApiResponse<?> updateCycleRes = schoolClassService.updateSchoolClassCycle(id);
+        return ResponseEntity.status(200).body(updateCycleRes);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @PostMapping("/update/{id}/class")
-    public SchoolApiResponse<?> updateClassDetails(@PathVariable UUID id, @RequestBody SchoolClassUpdate classUpdate) {
-        return schoolClassService.updateClass(id, classUpdate);
+    @PatchMapping("/update/{id}/class")
+    public ResponseEntity<?> updateClassDetails(@PathVariable UUID id, @RequestBody SchoolClassUpdate classUpdate) {
+        SchoolApiResponse<?> res = schoolClassService.updateClass(id, classUpdate);
+        return ResponseEntity.status(200).body(res);
     }
 
 }

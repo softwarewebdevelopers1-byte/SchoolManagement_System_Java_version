@@ -2,7 +2,9 @@ package com.example.school.system.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,19 +29,22 @@ public class OtpController {
     private final SchoolService schoolService;
 
     @PostMapping("/")
-    public SchoolApiResponse<?> otpSender(@Valid @RequestBody OtpCreationDTO otpCreationDTO) {
-        return otpService.GenerateOtp(otpCreationDTO, OtpPurpose.REMINDER);
+    public ResponseEntity<?> otpSender(@Valid @RequestBody OtpCreationDTO otpCreationDTO) {
+        SchoolApiResponse<?> otpGenRes = otpService.GenerateOtp(otpCreationDTO, OtpPurpose.REMINDER);
+        return ResponseEntity.status(201).body(otpGenRes);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/delete/school/{id}/verification")
-    public SchoolApiResponse<?> schoolOtpVerifier(@PathVariable UUID id,
+    @PatchMapping("/delete/school/{id}/verification")
+    public ResponseEntity<?> schoolOtpVerifier(@PathVariable UUID id,
             @RequestHeader("Authorization") String authHeader) {
-        return schoolService.deleteRequestverifier(authHeader, id);
+        SchoolApiResponse<?> otpVerifierRes = schoolService.deleteRequestverifier(authHeader, id);
+        return ResponseEntity.status(200).body(otpVerifierRes);
     }
 
     // @PostMapping("/validate/otp")
-    // public SchoolApiResponse<?> otpValidator(@Valid @RequestBody OtpValidationDTO otp) {
-    //     return SchoolApiResponse.success(otpService.ValidateOtp(otp));
+    // public SchoolApiResponse<?> otpValidator(@Valid @RequestBody OtpValidationDTO
+    // otp) {
+    // return SchoolApiResponse.success(otpService.ValidateOtp(otp));
     // }
 }

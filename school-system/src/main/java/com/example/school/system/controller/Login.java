@@ -6,24 +6,23 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.LoginService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
 @RequestMapping("/api/auth/login")
+@RequiredArgsConstructor
 public class Login {
     private final LoginService loginUserService;
 
-    public Login(LoginService loginUserService) {
-        this.loginUserService = loginUserService;
-    }
-
     @PostMapping("/login-user")
-    public SchoolApiResponse<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
+    public ResponseEntity<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
         var token = loginUserService.LoginUser(userLogin);
-        return SchoolApiResponse.success(token, "User logged in");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(token, "User logged in"));
     }
 
 }

@@ -2,8 +2,9 @@ package com.example.school.system.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,15 +25,15 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @GetMapping("/sheet")
-    public SchoolApiResponse<?> loadAttendanceSheet(@RequestParam UUID classId) {
+    public ResponseEntity<?> loadAttendanceSheet(@RequestParam UUID classId) {
         AttendanceSheetDTO sheet = attendanceService.getOrCreateSheet(classId);
-        return SchoolApiResponse.success(sheet, "sheet loaded");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(sheet, "sheet loaded"));
     }
 
-    @PostMapping("/sheet")
-    public SchoolApiResponse<?> updateStudentAttendance(@Valid @RequestBody StudentAttendanceDTO studentAttendanceDTO) {
+    @PatchMapping("/sheet")
+    public ResponseEntity<?> updateStudentAttendance(@Valid @RequestBody StudentAttendanceDTO studentAttendanceDTO) {
         attendanceService.updateStudentAttendance(studentAttendanceDTO);
-        return SchoolApiResponse.success("student attendance updated");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("student attendance updated"));
     }
 
 }

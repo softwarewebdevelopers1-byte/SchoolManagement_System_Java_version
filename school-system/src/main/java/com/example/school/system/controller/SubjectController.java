@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -25,15 +26,17 @@ public class SubjectController {
     }
 
     @PostMapping("/create/subject")
-    public SchoolApiResponse<?> CreateSingleSubject(
+    public ResponseEntity<?> CreateSingleSubject(
             @Valid @RequestBody SingleSubjectCreationDTO subjectCreationDTO) {
-        return subjectService.createSingleSubject(subjectCreationDTO);
+        var singleSubjectRes = subjectService.createSingleSubject(subjectCreationDTO);
+        return ResponseEntity.status(201).body(singleSubjectRes);
     }
 
     @PostMapping("/create/multiple/subjects")
-    public SchoolApiResponse<?> createMultipleSubjects(
+    public ResponseEntity<?> createMultipleSubjects(
             @Valid @RequestBody List<SingleSubjectCreationDTO> subjects) {
-        return subjectService.createMultipleSubject(subjects);
+        SchoolApiResponse<?> multiSchoolResponse= subjectService.createMultipleSubject(subjects);
+        return ResponseEntity.status(201).body(multiSchoolResponse);
     }
 
     @GetMapping("/getAll/subjects")

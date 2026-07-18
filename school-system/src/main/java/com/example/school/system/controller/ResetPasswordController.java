@@ -1,5 +1,6 @@
 package com.example.school.system.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,19 +24,21 @@ public class ResetPasswordController {
     private final ResetPasswordService resetPasswordService;
 
     @GetMapping("/reset/password/expiry-checker/{id}")
-    public SchoolApiResponse<?> tokenExpirationChecker(@PathVariable String id) {
-        return resetPasswordService.getToken(id);
+    public ResponseEntity<?> tokenExpirationChecker(@PathVariable String id) {
+        var res = resetPasswordService.getToken(id);
+        return ResponseEntity.status(200).body(res);
     }
 
     @PostMapping("/reset/password/request")
-    public SchoolApiResponse<?> resetPasswordEmailer(@Valid @RequestBody ResetPasswordEmailerDto resetPasswordDto) {
-        return resetPasswordService.emailRequest(resetPasswordDto);
+    public ResponseEntity<?> resetPasswordEmailer(@Valid @RequestBody ResetPasswordEmailerDto resetPasswordDto) {
+        var emailRes = resetPasswordService.emailRequest(resetPasswordDto);
+        return ResponseEntity.status(201).body(emailRes);
     }
 
     @PostMapping("/reset/password/token")
-    public SchoolApiResponse<?> resetPasswordValidator(@Valid @RequestBody PasswordResetter passwordResetter,
+    public ResponseEntity<?> resetPasswordValidator(@Valid @RequestBody PasswordResetter passwordResetter,
             @RequestParam String token) {
         resetPasswordService.updatePassword(token, passwordResetter);
-        return SchoolApiResponse.success("Password reset successfully");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("Password reset successfully"));
     }
 }

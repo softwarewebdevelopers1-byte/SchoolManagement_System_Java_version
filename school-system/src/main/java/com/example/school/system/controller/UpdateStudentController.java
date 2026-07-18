@@ -2,8 +2,9 @@ package com.example.school.system.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,10 +23,10 @@ public class UpdateStudentController {
     private final UpdateStudentService UpdateStudentService;
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @PostMapping("/id")
-    public SchoolApiResponse<?> updateStudent(@RequestBody UpdateStudentDTO updateStudentDTO, @RequestParam UUID id) {
+    @PatchMapping("/id")
+    public ResponseEntity<?> updateStudent(@RequestBody UpdateStudentDTO updateStudentDTO, @RequestParam UUID id) {
         UpdateStudentService.updateStudent(updateStudentDTO, id);
-        return SchoolApiResponse.success("student updated");
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("student updated"));
     }
 
 }

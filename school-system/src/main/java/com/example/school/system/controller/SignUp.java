@@ -7,6 +7,7 @@ import com.example.school.system.services.SignUpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,9 +19,10 @@ public class SignUp {
     private final SignUpService signUpService;
 
     @PostMapping("/teacher/create-account")
-    public SchoolApiResponse<?> createAccount(
+    public ResponseEntity<?> createAccount(
             @Valid @RequestBody SignUpUserDTO user) {
-        return signUpService.SignUpUser(user);
+        SchoolApiResponse<?> res = signUpService.SignUpUser(user);
+        return ResponseEntity.status(201).body(res);
 
     }
 
