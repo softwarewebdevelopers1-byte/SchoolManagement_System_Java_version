@@ -30,7 +30,7 @@ public class TeachersController {
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','CLASSTEACHER','DEPUTYTEACHER','SUBJECTTEACHER')")
     @PostMapping("/teacher/add-profile")
     public ResponseEntity<?> addProfile(@RequestHeader("Authorization") String authHeader,
-            @RequestBody TeacherAddProfile teacherAddProfile) {
+            @Valid @RequestBody TeacherAddProfile teacherAddProfile) {
         SchoolApiResponse<?> addTeacherRes = teachersService.addProfile(teacherAddProfile);
         return ResponseEntity.status(201).body(addTeacherRes);
 

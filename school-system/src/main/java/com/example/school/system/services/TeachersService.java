@@ -154,7 +154,7 @@ public class TeachersService {
     }
 
     public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile) {
-        toTeacherProfile(teacherAddProfile, teacherAddProfile.profileId());
+        toTeacherProfile(teacherAddProfile, teacherAddProfile.userId());
         return SchoolApiResponse.success("Teacher profile added");
     }
 
