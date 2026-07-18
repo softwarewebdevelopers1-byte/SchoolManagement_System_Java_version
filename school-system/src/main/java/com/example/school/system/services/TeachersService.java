@@ -77,9 +77,9 @@ public class TeachersService {
     }
 
     @Transactional
-    public void EditTeacher(TeacherEditDTO editTeacher, UUID userId, String authHeader) {
+    public void EditTeacher(TeacherEditDTO editTeacher, String authHeader) {
         // 1. Find the user
-        Users user = userRepository.findById(userId)
+        Users user = userRepository.findById(editTeacher.teacherId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
         if (!schoolUuid(authHeader).equals(user.getSchool().getId())) {
             throw new SchoolResourceNotFoundExceptionHandler(schoolNotFound);
@@ -153,8 +153,8 @@ public class TeachersService {
             teacherProfileRepository.save(teacher);
     }
 
-    public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile, UUID id) {
-        toTeacherProfile(teacherAddProfile, id);
+    public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile) {
+        toTeacherProfile(teacherAddProfile, teacherAddProfile.profileId());
         return SchoolApiResponse.success("Teacher profile added");
     }
 

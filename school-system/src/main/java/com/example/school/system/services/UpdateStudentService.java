@@ -28,8 +28,8 @@ public class UpdateStudentService {
     private final StudentRepository studentRepository;
 
     @Transactional
-    public void updateStudent(UpdateStudentDTO updateStudentDTO, UUID id) {
-        Users student = userRepository.findByIdAndRolesContaining(id,UserRoles.STUDENT)
+    public void updateStudent(UpdateStudentDTO updateStudentDTO) {
+        Users student = userRepository.findByIdAndRolesContaining(updateStudentDTO.studentId(), UserRoles.STUDENT)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
         StudentProfile studentProfile = student.getStudentProfile();
         String studentEmail = updateStudentDTO.email();

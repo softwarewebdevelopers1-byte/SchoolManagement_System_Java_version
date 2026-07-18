@@ -27,11 +27,11 @@ import lombok.RequiredArgsConstructor;
 public class TeachersController {
     private final TeachersService teachersService;
 
-    @PostMapping("/teacher/add-profile/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','CLASSTEACHER','DEPUTYTEACHER','SUBJECTTEACHER')")
+    @PostMapping("/teacher/add-profile")
     public ResponseEntity<?> addProfile(@RequestHeader("Authorization") String authHeader,
-            @RequestBody TeacherAddProfile teacherAddProfile, @PathVariable UUID id) {
-        SchoolApiResponse<?> addTeacherRes = teachersService.addProfile(teacherAddProfile, id);
+            @RequestBody TeacherAddProfile teacherAddProfile) {
+        SchoolApiResponse<?> addTeacherRes = teachersService.addProfile(teacherAddProfile);
         return ResponseEntity.status(201).body(addTeacherRes);
 
     }
@@ -44,11 +44,10 @@ public class TeachersController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/update/{id}")
+    @PatchMapping("/update")
     public ResponseEntity<?> updateTeacherDetails(@RequestHeader("Authorization") String authHeader,
-            @PathVariable UUID id,
             @Valid @RequestBody TeacherEditDTO teacherEditDTO) {
-        teachersService.EditTeacher(teacherEditDTO, id, authHeader);
+        teachersService.EditTeacher(teacherEditDTO, authHeader);
         return ResponseEntity.status(200).body(SchoolApiResponse.success("User updated"));
     }
 }

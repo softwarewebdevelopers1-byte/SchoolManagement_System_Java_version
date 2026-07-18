@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.PasswordResetter;
@@ -36,9 +35,8 @@ public class ResetPasswordController {
     }
 
     @PostMapping("/reset/password/token")
-    public ResponseEntity<?> resetPasswordValidator(@Valid @RequestBody PasswordResetter passwordResetter,
-            @RequestParam String token) {
-        resetPasswordService.updatePassword(token, passwordResetter);
+    public ResponseEntity<?> resetPasswordValidator(@Valid @RequestBody PasswordResetter passwordResetter) {
+        resetPasswordService.updatePassword(passwordResetter);
         return ResponseEntity.status(200).body(SchoolApiResponse.success("Password reset successfully"));
     }
 }

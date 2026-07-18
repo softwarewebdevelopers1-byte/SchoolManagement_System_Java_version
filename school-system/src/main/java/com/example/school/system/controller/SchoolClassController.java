@@ -40,9 +40,9 @@ public class SchoolClassController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @PatchMapping("/update/{id}/class")
-    public ResponseEntity<?> updateClassDetails(@PathVariable UUID id, @RequestBody SchoolClassUpdate classUpdate) {
-        SchoolApiResponse<?> res = schoolClassService.updateClass(id, classUpdate);
+    @PatchMapping("/update/class")
+    public ResponseEntity<?> updateClassDetails(@RequestBody SchoolClassUpdate classUpdate) {
+        SchoolApiResponse<?> res = schoolClassService.updateClass(classUpdate);
         return ResponseEntity.status(200).body(res);
     }
 

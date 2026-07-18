@@ -75,13 +75,13 @@ public class SchoolService {
     }
 
     @Transactional
-    public SchoolApiResponse<?> UpdateExistingSchool(UUID id, UpdateSchoolDTO schoolData, String authHeader) {
+    public SchoolApiResponse<?> UpdateExistingSchool(UpdateSchoolDTO schoolData, String authHeader) {
         Claims userToken = jwtValidator.validateTokenIssued(authHeader);
-        if (!userToken.get("school").equals(id.toString())) {
+        if (!userToken.get("school").equals(schoolData.schoolId().toString())) {
             throw new SchoolResourceRestrictedException("Forbidden");
         }
         System.out.println(userToken.get("school"));
-        School schoolToUpdate = schoolRepository.findById(id)
+        School schoolToUpdate = schoolRepository.findById(schoolData.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that Id does not exists"));
         if (!schoolToUpdate.getStatus().equals(SchoolStatus.ACTIVE)) {
             throw new SchoolResourceRestrictedException("school cannot be updated");
@@ -148,9 +148,9 @@ public class SchoolService {
     }
 
     // send otp first attach it to the frontend delete request
-    public SchoolApiResponse<?> deleteSchool(UUID id, OtpValidationDTO otpValidationDTO, String authHeader) {
-        tokenValidator(id, authHeader);
-        School schoolFound = schoolRepository.findById(id)
+    public SchoolApiResponse<?> deleteSchool(OtpValidationDTO otpValidationDTO, String authHeader) {
+        tokenValidator(otpValidationDTO.schoolId(), authHeader);
+        School schoolFound = schoolRepository.findById(otpValidationDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that id does not exist"));
         String otpValidationMessage = otpService.ValidateOtp(otpValidationDTO, OtpPurpose.DELETE_SCHOOL);
         schoolRepository.delete(schoolFound);

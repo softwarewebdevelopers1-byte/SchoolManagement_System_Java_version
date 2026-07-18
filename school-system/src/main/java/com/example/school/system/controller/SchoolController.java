@@ -14,15 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,19 +35,19 @@ public class SchoolController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/update/school/{id}")
-    public ResponseEntity<?> updateSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
+    @PatchMapping("/update/school")
+    public ResponseEntity<?> updateSchool(@RequestHeader("Authorization") String authHeader,
             @RequestBody UpdateSchoolDTO schoolData) {
 
-        var updateSchoolRes = schoolService.UpdateExistingSchool(id, schoolData, authHeader);
+        var updateSchoolRes = schoolService.UpdateExistingSchool(schoolData, authHeader);
         return ResponseEntity.status(200).body(updateSchoolRes);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/delete/school/{id}")
-    public ResponseEntity<?> deleteSchool(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id,
+    @DeleteMapping("/delete/school")
+    public ResponseEntity<?> deleteSchool(@RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody OtpValidationDTO otpValidationDTO) {
-        SchoolApiResponse<?> deleteSchoolResponse = schoolService.deleteSchool(id, otpValidationDTO, authHeader);
+        SchoolApiResponse<?> deleteSchoolResponse = schoolService.deleteSchool(otpValidationDTO, authHeader);
         return ResponseEntity.status(204).body(deleteSchoolResponse);
     }
 

@@ -63,8 +63,8 @@ public class ResetPasswordService {
         return SchoolApiResponse.success(validationTken, "token validated");
     }
 
-    public void updatePassword(String token, PasswordResetter passwordResetter) {
-        ExpiryLinks link = tokenValidator(token);
+    public void updatePassword( PasswordResetter passwordResetter) {
+        ExpiryLinks link = tokenValidator(passwordResetter.token());
         link.getUsers().setPassword(passwordHashing.PasswordEncoder().encode(passwordResetter.password()));
         link.setUsed(true);
         linkTokenRepository.save(link);

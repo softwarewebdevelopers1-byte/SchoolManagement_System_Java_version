@@ -7,12 +7,13 @@ import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 
 public record TeacherEditDTO(@Email String email,
         String password, AccountStatus status,
         String firstName,
         String lastName,
         Set<UserRoles> roles,
-        UUID schoolClassId) {
-
+        UUID schoolClassId,
+        @NotNull(message = "teacher id is required") UUID teacherId) {
 }

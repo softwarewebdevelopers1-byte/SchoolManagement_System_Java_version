@@ -1,7 +1,11 @@
 package com.example.school.system.DTO;
 
-import jakarta.validation.constraints.Email;
+import java.util.UUID;
 
-public record UserUpdateDTO(@Email(message = "Invalid email") String email, String password) {
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+
+public record UserUpdateDTO(@Email(message = "Invalid email") String email, String password,
+        @NotNull(message = "user id must be provided") UUID userUuid) {
 
 }

@@ -1,6 +1,5 @@
 package com.example.school.system.services;
 
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -24,9 +23,9 @@ public class UserUpdate {
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
 
-    public SchoolApiResponse<?> updateUserDetails(UUID id, UserUpdateDTO userUpdate, String token) {
-        validateToken(token, id.toString());
-        Users user = userRepository.findById(id)
+    public SchoolApiResponse<?> updateUserDetails(UserUpdateDTO userUpdate, String token) {
+        validateToken(token, userUpdate.userUuid().toString());
+        Users user = userRepository.findById(userUpdate.userUuid())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
         String email = userUpdate.email();
         String password = userUpdate.password();

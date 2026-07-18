@@ -42,7 +42,6 @@ public class SchoolClassService {
         return SchoolApiResponse.success("classes updated");
     }
 
-    
     public SchoolApiResponse<?> createClass(SchoolClassCreateDTO classDTO) {
         Integer grade = classDTO.grade();
         String classStream = classDTO.classStream();
@@ -62,8 +61,8 @@ public class SchoolClassService {
         return sClass;
     }
 
-    public SchoolApiResponse<?> updateClass(UUID classId, SchoolClassUpdate schoolClassDTO) {
-        SchoolClass schoolClass = schoolClassRepository.findById(classId)
+    public SchoolApiResponse<?> updateClass(SchoolClassUpdate schoolClassDTO) {
+        SchoolClass schoolClass = schoolClassRepository.findById(schoolClassDTO.classId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
 
         Integer grade = schoolClassDTO.grade();
