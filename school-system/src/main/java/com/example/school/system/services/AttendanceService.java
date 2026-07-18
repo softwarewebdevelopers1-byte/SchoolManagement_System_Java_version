@@ -7,12 +7,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.StudentAttendanceDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceRecordDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.AttendanceRecords;
 import com.example.school.system.models.AttendanceSheet;
 import com.example.school.system.models.SchoolClass;
+import com.example.school.system.repository.AttendanceRecordRepository;
 import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.types.ClassAttendanceStatus;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AttendanceService {
     private final AttendanceSheetRepository attendanceSheetRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
     private final SchoolClassRepository schoolClassRepository;
 
     @Transactional
@@ -68,5 +71,14 @@ public class AttendanceService {
         sheet.setAttendanceRecords(records);
         return attendanceSheetRepository.save(sheet);
     }
-}
 
+    @Transactional
+    public void updateStudentAttendance(StudentAttendanceDTO studentAttendanceDTO) {
+        AttendanceRecords studentRecord = attendanceRecordRepository.findById(studentAttendanceDTO.attendanceRecord())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+                        "attendance record for this student is missing"));
+        studentRecord.setStatus(studentAttendanceDTO.status());
+        attendanceRecordRepository.save(studentRecord);
+
+    }
+}

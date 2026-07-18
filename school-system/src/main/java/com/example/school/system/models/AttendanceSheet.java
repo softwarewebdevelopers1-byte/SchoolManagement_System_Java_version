@@ -37,7 +37,7 @@ public class AttendanceSheet {
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    @OneToMany(mappedBy = "sheet",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
     List<AttendanceRecords> attendanceRecords;
 
     @PrePersist
@@ -47,4 +47,3 @@ public class AttendanceSheet {
         }
     }
 }
-
