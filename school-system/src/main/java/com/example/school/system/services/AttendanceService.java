@@ -1,0 +1,72 @@
+package com.example.school.system.services;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.school.system.DTO.DTOResponse.AttendanceRecordDTO;
+import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
+import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.AttendanceRecords;
+import com.example.school.system.models.AttendanceSheet;
+import com.example.school.system.models.SchoolClass;
+import com.example.school.system.repository.AttendanceSheetRepository;
+import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.types.ClassAttendanceStatus;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AttendanceService {
+    private final AttendanceSheetRepository attendanceSheetRepository;
+    private final SchoolClassRepository schoolClassRepository;
+
+    @Transactional
+    public AttendanceSheetDTO getOrCreateSheet(UUID classId) {
+        SchoolClass schoolClass = schoolClassRepository.findById(classId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+        LocalDate timeNow = LocalDate.now();
+        AttendanceSheet sheet = attendanceSheetRepository.findBySchoolClassAndDate(schoolClass, timeNow)
+                .orElseGet(() -> createNewSheet(schoolClass, timeNow));
+        return toAttendanceSheetDto(sheet);
+    }
+
+    private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
+
+        List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
+            AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder()
+                    .studentName(r.getStudent().getStudentFullName()).status(r.getStatus()).build();
+            return recordDTO;
+        }).toList();
+
+        StringBuilder className = new StringBuilder();
+        className.append(sheet.getSchoolClass().getClassGrade());
+        className.append(" ");
+        className.append(sheet.getSchoolClass().getClassStream());
+        AttendanceSheetDTO sheetDTO = AttendanceSheetDTO.builder().sheetId(sheet.getId())
+                .className(className.toString())
+                .date(sheet.getDate()).records(records).build();
+        return sheetDTO;
+    }
+
+    private AttendanceSheet createNewSheet(SchoolClass schoolClass, LocalDate date) {
+
+        AttendanceSheet sheet = new AttendanceSheet();
+        sheet.setSchoolClass(schoolClass);
+        sheet.setDate(date);
+        List<AttendanceRecords> records = schoolClass.getStudent().stream().map((s) -> {
+            AttendanceRecords r = new AttendanceRecords();
+            r.setStudent(s);
+            r.setSheet(sheet);
+            r.setStatus(ClassAttendanceStatus.PRESENT);
+            return r;
+        }).toList();
+        sheet.setAttendanceRecords(records);
+        return attendanceSheetRepository.save(sheet);
+    }
+}
+

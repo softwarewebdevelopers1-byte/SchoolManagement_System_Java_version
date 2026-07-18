@@ -1,14 +1,17 @@
 package com.example.school.system.models;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.example.school.system.types.ClassAttendanceStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import lombok.Getter;
@@ -23,14 +26,16 @@ public class AttendanceRecords {
     @Id
     @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     UUID id;
-
-    LocalDateTime expirationTime;
+    @Enumerated(EnumType.STRING)
+    ClassAttendanceStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
     StudentProfile student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    AttendanceSheet attendanceSheet;
+    @JoinColumn(name = "attendance_sheet_id")
+    AttendanceSheet sheet;
 
     @PrePersist
     private void generateId() {
@@ -39,3 +44,4 @@ public class AttendanceRecords {
         }
     }
 }
+
