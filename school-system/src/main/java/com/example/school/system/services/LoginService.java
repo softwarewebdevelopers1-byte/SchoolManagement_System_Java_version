@@ -32,6 +32,11 @@ public class LoginService {
         Users userFound = userRepository.findByEmail(user.email())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
         AccountStatus userStatus = userFound.getStatus();
+
+        if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
+            throw new SchoolResourceNotFoundExceptionHandler(message);
+
+        }
         StringBuilder statusSender = new StringBuilder();
         if (userStatus.toString().contains("_")) {
             String[] userStatusSplitted = userStatus.toString().toLowerCase().split("_");
@@ -45,11 +50,6 @@ public class LoginService {
         if (!userStatus.equals(AccountStatus.ACTIVE)) {
             throw new SchoolResourceLockedExceptionHandler("Account is " + statusSender + " try again later");
         }
-        if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
-            throw new SchoolResourceNotFoundExceptionHandler(message);
-
-        }
-
         // if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
         // throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
         // }
