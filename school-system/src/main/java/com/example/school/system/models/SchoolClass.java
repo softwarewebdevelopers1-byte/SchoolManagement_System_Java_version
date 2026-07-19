@@ -54,7 +54,7 @@ public class SchoolClass {
     @JoinColumn(name = "school")
     School school;
 
-    @OneToOne
+    @OneToOne(mappedBy = "schoolClass")
     TeacherProfile teacher;
     // relationship between class and student
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
