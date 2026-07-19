@@ -1,6 +1,5 @@
 package com.example.school.system.services;
 
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -13,18 +12,13 @@ import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
-import com.example.school.system.models.AttendanceRecords;
-import com.example.school.system.models.AttendanceSheet;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.Users;
-import com.example.school.system.repository.AttendanceRecordRepository;
-import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.AccountStatus;
-import com.example.school.system.types.ClassAttendanceStatus;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
@@ -38,8 +32,6 @@ public class StudentRegistrationService {
     private final SchoolClassRepository schoolClassRepository;
     private final UserRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AttendanceSheetRepository attendanceSheetRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
@@ -91,15 +83,6 @@ public class StudentRegistrationService {
 
         // Create student profile
         StudentProfile studentProfile = new StudentProfile();
-        LocalDate today = LocalDate.now();
-        AttendanceSheet sheetFound = attendanceSheetRepository.findBySchoolClassAndDate(schoolClass, today)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                        "attendace sheet not found. load the attendance sheet first"));
-        AttendanceRecords record = new AttendanceRecords();
-        record.setDate(today);
-        record.setStudent(studentProfile);
-        record.setSheet(sheetFound);
-        record.setStatus(ClassAttendanceStatus.PRESENT);
         studentProfile.setStudentFullName(registerStudentDTO.studentFullName());
         studentProfile.setStudentAdm(studentAdm);
         studentProfile.setPhoneNumber(registerStudentDTO.phoneNumber());
@@ -108,7 +91,6 @@ public class StudentRegistrationService {
 
         // Save student profile
         studentProfileRepository.save(studentProfile);
-        attendanceRecordRepository.save(record);
         return SchoolApiResponse.success("student registered successfully");
     }
 

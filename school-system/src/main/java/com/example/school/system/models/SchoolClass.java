@@ -60,7 +60,7 @@ public class SchoolClass {
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     List<StudentProfile> student;
     // relationship between class and marks
-    @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
+    @OneToMany
     List<Marks> marks;
 
     @OneToMany(mappedBy = "schoolClass")
