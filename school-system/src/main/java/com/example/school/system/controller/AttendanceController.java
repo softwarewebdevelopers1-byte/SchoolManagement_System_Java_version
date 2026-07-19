@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
 import com.example.school.system.DTO.StudentAttendanceDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -28,6 +29,12 @@ public class AttendanceController {
     public ResponseEntity<?> loadAttendanceSheet(@RequestParam UUID classId) {
         AttendanceSheetDTO sheet = attendanceService.getOrCreateSheet(classId);
         return ResponseEntity.status(200).body(SchoolApiResponse.success(sheet, "sheet loaded"));
+    }
+
+    @GetMapping("/student/attendance/record")
+    public ResponseEntity<?> getStudentAttendanceRecord(@Valid @RequestBody FetchSingleDayStudentAttendance record) {
+        var studentRecord = attendanceService.getStudentSingleDayRecord(record);
+        return ResponseEntity.status(200).body(studentRecord);
     }
 
     @PatchMapping("/sheet")

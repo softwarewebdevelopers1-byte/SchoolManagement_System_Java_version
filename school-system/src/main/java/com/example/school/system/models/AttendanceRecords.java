@@ -1,5 +1,6 @@
 package com.example.school.system.models;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.example.school.system.types.ClassAttendanceStatus;
@@ -29,6 +30,8 @@ public class AttendanceRecords {
     @Enumerated(EnumType.STRING)
     ClassAttendanceStatus status;
 
+    private LocalDate date;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     StudentProfile student;
@@ -44,4 +47,3 @@ public class AttendanceRecords {
         }
     }
 }
-

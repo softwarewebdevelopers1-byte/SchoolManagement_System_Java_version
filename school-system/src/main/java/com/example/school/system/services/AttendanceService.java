@@ -7,16 +7,20 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
 import com.example.school.system.DTO.StudentAttendanceDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceRecordDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
+import com.example.school.system.DTO.DTOResponse.SingleDayStudentAttendanceRecord;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.AttendanceRecords;
 import com.example.school.system.models.AttendanceSheet;
 import com.example.school.system.models.SchoolClass;
+import com.example.school.system.models.StudentProfile;
 import com.example.school.system.repository.AttendanceRecordRepository;
 import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.types.ClassAttendanceStatus;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +31,7 @@ public class AttendanceService {
     private final AttendanceSheetRepository attendanceSheetRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final SchoolClassRepository schoolClassRepository;
+    private final StudentRepository studentRepository;
 
     @Transactional
     public AttendanceSheetDTO getOrCreateSheet(UUID classId) {
@@ -66,6 +71,7 @@ public class AttendanceService {
             r.setStudent(s);
             r.setSheet(sheet);
             r.setStatus(ClassAttendanceStatus.PRESENT);
+            r.setDate(date);
             return r;
         }).toList();
         sheet.setAttendanceRecords(records);
@@ -81,4 +87,19 @@ public class AttendanceService {
         attendanceRecordRepository.save(studentRecord);
 
     }
+
+    @Transactional
+    public SingleDayStudentAttendanceRecord getStudentSingleDayRecord(
+            FetchSingleDayStudentAttendance fetchSingleDayStudentAttendance) {
+        StudentProfile student = studentRepository.findByStudentAdm(fetchSingleDayStudentAttendance.studentAdm())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
+        AttendanceRecords recordFound = attendanceRecordRepository.findByStudentAndDate(student,
+                fetchSingleDayStudentAttendance.date())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student record not found"));
+        return SingleDayStudentAttendanceRecord.builder().recordDate(recordFound.getDate())
+                .studentName(student.getStudentFullName()).studentAdm(student.getStudentAdm())
+                .status(recordFound.getStatus()).build();
+
+    }
+
 }
