@@ -54,7 +54,7 @@ public class StudentProfile {
     @JoinColumn(name = "student_account")
     Users student;
 
-    @OneToMany(mappedBy = "student")
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     List<AttendanceRecords> attendanceRecords;
 
     @PreUpdate
