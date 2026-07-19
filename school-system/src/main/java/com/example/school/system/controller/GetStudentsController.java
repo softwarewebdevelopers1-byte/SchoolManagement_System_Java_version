@@ -7,8 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.GetStudentsOfSpecificClass;
-import com.example.school.system.services.SchoolClassService;
-
+import com.example.school.system.services.GetStudentsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -16,13 +15,12 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class GetStudentsController {
-    private final SchoolClassService schoolClassService;
+    private final GetStudentsService getStudentsService;
 
     @GetMapping("/get/students")
     public List<?> GetStudentsOfSpecificClass(
             @Valid @RequestBody GetStudentsOfSpecificClass getStudentsOfSpecificClass,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size
-           ) {
-        return schoolClassService.getStudentByClass(getStudentsOfSpecificClass, page, size);
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return getStudentsService.getStudentByClass(getStudentsOfSpecificClass, page, size);
     }
 }
