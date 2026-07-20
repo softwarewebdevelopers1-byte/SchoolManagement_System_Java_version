@@ -37,8 +37,9 @@ public class AttendanceService {
 
         @Transactional
         public AttendanceSheetDTO getOrCreateSheet(ClassAttendanceDTO classAttendanceDTO) {
-                SchoolClass schoolClass = schoolClassRepository.findById(classAttendanceDTO.classId())
+                SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+                studentsExistence(schoolClass);
                 if (schoolClass.getTeacher() == null) {
                         throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
                 }
@@ -52,6 +53,12 @@ public class AttendanceService {
                 return toAttendanceSheetDto(sheet);
         }
 
+        private void studentsExistence(SchoolClass schoolClass) {
+                if (schoolClass.getStudent().isEmpty() || schoolClass.getStudent() == null) {
+                        throw new SchoolResourceNotFoundExceptionHandler("No active students");
+                }
+        }
+        
         private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
 
                 List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
@@ -71,7 +78,7 @@ public class AttendanceService {
         }
 
         private AttendanceSheet createNewSheet(SchoolClass schoolClass, LocalDate date) {
-
+                studentsExistence(schoolClass);
                 AttendanceSheet sheet = new AttendanceSheet();
                 sheet.setSchoolClass(schoolClass);
                 sheet.setDate(date);
