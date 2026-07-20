@@ -12,10 +12,12 @@ import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.AccountStatus;
@@ -32,9 +34,12 @@ public class StudentRegistrationService {
     private final SchoolClassRepository schoolClassRepository;
     private final UserRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SchoolRepository schoolRepository;
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
+        School schoolFound = schoolRepository.findById(registerStudentDTO.schoolId())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         // Validate and fetch class if provided
         SchoolClass schoolClass = null;
         if (registerStudentDTO.classId() != null) {
@@ -71,6 +76,7 @@ public class StudentRegistrationService {
         // default password
         String studentPassword = "student";
         user.setEmail(email);
+        user.setSchool(schoolFound);
         user.setPassword(passwordEncoder.encode(studentPassword));
         Set<UserRoles> studentRole = new HashSet<>();
         studentRole.add(UserRoles.STUDENT);
