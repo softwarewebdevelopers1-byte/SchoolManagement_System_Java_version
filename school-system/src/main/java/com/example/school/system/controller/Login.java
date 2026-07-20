@@ -2,6 +2,7 @@ package com.example.school.system.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.LoginUserDTO;
+import com.example.school.system.DTO.DTOResponse.LoginResponse;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.LoginService;
 
@@ -21,8 +22,8 @@ public class Login {
 
     @PostMapping("/login-user")
     public ResponseEntity<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
-        var token = loginUserService.LoginUser(userLogin);
-        return ResponseEntity.status(200).body(SchoolApiResponse.success(token, "User logged in"));
+        LoginResponse loginRes = loginUserService.LoginUser(userLogin);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(loginRes, "User logged in"));
     }
 
 }
