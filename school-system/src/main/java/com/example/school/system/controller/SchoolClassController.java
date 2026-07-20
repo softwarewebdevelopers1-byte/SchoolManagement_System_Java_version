@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.DTO.DTOResponse.UnassignClassTeacherDTO;
 import com.example.school.system.services.SchoolClassService;
 
 import jakarta.validation.Valid;
@@ -41,9 +42,16 @@ public class SchoolClassController {
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PatchMapping("/update/class")
-    public ResponseEntity<?> updateClassDetails(@RequestBody SchoolClassUpdate classUpdate) {
+    public ResponseEntity<?> updateClassDetails(@Valid @RequestBody SchoolClassUpdate classUpdate) {
         SchoolApiResponse<?> res = schoolClassService.updateClass(classUpdate);
         return ResponseEntity.status(200).body(res);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/unassign/classteacher")
+    public ResponseEntity<?> unAssignTeacher(@Valid @RequestBody UnassignClassTeacherDTO unassignClassTeacher) {
+        var unassignRes = schoolClassService.unAssignClassTeacher(unassignClassTeacher);
+        return ResponseEntity.ok(unassignRes);
     }
 
 }
