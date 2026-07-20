@@ -42,7 +42,7 @@ public class GetStudentsService {
                 pageable);
         List<?> students = studentProfiles.stream().map(s -> {
             return GetStudentByClassDTO.builder().fullName(s.getStudentFullName()).adm(s.getStudentAdm())
-                    .studentProfileId(s.getId()).build();
+                   .build();
         }).toList();
         return students;
     }
@@ -60,11 +60,9 @@ public class GetStudentsService {
             StudentProfile studentProfile = s.getStudentProfile();
             return GetAllStudentsDTORes.builder().fullName(studentProfile.getStudentFullName())
                     .adm(studentProfile.getStudentAdm()).status(s.getStatus()).userId(s.getId())
-                    .studentProfileId(studentProfile.getId())
                     .email(s.getEmail())
                     .build();
         }).toList();
     }
 
 }
-

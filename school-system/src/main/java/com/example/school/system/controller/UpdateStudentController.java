@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class UpdateStudentController {
     private final UpdateStudentService UpdateStudentService;
 
-    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/id")
     public ResponseEntity<?> updateStudent(@RequestBody UpdateStudentDTO updateStudentDTO) {
         UpdateStudentService.updateStudent(updateStudentDTO);

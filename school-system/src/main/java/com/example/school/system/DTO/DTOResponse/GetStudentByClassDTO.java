@@ -1,7 +1,5 @@
 package com.example.school.system.DTO.DTOResponse;
 
-import java.util.UUID;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +9,5 @@ import lombok.Setter;
 @Builder
 public class GetStudentByClassDTO {
     String fullName;
-    UUID studentProfileId;
     String adm;
 }

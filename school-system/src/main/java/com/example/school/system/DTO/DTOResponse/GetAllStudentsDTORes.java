@@ -16,6 +16,5 @@ public class GetAllStudentsDTORes {
     String adm;
     AccountStatus status;
     UUID userId;
-    UUID studentProfileId;
     String email;
 }
