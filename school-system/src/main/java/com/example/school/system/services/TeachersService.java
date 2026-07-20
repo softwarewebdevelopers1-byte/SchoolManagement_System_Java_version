@@ -54,7 +54,6 @@ public class TeachersService {
                     userClass.append(teacherClass.getClassStream());
 
                     teachersDTO.setSchoolClass(userClass.toString());
-                    teachersDTO.setTeacherId(user.getId());
                 }
                 teachersDTO.setFirstName(profile.getFirstName());
                 teachersDTO.setLastName(profile.getLastName());

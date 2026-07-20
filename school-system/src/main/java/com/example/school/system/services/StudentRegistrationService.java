@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -12,10 +13,12 @@ import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.AttendanceSheet;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.Users;
+import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
@@ -35,6 +38,7 @@ public class StudentRegistrationService {
     private final UserRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final SchoolRepository schoolRepository;
+    private final AttendanceSheetRepository attendanceSheetRepository;
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
@@ -70,7 +74,7 @@ public class StudentRegistrationService {
                 throw new SchoolResourceNotFoundExceptionHandler("Admission number already exists: " + studentAdm);
             }
         }
-
+// AttendanceSheet sheet=attendanceSheetRepository.findBySchoolClassAndDate(schoolClass,LocalDate.now());
         // Create Users account first
         Users user = new Users();
         // default password
@@ -85,7 +89,7 @@ public class StudentRegistrationService {
 
         // Save user first
         Users savedUser = usersRepository.save(user);
-        log.info("User account created with ID: {}", savedUser.getId());
+       
 
         // Create student profile
         StudentProfile studentProfile = new StudentProfile();

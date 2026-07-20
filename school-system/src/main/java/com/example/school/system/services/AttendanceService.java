@@ -46,7 +46,8 @@ public class AttendanceService {
                         throw new SchoolResourceLockedExceptionHandler("You're not the class teacher");
                 }
                 LocalDate timeNow = LocalDate.now();
-                AttendanceSheet sheet = attendanceSheetRepository.findBySchoolClassAndDate(schoolClass, timeNow)
+                AttendanceSheet sheet = attendanceSheetRepository
+                                .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
                                 .orElseGet(() -> createNewSheet(schoolClass, timeNow));
                 return toAttendanceSheetDto(sheet);
         }
@@ -132,7 +133,8 @@ public class AttendanceService {
                         throw new SchoolResourceLockedExceptionHandler("Not your class");
                 }
                 AttendanceSheet sheet = attendanceSheetRepository
-                                .findBySchoolClassAndDate(classFound, attendaceSheetSpecificDate.date())
+                                .findBySchoolClassClassIdAndDate(attendaceSheetSpecificDate.classId(),
+                                                attendaceSheetSpecificDate.date())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
                                                 "attendance sheet not found"));
                 return toAttendanceSheetDto(sheet);

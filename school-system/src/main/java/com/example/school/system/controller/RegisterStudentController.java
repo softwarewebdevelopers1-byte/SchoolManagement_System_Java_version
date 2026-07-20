@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-@PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
+@PreAuthorize("hasAnyRole('ADMIN')")
 public class RegisterStudentController {
     private final StudentRegistrationService studentRegistrationService;
 

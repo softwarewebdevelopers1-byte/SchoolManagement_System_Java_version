@@ -19,5 +19,4 @@ public class GetTeachersDTO {
         private Set<UserRoles> roles;
         private String schoolClass;
         private UUID usersId;
-        private UUID teacherId;
 }
