@@ -15,7 +15,6 @@ import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
-import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
@@ -29,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TeachersService {
     private final UserRepository userRepository;
-    private final SchoolClassRepository gradeRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
@@ -87,9 +85,6 @@ public class TeachersService {
         // 2. Get the teacher profile - FIXED
         TeacherProfile teacher = user.getTeacherProfile(); // Direct access from user
         String response = "Teacher profile doesn't exist";
-        if (editTeacher.schoolClassId() != null && teacher == null) {
-            throw new SchoolResourceNotFoundExceptionHandler(response);
-        }
         if (editTeacher.firstName() != null && teacher == null) {
             throw new SchoolResourceNotFoundExceptionHandler(response);
         }
@@ -107,15 +102,6 @@ public class TeachersService {
         if (!user.getEmail().equals(newEmail)
                 && userRepository.existsByEmail(newEmail)) {
             throw new SchoolResourceExistsExceptionHandler("user already exists");
-        }
-
-        if (teacher != null) {
-
-            if (editTeacher.schoolClassId() != null) {
-                var classFound = gradeRepository.findById(editTeacher.schoolClassId())
-                        .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-                teacher.setSchoolClass(classFound);
-            }
         }
 
         if (editTeacher.password() != null) {
@@ -169,4 +155,3 @@ public class TeachersService {
         teacherProfileRepository.save(profile);
     }
 };
-

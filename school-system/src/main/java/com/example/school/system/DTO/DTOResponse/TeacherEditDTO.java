@@ -14,6 +14,5 @@ public record TeacherEditDTO(@Email String email,
         String firstName,
         String lastName,
         Set<UserRoles> roles,
-        UUID schoolClassId,
         @NotNull(message = "teacher id is required") UUID teacherId) {
 }
