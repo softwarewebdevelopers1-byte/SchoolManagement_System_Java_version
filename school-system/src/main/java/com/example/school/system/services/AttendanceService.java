@@ -2,6 +2,9 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +53,22 @@ public class AttendanceService {
                 AttendanceSheet sheet = attendanceSheetRepository
                                 .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
                                 .orElseGet(() -> createNewSheet(schoolClass, timeNow));
+                syncAllStudents(sheet);
                 return toAttendanceSheetDto(sheet);
+        }
+
+        private void syncAllStudents(AttendanceSheet attendanceSheet) {
+                Set<UUID> attendanceRecordsId = attendanceSheet.getAttendanceRecords().stream().map(s -> {
+                        return s.getStudent().getId();
+                }).collect(Collectors.toSet());
+
+                attendanceSheet.getSchoolClass().getStudent().stream()
+                                .filter(s -> !attendanceRecordsId.contains(s.getId())).forEach(s -> {
+                                        AttendanceRecords attendanceRecord = new AttendanceRecords();
+                                        attendanceRecord.setStudent(s);
+                                        attendanceRecord.setSheet(attendanceSheet);
+                                        attendanceRecordRepository.save(attendanceRecord);
+                                });
         }
 
         private void studentsExistence(SchoolClass schoolClass) {
@@ -58,11 +76,11 @@ public class AttendanceService {
                         throw new SchoolResourceNotFoundExceptionHandler("No active students");
                 }
         }
-        
+
         private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
 
                 List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
-                        AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder()
+                        AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder().recordId(r.getId())
                                         .studentName(r.getStudent().getStudentFullName()).status(r.getStatus()).build();
                         return recordDTO;
                 }).toList();

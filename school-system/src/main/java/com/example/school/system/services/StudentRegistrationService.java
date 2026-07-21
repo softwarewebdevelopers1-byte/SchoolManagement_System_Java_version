@@ -1,34 +1,25 @@
 package com.example.school.system.services;
 
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
-import com.example.school.system.models.AttendanceRecords;
-import com.example.school.system.models.AttendanceSheet;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.Users;
-import com.example.school.system.repository.AttendanceRecordRepository;
-import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.AccountStatus;
-import com.example.school.system.types.ClassAttendanceStatus;
 import com.example.school.system.types.UserRoles;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,8 +32,6 @@ public class StudentRegistrationService {
     private final UserRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final SchoolRepository schoolRepository;
-    private final AttendanceSheetRepository attendanceSheetRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
@@ -75,14 +64,6 @@ public class StudentRegistrationService {
                 throw new SchoolResourceNotFoundExceptionHandler("Admission number already exists: " + studentAdm);
             }
         }
-        AttendanceSheet sheet = attendanceSheetRepository
-                .findBySchoolClassClassIdAndDate(schoolClass.getClassId(), LocalDate.now())
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                        "attendace sheet not found. load attendance sheet first"));
-        AttendanceRecords attendanceRecord = new AttendanceRecords();
-        attendanceRecord.setSheet(sheet);
-        attendanceRecord.setDate(sheet.getDate());
-        attendanceRecord.setStatus(ClassAttendanceStatus.PRESENT);
         // Create Users account first
         Users user = new Users();
         // default password
@@ -105,12 +86,10 @@ public class StudentRegistrationService {
         studentProfile.setPhoneNumber(registerStudentDTO.phoneNumber());
         studentProfile.setSchoolClass(schoolClass);
         studentProfile.setStudent(savedUser);
-        attendanceRecord.setStudent(studentProfile);
         // Link to user account
 
         // Save student profile
         studentProfileRepository.save(studentProfile);
-        attendanceRecordRepository.save(attendanceRecord);
         return SchoolApiResponse.success("student registered successfully");
     }
 

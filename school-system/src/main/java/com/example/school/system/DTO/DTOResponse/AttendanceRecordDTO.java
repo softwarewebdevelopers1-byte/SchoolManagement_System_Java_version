@@ -14,7 +14,8 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 public class AttendanceRecordDTO {
-    private UUID studentId;
+    private UUID recordId;
     private String studentName;
     private ClassAttendanceStatus status;
 }
+
