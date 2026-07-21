@@ -1,14 +1,14 @@
 package com.example.school.system.models;
 
-import java.util.List;
+import java.util.UUID;
 
-import jakarta.persistence.CascadeType;
+import com.github.f4b6a3.uuid.UuidCreator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -26,33 +26,31 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Subject {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "subject_id")
-    Integer subjectId;
-
-    @Column(name = "subject_name", unique = true)
+    @Column(name = "id", nullable = false, insertable = true, updatable = true,columnDefinition = "BINARY(16)")
+    UUID id; 
+    
+    @Column(name = "subject_name")
     @NotBlank(message = "subject name is missing")
     String subjectName;
 
-    @Column(name = "subject_type")
-    String subjectType = "compulsory";
+    @ManyToOne
+    @JoinColumn(name = "school_id")
+    private School school;
 
-    // relationship between subject and marks
-    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
-    List<Marks> marks;
-
-    // create relationship between subject and TeacherSubject entity
-    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
-    List<TeacherLinkedToSubject> teacherSubjects;
-
-    @PrePersist
     @PreUpdate
     private void normalze() {
         if (subjectName != null) {
             subjectName = subjectName.trim().toLowerCase();
         }
-        if (subjectType != null) {
-            subjectType = subjectType.trim().toLowerCase();
+    }
+
+    @PrePersist
+    private void generateIdAndNormalize() {
+        if (id == null) {
+            id = UuidCreator.getTimeOrdered();
+        }
+        if (subjectName != null) {
+            subjectName = subjectName.trim().toLowerCase();
         }
     }
 }
