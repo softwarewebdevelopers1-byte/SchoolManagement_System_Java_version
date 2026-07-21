@@ -54,6 +54,9 @@ public class AttendanceService {
                                 .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
                                 .orElseGet(() -> createNewSheet(schoolClass, timeNow));
                 syncAllStudents(sheet);
+                attendanceSheetRepository.save(sheet);
+                sheet = attendanceSheetRepository
+                                .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow).orElseThrow();
                 return toAttendanceSheetDto(sheet);
         }
 
@@ -67,7 +70,8 @@ public class AttendanceService {
                                         AttendanceRecords attendanceRecord = new AttendanceRecords();
                                         attendanceRecord.setStudent(s);
                                         attendanceRecord.setSheet(attendanceSheet);
-                                        attendanceRecordRepository.save(attendanceRecord);
+                                        attendanceRecord.setStatus(ClassAttendanceStatus.PRESENT);
+                                        attendanceSheet.getAttendanceRecords().add(attendanceRecord);
                                 });
         }
 
