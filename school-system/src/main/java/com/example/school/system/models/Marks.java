@@ -30,15 +30,13 @@ public class Marks {
     @Column(name = "total_marks")
     private Integer totalMarks = 0;
 
+    @ManyToOne
+    @JoinColumn(name = "subject_joint_id")
+    private SubjectJoint subjectJoint;
     // relationship between marks and student
     @ManyToOne
     @JoinColumn(name = "student_id")
     private StudentProfile student;
-
-    // relationship between marks and class
-    @ManyToOne
-    @JoinColumn(name = "class_id")
-    private SchoolClass schoolClass;
 
     @PreUpdate
     @PrePersist

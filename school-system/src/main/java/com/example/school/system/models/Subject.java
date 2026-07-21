@@ -1,5 +1,6 @@
 package com.example.school.system.models;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.github.f4b6a3.uuid.UuidCreator;
@@ -9,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -26,9 +28,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Subject {
     @Id
-    @Column(name = "id", nullable = false, insertable = true, updatable = true,columnDefinition = "BINARY(16)")
-    UUID id; 
-    
+    @Column(name = "id", nullable = false, insertable = true, updatable = true, columnDefinition = "BINARY(16)")
+    UUID id;
+
     @Column(name = "subject_name")
     @NotBlank(message = "subject name is missing")
     String subjectName;
@@ -36,6 +38,9 @@ public class Subject {
     @ManyToOne
     @JoinColumn(name = "school_id")
     private School school;
+
+    @OneToMany(mappedBy = "subject")
+    private List<SubjectJoint> subjectJoints;
 
     @PreUpdate
     private void normalze() {

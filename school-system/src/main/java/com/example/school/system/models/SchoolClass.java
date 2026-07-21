@@ -33,38 +33,38 @@ import lombok.Setter;
 public class SchoolClass {
     @Id
     @Column(name = "class_id", columnDefinition = "BINARY(16)")
-    UUID classId;
+    private UUID classId;
 
     // class as integer for example grade 7
     @NotNull(message = "Grade is missing")
     @Column(name = "grade")
-    Integer classGrade;
+    private Integer classGrade;
 
     // class stream for example North
     @NotBlank(message = "Stream is missing")
     @Column(name = "stream")
-    String classStream;
+    private String classStream;
 
-    LocalDate createdAt;
+    private LocalDate createdAt;
 
-    LocalDate updatedAt;
+    private LocalDate updatedAt;
+
+    @OneToMany(mappedBy = "schoolClass")
+    private List<SubjectJoint> subjectJoints;
 
     // relationship between school and student
     @ManyToOne
     @JoinColumn(name = "school")
-    School school;
+    private School school;
 
     @OneToOne(mappedBy = "schoolClass")
-    TeacherProfile teacher;
+    private TeacherProfile teacher;
     // relationship between class and student
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
-    List<StudentProfile> student;
-    // relationship between class and marks
-    @OneToMany
-    List<Marks> marks;
+    private List<StudentProfile> student;
 
     @OneToMany(mappedBy = "schoolClass")
-    List<AttendanceSheet> attendanceSheets;
+    private List<AttendanceSheet> attendanceSheets;
 
     @PreUpdate
     private void normalize() {
