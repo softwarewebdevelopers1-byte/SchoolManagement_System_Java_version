@@ -30,28 +30,30 @@ import lombok.Setter;
 public class StudentProfile {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "student_id", nullable = false, updatable = false)
-    UUID id;
+    private UUID id;
 
     @Column(name = "student_name")
-    String studentFullName;
+    private String studentFullName;
 
     @Column(name = "student_adm", unique = true)
-    String studentAdm;
+    private String studentAdm;
 
     @Column(name = "phone_number")
-    String phoneNumber;
+    private String phoneNumber;
 
+    @OneToMany(mappedBy = "StudentProfile")
+    List<Marks> marks;
     // relationship between student and class
     @ManyToOne
     @JoinColumn(name = "class_id")
-    SchoolClass schoolClass;
+    private SchoolClass schoolClass;
 
     @OneToOne
     @JoinColumn(name = "student_account")
-    Users student;
+    private Users student;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<AttendanceRecords> attendanceRecords;
+    private List<AttendanceRecords> attendanceRecords;
 
     @PreUpdate
     private void normalze() {
@@ -84,4 +86,3 @@ public class StudentProfile {
         }
     }
 }
-

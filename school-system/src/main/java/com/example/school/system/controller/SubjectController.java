@@ -1,6 +1,9 @@
 package com.example.school.system.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.school.system.DTO.AssignSubjectTeacherDTO;
+import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectUpdateDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -13,11 +16,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
@@ -25,6 +30,20 @@ import org.springframework.web.bind.annotation.PatchMapping;
 @RequestMapping("/api")
 public class SubjectController {
     private final SubjectService subjectService;
+
+    @PostMapping("/assign/subject/teacher")
+    public ResponseEntity<?> assignTeacher(@Valid @RequestBody AssignSubjectTeacherDTO assignSubjectTeacherDTO) {
+        subjectService.subjectAssignment(assignSubjectTeacherDTO.subjectJointId(),
+                assignSubjectTeacherDTO.teacherId());
+        return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher assigned"));
+    }
+
+    @PatchMapping("/unassign/subject/teacher")
+    public ResponseEntity<?> UnAssignTeacher(@Valid @RequestBody AssignSubjectTeacherDTO assignSubjectTeacherDTO) {
+        subjectService.subjectAssignment(assignSubjectTeacherDTO.subjectJointId(),
+                assignSubjectTeacherDTO.teacherId());
+        return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher assigned"));
+    }
 
     @PostMapping("/create/subject")
     public ResponseEntity<?> CreateSingleSubject(
@@ -46,11 +65,23 @@ public class SubjectController {
         return ResponseEntity.ok(updateSubjectRes);
     }
 
-    @GetMapping("/getAll/subjects")
-    public String getSubjects(@RequestBody String entity) {
-
-        return entity;
+    @GetMapping("/getAll/subjects/{id}")
+    public ResponseEntity<?> getSubjects(@PathVariable UUID id) {
+        var response = subjectService.getSubjects(id);
+        return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/register/subject-joint")
+    public ResponseEntity<?> createSubjectJoint(@Valid @RequestBody RegisterSubjectJoint registerSubjectJoint) {
+        subjectService.RegisterSubjectJoint(registerSubjectJoint);
+
+        return ResponseEntity.ok(SchoolApiResponse.success("subject registered"));
+    }
+
+    @GetMapping("/get/all/subject-joints/{schoolId}")
+    public ResponseEntity<?> getAllSubjectJoints(@PathVariable(required = true) UUID schoolId) {
+        var res = subjectService.getAllSubjectJoints(schoolId);
+        return ResponseEntity.ok(res);
+    }
 }
 

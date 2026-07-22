@@ -10,8 +10,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -34,10 +32,6 @@ public class SubjectJoint {
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    @ManyToMany
-    @JoinTable(name = "subject_assignment", joinColumns = @JoinColumn(name = "subject_joint_id"), inverseJoinColumns = @JoinColumn(name = "teacher_id"))
-    List<TeacherProfile> teacherProfile;
-
     @OneToMany(mappedBy = "subjectJoint")
     List<Marks> marks;
 
@@ -45,6 +39,8 @@ public class SubjectJoint {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
+    @ManyToOne
+    private TeacherProfile teacherProfile;
     @PrePersist
     private void generateIdAndNormalize() {
         if (id == null) {
@@ -52,3 +48,4 @@ public class SubjectJoint {
         }
     }
 }
+

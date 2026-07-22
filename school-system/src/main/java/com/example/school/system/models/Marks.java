@@ -1,9 +1,9 @@
 package com.example.school.system.models;
 
+import java.util.UUID;
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -20,8 +20,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Marks {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer marksId;
+    @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
+    private UUID id;
 
     @Column(name = "subject_name")
     @NotBlank(message = "subject name is missing")
@@ -34,11 +34,22 @@ public class Marks {
     @JoinColumn(name = "subject_joint_id")
     private SubjectJoint subjectJoint;
 
+    @ManyToOne
+    @JoinColumn(name = "student_id")
+    private StudentProfile StudentProfile;
+
     @PreUpdate
-    @PrePersist
     private void Normalize() {
         if (subjectName != null) {
             subjectName = subjectName.trim().toLowerCase();
         }
+    }
+
+    @PrePersist
+    private void generateIdAndNormalize() {
+        if (id == null) {
+            id = UuidCreator.getTimeOrdered();
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-package com.example.school.system.DTO.DTOResponse;
+package com.example.school.system.DTO;
 
 import java.util.UUID;
 

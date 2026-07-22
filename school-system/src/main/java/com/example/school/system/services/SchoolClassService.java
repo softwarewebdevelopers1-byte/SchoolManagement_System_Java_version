@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
+import com.example.school.system.DTO.UnassignClassTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.DTO.DTOResponse.UnassignClassTeacherDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
