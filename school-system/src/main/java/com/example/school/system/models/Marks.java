@@ -33,10 +33,6 @@ public class Marks {
     @ManyToOne
     @JoinColumn(name = "subject_joint_id")
     private SubjectJoint subjectJoint;
-    // relationship between marks and student
-    @ManyToOne
-    @JoinColumn(name = "student_id")
-    private StudentProfile student;
 
     @PreUpdate
     @PrePersist

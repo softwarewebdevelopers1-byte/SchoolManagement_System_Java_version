@@ -41,10 +41,6 @@ public class StudentProfile {
     @Column(name = "phone_number")
     String phoneNumber;
 
-    // relationship between student and marks
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL)
-    List<Marks> marks;
-
     // relationship between student and class
     @ManyToOne
     @JoinColumn(name = "class_id")
