@@ -28,7 +28,7 @@ public class SubjectJoint {
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false, insertable = false)
     UUID id;
     @Enumerated(EnumType.STRING)
-    private SubjectType subjectType;
+    private SubjectType subjectType = SubjectType.COMPULSORY;
 
     @ManyToOne
     @JoinColumn(name = "class_id")
