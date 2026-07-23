@@ -8,26 +8,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "marks")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class Marks {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
     private UUID id;
-
-    @Column(name = "subject_name")
-    @NotBlank(message = "subject name is missing")
-    private String subjectName;
 
     private String academicYear;
 
@@ -53,13 +49,6 @@ public class Marks {
     @ManyToOne
     @JoinColumn(name = "student_id")
     private StudentProfile StudentProfile;
-
-    @PreUpdate
-    private void Normalize() {
-        if (subjectName != null) {
-            subjectName = subjectName.trim().toLowerCase();
-        }
-    }
 
     @PrePersist
     private void generateIdAndNormalize() {
