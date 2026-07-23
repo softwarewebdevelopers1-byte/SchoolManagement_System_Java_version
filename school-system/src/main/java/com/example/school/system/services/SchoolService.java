@@ -1,10 +1,8 @@
 package com.example.school.system.services;
 
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.OtpCreationDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
@@ -20,7 +18,6 @@ import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.OtpPurpose;
 import com.example.school.system.types.SchoolStatus;
-
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 

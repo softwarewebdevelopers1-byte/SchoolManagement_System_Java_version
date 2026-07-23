@@ -3,9 +3,9 @@ package com.example.school.system.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.types.SubjectType;
 
@@ -22,4 +22,10 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
             UUID schoolId);
 
     List<SubjectJoint> findAllBySubjectTypeAndSchoolClassClassId(SubjectType subjectType, UUID classId);
+
+    @Query("""
+            SELECT s FROM SubjectJoint s WHERE NOT s.subjectType = :subjectType AND id = :id
+            """)
+    Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
+            @Param("subjectType") SubjectType subjectType);
 }

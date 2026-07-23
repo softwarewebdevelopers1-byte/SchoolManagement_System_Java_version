@@ -1,9 +1,10 @@
 package com.example.school.system.models;
 
+import java.time.LocalDate;
+import java.util.UUID;
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -23,27 +24,37 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SchoolSettings {
   @Id
-  @Column(name = "settings_id")
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Integer settingsId;
+  @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
+  private UUID id;
 
+  private String academicYear;
   // for example term one
   @Column(name = "term")
-  Integer schoolTerm = 1;
+  private Integer currentSchoolTerm = 1;
 
   // for example term one opener
   @Column(name = "sub_term")
-  String subTerm = "opener";
+  private String currentSubTerm = "opener";
 
   // relationship between settings and school
   @OneToOne
   @JoinColumn(name = "school_id")
-  School school;
-  @PrePersist
+  private School school;
+
   @PreUpdate
   private void normalze() {
-    if (subTerm != null) {
-      subTerm = subTerm.trim().toLowerCase();
+    if (currentSubTerm != null) {
+      currentSubTerm = currentSubTerm.trim().toLowerCase();
+    }
+  }
+
+  @PrePersist
+  private void generateIdAndNormalize() {
+    if (id == null) {
+      id = UuidCreator.getTimeOrdered();
+    }
+    if (academicYear == null) {
+      academicYear = String.valueOf(LocalDate.now().getYear());
     }
   }
 }
