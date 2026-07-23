@@ -3,6 +3,7 @@ package com.example.school.system.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.AssignSubjectTeacherDTO;
+import com.example.school.system.DTO.RegisterStudentsToSubjectDTO;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectUnassignment;
@@ -85,6 +86,16 @@ public class SubjectController {
         subjectService.RegisterSubjectJoint(registerSubjectJoint);
 
         return ResponseEntity.ok(SchoolApiResponse.success("subject registered"));
+    }
+
+    @PostMapping("/register/singlestudent/subject-joint")
+    public ResponseEntity<?> studentSubjectJointReg(
+            @Valid @RequestBody RegisterStudentsToSubjectDTO registerStudentsToSubjectDTO) {
+        subjectService.registerStudentsToSubject(registerStudentsToSubjectDTO.studentId(),
+                registerStudentsToSubjectDTO.subjectJoint(), registerStudentsToSubjectDTO.schoolId(),
+                registerStudentsToSubjectDTO.electiveCode());
+        ;
+        return ResponseEntity.ok(SchoolApiResponse.success("student registered successfully"));
     }
 
     @GetMapping("/get/all/subject-joints/{schoolId}")

@@ -16,5 +16,10 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
 
     List<SubjectJoint> findAllBySchoolClass_schoolId(UUID schoolId);
 
+    Optional<SubjectJoint> findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(UUID subjectJointId,
+            String electiveCode,
+            SubjectType subjectType,
+            UUID schoolId);
+
     List<SubjectJoint> findAllBySubjectTypeAndSchoolClassClassId(SubjectType subjectType, UUID classId);
 }

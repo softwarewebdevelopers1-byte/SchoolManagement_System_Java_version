@@ -17,6 +17,7 @@ import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
+import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.repository.SubjectRepository;
@@ -25,6 +26,8 @@ import com.example.school.system.types.SubjectType;
 import lombok.RequiredArgsConstructor;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
+import com.example.school.system.models.StudentProfile;
+import com.example.school.system.models.StudentSubjectSelection;
 import com.example.school.system.models.Subject;
 // import lombok.AllArgsConstructor;
 import com.example.school.system.models.SubjectJoint;
@@ -38,7 +41,8 @@ public class SubjectService {
     private final SchoolRepository schoolRepository;
     private final SubjectJointRepo subjectJointRepo;
     private final TeacherProfileRepository teacherProfileRepository;
-    private final StudentSubjectSelectionRepo studentSubjectSelection;
+    private final StudentSubjectSelectionRepo studentSubjectSelectionRepo;
+    private final StudentRepository studentRepository;
 
     public SchoolApiResponse<?> createSingleSubject(SubjectDTO subjectCreationDTO) {
         subjectRepository.save(toSubject(subjectCreationDTO));
@@ -189,8 +193,21 @@ public class SubjectService {
         return subjectJointsDto;
     }
 
-    public void registerStudentsToSubject() {
-
+    public void registerStudentsToSubject(UUID studentId, UUID subjectJoint, UUID schoolId, String electiveCode) {
+        StudentProfile studentProfile = studentRepository.findById(studentId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
+        SubjectJoint subjectJointFound = subjectJointRepo
+                .findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(subjectJoint, electiveCode,
+                        SubjectType.ELECTIVE, schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
+        if (studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, studentId)) {
+            throw new SchoolResourceExistsExceptionHandler("Student already enrolled in the same elective pair");
+        }
+        StudentSubjectSelection subjectSelection = new StudentSubjectSelection();
+        subjectSelection.setElectiveCode(electiveCode);
+        subjectSelection.setStudentProfile(studentProfile);
+        subjectSelection.setSubjectJoint(subjectJointFound);
+        studentSubjectSelectionRepo.save(subjectSelection);
     }
 
     public void updateSubjectJointStatus(UUID subjectJointId, SubjectType subjectType, String electiveCode) {
@@ -203,7 +220,7 @@ public class SubjectService {
             subjectJoint.setElectiveCode(electiveCode);
         } else {
             if (subjectJoint.getSubjectType() == SubjectType.ELECTIVE) {
-                studentSubjectSelection.deleteBySubjectJointId(subjectJointId);
+                studentSubjectSelectionRepo.deleteBySubjectJointId(subjectJointId);
             }
             subjectJoint.setElectiveCode(null);
         }
