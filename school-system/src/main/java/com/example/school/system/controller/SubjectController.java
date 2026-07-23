@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.AssignSubjectTeacherDTO;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
+import com.example.school.system.DTO.SubjectUnassignment;
 import com.example.school.system.DTO.SubjectUpdateDTO;
+import com.example.school.system.DTO.UpdateSubjectJoint;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SubjectService;
 import jakarta.validation.Valid;
@@ -39,10 +41,9 @@ public class SubjectController {
     }
 
     @PatchMapping("/unassign/subject/teacher")
-    public ResponseEntity<?> UnAssignTeacher(@Valid @RequestBody AssignSubjectTeacherDTO assignSubjectTeacherDTO) {
-        subjectService.subjectAssignment(assignSubjectTeacherDTO.subjectJointId(),
-                assignSubjectTeacherDTO.teacherId());
-        return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher assigned"));
+    public ResponseEntity<?> UnAssignTeacher(@Valid @RequestBody SubjectUnassignment subjectUnassignment) {
+        subjectService.subjectUnassignment(subjectUnassignment.subjectJointId(), subjectUnassignment.teacherId());
+        return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher unassigned"));
     }
 
     @PostMapping("/create/subject")
@@ -65,6 +66,14 @@ public class SubjectController {
         return ResponseEntity.ok(updateSubjectRes);
     }
 
+    @PatchMapping("/update/subject-joint")
+    public ResponseEntity<?> updateSubjectJoint(@RequestBody UpdateSubjectJoint updateSubjectJoint) {
+        subjectService.updateSubjectJointStatus(updateSubjectJoint.subjectJointId(),
+                updateSubjectJoint.subjectType(), updateSubjectJoint.electiveCode());
+        ;
+        return ResponseEntity.ok(SchoolApiResponse.success("subject updated"));
+    }
+
     @GetMapping("/getAll/subjects/{id}")
     public ResponseEntity<?> getSubjects(@PathVariable UUID id) {
         var response = subjectService.getSubjects(id);
@@ -84,4 +93,3 @@ public class SubjectController {
         return ResponseEntity.ok(res);
     }
 }
-

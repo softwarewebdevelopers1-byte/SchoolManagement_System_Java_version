@@ -41,6 +41,9 @@ public class StudentProfile {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @OneToMany(mappedBy = "studentProfile")
+    List<StudentSubjectSelection> studentSubjectSelections;
+
     @OneToMany(mappedBy = "StudentProfile")
     List<Marks> marks;
     // relationship between student and class

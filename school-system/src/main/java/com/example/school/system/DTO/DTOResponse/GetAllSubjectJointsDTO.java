@@ -18,4 +18,5 @@ public class GetAllSubjectJointsDTO {
     private UUID subjectTeacherId;
     private String subjectTeacherName;
     private SubjectType subjectType;
+    private String electiveCode;
 }

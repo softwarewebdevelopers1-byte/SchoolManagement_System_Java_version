@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.school.system.models.SubjectJoint;
+import com.example.school.system.types.SubjectType;
 
 public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
     Optional<SubjectJoint> findByIdAndSchoolClassClassId(UUID id, UUID classId);
@@ -14,4 +15,6 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
     boolean existsBySubjectIdAndSchoolClassClassId(UUID subjectId, UUID classId);
 
     List<SubjectJoint> findAllBySchoolClass_schoolId(UUID schoolId);
+
+    List<SubjectJoint> findAllBySubjectTypeAndSchoolClassClassId(SubjectType subjectType, UUID classId);
 }

@@ -39,8 +39,14 @@ public class SubjectJoint {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
+    @OneToMany(mappedBy = "subjectJoint")
+    List<StudentSubjectSelection> studentSubjectSelections;
+
+    private String electiveCode;
+
     @ManyToOne
     private TeacherProfile teacherProfile;
+
     @PrePersist
     private void generateIdAndNormalize() {
         if (id == null) {
@@ -48,4 +54,3 @@ public class SubjectJoint {
         }
     }
 }
-
