@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.services.MarksEntryService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,7 +28,7 @@ public class MarksEntryController {
     }
 
     @PostMapping("/marks/entry")
-    public ResponseEntity<?> marksEntry(@RequestBody MarksheetSaveRequest marksheetSaveRequest) {
+    public ResponseEntity<?> marksEntry(@Valid @RequestBody MarksheetSaveRequest marksheetSaveRequest) {
         var res = marksEntryService.saveMarks(marksheetSaveRequest);
         return ResponseEntity.status(201).body(res);
     }

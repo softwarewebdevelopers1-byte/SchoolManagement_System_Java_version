@@ -31,12 +31,16 @@ public class Marks {
 
     private String currentSubTerm;
 
+    @Column(nullable = true)
     private Integer exam;
 
+    @Column(nullable = true)
     private Integer cat1;
 
+    @Column(nullable = true)
     private Integer cat2;
 
+    @Column(nullable = true)
     private Integer cat3;
 
     @Column(name = "total_marks")

@@ -48,3 +48,4 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
 
     Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
 }
+

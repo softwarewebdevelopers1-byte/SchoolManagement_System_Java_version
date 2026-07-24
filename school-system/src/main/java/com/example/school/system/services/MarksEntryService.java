@@ -91,7 +91,6 @@ public class MarksEntryService {
 
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
-
         marksheetSaveRequest.markInputDTOs().forEach(m -> {
             if (!validStudentIds.contains(m.studentId())) {
                 throw new SchoolResourceNotFoundExceptionHandler("student not registered for this subject");
@@ -122,7 +121,7 @@ public class MarksEntryService {
 
             }
             mark.setSubjectJoint(subjectJoint);
-            mark.setTotalMarks(claculate(m));
+            // mark.setTotalMarks(claculate(m));
             marksRepo.save(mark);
         });
         return SchoolApiResponse.success("Marks saved successfully");
