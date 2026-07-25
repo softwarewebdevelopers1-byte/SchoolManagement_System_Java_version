@@ -1,14 +1,15 @@
 package com.example.school.system.services;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.example.school.system.DTO.MarkInputDTO;
 import com.example.school.system.DTO.MarksRowDTO;
 import com.example.school.system.DTO.MarksSheetDTO;
@@ -16,18 +17,19 @@ import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.Marks;
+import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.StudentSubjectSelection;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.repository.MarksRepo;
+import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.types.SubjectType;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,6 +40,7 @@ public class MarksEntryService {
     private final StudentRepository studentRepository;
     private final StudentSubjectSelectionRepo studentSubjectSelection;
     private final SchoolSettingsRepository settingsRepository;
+    private final MarksSheetRepo marksSheetRepo;
 
     @Transactional
     public MarksSheetDTO loadMarksEntrySheet(UUID subjectJointId) {
@@ -47,27 +50,42 @@ public class MarksEntryService {
 
         List<StudentProfile> students = getStudentsForSubject(subjectJointId, subjectJoint);
         SchoolSettings schoolSettings = schoolClass.getSchool().getSchoolSettings();
-        Map<UUID, Marks> existingMarks = marksRepo
-                .findAllBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(subjectJointId,
+        MarksSheet existingMarkSheet = marksSheetRepo
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(subjectJointId,
                         schoolSettings.getAcademicYear(), schoolSettings.getCurrentSchoolTerm(),
                         schoolSettings.getCurrentSubTerm())
-                .stream().collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
-
+                .orElseGet(() -> createMarksSheet(subjectJoint, schoolSettings, students));
+        Map<UUID, Marks> existingMarks = new HashMap<>();
+        if (existingMarkSheet.getId() != null) {
+            Map<UUID, Marks> dbMarks = marksRepo.findAllByMarksSheetId(existingMarkSheet.getId()).stream()
+                    .collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
+            existingMarks.putAll(dbMarks);
+        }
         List<MarksRowDTO> marksRow = students.stream().map(s -> {
             Marks marks = existingMarks.get(s.getId());
             return MarksRowDTO.builder().studentId(s.getId()).studentName(s.getStudentFullName())
-                    .studentAdm(s.getStudentAdm())
-                    .cat1(marks != null && marks.getCat1() != null ? marks.getCat1() : null)
-                    .cat2(marks != null && marks.getCat2() != null ? marks.getCat2() : null)
-                    .cat3(marks != null && marks.getCat3() != null ? marks.getCat3() : null)
-                    .exam(marks != null && marks.getExam() != null ? marks.getExam() : null)
-                    .build();
+                    .studentAdm(s.getStudentAdm()).cat1(marks != null ? marks.getCat1() : null)
+                    .cat2(marks != null ? marks.getCat2() : null).cat3(marks != null ? marks.getCat3() : null)
+                    .exam(marks != null ? marks.getExam() : null).build();
         }).toList();
+
         return MarksSheetDTO.builder().subjectJointId(subjectJointId)
                 .subjectName(subjectJoint.getSubject().getSubjectName()).subjectType(subjectJoint.getSubjectType())
                 .classId(schoolClass.getClassId())
                 .className(schoolClass.getClassGrade() + " " + schoolClass.getClassStream())
-                .electiveCode(subjectJoint.getElectiveCode()).marksRow(marksRow).build();
+                .electiveCode(subjectJoint.getElectiveCode()).marksRow(marksRow).maxCat1(existingMarkSheet.getMaxCat1())
+                .maxCat2(existingMarkSheet.getMaxCat2()).maxCat3(existingMarkSheet.getMaxCat3())
+                .maxExam(existingMarkSheet.getMaxExam()).build();
+    }
+
+    private MarksSheet createMarksSheet(SubjectJoint subjectJoint,
+            SchoolSettings schoolSettings, List<StudentProfile> students) {
+        MarksSheet newMarksSheet = new MarksSheet();
+        newMarksSheet.setAcademicYear(schoolSettings.getAcademicYear());
+        newMarksSheet.setCurrentSchoolTerm(schoolSettings.getCurrentSchoolTerm());
+        newMarksSheet.setCurrentSubTerm(schoolSettings.getCurrentSubTerm());
+        newMarksSheet.setSubjectJoint(subjectJoint);
+        return newMarksSheet;
     }
 
     private List<StudentProfile> getStudentsForSubject(UUID subjectJointId, SubjectJoint subjectJoint) {
@@ -83,6 +101,7 @@ public class MarksEntryService {
         return studentProfiles;
     }
 
+    @Transactional
     public SchoolApiResponse<?> saveMarks(MarksheetSaveRequest marksheetSaveRequest) {
         SchoolSettings settings = settingsRepository.findBySchoolId(marksheetSaveRequest.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school settings not found"));
@@ -91,44 +110,92 @@ public class MarksEntryService {
 
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
-        marksheetSaveRequest.markInputDTOs().forEach(m -> {
-            if (!validStudentIds.contains(m.studentId())) {
-                throw new SchoolResourceNotFoundExceptionHandler("student not registered for this subject");
-            }
-            Marks mark = marksRepo
-                    .findByStudentProfileIdAndSubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(
-                            m.studentId(), subjectJoint.getId(), settings.getAcademicYear(),
-                            settings.getCurrentSchoolTerm(), settings.getCurrentSubTerm())
-                    .orElseGet(() -> new Marks());
-            mark.setStudentProfile(studentRepository.findById(m.studentId())
-                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found")));
-            mark.setAcademicYear(settings.getAcademicYear());
-            mark.setCurrentSchoolTerm(settings.getCurrentSchoolTerm());
-            mark.setCurrentSubTerm(settings.getCurrentSubTerm());
-            if (m.cat1() != null) {
-                mark.setCat1(m.cat1());
-            }
-            if (m.cat2() != null) {
-                mark.setCat2(m.cat2());
+                
+        MarksSheet marksSheet = marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(
+                subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
+                settings.getCurrentSubTerm())
+                .orElseGet(() -> {
+                    MarksSheet newMarksSheet = new MarksSheet();
+                    newMarksSheet.setSubjectJoint(subjectJoint);
+                    newMarksSheet.setAcademicYear(settings.getAcademicYear());
+                    newMarksSheet.setCurrentSchoolTerm(settings.getCurrentSchoolTerm());
+                    newMarksSheet.setCurrentSubTerm(settings.getCurrentSubTerm());
+                    marksSheetRepo.save(newMarksSheet);
+                    return newMarksSheet;
+                });
+        boolean rubricChanged = !Objects.equals(marksSheet.getMaxCat1(), marksheetSaveRequest.maxCat1())
+                || !Objects.equals(marksSheet.getMaxCat2(), marksheetSaveRequest.maxCat2())
+                || !Objects.equals(marksSheet.getMaxCat3(), marksheetSaveRequest.maxCat3())
+                || !Objects.equals(marksSheet.getMaxExam(), marksheetSaveRequest.maxExam());
 
+        if (rubricChanged) {
+            marksSheet.setMaxCat1(marksheetSaveRequest.maxCat1());
+            marksSheet.setMaxCat2(marksheetSaveRequest.maxCat2());
+            marksSheet.setMaxCat3(marksheetSaveRequest.maxCat3());
+            marksSheet.setMaxExam(marksheetSaveRequest.maxExam());
+        }
+        int skippedStudentsCount = 0;
+        for (MarkInputDTO input : marksheetSaveRequest.markInputDTOs()) {
+            if (!validStudentIds.contains(input.studentId())) {
+                skippedStudentsCount++;
+                continue;
             }
-            if (m.cat3() != null) {
-                mark.setCat3(m.cat3());
-
+            Marks marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
+                    .orElseGet(() -> {
+                        Marks newMarks = new Marks();
+                        newMarks.setMarksSheet(marksSheet);
+                        newMarks.setStudentProfile(studentRepository.getReferenceById(input.studentId()));
+                        return newMarks;
+                    });
+            boolean changed = false;
+            if (!Objects.equals(marks.getCat1(), input.cat1())) {
+                marks.setCat1(input.cat1());
+                changed = true;
             }
-            if (m.exam() != null) {
-                mark.setExam(m.exam());
-
+            if (!Objects.equals(marks.getCat2(), input.cat2())) {
+                marks.setCat2(input.cat2());
+                changed = true;
             }
-            mark.setSubjectJoint(subjectJoint);
-            // mark.setTotalMarks(claculate(m));
-            marksRepo.save(mark);
-        });
-        return SchoolApiResponse.success("Marks saved successfully");
+            if (!Objects.equals(marks.getCat3(), input.cat3())) {
+                marks.setCat3(input.cat3());
+                changed = true;
+            }
+            if (!Objects.equals(marks.getExam(), input.exam())) {
+                marks.setExam(input.exam());
+                changed = true;
+            }
+            if (changed) {
+                marksRepo.save(marks);
+            }
+        }
+        if (rubricChanged) {
+            marksSheetRepo.save(marksSheet);
+        }
+        return SchoolApiResponse.success(skippedStudentsCount,"Marks saved successfully. Above is the count of unsaved students"
+                );
     }
-
-    private Integer claculate(MarkInputDTO input) {
-        return Stream.of(input.cat1(), input.cat2(), input.cat3(), input.exam()).filter(Objects::nonNull)
-                .mapToInt(Integer::intValue).sum();
+    
+    private void calculate(MarksheetSaveRequest marksheetSaveRequest, Marks marks) {
+        int count = 0;
+        int maxPossible = 0;
+        if (marksheetSaveRequest.maxCat1() != null) {
+            maxPossible += marksheetSaveRequest.maxCat1();
+            count++;
+        }
+        if (marksheetSaveRequest.maxCat2() != null) {
+            maxPossible += marksheetSaveRequest.maxCat2();
+            count++;
+        }
+        if (marksheetSaveRequest.maxCat3() != null) {
+            maxPossible += marksheetSaveRequest.maxCat3();
+            count++;
+        }
+        if (marksheetSaveRequest.maxExam() != null) {
+            maxPossible += marksheetSaveRequest.maxExam();
+            count++;
+        }
+        marks.setTotalMarks(maxPossible);
+        marks.setAverageMarksPercentage(maxPossible / count * 100);
+        ;
     }
 }

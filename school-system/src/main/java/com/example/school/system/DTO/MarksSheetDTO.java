@@ -20,4 +20,8 @@ public class MarksSheetDTO {
     private String className;
     private String electiveCode;
     private List<MarksRowDTO> marksRow;
+    private Integer maxCat1;
+    private Integer maxCat2;
+    private Integer maxCat3;
+    private Integer maxExam;
 }

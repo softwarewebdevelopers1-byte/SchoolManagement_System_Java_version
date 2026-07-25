@@ -33,7 +33,7 @@ public class SubjectJoint {
     private SchoolClass schoolClass;
 
     @OneToMany(mappedBy = "subjectJoint")
-    List<Marks> marks;
+    List<MarksSheet> marksSheets;
 
     @ManyToOne
     @JoinColumn(name = "subject_id")

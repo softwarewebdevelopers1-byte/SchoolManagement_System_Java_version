@@ -6,11 +6,12 @@ import java.util.UUID;
 import jakarta.validation.constraints.NotNull;
 
 public record MarksheetSaveRequest(
-        @NotNull(message = "subject joint id is required")
-        UUID subjectJointId,
-        @NotNull(message = "school id is required")
-        UUID schoolId,
-        @NotNull(message = "marks input is required")
-        List<MarkInputDTO> markInputDTOs) {
+                @NotNull(message = "subject joint id is required") UUID subjectJointId,
+                @NotNull(message = "school id is required") UUID schoolId,
+                Integer maxCat1,
+                Integer maxCat2,
+                Integer maxCat3,
+                Integer maxExam,
+                @NotNull(message = "marks input is required") List<MarkInputDTO> markInputDTOs) {
 
 }
