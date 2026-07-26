@@ -10,7 +10,7 @@ import com.example.school.system.models.MarksRow;
 
 public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
         @Query("""
-                        SELECT m FROM Marks m WHERE m.StudentProfile.id = :studentId
+                        SELECT m FROM MarksRow m WHERE m.StudentProfile.id = :studentId
                         AND m.marksSheet.id = :marksSheetId
 
                                     """)

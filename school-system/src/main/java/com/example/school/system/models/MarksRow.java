@@ -44,7 +44,7 @@ public class MarksRow {
     private String grade;
 
     // "1","10"
-    private Integer points;
+    private Double points;
 
     @Column(nullable = true, name = "average_marks%")
     private Integer averageMarksPercentage;

@@ -15,6 +15,7 @@ import com.example.school.system.DTO.MarksSheetDTO;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.MarksRow;
 import com.example.school.system.models.MarksSheet;
@@ -31,9 +32,11 @@ import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.types.SubjectType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MarksEntryService {
     private final MarksRepo marksRepo;
     private final SubjectJointRepo subjectJointRepo;
@@ -48,7 +51,9 @@ public class MarksEntryService {
         SubjectJoint subjectJoint = subjectJointRepo.findByIdWithoutSubjectType(subjectJointId, SubjectType.DROPPED)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
         SchoolClass schoolClass = subjectJoint.getSchoolClass();
-
+        if (schoolClass == null) {
+            throw new SchoolResourceNotFoundExceptionHandler("class not found");
+        }
         List<StudentProfile> students = getStudentsForSubject(subjectJointId, subjectJoint);
         SchoolSettings schoolSettings = schoolClass.getSchool().getSchoolSettings();
         MarksSheet existingMarkSheet = marksSheetRepo
@@ -67,7 +72,9 @@ public class MarksEntryService {
             return MarksRowDTO.builder().studentId(s.getId()).studentName(s.getStudentFullName())
                     .studentAdm(s.getStudentAdm()).cat1(marks != null ? marks.getCat1() : null)
                     .cat2(marks != null ? marks.getCat2() : null).cat3(marks != null ? marks.getCat3() : null)
-                    .exam(marks != null ? marks.getExam() : null).build();
+                    .exam(marks != null ? marks.getExam() : null).marksGrade(marks != null ? marks.getGrade() : null)
+                    .points(marks != null && marks.getPoints() != null ? marks.getPoints() : null)
+                    .build();
         }).toList();
 
         return MarksSheetDTO.builder().subjectJointId(subjectJointId)
@@ -117,6 +124,10 @@ public class MarksEntryService {
                 settings.getCurrentSubTerm())
                 .orElseGet(() -> {
                     MarksSheet newMarksSheet = new MarksSheet();
+                    newMarksSheet.setMaxExam(100);
+                    newMarksSheet.setMaxCat1(40);
+                    newMarksSheet.setMaxCat2(40);
+                    newMarksSheet.setMaxCat3(40);
                     newMarksSheet.setSubjectJoint(subjectJoint);
                     newMarksSheet.setAcademicYear(settings.getAcademicYear());
                     newMarksSheet.setCurrentSchoolTerm(settings.getCurrentSchoolTerm());
@@ -124,10 +135,14 @@ public class MarksEntryService {
                     marksSheetRepo.save(newMarksSheet);
                     return newMarksSheet;
                 });
-        boolean rubricChanged = !Objects.equals(marksSheet.getMaxCat1(), marksheetSaveRequest.maxCat1())
-                || !Objects.equals(marksSheet.getMaxCat2(), marksheetSaveRequest.maxCat2())
-                || !Objects.equals(marksSheet.getMaxCat3(), marksheetSaveRequest.maxCat3())
-                || !Objects.equals(marksSheet.getMaxExam(), marksheetSaveRequest.maxExam());
+        boolean rubricChanged = marksheetSaveRequest.maxCat1() != null
+                && !Objects.equals(marksSheet.getMaxCat1(), marksheetSaveRequest.maxCat1())
+                || marksheetSaveRequest.maxCat2() != null
+                        && !Objects.equals(marksSheet.getMaxCat2(), marksheetSaveRequest.maxCat2())
+                || marksheetSaveRequest.maxCat3() != null
+                        && !Objects.equals(marksSheet.getMaxCat3(), marksheetSaveRequest.maxCat3())
+                || marksheetSaveRequest.maxExam() != null
+                        && !Objects.equals(marksSheet.getMaxExam(), marksheetSaveRequest.maxExam());
 
         if (rubricChanged) {
             marksSheet.setMaxCat1(marksheetSaveRequest.maxCat1());
@@ -141,6 +156,8 @@ public class MarksEntryService {
                 skippedStudentsCount++;
                 continue;
             }
+            log.info(String.valueOf(marksSheet.getMaxExam()));
+
             MarksRow marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
                     .orElseGet(() -> {
                         MarksRow newMarks = new MarksRow();
@@ -149,15 +166,15 @@ public class MarksEntryService {
                         return newMarks;
                     });
             boolean changed = false;
-            if (!Objects.equals(marks.getCat1(), input.cat1())) {
+            if (marksSheet.isCat1Entry() && !Objects.equals(marks.getCat1(), input.cat1())) {
                 marks.setCat1(input.cat1());
                 changed = true;
             }
-            if (!Objects.equals(marks.getCat2(), input.cat2())) {
+            if (marksSheet.isCat2Entry() && !Objects.equals(marks.getCat2(), input.cat2())) {
                 marks.setCat2(input.cat2());
                 changed = true;
             }
-            if (!Objects.equals(marks.getCat3(), input.cat3())) {
+            if (marksSheet.isCat3Entry() && !Objects.equals(marks.getCat3(), input.cat3())) {
                 marks.setCat3(input.cat3());
                 changed = true;
             }
@@ -165,7 +182,7 @@ public class MarksEntryService {
                 marks.setExam(input.exam());
                 changed = true;
             }
-            calculate(marksheetSaveRequest, marks, gradingScale);
+            calculate(marksSheet, marks, gradingScale);
             if (changed) {
                 marksRepo.save(marks);
             }
@@ -177,9 +194,49 @@ public class MarksEntryService {
                 "Marks saved successfully. Above is the count of unsaved students");
     }
 
-    private void calculate(MarksheetSaveRequest marksheetSaveRequest, MarksRow marks, GradingScale gradingScale) {
-        int count = 0;
+    private void calculate(MarksSheet marksSheet, MarksRow marks,
+            GradingScale gradingScale) {
         int maxPossible = 0;
-        
+        int scored = 0;
+        if (marksSheet.isCat1Entry()) {
+            maxPossible += marksSheet.getMaxCat1();
+            if (marks.getCat1() != null) {
+                scored += marks.getCat1();
+            }
+        }
+        if (marksSheet.isCat2Entry()) {
+            maxPossible += marksSheet.getMaxCat2();
+            if (marks.getCat2() != null) {
+                scored += marks.getCat2();
+            }
+        }
+        if (marksSheet.isCat3Entry()) {
+            maxPossible += marksSheet.getMaxCat3();
+            if (marks.getCat3() != null) {
+                scored += marks.getCat3();
+            }
+        }
+        log.info(String.valueOf(marksSheet.isCat1Entry()));
+        if (marksSheet.isExamEntry()) {
+            maxPossible += marksSheet.getMaxExam();
+            if (marks.getExam() != null)
+                scored += marks.getExam();
+        }
+        marks.setTotalMarks(scored);
+        if (maxPossible > 0) {
+            double averangeMarks = ((double) scored / maxPossible) * 100;
+            averangeMarks = Math.round(averangeMarks * 100) / 100;
+            marks.setAverageMarksPercentage((int)averangeMarks);
+        }
+        gradingResults(marks, gradingScale);
+    }
+
+    private void gradingResults(MarksRow marksRow, GradingScale gradingScale) {
+        GradeBand band = gradingScale.getBands().stream()
+                .filter(b -> marksRow.getAverageMarksPercentage() >= b.getMinScore()
+                        && marksRow.getAverageMarksPercentage() <= b.getMaxScore())
+                .findFirst().orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("Band at of range"));
+        marksRow.setPoints(band.getPoints());
+        marksRow.setGrade(band.getGrade());
     }
 }

@@ -3,6 +3,8 @@ package com.example.school.system.services;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.repository.GradingScaleRepo;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class GradingService {
     private final GradingScaleRepo gradingScaleRepo;
 
+    @Transactional
     public GradingScale getOrCreateDefaultScale(UUID schoolId) {
         return gradingScaleRepo.findBySchoolId(schoolId)
                 .orElseGet(() -> createDefaultScaling(schoolId));
@@ -51,3 +54,5 @@ public class GradingService {
         return newGradingScale;
     }
 }
+
+

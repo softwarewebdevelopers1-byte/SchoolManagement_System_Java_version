@@ -28,16 +28,18 @@ public class MarksSheet {
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    private Integer maxExam = 100;
+    private Integer maxExam;
+        private boolean ExamEntry = true;
 
-    private Integer maxCat1 = 40;
-    private boolean maxCat1Entry = false;
 
-    private Integer maxCat2 = 40;
-    private boolean maxCat2Entry = false;
+    private Integer maxCat1;
+    private boolean Cat1Entry = false;
 
-    private Integer maxCat3 = 40;
-    private boolean maxCat3Entry = false;
+    private Integer maxCat2;
+    private boolean Cat2Entry = false;
+
+    private Integer maxCat3;
+    private boolean Cat3Entry = false;
 
     private String academicYear;
 
