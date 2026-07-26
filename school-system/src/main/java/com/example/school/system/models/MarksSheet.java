@@ -46,7 +46,7 @@ public class MarksSheet {
     private String currentSubTerm;
 
     @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Marks> marks;
+    List<MarksRow> marks;
 
     @ManyToOne
     @JoinColumn(name = "subject_joint_id")

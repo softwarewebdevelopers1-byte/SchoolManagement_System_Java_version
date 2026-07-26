@@ -6,18 +6,18 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import com.example.school.system.models.Marks;
+import com.example.school.system.models.MarksRow;
 
-public interface MarksRepo extends JpaRepository<Marks, UUID> {
+public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
         @Query("""
                         SELECT m FROM Marks m WHERE m.StudentProfile.id = :studentId
                         AND m.marksSheet.id = :marksSheetId
 
                                     """)
-        Optional<Marks> findByStudentProfileIdAndMarksSheetId(
+        Optional<MarksRow> findByStudentProfileIdAndMarksSheetId(
                         @Param("studentId") UUID studentProfileId, @Param("marksSheetId") UUID marksSheetId);
 
-        List<Marks> findAllByMarksSheetId(UUID sheetId);
+        List<MarksRow> findAllByMarksSheetId(UUID sheetId);
 }
 
 

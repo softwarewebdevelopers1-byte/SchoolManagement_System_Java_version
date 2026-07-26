@@ -45,7 +45,7 @@ public class StudentProfile {
     List<StudentSubjectSelection> studentSubjectSelections;
 
     @OneToMany(mappedBy = "StudentProfile")
-    List<Marks> marks;
+    List<MarksRow> marks;
     // relationship between student and class
     @ManyToOne
     @JoinColumn(name = "class_id")

@@ -20,7 +20,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Marks {
+public class MarksRow {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
     private UUID id;

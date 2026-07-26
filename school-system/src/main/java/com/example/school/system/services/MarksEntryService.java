@@ -16,7 +16,7 @@ import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.GradingScale;
-import com.example.school.system.models.Marks;
+import com.example.school.system.models.MarksRow;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.SchoolSettings;
@@ -56,14 +56,14 @@ public class MarksEntryService {
                         schoolSettings.getAcademicYear(), schoolSettings.getCurrentSchoolTerm(),
                         schoolSettings.getCurrentSubTerm())
                 .orElseGet(() -> createMarksSheet(subjectJoint, schoolSettings, students));
-        Map<UUID, Marks> existingMarks = new HashMap<>();
+        Map<UUID, MarksRow> existingMarks = new HashMap<>();
         if (existingMarkSheet.getId() != null) {
-            Map<UUID, Marks> dbMarks = marksRepo.findAllByMarksSheetId(existingMarkSheet.getId()).stream()
+            Map<UUID, MarksRow> dbMarks = marksRepo.findAllByMarksSheetId(existingMarkSheet.getId()).stream()
                     .collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
             existingMarks.putAll(dbMarks);
         }
         List<MarksRowDTO> marksRow = students.stream().map(s -> {
-            Marks marks = existingMarks.get(s.getId());
+            MarksRow marks = existingMarks.get(s.getId());
             return MarksRowDTO.builder().studentId(s.getId()).studentName(s.getStudentFullName())
                     .studentAdm(s.getStudentAdm()).cat1(marks != null ? marks.getCat1() : null)
                     .cat2(marks != null ? marks.getCat2() : null).cat3(marks != null ? marks.getCat3() : null)
@@ -141,9 +141,9 @@ public class MarksEntryService {
                 skippedStudentsCount++;
                 continue;
             }
-            Marks marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
+            MarksRow marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
                     .orElseGet(() -> {
-                        Marks newMarks = new Marks();
+                        MarksRow newMarks = new MarksRow();
                         newMarks.setMarksSheet(marksSheet);
                         newMarks.setStudentProfile(studentRepository.getReferenceById(input.studentId()));
                         return newMarks;
@@ -177,27 +177,9 @@ public class MarksEntryService {
                 "Marks saved successfully. Above is the count of unsaved students");
     }
 
-    private void calculate(MarksheetSaveRequest marksheetSaveRequest, Marks marks, GradingScale gradingScale) {
+    private void calculate(MarksheetSaveRequest marksheetSaveRequest, MarksRow marks, GradingScale gradingScale) {
         int count = 0;
         int maxPossible = 0;
-        if (marksheetSaveRequest.maxCat1() != null) {
-            maxPossible += marksheetSaveRequest.maxCat1();
-            count++;
-        }
-        if (marksheetSaveRequest.maxCat2() != null) {
-            maxPossible += marksheetSaveRequest.maxCat2();
-            count++;
-        }
-        if (marksheetSaveRequest.maxCat3() != null) {
-            maxPossible += marksheetSaveRequest.maxCat3();
-            count++;
-        }
-        if (marksheetSaveRequest.maxExam() != null) {
-            maxPossible += marksheetSaveRequest.maxExam();
-            count++;
-        }
-        marks.setTotalMarks(maxPossible);
-        marks.setAverageMarksPercentage(maxPossible / count * 100);
-        ;
+        
     }
 }
