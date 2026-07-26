@@ -9,13 +9,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.MarkInputDTO;
 import com.example.school.system.DTO.MarksRowDTO;
 import com.example.school.system.DTO.MarksSheetDTO;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.Marks;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.SchoolClass;
@@ -41,6 +41,7 @@ public class MarksEntryService {
     private final StudentSubjectSelectionRepo studentSubjectSelection;
     private final SchoolSettingsRepository settingsRepository;
     private final MarksSheetRepo marksSheetRepo;
+    private final GradingService gradingService;
 
     @Transactional
     public MarksSheetDTO loadMarksEntrySheet(UUID subjectJointId) {
@@ -107,10 +108,10 @@ public class MarksEntryService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school settings not found"));
         SubjectJoint subjectJoint = subjectJointRepo.findById(marksheetSaveRequest.subjectJointId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
-
+        GradingScale gradingScale = gradingService.getOrCreateDefaultScale(marksheetSaveRequest.schoolId());
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
-                
+
         MarksSheet marksSheet = marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(
                 subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
                 settings.getCurrentSubTerm())
@@ -164,6 +165,7 @@ public class MarksEntryService {
                 marks.setExam(input.exam());
                 changed = true;
             }
+            calculate(marksheetSaveRequest, marks, gradingScale);
             if (changed) {
                 marksRepo.save(marks);
             }
@@ -171,11 +173,11 @@ public class MarksEntryService {
         if (rubricChanged) {
             marksSheetRepo.save(marksSheet);
         }
-        return SchoolApiResponse.success(skippedStudentsCount,"Marks saved successfully. Above is the count of unsaved students"
-                );
+        return SchoolApiResponse.success(skippedStudentsCount,
+                "Marks saved successfully. Above is the count of unsaved students");
     }
-    
-    private void calculate(MarksheetSaveRequest marksheetSaveRequest, Marks marks) {
+
+    private void calculate(MarksheetSaveRequest marksheetSaveRequest, Marks marks, GradingScale gradingScale) {
         int count = 0;
         int maxPossible = 0;
         if (marksheetSaveRequest.maxCat1() != null) {

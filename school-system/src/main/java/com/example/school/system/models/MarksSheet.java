@@ -29,9 +29,15 @@ public class MarksSheet {
     private UUID id;
 
     private Integer maxExam = 100;
+
     private Integer maxCat1 = 40;
+    private boolean maxCat1Entry = false;
+
     private Integer maxCat2 = 40;
+    private boolean maxCat2Entry = false;
+
     private Integer maxCat3 = 40;
+    private boolean maxCat3Entry = false;
 
     private String academicYear;
 

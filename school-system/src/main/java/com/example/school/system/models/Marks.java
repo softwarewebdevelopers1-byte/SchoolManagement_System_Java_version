@@ -40,6 +40,12 @@ public class Marks {
     @Column(name = "total_marks")
     private Integer totalMarks = 0;
 
+    // "A","B+"
+    private String grade;
+
+    // "1","10"
+    private Integer points;
+
     @Column(nullable = true, name = "average_marks%")
     private Integer averageMarksPercentage;
 

@@ -1,17 +1,15 @@
 package com.example.school.system.models;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
-import com.example.school.system.types.ClassAttendanceStatus;
+
 import com.github.f4b6a3.uuid.UuidCreator;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,22 +19,16 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class AttendanceRecords {
+public class GradingScale {
     @Id
     @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     UUID id;
-    @Enumerated(EnumType.STRING)
-    ClassAttendanceStatus status;
 
-    private LocalDate date;
+    @Column(unique = true)
+    private UUID schoolId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    StudentProfile student;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attendance_sheet_id")
-    AttendanceSheet sheet;
+    @OneToMany(mappedBy = "gradingScale", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GradeBand> bands;
 
     @PrePersist
     private void generateId() {
