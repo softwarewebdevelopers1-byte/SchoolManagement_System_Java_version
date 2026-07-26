@@ -16,5 +16,7 @@ public class MarksRowDTO {
     private Integer cat3;
     private Integer exam;
     private Double points;
+    private Integer totalMarks;
+    private String avgPercentage;
     private String marksGrade;
 }

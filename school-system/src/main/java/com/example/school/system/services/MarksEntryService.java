@@ -74,6 +74,8 @@ public class MarksEntryService {
                     .cat2(marks != null ? marks.getCat2() : null).cat3(marks != null ? marks.getCat3() : null)
                     .exam(marks != null ? marks.getExam() : null).marksGrade(marks != null ? marks.getGrade() : null)
                     .points(marks != null && marks.getPoints() != null ? marks.getPoints() : null)
+                    .totalMarks(marks != null ? marks.getTotalMarks() : null)
+                    .avgPercentage(marks != null ? String.valueOf(marks.getAverageMarksPercentage()) + "%" : null)
                     .build();
         }).toList();
 
@@ -226,7 +228,7 @@ public class MarksEntryService {
         if (maxPossible > 0) {
             double averangeMarks = ((double) scored / maxPossible) * 100;
             averangeMarks = Math.round(averangeMarks * 100) / 100;
-            marks.setAverageMarksPercentage((int)averangeMarks);
+            marks.setAverageMarksPercentage((int) averangeMarks);
         }
         gradingResults(marks, gradingScale);
     }
