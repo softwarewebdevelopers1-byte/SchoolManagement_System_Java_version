@@ -136,4 +136,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> MailSendException() {
         return ResponseEntity.status(500).body(SchoolApiResponse.error("unable to send email"));
     }
+
+    @ExceptionHandler(SchoolResourceBadInputExceptionHandler.class)
+
+    public ResponseEntity<?> BadInput(SchoolResourceBadInputExceptionHandler badRequestError) {
+        return ResponseEntity.status(400).body(SchoolApiResponse.success(badRequestError.getMessage()));
+    }
 }
+

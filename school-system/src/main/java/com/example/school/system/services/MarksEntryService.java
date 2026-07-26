@@ -14,6 +14,7 @@ import com.example.school.system.DTO.MarksRowDTO;
 import com.example.school.system.DTO.MarksSheetDTO;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.GradingScale;
@@ -237,7 +238,7 @@ public class MarksEntryService {
         GradeBand band = gradingScale.getBands().stream()
                 .filter(b -> marksRow.getAverageMarksPercentage() >= b.getMinScore()
                         && marksRow.getAverageMarksPercentage() <= b.getMaxScore())
-                .findFirst().orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("Band at of range"));
+                .findFirst().orElseThrow(() -> new SchoolResourceBadInputExceptionHandler("Band out of range"));
         marksRow.setPoints(band.getPoints());
         marksRow.setGrade(band.getGrade());
     }
