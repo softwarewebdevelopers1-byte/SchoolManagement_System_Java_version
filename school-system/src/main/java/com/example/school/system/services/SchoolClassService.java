@@ -134,7 +134,7 @@ public class SchoolClassService {
         }
 
         schoolClassRepository.save(schoolClass);
-        if(teacherRoleAdded){
+        if (teacherRoleAdded) {
             userRepository.save(user);
         }
         teacherProfileRepository.save(teacherProfile);
@@ -149,6 +149,11 @@ public class SchoolClassService {
         if (currenTeacher == null) {
             throw new SchoolResourceNotFoundExceptionHandler("class has no assigned teacher");
         }
+        Users user = currenTeacher.getTeacher();
+        if (user.getRoles().contains(UserRoles.CLASSTEACHER)) {
+            user.getRoles().remove(UserRoles.CLASSTEACHER);
+        }
+        userRepository.save(user);
         currenTeacher.setSchoolClass(null);
         classFound.setTeacher(null);
         schoolClassRepository.save(classFound);
@@ -156,3 +161,4 @@ public class SchoolClassService {
         return SchoolApiResponse.success("class teacher unassigned");
     }
 }
+
