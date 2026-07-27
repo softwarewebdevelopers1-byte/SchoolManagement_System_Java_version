@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,9 @@ public class SchoolClassService {
             long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
             return GetAllClassesDTO.builder().classId(c.getClassId())
                     .className(c.getClassGrade().toString() + " " + c.getClassStream())
-                    .classTeacher(c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName())
+                    .classTeacher(
+                            c.getTeacher() != null ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
+                                    : null)
                     .totalStudents(allStudents).build();
         }).toList();
         return SchoolApiResponse.success(allClasses, "all classes loaded");
@@ -110,9 +113,6 @@ public class SchoolClassService {
             throw new SchoolResourceExistsExceptionHandler("class already exists");
         }
 
-        if (teacherId != null && schoolClass.getTeacher() != null) {
-            throw new SchoolResourceExistsExceptionHandler("unassign class teacher first");
-        }
         Users user = userRepository.findById(teacherId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("teacher not found"));
         boolean teacherRoleAdded = false;
@@ -123,6 +123,10 @@ public class SchoolClassService {
         TeacherProfile teacherProfile = user.getTeacherProfile();
         if (teacherProfile == null) {
             throw new SchoolResourceNotFoundExceptionHandler("teacher profile not found");
+        }
+        if (teacherProfile.getSchoolClass() != null
+                && !Objects.equals(schoolClass.getClassId(), teacherProfile.getSchoolClass().getClassId())) {
+            throw new SchoolResourceExistsExceptionHandler("Teacher already assigned to another class");
         }
         schoolClass.setTeacher(teacherProfile);
         teacherProfile.setSchoolClass(schoolClass);
@@ -161,4 +165,3 @@ public class SchoolClassService {
         return SchoolApiResponse.success("class teacher unassigned");
     }
 }
-
