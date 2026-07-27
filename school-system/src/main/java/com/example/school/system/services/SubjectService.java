@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectUpdateDTO;
@@ -22,7 +21,10 @@ import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.repository.SubjectRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
+import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.SubjectType;
+import com.example.school.system.types.UserRoles;
+
 import lombok.RequiredArgsConstructor;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
@@ -32,6 +34,7 @@ import com.example.school.system.models.Subject;
 // import lombok.AllArgsConstructor;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.TeacherProfile;
+import com.example.school.system.models.Users;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +46,7 @@ public class SubjectService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final StudentSubjectSelectionRepo studentSubjectSelectionRepo;
     private final StudentRepository studentRepository;
+    private final UserRepository userRepository;
 
     public SchoolApiResponse<?> createSingleSubject(SubjectDTO subjectCreationDTO) {
         subjectRepository.save(toSubject(subjectCreationDTO));
@@ -92,6 +96,16 @@ public class SubjectService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
         if (subjectJoint.getTeacherProfile() != null) {
             throw new SchoolResourceExistsExceptionHandler("subject already assigned");
+        }
+        boolean teacherFirstAssignment = false;
+
+        Users userProfile = teacherProfile.getTeacher();
+        if (!userProfile.getRoles().contains(UserRoles.SUBJECTTEACHER)) {
+            teacherFirstAssignment = true;
+            userProfile.getRoles().add(UserRoles.SUBJECTTEACHER);
+        }
+        if (teacherFirstAssignment) {
+            userRepository.save(userProfile);
         }
         subjectJoint.setTeacherProfile(teacherProfile);
         subjectJointRepo.save(subjectJoint);
