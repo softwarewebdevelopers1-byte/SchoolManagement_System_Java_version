@@ -153,13 +153,13 @@ public class GradingService {
                                                                 next.getMaxScore()));
                         }
 
-                        // Gap: current.min - next.max > 0.01
-                        double gap = current.getMinScore() - next.getMaxScore();
-                        if (gap > 0.01) {
-                                throw new SchoolResourceBadInputExceptionHandler(
-                                                String.format("Gap of %.2f between %s and %s. Ranges must be continuous.",
-                                                                gap, current.getGrade(), next.getGrade()));
-                        }
+                        // // Gap: current.min - next.max > 0.01
+                        // double gap = current.getMinScore() - next.getMaxScore();
+                        // if (gap > 0.01) {
+                        //         throw new SchoolResourceBadInputExceptionHandler(
+                        //                         String.format("Gap of %.2f between %s and %s. Ranges must be continuous.",
+                        //                                         gap, current.getGrade(), next.getGrade()));
+                        // }
                 }
 
                 // 5. Must cover full 0-100

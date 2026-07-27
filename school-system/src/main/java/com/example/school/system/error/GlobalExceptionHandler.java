@@ -140,7 +140,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SchoolResourceBadInputExceptionHandler.class)
 
     public ResponseEntity<?> BadInput(SchoolResourceBadInputExceptionHandler badRequestError) {
-        return ResponseEntity.status(400).body(SchoolApiResponse.success(badRequestError.getMessage()));
+        return ResponseEntity.status(400).body(SchoolApiResponse.error(badRequestError.getMessage()));
     }
 }
 

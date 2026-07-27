@@ -18,6 +18,7 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.services.GradingService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,11 +47,11 @@ public class GradeBandController {
                 "Grading configuration added"));
     }
 
-    @PatchMapping("/update/scale/{id}")
+    @PatchMapping("/update/scale")
     public ResponseEntity<?> updateGradeScale(
-            @RequestBody GradeScaleInput gradeScaleInput) {
+            @Valid @RequestBody GradeScaleInput gradeScaleInput) {
         gradingService.updateGradeScale(gradeScaleInput);
-        return ResponseEntity.status(200).body(null);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("Grading scale updated"));
     }
 
     @DeleteMapping("/delete/grade-band/{id}")
