@@ -53,6 +53,7 @@ public class TeachersService {
 
                     teachersDTO.setSchoolClass(userClass.toString());
                 }
+                teachersDTO.setTeacherProfileId(profile.getId());
                 teachersDTO.setFirstName(profile.getFirstName());
                 teachersDTO.setLastName(profile.getLastName());
             }
