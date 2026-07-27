@@ -3,12 +3,13 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
+import com.example.school.system.types.WholeAttendanceSheetStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -31,7 +32,8 @@ public class AttendanceSheet {
     @Column(unique = true)
     private LocalDate date;
 
-    private boolean locked = false;
+    @Enumerated(EnumType.STRING)
+    private WholeAttendanceSheetStatus status=WholeAttendanceSheetStatus.DRAFT;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")

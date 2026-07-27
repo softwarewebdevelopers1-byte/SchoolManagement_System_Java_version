@@ -7,14 +7,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.school.system.DTO.AttendanceSheetSubmit;
 import com.example.school.system.DTO.ClassAttendanceDTO;
 import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
 import com.example.school.system.DTO.LoadAttendaceSheetSpecificDate;
-import com.example.school.system.DTO.StudentAttendanceDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.AttendanceService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -36,10 +35,17 @@ public class AttendanceController {
         return ResponseEntity.status(200).body(studentRecord);
     }
 
-    @PatchMapping("/sheet")
-    public ResponseEntity<?> updateStudentAttendance(@Valid @RequestBody StudentAttendanceDTO studentAttendanceDTO) {
-        attendanceService.updateStudentAttendance(studentAttendanceDTO);
-        return ResponseEntity.status(200).body(SchoolApiResponse.success("student attendance updated"));
+    // @PatchMapping("/sheet")
+    // public ResponseEntity<?> updateStudentAttendance(@Valid @RequestBody
+    // StudentAttendanceDTO studentAttendanceDTO) {
+    // attendanceService.updateStudentAttendance(studentAttendanceDTO);
+    // return ResponseEntity.status(200).body(SchoolApiResponse.success("student
+    // attendance updated"));
+    // }
+    @PatchMapping("/update/sheet")
+    public ResponseEntity<?> updateSheet(@Valid @RequestBody AttendanceSheetSubmit sheetDTO) {
+        attendanceService.updateSheet(sheetDTO);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("sheet updated"));
     }
 
     @GetMapping("/get/attendance-sheet")

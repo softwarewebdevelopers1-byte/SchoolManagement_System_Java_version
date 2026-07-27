@@ -2,17 +2,17 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.AttendanceSheetSubmit;
 import com.example.school.system.DTO.ClassAttendanceDTO;
 import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
 import com.example.school.system.DTO.LoadAttendaceSheetSpecificDate;
-import com.example.school.system.DTO.StudentAttendanceDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceRecordDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.DTO.DTOResponse.SingleDayStudentAttendanceRecord;
@@ -27,7 +27,7 @@ import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.types.ClassAttendanceStatus;
-
+import com.example.school.system.types.WholeAttendanceSheetStatus;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -112,20 +112,23 @@ public class AttendanceService {
                         r.setDate(date);
                         return r;
                 }).toList();
+                sheet.setStatus(WholeAttendanceSheetStatus.DRAFT);
+                ;
                 sheet.setAttendanceRecords(records);
                 return attendanceSheetRepository.save(sheet);
         }
 
-        @Transactional
-        public void updateStudentAttendance(StudentAttendanceDTO studentAttendanceDTO) {
-                AttendanceRecords studentRecord = attendanceRecordRepository
-                                .findById(studentAttendanceDTO.attendanceRecord())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                                                "attendance record for this student is missing"));
-                studentRecord.setStatus(studentAttendanceDTO.status());
-                attendanceRecordRepository.save(studentRecord);
+        // @Transactional
+        // public void updateStudentAttendance(StudentAttendanceDTO
+        // studentAttendanceDTO) {
+        // AttendanceRecords studentRecord = attendanceRecordRepository
+        // .findById(studentAttendanceDTO.attendanceRecord())
+        // .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+        // "attendance record for this student is missing"));
+        // studentRecord.setStatus(studentAttendanceDTO.status());
+        // attendanceRecordRepository.save(studentRecord);
 
-        }
+        // }
 
         @Transactional
         public SingleDayStudentAttendanceRecord getStudentSingleDayRecord(
@@ -173,6 +176,18 @@ public class AttendanceService {
                 if (date.isAfter(LocalDate.now())) {
                         throw new SchoolResourceLockedExceptionHandler("Cannot get attendance for future date");
                 }
+        }
+
+        public void updateSheet(AttendanceSheetSubmit sheetDTO) {
+                AttendanceSheet attendanceSheet = attendanceSheetRepository
+                                .findEditableSheet(sheetDTO.attendanceSheetId(), sheetDTO.classId())
+                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+                                                "attendance sheet not found or already locked"));
+                Map<UUID, ClassAttendanceStatus> map = sheetDTO.attendanceRecordDTOs().stream()
+                                .collect(Collectors.toMap(r -> r.getRecordId(), r -> r.getStatus()));
+                attendanceSheet.getAttendanceRecords().forEach(r -> r.setStatus(map.get(r.getId())));
+                attendanceSheet.setStatus(WholeAttendanceSheetStatus.SUBMITTED);
+                attendanceSheetRepository.save(attendanceSheet);
         }
 
 }
