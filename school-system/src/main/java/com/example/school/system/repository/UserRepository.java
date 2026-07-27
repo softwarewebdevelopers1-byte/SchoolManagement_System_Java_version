@@ -47,5 +47,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             @Param("role") UserRoles role);
 
     Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
+
+    int deleteAllByStatus(AccountStatus status);
 }
 
