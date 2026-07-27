@@ -23,6 +23,7 @@ import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
+import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +45,8 @@ public class SchoolClassService {
             long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
             return GetAllClassesDTO.builder().classId(c.getClassId())
                     .className(c.getClassGrade().toString() + " " + c.getClassStream())
-                    .classTeacher(c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()).totalStudents(allStudents).build();
+                    .classTeacher(c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName())
+                    .totalStudents(allStudents).build();
         }).toList();
         return SchoolApiResponse.success(allClasses, "all classes loaded");
     }
@@ -113,6 +115,11 @@ public class SchoolClassService {
         }
         Users user = userRepository.findById(teacherId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("teacher not found"));
+        boolean teacherRoleAdded = false;
+        if (!user.getRoles().contains(UserRoles.CLASSTEACHER)) {
+            teacherRoleAdded = true;
+            user.getRoles().add(UserRoles.CLASSTEACHER);
+        }
         TeacherProfile teacherProfile = user.getTeacherProfile();
         if (teacherProfile == null) {
             throw new SchoolResourceNotFoundExceptionHandler("teacher profile not found");
@@ -127,6 +134,9 @@ public class SchoolClassService {
         }
 
         schoolClassRepository.save(schoolClass);
+        if(teacherRoleAdded){
+            userRepository.save(user);
+        }
         teacherProfileRepository.save(teacherProfile);
         return SchoolApiResponse.success("class updated");
     }
