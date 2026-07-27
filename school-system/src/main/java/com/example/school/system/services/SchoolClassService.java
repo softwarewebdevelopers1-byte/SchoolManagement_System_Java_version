@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.example.school.system.DTO.GetAllClassesDTO;
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
 import com.example.school.system.DTO.UnassignClassTeacherDTO;
@@ -19,18 +20,34 @@ import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
+import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class SchoolClassService {
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolRepository schoolRepository;
+    private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final TeacherProfileRepository teacherProfileRepository;
+
+    @Transactional
+    public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
+        List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId);
+        List<GetAllClassesDTO> allClasses = classes.stream().map(c -> {
+            long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
+            return GetAllClassesDTO.builder().classId(c.getClassId())
+                    .className(c.getClassGrade().toString() + " " + c.getClassStream())
+                    .classTeacher(c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()).totalStudents(allStudents).build();
+        }).toList();
+        return SchoolApiResponse.success(allClasses, "all classes loaded");
+    }
 
     @Transactional
     public SchoolApiResponse<?> updateSchoolClassCycle(UUID schoolId) {

@@ -16,4 +16,6 @@ public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
 
     Page <StudentProfile> findBySchoolClassClassId(UUID classId,Pageable pageable);
      List <StudentProfile> findAllBySchoolClassClassId(UUID classId);
+
+     long countByschoolClassClassId(UUID classId);
 }

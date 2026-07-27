@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,11 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class SchoolClassController {
     private final SchoolClassService schoolClassService;
+
+    @GetMapping("/all/classes/{id}")
+    public SchoolApiResponse<?> getAllClasses(@PathVariable UUID id) {
+        return schoolClassService.getAllClasses(id);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PostMapping("/create/school/class")
