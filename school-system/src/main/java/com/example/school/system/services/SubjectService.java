@@ -123,6 +123,11 @@ public class SubjectService {
         if (!subjectJoint.getTeacherProfile().getId().equals(teacherProfile.getId())) {
             throw new SchoolResourceNotFoundExceptionHandler("teacher assignment id mismatch");
         }
+        if (teacherProfile.getSubjectJoints().isEmpty()) {
+            Users userProfile = teacherProfile.getTeacher();
+            userProfile.getRoles().remove(UserRoles.SUBJECTTEACHER);
+            userRepository.save(userProfile);
+        }
         subjectJoint.setTeacherProfile(null);
         subjectJointRepo.save(subjectJoint);
     }
