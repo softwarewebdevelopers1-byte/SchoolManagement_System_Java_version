@@ -52,3 +52,4 @@ public class UserUpdateController {
         return ResponseEntity.status(200).body(SchoolApiResponse.success("user suspended"));
     }
 }
+

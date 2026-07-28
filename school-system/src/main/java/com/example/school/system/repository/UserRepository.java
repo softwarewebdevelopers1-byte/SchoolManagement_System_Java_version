@@ -38,7 +38,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
                             SELECT u
                             FROM Users u
                             WHERE u.school.id = :schoolId
-                              AND :role NOT MEMBER OF u.roles AND status!=PENDING_VERIFICATION AND status!=REJECTED_INVITE
+                              AND :role NOT MEMBER OF u.roles AND status!=PENDING_APPROVAL AND status!=REJECTED_INVITE
                         """)
         List<Users> findUsersBySchoolWithoutRole(
                         @Param("schoolId") UUID schoolId,
@@ -50,9 +50,10 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
                             SELECT u
                             FROM Users u
                             WHERE u.school.id = :schoolId
-                               AND status=PENDING_VERIFICATION
+                               AND status=PENDING_APPROVAL
                         """)
         List<Users> findBySchoolIdGetPendingInvites(@Param("schoolId") UUID schoolId);
 
         int deleteAllByStatus(AccountStatus status);
 }
+
