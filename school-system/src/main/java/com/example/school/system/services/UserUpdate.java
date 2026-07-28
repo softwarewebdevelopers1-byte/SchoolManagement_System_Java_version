@@ -62,6 +62,13 @@ public class UserUpdate {
         ;
     }
 
+    @Transactional
+    public void deActivateAccount(UUID id) {
+        userRepository.findById(id).orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
+                .setStatus(AccountStatus.INACTIVE);
+        ;
+    }
+
     private void validateToken(String token, String id) {
         Claims userToken = jwtValidator.validateTokenIssued(token);
         if (!id.equals(userToken.getSubject().toString())) {

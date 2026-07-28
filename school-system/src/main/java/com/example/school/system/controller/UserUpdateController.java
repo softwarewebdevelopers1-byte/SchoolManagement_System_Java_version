@@ -45,4 +45,10 @@ public class UserUpdateController {
         return ResponseEntity.status(200).body(SchoolApiResponse.success("user suspended"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','CLASSTEACHER','DEPUTYTEACHER','SUBJECTTEACHER')")
+    @PatchMapping("/deactivate/user")
+    public ResponseEntity<?> deactivateAcc(@RequestParam UUID id) {
+        updateUser.deActivateAccount(id);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success("user suspended"));
+    }
 }
