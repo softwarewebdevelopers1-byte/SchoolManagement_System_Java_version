@@ -57,7 +57,7 @@ public class SignUpService {
         user.setEmail(userProfileDTO.email());
         user.setSchool(userSchool);
         user.setRoles(userFirstRole);
-        user.setStatus(AccountStatus.PENDING_VERIFICATION);
+        user.setStatus(AccountStatus.PENDING_APPROVAL);
         user.setPassword(passwordHashing.PasswordEncoder().encode(userProfileDTO.password()));
         userRepository.save(user);
     }
