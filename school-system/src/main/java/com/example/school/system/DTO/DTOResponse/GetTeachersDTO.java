@@ -6,11 +6,17 @@ import java.util.UUID;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
+@Builder
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class GetTeachersDTO {
         private String email;
         private AccountStatus status;

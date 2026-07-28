@@ -155,4 +155,15 @@ public class TeachersService {
         profile.setTeacher(user);
         teacherProfileRepository.save(profile);
     }
+
+    @Transactional
+    public SchoolApiResponse<?> getPendingInvites(UUID schoolId) {
+        List<Users> pendingInvites = userRepository.findBySchoolIdGetPendingInvites(schoolId);
+        List<GetTeachersDTO> inviteList = pendingInvites.stream().map(i -> {
+            GetTeachersDTO teacherInvite = GetTeachersDTO.builder().email(i.getEmail()).status(i.getStatus())
+                    .usersId(i.getId()).build();
+            return teacherInvite;
+        }).toList();
+        return SchoolApiResponse.success(inviteList, "Invites loaded");
+    }
 };

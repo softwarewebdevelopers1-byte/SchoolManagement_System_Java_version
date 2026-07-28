@@ -37,6 +37,13 @@ public class TeachersController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/get/invites/{id}")
+    public ResponseEntity<?> getPendingInvites(@PathVariable UUID id) {
+        var res = teachersService.getPendingInvites(id);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}/teachers")
     public ResponseEntity<?> getTeachers(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id) {
         var teachers = teachersService.getTeachers(id, authHeader);
