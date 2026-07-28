@@ -28,7 +28,8 @@ public class RequestFilter {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/login").permitAll().requestMatchers("/api/reset/password/token**")
+                        .permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
@@ -38,7 +39,7 @@ public class RequestFilter {
                         .requestMatchers("/api/schools/create-school").permitAll()
                         .requestMatchers("/api/reset/password/request").permitAll()
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
-                        .requestMatchers("/api/attendance/**").permitAll()                        // All other requests require authentication
+                        .requestMatchers("/api/attendance/**").permitAll() // All other requests require authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
                 // Add JWT filter before Spring Security's authentication

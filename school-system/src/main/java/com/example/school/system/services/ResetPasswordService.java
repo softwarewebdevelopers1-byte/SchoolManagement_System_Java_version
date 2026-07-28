@@ -35,7 +35,6 @@ public class ResetPasswordService {
 
         linkTokenRepository.save(toToken(token, user));
         applicationEventPublisher.publishEvent(new ResetPasswordEvent(resetPasswordDto.email(), token));
-        System.out.println(token);
         return SchoolApiResponse.success("Reset password request emailed");
     }
 
