@@ -1,5 +1,6 @@
 package com.example.school.system.models;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +61,8 @@ public class Users {
   @CreationTimestamp
   LocalDate date;
 
+  Instant deletedAt;
+
   @Column(name = "status")
   @Enumerated(EnumType.STRING)
   private AccountStatus status = AccountStatus.ACTIVE;
@@ -99,4 +102,3 @@ public class Users {
     }
   }
 }
-

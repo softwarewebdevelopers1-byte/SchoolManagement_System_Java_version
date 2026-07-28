@@ -1,0 +1,30 @@
+package com.example.school.system.schedulers;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.school.system.repository.UserRepository;
+import com.example.school.system.types.AccountStatus;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class ClearUsers {
+    private final UserRepository userRepository;
+
+    @Transactional
+    @Scheduled(cron = "0 0 03 * * *", zone = "Africa/Nairobi")
+    public void deleteAccounts() {
+        Instant cutOff = Instant.now().minus(30, ChronoUnit.DAYS);
+        int deleteAccounts = userRepository.deleteAllByStatusAndDeletedAtBefore(AccountStatus.DELETED, cutOff);
+        log.info("Deleted {} accounts", deleteAccounts);
+    }
+}
+

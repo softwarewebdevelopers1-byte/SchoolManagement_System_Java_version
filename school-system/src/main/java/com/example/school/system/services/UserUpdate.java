@@ -1,5 +1,7 @@
 package com.example.school.system.services;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -50,9 +52,10 @@ public class UserUpdate {
 
     @Transactional
     public void deleteAccount(UUID id) {
-        userRepository.findById(id).orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
-                .setStatus(AccountStatus.DELETED);
-        ;
+        Users userFound = userRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
+        userFound.setStatus(AccountStatus.DELETED);
+        userFound.setDeletedAt(Instant.now());
     }
 
     @Transactional
