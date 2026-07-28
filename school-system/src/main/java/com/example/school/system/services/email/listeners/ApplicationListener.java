@@ -1,5 +1,6 @@
 package com.example.school.system.services.email.listeners;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -15,6 +16,7 @@ public class ApplicationListener {
         this.emailSender = emailSender;
     }
 
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRegistrationEmail(UserRegistrationEvent userRegistrationEvent) {
         StringBuilder welcomeMessage = new StringBuilder();
@@ -25,21 +27,22 @@ public class ApplicationListener {
         emailSender.SendEmail(userRegistrationEvent.email(), welcomeMessage);
     }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-public void resetPasswordEmailer(ResetPasswordEvent resetPasswordEvent) {
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void resetPasswordEmailer(ResetPasswordEvent resetPasswordEvent) {
 
-    StringBuilder link = new StringBuilder();
-    link.append("<a");
-    link.append(" ");
-    link.append("href");
-    link.append("=");
-    link.append("http://localhost:5173/forgot-password/");
-    link.append(resetPasswordEvent.token());
-    link.append(" ");
-    link.append("style=\"display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; border: none; cursor: pointer;\"");
-    link.append(">Reset Password</a>");
-    
-    emailSender.SendEmail(resetPasswordEvent.email(), link);
-}
-}
+        StringBuilder link = new StringBuilder();
+        link.append("<a");
+        link.append(" ");
+        link.append("href");
+        link.append("=");
+        link.append("http://localhost:5173/forgot-password/");
+        link.append(resetPasswordEvent.token());
+        link.append(" ");
+        link.append(
+                "style=\"display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; border: none; cursor: pointer;\"");
+        link.append(">Reset Password</a>");
 
+        emailSender.SendEmail(resetPasswordEvent.email(), link);
+    }
+}
