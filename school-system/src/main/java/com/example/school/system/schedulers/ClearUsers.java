@@ -20,7 +20,7 @@ public class ClearUsers {
     private final UserRepository userRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 03 * * *", zone = "Africa/Nairobi")
+    @Scheduled(cron = "0 0 3 * * *", zone = "Africa/Nairobi")
     public void deleteAccounts() {
         Instant cutOff = Instant.now().minus(30, ChronoUnit.DAYS);
         int deleteAccounts = userRepository.deleteAllByStatusAndDeletedAtBefore(AccountStatus.DELETED, cutOff);
