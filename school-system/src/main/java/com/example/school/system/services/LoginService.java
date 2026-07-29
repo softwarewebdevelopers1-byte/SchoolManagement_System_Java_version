@@ -20,7 +20,7 @@ public class LoginService {
     private final JwtCreationService jwtService;
     private final UserRepository userRepository;
     private final PasswordHashing passwordHashing;
-    private final RecaptchaService recaptchaService;
+    // private final RecaptchaService recaptchaService;
     private final AuthMapperDto authMapperDto;
 
     // login user service
@@ -54,3 +54,4 @@ public class LoginService {
         return authMapperDto.toLoginResponse(token, userFound);
     }
 }
+
