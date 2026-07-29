@@ -15,6 +15,7 @@ import com.example.school.system.DTO.SchoolClassUpdate;
 import com.example.school.system.DTO.UnassignClassTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.StudentClassHistoryDTO;
+import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
@@ -67,6 +68,13 @@ public class SchoolClassService {
     public SchoolApiResponse<?> updateSchoolClassCycle(UUID schoolId) {
         School schoolFound = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        int currentYear = LocalDate.now().getYear();
+        int settingsYear = Integer.parseInt(schoolFound.getSchoolSettings().getAcademicYear());
+        if (settingsYear == currentYear) {
+            log.info("{} cannot be updated from {} to {}", schoolFound.getSchoolName(), settingsYear, currentYear);
+            throw new SchoolResourceBadInputExceptionHandler(
+                    "Cannot update school since we are on current year " + currentYear);
+        }
         String academicYear = schoolSettingsRepository.findBySchoolId(schoolId)
                 .map(SchoolSettings::getAcademicYear)
                 .orElse(String.valueOf(LocalDate.now().getYear()));
@@ -80,6 +88,10 @@ public class SchoolClassService {
 
             });
         }
+        SchoolSettings settings = schoolFound.getSchoolSettings();
+        settings.setAcademicYear(String.valueOf(currentYear));
+        settings.setCurrentSchoolTerm(1);
+        settings.setCurrentSubTerm("opener");
         schoolFound.setClasses(classes);
         return SchoolApiResponse.success("classes updated and student class history recorded");
     }
