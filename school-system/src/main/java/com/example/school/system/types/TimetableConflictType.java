@@ -1,0 +1,14 @@
+package com.example.school.system.types;
+
+public enum TimetableConflictType {
+    TEACHER_CONFLICT,
+    CLASS_CONFLICT,
+    DUPLICATE_ENTRY,
+    BREAK_VIOLATION,
+    ELECTIVE_CLASH,
+    MISSING_LESSON,
+    EXTRA_LESSON,
+    INVALID_TEACHER_ASSIGNMENT,
+    INVALID_SUBJECT_ASSIGNMENT,
+    OVERLAPPING_ENTRY
+}
