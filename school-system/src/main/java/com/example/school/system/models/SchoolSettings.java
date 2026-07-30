@@ -50,7 +50,7 @@ public class SchoolSettings {
   @JoinColumn(name = "school_id")
   private School school;
 
-  @OneToOne(mappedBy = "schoolSettings")
+  @OneToOne(mappedBy = "schoolSettings",cascade = CascadeType.ALL)
   private ExamSettings examSettings;
 
   @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true)

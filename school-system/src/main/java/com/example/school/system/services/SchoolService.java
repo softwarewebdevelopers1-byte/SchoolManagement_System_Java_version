@@ -14,6 +14,7 @@ import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
+import com.example.school.system.repository.ExamSettingsRepo;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
@@ -31,6 +32,7 @@ public class SchoolService {
     private final OtpService otpService;
     private final RandomValuesService randomValues;
     private final JwtValidator jwtValidator;
+    private final ExamSettingsRepo examSettingsRepo;
 
     public SchoolApiResponse<?> getSchool(String code) {
         School schoolName = schoolRepository.findBySchoolCode(code)
@@ -55,8 +57,9 @@ public class SchoolService {
         school = schoolRepository.save(school);
         SchoolSettings settings = new SchoolSettings();
         ExamSettings examSettings = new ExamSettings();
-        examSettings.setExamType(ExamType.OPENER);
         settings.setExamSettings(examSettings);
+        examSettings.setExamType(ExamType.OPENER);
+        examSettings.setSchoolSettings(settings);
         settings.setSchool(school);
         schoolSettingsRepository.save(settings);
         code.insert(0, "Your school code:");
@@ -159,3 +162,5 @@ public class SchoolService {
         return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }
 }
+
+

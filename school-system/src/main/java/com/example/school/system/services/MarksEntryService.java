@@ -16,7 +16,6 @@ import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
-import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.MarksRow;
@@ -59,7 +58,7 @@ public class MarksEntryService {
         List<StudentProfile> students = getStudentsForSubject(subjectJointId, subjectJoint);
         SchoolSettings schoolSettings = schoolClass.getSchool().getSchoolSettings();
         MarksSheet existingMarkSheet = marksSheetRepo
-                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamSettingsExamType(subjectJointId,
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(subjectJointId,
                         schoolSettings.getAcademicYear(), schoolSettings.getCurrentSchoolTerm(),
                         schoolSettings.getExamSettings().getExamType())
                 .orElseGet(() -> createMarksSheet(subjectJoint, schoolSettings, students));
@@ -125,7 +124,7 @@ public class MarksEntryService {
                 .map(s -> s.getId()).collect(Collectors.toSet());
 
         MarksSheet marksSheet = marksSheetRepo
-                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamSettingsExamType(
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
                         subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
                         settings.getExamSettings().getExamType())
                 .orElseGet(() -> {
@@ -246,3 +245,4 @@ public class MarksEntryService {
         marksRow.setGrade(band.getGrade());
     }
 }
+

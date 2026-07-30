@@ -7,6 +7,6 @@ import com.example.school.system.models.MarksSheet;
 import com.example.school.system.types.ExamType;
 
 public interface MarksSheetRepo extends JpaRepository<MarksSheet, UUID> {
-    Optional<MarksSheet> findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamSettingsExamType(UUID subjectJointId,
+    Optional<MarksSheet> findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(UUID subjectJointId,
             String academicYear, Integer currentSchoolTerm, ExamType examType);
 }
