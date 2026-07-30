@@ -24,7 +24,7 @@ public class RequestFilter {
     public SecurityFilterChain RequestFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .cors(Customizer.withDefaults())
-                .csrf(csrf->csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/login").permitAll().requestMatchers("/api/reset/password/token**")
@@ -38,7 +38,8 @@ public class RequestFilter {
                         .requestMatchers("/api/schools/create-school").permitAll()
                         .requestMatchers("/api/reset/password/request").permitAll()
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
-                        .requestMatchers("/api/attendance/**").permitAll() // All other requests require authentication
+                        .requestMatchers("/api/attendance/**").permitAll().requestMatchers("/api/complex/login")
+                        .permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
                 // Add JWT filter before Spring Security's authentication

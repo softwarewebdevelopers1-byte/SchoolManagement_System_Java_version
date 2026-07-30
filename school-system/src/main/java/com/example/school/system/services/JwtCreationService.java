@@ -29,6 +29,24 @@ public class JwtCreationService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
+    public String GenerateAdminToken(Users users) {
+        Date now = new Date();
+        Date expirationDate = new Date(now.getTime() + expiration);
+
+        // Convert roles to Strings with "ROLE_" prefix
+        List<String> rolesWithPrefix = users.getRoles().stream()
+                .map(role -> "ROLE_" + role.name().toUpperCase()) // ← ADD THIS!
+                .collect(Collectors.toList());
+
+        return Jwts.builder()
+                .subject(users.getId().toString())
+                .claim("roles", rolesWithPrefix) // Now has "ROLE_ADMIN", "ROLE_USER"
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(secretKeyBuilder(secret))
+                .compact();
+    }
+
     public String GenerateToken(Users users) {
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + expiration);
