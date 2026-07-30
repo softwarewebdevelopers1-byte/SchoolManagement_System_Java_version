@@ -32,6 +32,7 @@ import com.example.school.system.repository.StudentClassHistoryRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
+import com.example.school.system.types.ExamType;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
@@ -91,7 +92,8 @@ public class SchoolClassService {
         SchoolSettings settings = schoolFound.getSchoolSettings();
         settings.setAcademicYear(String.valueOf(currentYear));
         settings.setCurrentSchoolTerm(1);
-        settings.setCurrentSubTerm("opener");
+        settings.getExamSettings().setExamType(ExamType.OPENER);
+        ;
         schoolFound.setClasses(classes);
         return SchoolApiResponse.success("classes updated and student class history recorded");
     }

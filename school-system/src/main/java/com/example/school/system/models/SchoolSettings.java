@@ -14,7 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,10 +36,6 @@ public class SchoolSettings {
   @Column(name = "term")
   private Integer currentSchoolTerm = 1;
 
-  // for example term one opener
-  @Column(name = "sub_term")
-  private String currentSubTerm = "opener";
-
   @Column(name = "school_start_time")
   private LocalTime schoolStartTime = LocalTime.of(8, 0);
 
@@ -55,15 +50,11 @@ public class SchoolSettings {
   @JoinColumn(name = "school_id")
   private School school;
 
+  @OneToOne(mappedBy = "schoolSettings")
+  private ExamSettings examSettings;
+
   @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<SchoolBreak> breaks = new ArrayList<>();
-
-  @PreUpdate
-  private void normalze() {
-    if (currentSubTerm != null) {
-      currentSubTerm = currentSubTerm.trim().toLowerCase();
-    }
-  }
 
   @PrePersist
   private void generateIdAndNormalize() {

@@ -11,11 +11,13 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.SchoolResourceRestrictedException;
+import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
+import com.example.school.system.types.ExamType;
 import com.example.school.system.types.OtpPurpose;
 import com.example.school.system.types.SchoolStatus;
 import io.jsonwebtoken.Claims;
@@ -52,6 +54,9 @@ public class SchoolService {
 
         school = schoolRepository.save(school);
         SchoolSettings settings = new SchoolSettings();
+        ExamSettings examSettings = new ExamSettings();
+        examSettings.setExamType(ExamType.OPENER);
+        settings.setExamSettings(examSettings);
         settings.setSchool(school);
         schoolSettingsRepository.save(settings);
         code.insert(0, "Your school code:");

@@ -3,6 +3,7 @@ package com.example.school.system.models;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.school.system.types.ExamType;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
@@ -45,7 +46,7 @@ public class MarksSheet {
 
     private Integer currentSchoolTerm;
 
-    private String currentSubTerm;
+    private ExamType examType;
 
     @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true)
     List<MarksRow> marks;

@@ -16,6 +16,7 @@ import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.MarksRow;
@@ -58,9 +59,9 @@ public class MarksEntryService {
         List<StudentProfile> students = getStudentsForSubject(subjectJointId, subjectJoint);
         SchoolSettings schoolSettings = schoolClass.getSchool().getSchoolSettings();
         MarksSheet existingMarkSheet = marksSheetRepo
-                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(subjectJointId,
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamSettingsExamType(subjectJointId,
                         schoolSettings.getAcademicYear(), schoolSettings.getCurrentSchoolTerm(),
-                        schoolSettings.getCurrentSubTerm())
+                        schoolSettings.getExamSettings().getExamType())
                 .orElseGet(() -> createMarksSheet(subjectJoint, schoolSettings, students));
         Map<UUID, MarksRow> existingMarks = new HashMap<>();
         if (existingMarkSheet.getId() != null) {
@@ -94,7 +95,8 @@ public class MarksEntryService {
         MarksSheet newMarksSheet = new MarksSheet();
         newMarksSheet.setAcademicYear(schoolSettings.getAcademicYear());
         newMarksSheet.setCurrentSchoolTerm(schoolSettings.getCurrentSchoolTerm());
-        newMarksSheet.setCurrentSubTerm(schoolSettings.getCurrentSubTerm());
+        newMarksSheet.setExamType(schoolSettings.getExamSettings().getExamType());
+        ;
         newMarksSheet.setSubjectJoint(subjectJoint);
         return newMarksSheet;
     }
@@ -122,9 +124,10 @@ public class MarksEntryService {
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
 
-        MarksSheet marksSheet = marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndCurrentSubTerm(
-                subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
-                settings.getCurrentSubTerm())
+        MarksSheet marksSheet = marksSheetRepo
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamSettingsExamType(
+                        subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
+                        settings.getExamSettings().getExamType())
                 .orElseGet(() -> {
                     MarksSheet newMarksSheet = new MarksSheet();
                     newMarksSheet.setMaxExam(100);
@@ -134,7 +137,7 @@ public class MarksEntryService {
                     newMarksSheet.setSubjectJoint(subjectJoint);
                     newMarksSheet.setAcademicYear(settings.getAcademicYear());
                     newMarksSheet.setCurrentSchoolTerm(settings.getCurrentSchoolTerm());
-                    newMarksSheet.setCurrentSubTerm(settings.getCurrentSubTerm());
+                    newMarksSheet.setExamType(settings.getExamSettings().getExamType());
                     marksSheetRepo.save(newMarksSheet);
                     return newMarksSheet;
                 });
