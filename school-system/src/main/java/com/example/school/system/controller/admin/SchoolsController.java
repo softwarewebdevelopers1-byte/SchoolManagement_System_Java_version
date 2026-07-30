@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api/complex")
 @PreAuthorize("hasRole('SUPERADMIN')")
-public class AcceptSchoolsController {
+public class SchoolsController {
     private final GetAllSchools schools;
 
     @GetMapping("/get/all/schools")

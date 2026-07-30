@@ -95,7 +95,7 @@ public class Users {
       id = UuidCreator.getTimeOrdered();
     }
     if (roles.isEmpty()) {
-      roles.add(UserRoles.STUDENT);
+      roles.add(UserRoles.UNASSIGNED);
     }
     if (email != null) {
       email = email.trim().toLowerCase();

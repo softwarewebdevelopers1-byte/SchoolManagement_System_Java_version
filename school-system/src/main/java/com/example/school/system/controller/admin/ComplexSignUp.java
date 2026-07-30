@@ -1,5 +1,7 @@
 package com.example.school.system.controller.admin;
 
+import java.util.Set;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +14,7 @@ import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
+import com.example.school.system.types.UserRoles;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -35,8 +38,12 @@ public class ComplexSignUp {
 
     private Users toUsers(String password, String email) {
         Users user = new Users();
+        Set<UserRoles> newRole = Set.of(UserRoles.SUPERADMIN);
+        user.setRoles(newRole);
         user.setPassword(password);
         user.setEmail(email);
         return user;
     }
 }
+
+
