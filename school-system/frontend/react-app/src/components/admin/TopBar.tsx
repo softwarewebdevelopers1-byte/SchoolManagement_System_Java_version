@@ -1,0 +1,215 @@
+// components/admin/TopBar.tsx
+import React from "react";
+import { DashboardTheme } from "../../lib/useDashboardTheme";
+import { RoleSwitcher } from "../shared/RoleSwitcher";
+
+interface TopBarProps {
+  title: string;
+  unassignedCount: number;
+  onSwitchTab: (tab: string) => void;
+  teacherInitials: string;
+  teacherAvatarColor: string;
+  isMobile: boolean;
+  onOpenMenu: () => void;
+  theme: DashboardTheme;
+  onToggleTheme: () => void;
+  onLogout: () => void;
+  user: any;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({
+  title,
+  unassignedCount,
+  onSwitchTab,
+  teacherInitials,
+  teacherAvatarColor,
+  isMobile,
+  onOpenMenu,
+  theme,
+  onToggleTheme,
+  onLogout,
+  user,
+}) => {
+  const date = new Date().toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  return (
+    <header
+      style={{
+        background: "var(--cream)",
+        borderBottom: "1px solid var(--border)",
+        height: isMobile ? "auto" : 54,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexShrink: 0,
+        gap: 12,
+        flexWrap: "wrap",
+        minHeight: isMobile ? 72 : 54,
+        padding: isMobile ? "14px 16px" : "0 20px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            aria-label="Open navigation menu"
+            style={{
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--sand)",
+              color: "var(--textM)",
+              fontFamily: "var(--sans)",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Menu
+          </button>
+        )}
+        <div style={{ minWidth: 0 }}>
+          <p
+            style={{
+              fontSize: 9.5,
+              fontWeight: 700,
+              color: "var(--gold)",
+              textTransform: "uppercase",
+              letterSpacing: ".09em",
+              margin: 0,
+            }}
+          >
+            Admin Dashboard
+          </p>
+          <h2
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              color: "var(--text)",
+              margin: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
+        {unassignedCount > 0 && (
+          <button
+            onClick={() => onSwitchTab("classes")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "5px 12px",
+              background: "var(--dBg)",
+              border: "1px solid #fecaca",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontFamily: "var(--sans)",
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: "var(--dText)",
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>
+              {unassignedCount} class{unassignedCount > 1 ? "es" : ""} without
+              CT
+            </span>
+          </button>
+        )}
+        <RoleSwitcher user={user} />
+        <button
+          onClick={onToggleTheme}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "var(--white)",
+            color: "var(--text)",
+            fontFamily: "var(--sans)",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {theme === "dark" ? "Light" : "Dark"}
+        </button>
+        <p style={{ fontSize: 11.5, color: "var(--textF)", margin: 0, whiteSpace: "nowrap" }}>
+          {date}
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: 31,
+              height: 31,
+              borderRadius: "50%",
+              background: teacherAvatarColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 700,
+              fontSize: 11,
+              color: "#fff",
+            }}
+          >
+            {teacherInitials}
+          </div>
+          <div>
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--text)",
+                margin: 0,
+              }}
+            >
+              Admin User
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={onLogout}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 10,
+                  color: "var(--dText)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "underline"
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};

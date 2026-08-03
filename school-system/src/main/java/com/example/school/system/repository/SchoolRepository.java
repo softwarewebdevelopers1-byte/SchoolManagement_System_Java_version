@@ -1,5 +1,6 @@
 package com.example.school.system.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,4 +20,8 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
     Optional<School> findBySchoolCodeAndStatus(String code, SchoolStatus status);
 
     Optional<School> findByEmail(String schoolEmail);
+
+    List<School> findAllByStatus(SchoolStatus status);
+
+    Optional<School> findByIdAndSchoolNameAndStatus(UUID id, String schoolName,SchoolStatus status);
 }

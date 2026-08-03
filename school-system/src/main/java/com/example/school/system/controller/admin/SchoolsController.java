@@ -1,19 +1,21 @@
 package com.example.school.system.controller.admin;
 
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.controller.admin.DTO.ApproveSchoolDto;
+import com.example.school.system.controller.admin.service.SchoolAcceptance;
 import com.example.school.system.controller.admin.service.Teachers;
 import com.example.school.system.services.admin.GetAllSchools;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class SchoolsController {
     private final GetAllSchools schools;
     private final Teachers teachers;
+    private final SchoolAcceptance schoolAcceptance;
 
     @GetMapping("/get/all/schools")
     public ResponseEntity<?> getAllSchools() {
@@ -45,11 +48,13 @@ public class SchoolsController {
 
     @GetMapping("/get/schools/pending/approval")
     public ResponseEntity<?> getPendingSchools() {
-        return ResponseEntity.status(200).body(null);
+        var schools = schoolAcceptance.pendingApprovalSchools();
+        return ResponseEntity.status(200).body(schools);
     }
 
-    @PostMapping("/accept/school")
-    public ResponseEntity<?> acceptSchools(@RequestParam UUID id) {
-        return ResponseEntity.status(200).body(null);
+    @PostMapping("/approve/school")
+    public ResponseEntity<?> approveSchool(@Valid @RequestBody ApproveSchoolDto approval) {
+        var res = schoolAcceptance.acceptSchool(approval.schoolId(), approval.schoolName(), approval.schoolStatus());
+        return ResponseEntity.status(0).body(res);
     }
 }

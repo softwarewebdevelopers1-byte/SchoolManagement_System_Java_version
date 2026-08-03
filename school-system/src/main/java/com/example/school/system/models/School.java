@@ -88,7 +88,7 @@ public class School {
             schoolMotto = schoolMotto.trim().toLowerCase();
         }
         if (status == null) {
-            status = SchoolStatus.PENDING_VERIFICATION;
+            status = SchoolStatus.PENDING_APPROVAL;
         }
     }
 
@@ -101,7 +101,7 @@ public class School {
             schoolName = schoolName.trim().toLowerCase();
         }
         if (status == null) {
-            status = SchoolStatus.PENDING_VERIFICATION;
+            status = SchoolStatus.PENDING_APPROVAL;
         }
         if (email != null) {
             email = email.trim().toLowerCase();

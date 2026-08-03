@@ -1,0 +1,174 @@
+// components/subjectteacher/SubjectsTab.tsx
+import React from "react";
+import styles from "./SubjectTeacherDashboard.module.css";
+import { Subject } from "./types";
+import { formatSubjectOfferingTag } from "../../lib/subjectEnrollment";
+
+interface SubjectsTabProps {
+  subjects: Subject[];
+  onSelectSubject: (subjectId: string) => void;
+  onEnterMarks: (subjectId: string) => void;
+  pushedSubjects: Set<string>;
+  gc: (value: number) => string;
+  term: number;
+  year: number;
+}
+
+export const SubjectsTab: React.FC<SubjectsTabProps> = ({
+  subjects,
+  onSelectSubject,
+  onEnterMarks,
+  pushedSubjects,
+  term,
+  year,
+}) => {
+  const totalStudents = subjects.reduce((sum, s) => sum + s.students, 0);
+  const electiveCount = subjects.filter((subject) => subject.enrollmentMode === "elective").length;
+  return (
+    <div className={styles.anim}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <p className={styles.sectionEyebrow}>My Teaching Streams</p>
+          <h2 className={styles.sectionTitle}>Assigned Subjects</h2>
+          <p className={styles.sectionSub}>
+            {subjects.length} streams · {totalStudents} total learners · Term {term},
+            {year}
+          </p>
+        </div>
+      </div>
+
+      <div className={styles.metricGrid}>
+        <div className={styles.metricCard}>
+          <p className={styles.metricLabel}>Streams</p>
+          <p className={styles.metricValue}>{subjects.length}</p>
+          <p className={styles.metricNote}>Assigned this term</p>
+        </div>
+        <div
+          className={styles.metricCard}
+          style={{ borderTopColor: "var(--sText)" }}
+        >
+          <p className={styles.metricLabel}>Total learners</p>
+          <p className={styles.metricValue}>{totalStudents}</p>
+          <p className={styles.metricNote}>Across all streams</p>
+        </div>
+        <div
+          className={styles.metricCard}
+          style={{ borderTopColor: "var(--iText)" }}
+        >
+          <p className={styles.metricLabel}>Elective streams</p>
+          <p className={styles.metricValue}>{electiveCount}</p>
+          <p className={styles.metricNote}>Student-level enrollment</p>
+        </div>
+      </div>
+
+      <div className={styles.subjectsGrid}>
+        {subjects.map((subject) => (
+          <div
+            key={subject.id}
+            className={styles.subjectCard}
+            onClick={() => onSelectSubject(subject.id)}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--serif)",
+                    fontSize: "1.2rem",
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    margin: "0 0 2px",
+                  }}
+                >
+                  {subject.name}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--textMut)",
+                    margin: 0,
+                  }}
+                >
+                  {subject.grade} | {formatSubjectOfferingTag(subject.enrollmentMode, subject.sharedSlotId)}
+                </p>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 6,
+                marginBottom: 10,
+              }}
+            >
+              {[
+                ["Students", subject.students],
+                ["Term", `T${subject.term}`],
+                ["Last", subject.lastAssess.split(" ")[0]],
+              ].map(([k, v]) => (
+                <div
+                  key={k}
+                  style={{
+                    background: "var(--sand)",
+                    borderRadius: 7,
+                    padding: "7px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      color: "var(--textF)",
+                      textTransform: "uppercase",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    {k}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "12.5px",
+                      fontWeight: 700,
+                      color: "var(--text)",
+                      margin: 0,
+                    }}
+                  >
+                    {v}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 7 }}>
+              <button
+                className={styles.btnPrimary}
+                style={{ flex: 1, fontSize: "11.5px" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEnterMarks(subject.id);
+                }}
+              >
+                Enter Marks
+              </button>
+              <span
+                className={
+                  pushedSubjects.has(subject.id)
+                    ? styles.badgePushed
+                    : styles.badgePending
+                }
+              >
+                {pushedSubjects.has(subject.id) ? "Pushed" : "Not pushed"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,203 @@
+/* components/admin/AdminDashboard.module.css */
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito:wght@300;400;500;600;700&display=swap");
+
+.dashboard {
+  --cg: #0b2018;
+  --cgm: #163325;
+  --cgl: rgba(255, 255, 255, 0.06);
+  --gold: #c9963d;
+  --goldL: #f5ead4;
+  --goldP: #faf4e8;
+  --cream: #fdfbf7;
+  --sand: #f0e9dc;
+  --border: #e8dcc8;
+  --borderL: #f0e8d8;
+  --text: #1a1208;
+  --textM: #4a3820;
+  --textMut: #7a6040;
+  --textF: #b8a58a;
+  --white: #ffffff;
+  --sBg: #eaf3de;
+  --sText: #3b6d11;
+  --wBg: #faeeda;
+  --wText: #854f0b;
+  --dBg: #fcebeb;
+  --dText: #a32d2d;
+  --iBg: #e8f0fb;
+  --iText: #1a4a99;
+  --serif: "Cormorant Garamond", serif;
+  --sans: "Nunito", sans-serif;
+  --panelBg: linear-gradient(180deg, #fdfbf7 0%, #f7f0e3 100%);
+  color-scheme: light;
+
+  /* Aliases for shared components */
+  --ct-green: var(--cg);
+  --ct-green-mid: var(--cgm);
+  --ct-green-light: var(--cgl);
+  --ct-gold: var(--gold);
+  --ct-gold-light: var(--goldL);
+  --ct-gold-pale: var(--goldP);
+  --ct-cream: var(--cream);
+  --ct-sand: var(--sand);
+  --ct-border: var(--border);
+  --ct-border-light: var(--borderL);
+  --ct-text: var(--text);
+  --ct-text-mid: var(--textM);
+  --ct-text-muted: var(--textMut);
+  --ct-text-faint: var(--textF);
+  --ct-white: var(--white);
+  --ct-success-bg: var(--sBg);
+  --ct-success-text: var(--sText);
+  --ct-warn-bg: var(--wBg);
+  --ct-warn-text: var(--wText);
+  --ct-danger-bg: var(--dBg);
+  --ct-danger-text: var(--dText);
+}
+
+.dashboard[data-theme="dark"] {
+  --cg: #08110d;
+  --cgm: #102018;
+  --cgl: rgba(255, 255, 255, 0.09);
+  --gold: #d7ab59;
+  --goldL: #312617;
+  --goldP: #221a11;
+  --cream: #121714;
+  --sand: #0c120f;
+  --border: #283329;
+  --borderL: #1b241d;
+  --text: #f3eadb;
+  --textM: #ddcdb8;
+  --textMut: #baa88c;
+  --textF: #93836b;
+  --white: #161d19;
+  --sBg: #172416;
+  --sText: #98cd73;
+  --wBg: #241b11;
+  --wText: #e7bc71;
+  --dBg: #261515;
+  --dText: #f09b9b;
+  --iBg: #142030;
+  --iText: #8ab5ff;
+  --panelBg: linear-gradient(180deg, #101612 0%, #0b100d 100%);
+  color-scheme: dark;
+}
+
+.dashboard input,
+.dashboard select,
+.dashboard textarea {
+  color: var(--text);
+  background: var(--cream);
+  border-color: var(--border);
+}
+
+.dashboard button {
+  font-family: var(--sans);
+}
+
+.dashboard :is(input, select, textarea)::placeholder {
+  color: var(--textF);
+}
+
+.dashboard div:has(> table) {
+  overflow-x: auto;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.anim {
+  animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scalein {
+  animation: scaleIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dashboard Layout */
+.dashboard {
+  display: flex;
+  min-height: 100dvh;
+  height: 100dvh;
+  font-family: var(--sans);
+  background: var(--sand);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Modal Styles */
+.modalBg {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 32, 24, 0.55);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .modalBg {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .modalBox {
+    max-width: none;
+    max-height: calc(100dvh - 20px);
+    border-radius: 12px;
+  }
+}
+
+.modalBox {
+  background: var(--cream);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 24px 60px rgba(11, 32, 24, 0.3);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .dashboard table {
+    min-width: 680px;
+  }
+
+  .dashboard th,
+  .dashboard td {
+    white-space: nowrap;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d0c4a8;
+  border-radius: 3px;
+}
