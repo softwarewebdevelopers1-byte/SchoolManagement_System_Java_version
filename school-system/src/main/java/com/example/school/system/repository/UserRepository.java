@@ -33,7 +33,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
 
         Optional<Users> findByIdAndEmail(UUID id, String email);
 
-        List<Users> findAllBySchool(UUID id);
+        List<Users> findAllBySchoolId(UUID id);
 
         @Query("""
                             SELECT u

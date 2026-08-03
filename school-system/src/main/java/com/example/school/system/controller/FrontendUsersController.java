@@ -57,7 +57,7 @@ public class FrontendUsersController {
     @GetMapping
     public ResponseEntity<?> dashboard(@RequestHeader("Authorization") String authHeader) {
         UUID schoolId = currentSchoolId(authHeader);
-        List<Users> users = userRepository.findAllBySchool(schoolId);
+        List<Users> users = userRepository.findAllBySchoolId(schoolId);
         List<Subject> subjects = subjectRepository.findAllBySchoolId(schoolId);
         List<SubjectJoint> subjectJoints = subjectJointRepo.findAllBySchoolClass_schoolId(schoolId);
 
@@ -191,8 +191,9 @@ public class FrontendUsersController {
 
     @PutMapping("/graduation-settings")
     public ResponseEntity<?> updateGraduationSettings(@RequestBody Map<String, Object> payload) {
-        return ResponseEntity.ok(SchoolApiResponse.success(Map.of("finalGrade", String.valueOf(payload.get("finalGrade"))),
-                "Graduation settings updated"));
+        return ResponseEntity
+                .ok(SchoolApiResponse.success(Map.of("finalGrade", String.valueOf(payload.get("finalGrade"))),
+                        "Graduation settings updated"));
     }
 
     private UUID currentSchoolId(String authHeader) {
