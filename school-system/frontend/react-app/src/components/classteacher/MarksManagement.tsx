@@ -1,7 +1,7 @@
 // components/classteacher/MarksManagement.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { C } from "./shared/constants";
-import { api } from "../../lib/api";
+import { marksApi } from "../../api";
 import { buildElectiveSubjectGroups } from "../../lib/subjectEnrollment";
 import { MarksEntry } from "../shared/MarksEntry";
 import { avatar } from "../../lib/dashboardHelpers";
@@ -235,7 +235,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       const subjectPayloads = await Promise.all(
         currentSubject.actualSubjects.map(async (actualSubject) => ({
           subjectId: actualSubject.id,
-          data: await api.get("/marks", {
+          data: await marksApi.list({
             subjectId: actualSubject.id,
             classGrade: user.classGrade,
             classStream: user.classStream,
@@ -449,7 +449,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     try {
       await Promise.all(
         Array.from(marksByActualSubject.entries()).map(([actualSubjectId, actualSubjectMarks]) =>
-          api.post("/marks/save", {
+          marksApi.save({
             subjectId: actualSubjectId,
             classGrade: user.classGrade,
             classStream: user.classStream,
@@ -463,7 +463,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       );
 
       if (summaryData.length > 0) {
-        await api.post("/marks/summary-save", {
+        await marksApi.saveSummary({
           classGrade: user.classGrade,
           classStream: user.classStream,
           term,

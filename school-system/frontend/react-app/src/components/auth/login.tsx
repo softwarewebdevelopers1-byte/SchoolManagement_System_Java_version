@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
-import { api } from "../../lib/api";
+import { authApi, getDefaultDashboardPath } from "../../api";
 
 // Role labels removed
 
@@ -137,32 +137,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response: any = await api.post("/users/login", {
-        identifier: loginIdentifier.trim(),
+      const response = await authApi.login({
+        email: loginIdentifier.trim(),
         password,
+        captchaToken: "",
       });
-      
-      // Store user data in localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response),
-      );
 
       const user = response.user;
       if (onLogin) {
         onLogin(user);
       } else {
-        const primaryRole = user.primaryRole;
-        const paths: Record<string, string> = {
-          superadmin: "/admin",
-          admin: "/admin",
-          headteacher: "/headteacher",
-          deputyteacher: "/deputyHead",
-          classteacher: "/classTeacher",
-          subjectteacher: "/subjectTeacher",
-          student: "/students",
-        };
-        window.location.href = paths[primaryRole] || "/dashboard";
+        window.location.href = getDefaultDashboardPath(user);
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");

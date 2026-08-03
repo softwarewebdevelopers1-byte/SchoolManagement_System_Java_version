@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api } from "../../lib/api";
+import { marksApi } from "../../api";
 import { C } from "../classteacher/shared/constants";
 import { MarksEntry } from "../shared/MarksEntry";
 import {
@@ -193,7 +193,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
 
     const loadDetailedMarks = async () => {
       try {
-        const response = await api.get<PaginatedMarksResponse | any[]>("/marks", {
+        const response = await marksApi.list<PaginatedMarksResponse | any[]>({
           subjectId: activeSubjectId,
           classGrade: currentClass.grade,
           classStream: currentClass.stream || "",
@@ -384,7 +384,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
           finalScore: marks.finalScore,
         }));
 
-      await api.post("/marks/save", {
+      await marksApi.save({
         subjectId,
         classGrade: currentClass.grade,
         classStream: currentClass.stream || "",
@@ -396,7 +396,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
       });
 
       if (summaryMarks.length > 0) {
-        await api.post("/marks/summary-save", {
+        await marksApi.saveSummary({
           classGrade: currentClass.grade,
           classStream: currentClass.stream || "",
           term: currentClass.term,

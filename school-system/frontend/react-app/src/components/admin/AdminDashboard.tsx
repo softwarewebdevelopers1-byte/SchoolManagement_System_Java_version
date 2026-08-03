@@ -30,7 +30,14 @@ import {
   ExitedStudent,
 } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import {
+  api,
+  clearStoredSession,
+  getStoredSession,
+  getUserRoles,
+  schoolApi,
+  usersApi,
+} from "../../api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -110,6 +117,28 @@ const navItems: NavItem[] = [
     svg: "<path d='M16 17l5-5-5-5'/><path d='M21 12H9'/><path d='M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7'/>",
   },
 ];
+
+const featureRoles: Record<string, string[]> = {
+  overview: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher", "subjectteacher"],
+  classes: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher"],
+  students: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher"],
+  marks: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher", "subjectteacher"],
+  performance: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher", "subjectteacher"],
+  subjects: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher", "subjectteacher"],
+  "elective-enrollment": ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  teachers: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  assignments: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  timetables: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead", "classteacher", "subjectteacher"],
+  cycle: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  "cbc-grading": ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  archives: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+  exited: ["admin", "administrator", "superadmin", "headteacher", "deputyteacher", "deputyhead"],
+};
+
+const canAccessFeature = (roles: string[], featureId: string) => {
+  const allowedRoles = featureRoles[featureId] || [];
+  return roles.some((role) => allowedRoles.includes(role));
+};
 
 const teacherInitials = "AU";
 const teacherAvatarColor = "#c9963d";
@@ -364,20 +393,27 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState("");
   const { theme, toggleTheme } = useDashboardTheme();
   const [user, setUserState] = useState(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
-      } catch (e) {}
-    }
-    return null;
+    return getStoredSession()?.user || null;
   });
+  const userRoles = useMemo(() => getUserRoles(user), [user]);
+  const permittedNavItems = useMemo(() => {
+    const filteredItems = navItems.filter((item) =>
+      canAccessFeature(userRoles, item.id),
+    );
+
+    return filteredItems.length ? filteredItems : [navItems[0]];
+  }, [userRoles]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    clearStoredSession();
     window.location.href = "/login";
   };
+
+  useEffect(() => {
+    if (!permittedNavItems.some((item) => item.id === activeTab)) {
+      setActiveTab(permittedNavItems[0].id);
+    }
+  }, [activeTab, permittedNavItems]);
 
   const handleChangePassword = () => {
     window.location.href = "/change-password";
@@ -400,9 +436,9 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       setError("");
       const [response, subjectSettings, graduationSettings] = await Promise.all([
-        api.get<UsersDashboardResponse>("/users"),
-        api.get<ClassSubjectSetting[]>("/school/class-subjects"),
-        api.get<{ finalGrade: string }>("/users/graduation-settings"),
+        usersApi.dashboard<UsersDashboardResponse>(),
+        schoolApi.classSubjectSettings<ClassSubjectSetting[]>(),
+        usersApi.graduationSettings<{ finalGrade: string }>(),
       ]);
       const mappedStudents = mapStudentsFromApi(response.students);
       setTeachers(mapStaffToTeachers(response.staff));
@@ -426,7 +462,7 @@ const AdminDashboard: React.FC = () => {
   const refreshUser = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const freshUser: any = await api.get(`/users/${user.id}`);
+      const freshUser: any = await usersApi.byId(user.id);
       if (freshUser) {
         // Ensure roles is always an array
         let rolesArr = freshUser.roles;
@@ -438,7 +474,7 @@ const AdminDashboard: React.FC = () => {
         const updatedUser = {
           ...user,
           ...freshUser,
-          id: freshUser._id,
+          id: freshUser.id || freshUser.userId || user.id,
           roles: rolesArr || user.roles || [],
         };
         const savedItem = localStorage.getItem("user");
@@ -501,9 +537,9 @@ const AdminDashboard: React.FC = () => {
 
     try {
       if (studentId) {
-        await api.put(`/users/${studentId}`, body);
+        await usersApi.update(studentId, body);
       } else {
-        await api.post("/users", body);
+        await usersApi.create(body);
       }
 
       await loadDashboardUsers();
@@ -518,7 +554,7 @@ const AdminDashboard: React.FC = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
-      await api.delete(`/users/${studentId}`);
+      await usersApi.remove(studentId);
       await loadDashboardUsers();
       showSuccess("Student record deleted.");
     } catch (err) {
@@ -547,9 +583,9 @@ const AdminDashboard: React.FC = () => {
 
     try {
       if (teacherId) {
-        await api.put(`/users/${teacherId}`, body);
+        await usersApi.update(teacherId, body);
       } else {
-        await api.post("/users", body);
+        await usersApi.create(body);
       }
 
       await loadDashboardUsers();
@@ -565,7 +601,7 @@ const AdminDashboard: React.FC = () => {
 
   const deleteTeacher = async (teacherId: string) => {
     try {
-      await api.delete(`/users/${teacherId}`);
+      await usersApi.remove(teacherId);
       await loadDashboardUsers();
       await refreshUser();
       showSuccess("Staff record deleted.");
@@ -633,9 +669,9 @@ const AdminDashboard: React.FC = () => {
   ) => {
     try {
       if (subjectId) {
-        await api.put(`/school/subjects/${subjectId}`, { name, department });
+        await schoolApi.updateSubject({ subjectId, name, department });
       } else {
-        await api.post("/school/subjects", { name, department });
+        await schoolApi.createSubject({ name, department });
       }
       await loadDashboardUsers();
       showSuccess(`Subject ${subjectId ? "updated" : "created"} successfully.`);
@@ -662,7 +698,7 @@ const AdminDashboard: React.FC = () => {
     classStream: string;
   }) => {
     try {
-      await api.post("/school/assignments", payload);
+      await schoolApi.assignSubjectTeacher(payload);
       await loadDashboardUsers();
       await refreshUser();
       showSuccess("Assignment updated successfully.");
@@ -681,17 +717,14 @@ const AdminDashboard: React.FC = () => {
     sharedSlotId: string | null = null,
   ) => {
     try {
-      const response = await api.put<{ message?: string }>(
-        "/school/class-subjects",
-        {
-          subjectId,
-          classGrade,
-          classStream,
-          isOffered,
-          enrollmentMode,
-          sharedSlotId,
-        },
-      );
+      const response = await schoolApi.updateClassSubjectSettings<{ message?: string }>({
+        subjectId,
+        classGrade,
+        classStream,
+        isOffered,
+        enrollmentMode,
+        sharedSlotId,
+      });
       await loadDashboardUsers();
       showSuccess(
         response.message ||
@@ -739,7 +772,7 @@ const AdminDashboard: React.FC = () => {
     action: "enroll" | "unenroll",
   ) => {
     try {
-      const response = await api.put<{ message?: string }>("/users/bulk-enroll-elective", {
+      const response = await usersApi.bulkEnrollElective<{ message?: string }>({
         studentIds,
         subjectId,
         classGrade,
@@ -765,7 +798,7 @@ const AdminDashboard: React.FC = () => {
         const newRoles = existingRoles.filter((r) => r !== "classteacher");
         if (newRoles.length === 0) newRoles.push("subjectteacher");
 
-        await api.put(`/users/${teacherId}`, {
+        await usersApi.update(teacherId, {
           name: teacher.name,
           email: teacher.email,
           phone: teacher.phone,
@@ -791,10 +824,11 @@ const AdminDashboard: React.FC = () => {
     examType: string,
   ) => {
     try {
-      const res = await api.put<{ message?: string }>(
-        "/users/bulk-update-term",
-        { term, year, examType },
-      );
+      const res = await usersApi.bulkUpdateTerm<{ message?: string }>({
+        term,
+        year,
+        examType,
+      });
       await loadDashboardUsers();
       showSuccess(
         res.message ||
@@ -812,10 +846,10 @@ const AdminDashboard: React.FC = () => {
 
   const handleFinalGradeUpdate = async (nextFinalGrade: string) => {
     try {
-      const response = await api.put<{ message?: string; finalGrade: string }>(
-        "/users/graduation-settings",
-        { finalGrade: nextFinalGrade },
-      );
+      const response = await usersApi.updateGraduationSettings<{
+        message?: string;
+        finalGrade: string;
+      }>({ finalGrade: nextFinalGrade });
       setFinalGrade(response.finalGrade);
       showSuccess(response.message || "Final grade setting updated.");
     } catch (err) {
@@ -1115,7 +1149,7 @@ const AdminDashboard: React.FC = () => {
         isMobile={isMobile}
         mobileOpen={mobileMenuOpen}
         activeTab={activeTab}
-        navItems={navItems}
+        navItems={permittedNavItems}
         classesCount={classes.length}
         subjectsCount={subjects.length}
         teachersCount={teachers.length}

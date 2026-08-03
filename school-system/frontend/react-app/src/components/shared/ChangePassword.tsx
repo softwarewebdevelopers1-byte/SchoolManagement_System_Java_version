@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { api } from "../../lib/api";
+import { usersApi } from "../../api";
 
 interface ChangePasswordProps {
   onClose: () => void;
@@ -30,7 +30,7 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose, onSucce
 
     setLoading(true);
     try {
-      await api.put("/users/password", { oldPassword, newPassword });
+      await usersApi.changePassword({ oldPassword, newPassword });
       setSuccess(true);
       if (onSuccess) onSuccess();
     } catch (err: any) {

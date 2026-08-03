@@ -25,7 +25,7 @@ import {
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import { api, clearStoredSession, getStoredSession, schoolApi, usersApi } from "../../api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 
 const NAV = [
@@ -82,14 +82,7 @@ const NAV = [
 export default function ClassTeacherDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
-      } catch (e) {}
-    }
-    return null;
+    return (getStoredSession()?.user as any) || null;
   });
 
   const [tab, setTab] = useState("students");
@@ -123,11 +116,11 @@ export default function ClassTeacherDashboard() {
             examType: currentUser.examType,
           },
         ),
-        api.get("/school/class-subjects", {
+        schoolApi.classSubjectSettings({
           classGrade: currentUser.classGrade,
           classStream: currentUser.classStream,
         }),
-        api.get("/users"), // Get assignments and staff names
+        usersApi.dashboard(), // Get assignments and staff names
       ])) as [any[], any[], any];
       setStudents(studentsData);
       const mappedSubjects = subjectsData.map((subject: any) => ({
@@ -184,7 +177,7 @@ export default function ClassTeacherDashboard() {
         payload.sharedSlotId = sharedSlotId;
       }
 
-      await api.put("/school/class-subjects", payload);
+      await schoolApi.updateClassSubjectSettings(payload);
       await loadData();
     },
     [currentUser, loadData],
@@ -197,7 +190,7 @@ export default function ClassTeacherDashboard() {
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
     try {
-      const freshUser: any = await api.get(`/users/${currentUser.id}`);
+      const freshUser: any = await usersApi.byId(currentUser.id);
       if (freshUser) {
         // Ensure roles is always an array (backend may return object from DB)
         let rolesArr = freshUser.roles;
@@ -235,7 +228,7 @@ export default function ClassTeacherDashboard() {
   }, [refreshUser]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    clearStoredSession();
     navigate("/login");
   };
 

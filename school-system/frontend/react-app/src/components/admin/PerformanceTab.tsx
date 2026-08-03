@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api } from "../../lib/api";
+import { marksApi } from "../../api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
 import { Class, Student, Subject } from "./types";
 
@@ -177,7 +177,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       for (const cls of targetClasses) {
         const clsSubjects = subjects.filter(s => cls.offeredSubjectIds.includes(s.id));
         for (const sub of clsSubjects) {
-          const data: any[] = await api.get("/marks", {
+          const data: any[] = await marksApi.list({
             subjectId: sub.id,
             classGrade: cls.grade,
             classStream: cls.stream || "",
@@ -241,7 +241,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     setIsSendingWhatsapp(true);
     setMsg(null);
     try {
-      const response = await api.post<{ message?: string }>("/marks/whatsapp/class", {
+      const response = await marksApi.sendClassWhatsapp<{ message?: string }>({
         classGrade: currentClass.grade,
         classStream: currentClass.stream || "",
         term: currentClass.term || 1,

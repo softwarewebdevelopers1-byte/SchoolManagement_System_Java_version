@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { api } from "../../lib/api";
+import { timetableApi } from "../../api";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Class } from "./types";
 
@@ -135,7 +135,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
     try {
       validateBreakConfiguration(schoolStartTime, subjectDurationMinutes, breaks);
 
-      const response = await api.post<{ message: string }>("/school/timetables/generate", {
+      const response = await timetableApi.generate<{ message: string }>({
         schoolStartTime,
         subjectsPerDay,
         subjectDurationMinutes,

@@ -1,7 +1,7 @@
 // components/classteacher/Settings.tsx
 import React, { useState } from "react";
 import { C, FONT } from "./shared/constants";
-import { api } from "../../lib/api";
+import { usersApi } from "../../api";
 
 interface SettingsProps {
   user: any;
@@ -88,7 +88,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, studentsCount, onUserU
         term: Number(form.term),
         year: Number(form.academicYear),
       };
-      await api.put(`/users/${user.id}`, updatedData);
+      await usersApi.update(user.id, updatedData);
       setSaved(true);
       if (onUserUpdate) onUserUpdate(updatedData);
       // Update local storage too

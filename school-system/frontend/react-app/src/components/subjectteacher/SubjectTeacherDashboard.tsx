@@ -12,7 +12,13 @@ import { ResourcesTab } from "./ResourcesTab";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Subject, Student, MarksData } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import {
+  clearStoredSession,
+  getStoredSession,
+  marksApi,
+  schoolApi,
+  usersApi,
+} from "../../api";
 
 import { initials, avatarColor, avatar, gc } from "../../lib/dashboardHelpers";
 
@@ -45,14 +51,7 @@ const collectStudentsWithStoredMarks = (subjectMarks?: SubjectMarksMap) =>
 
 const SubjectTeacherDashboard: React.FC = () => {
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
-      } catch (e) {}
-    }
-    return null;
+    return (getStoredSession()?.user as any) || null;
   });
 
   const [collapsed, setCollapsed] = useState(false);
@@ -73,7 +72,7 @@ const SubjectTeacherDashboard: React.FC = () => {
   const { theme, toggleTheme } = useDashboardTheme();
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    clearStoredSession();
     window.location.href = "/login";
   };
 
@@ -103,8 +102,8 @@ const SubjectTeacherDashboard: React.FC = () => {
     try {
       setLoading(true);
       const [data, averages] = await Promise.all([
-        api.get(`/school/assignments/teacher/${currentUser.id}`) as Promise<any[]>,
-        api.get(`/marks/averages/teacher/${currentUser.id}`, {
+        schoolApi.assignmentsByTeacher<any[]>(currentUser.id),
+        marksApi.teacherAverages<Record<string, number>>(currentUser.id, {
           term: currentUser.term || 1,
           year: currentUser.year || 2024,
           examType: currentUser.examType || "opener",
@@ -142,7 +141,7 @@ const SubjectTeacherDashboard: React.FC = () => {
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
     try {
-      const freshUser: any = await api.get(`/users/${currentUser.id}`);
+      const freshUser: any = await usersApi.byId(currentUser.id);
       if (freshUser) {
         let rolesArr = freshUser.roles;
         if (rolesArr && !Array.isArray(rolesArr)) {
@@ -192,7 +191,7 @@ const SubjectTeacherDashboard: React.FC = () => {
 
     try {
       // Ensure we send params in a way that matches what the backend expects
-      const data: any[] = await api.get("/marks", {
+      const data: any[] = await marksApi.list({
         subjectId: currentSubject.subjectId, // Use the actual subject ID
         classGrade: currentSubject.classGrade,
         classStream: currentSubject.classStream,
@@ -358,7 +357,7 @@ const SubjectTeacherDashboard: React.FC = () => {
     }));
 
     try {
-      await api.post("/marks/save", {
+      await marksApi.save({
         subjectId: currentSubject.subjectId,
         classGrade: currentSubject.classGrade,
         classStream: currentSubject.classStream,
@@ -392,7 +391,7 @@ const SubjectTeacherDashboard: React.FC = () => {
     }));
 
     try {
-      await api.post("/marks/save", {
+      await marksApi.save({
         subjectId: currentSubject.subjectId,
         classGrade: currentSubject.classGrade,
         classStream: currentSubject.classStream,

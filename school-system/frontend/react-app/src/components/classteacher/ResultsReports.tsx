@@ -2,7 +2,7 @@ import React from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api } from "../../lib/api";
+import { marksApi } from "../../api";
 import { DlIcon } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { gradeBg, gradeColor, getSubjectRemark, getSubId, isStudentSubject, marksForStudentSubjects, subjectsForStudent, sum, sumPoints } from "./shared/helpers";
@@ -104,7 +104,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     setIsSendingWhatsapp(true);
     setMsg(null);
     try {
-      const response = await api.post<{ message?: string }>("/marks/whatsapp/class", {
+      const response = await marksApi.sendClassWhatsapp<{ message?: string }>({
         classGrade,
         classStream,
         term,
