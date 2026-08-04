@@ -89,7 +89,7 @@ export const normalizeUser = (user: any) => {
 
 export const getDefaultDashboardPath = (user: any) => {
   const roles = normalizeRoles(user?.roles || user?.role);
-  return ROLE_PATHS[roles[0]] || "/admin";
+  return `edunex-org${ROLE_PATHS[roles[0]]}` || "/";
 };
 
 export const getRoleFromPath = (path: string): string => {

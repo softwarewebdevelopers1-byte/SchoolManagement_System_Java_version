@@ -8,7 +8,12 @@ import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherD
 import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
-import { getDefaultDashboardPath, normalizeUser, normalizeRoles, ROLE_PATHS } from "./lib/api";
+import {
+  getDefaultDashboardPath,
+  normalizeUser,
+  normalizeRoles,
+  ROLE_PATHS,
+} from "./lib/api";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -24,7 +29,7 @@ const DashboardSelector = () => {
     const user = normalizeUser(session.user || session);
     const roles = normalizeRoles(user?.roles || user?.role);
     const validRoles = roles.filter((r) => ROLE_PATHS[r]);
-    
+
     if (validRoles.length <= 1) {
       return <Navigate to={getDefaultDashboardPath(user)} replace />;
     }
@@ -36,49 +41,59 @@ const DashboardSelector = () => {
       DEPUTYTEACHER: "Deputy Head",
       CLASSTEACHER: "Class Teacher",
       SUBJECTTEACHER: "Subject Teacher",
-      STUDENT: "Student"
+      STUDENT: "Student",
     };
 
     return (
-      <div style={{ 
-        minHeight: "100vh", 
-        display: "flex", 
-        flexDirection: "column", 
-        alignItems: "center", 
-        justifyContent: "center",
-        background: "#163325",
-        fontFamily: "system-ui, sans-serif"
-      }}>
-        <div style={{
-          background: "rgba(255,255,255,0.95)",
-          borderRadius: 24,
-          padding: "48px 40px",
-          boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
-          textAlign: "center",
-          maxWidth: 520,
-          width: "90%"
-        }}>
-          <h1 style={{
-            fontSize: "1.8rem",
-            fontWeight: 700,
-            color: "#0f2e22",
-            margin: "0 0 8px"
-          }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#163325",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(255,255,255,0.95)",
+            borderRadius: 24,
+            padding: "48px 40px",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
+            textAlign: "center",
+            maxWidth: 520,
+            width: "90%",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "1.8rem",
+              fontWeight: 700,
+              color: "#0f2e22",
+              margin: "0 0 8px",
+            }}
+          >
             Welcome back
           </h1>
-          <p style={{
-            fontSize: "0.95rem",
-            color: "#5d665f",
-            margin: "0 0 28px"
-          }}>
+          <p
+            style={{
+              fontSize: "0.95rem",
+              color: "#5d665f",
+              margin: "0 0 28px",
+            }}
+          >
             Choose a dashboard to continue
           </p>
-          <div style={{
-            display: "grid",
-            gap: 12
-          }}>
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+            }}
+          >
             {validRoles.map((role) => {
-              const path = ROLE_PATHS[role];
+              const path = `/edunex-org${ROLE_PATHS[role]}`;
               return (
                 <a
                   key={role}
@@ -93,7 +108,7 @@ const DashboardSelector = () => {
                     color: "#0f2e22",
                     fontWeight: 700,
                     fontSize: "0.95rem",
-                    transition: "all 0.15s ease"
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "#c9963d";
@@ -125,16 +140,72 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardSelector /></ProtectedRoute>} />
-        
-        <Route path="/students" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
-        <Route path="/classTeacher" element={<ProtectedRoute><ClassTeacherDashboard /></ProtectedRoute>} />
-        <Route path="/deputyHead" element={<ProtectedRoute><DeputyHeadDashboard userRole="deputy" /></ProtectedRoute>} />
-        <Route path="/headteacher" element={<ProtectedRoute><DeputyHeadDashboard userRole="headteacher" /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/subjectTeacher" element={<ProtectedRoute><SubjectTeacherDashboard /></ProtectedRoute>} />
-        <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-        
+        <Route
+          path="/edunex-org/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardSelector />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/edunex-org/students"
+          element={
+            <ProtectedRoute>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/classTeacher"
+          element={
+            <ProtectedRoute>
+              <ClassTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/deputyHead"
+          element={
+            <ProtectedRoute>
+              <DeputyHeadDashboard userRole="deputy" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/headteacher"
+          element={
+            <ProtectedRoute>
+              <DeputyHeadDashboard userRole="headteacher" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/subjectTeacher"
+          element={
+            <ProtectedRoute>
+              <SubjectTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </BrowserRouter>

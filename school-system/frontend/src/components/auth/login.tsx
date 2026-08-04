@@ -152,7 +152,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       } else {
         const roles = normalizeRoles(user.roles);
         if (roles.length > 1) {
-          window.location.href = "/dashboard";
+          window.location.href = "/edunex-org/dashboard";
         } else {
           window.location.href = getDefaultDashboardPath(user);
         }

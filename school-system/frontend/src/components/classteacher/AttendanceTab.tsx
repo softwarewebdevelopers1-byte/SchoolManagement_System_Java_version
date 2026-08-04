@@ -122,7 +122,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           <h2 style={{ margin: "0 0 8px", fontFamily: FONT.serif, fontSize: "2rem", color: C.text, letterSpacing: "-0.02em" }}>
             Attendance Management
           </h2>
-          <p style={{ margin: 0, fontFamily: FONT.sans, fontSize: 14, color: C.textMut }}>
+          <p style={{ margin: 0, fontFamily: FONT.sans, fontSize: 14, color: C.textMuted }}>
             Mark student attendance for <strong style={{ color: C.text }}>{user.classGrade} {user.classStream}</strong>
           </p>
         </div>
@@ -201,9 +201,9 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead style={{ background: "#f8f9fa" }}>
               <tr>
-                <th style={{ textAlign: "left", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMut, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Student Name</th>
-                <th style={{ textAlign: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMut, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", width: 160 }}>Present</th>
-                <th style={{ textAlign: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMut, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", width: 160 }}>Absent</th>
+                <th style={{ textAlign: "left", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMuted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Student Name</th>
+                <th style={{ textAlign: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMuted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", width: 160 }}>Present</th>
+                <th style={{ textAlign: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, color: C.textMuted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", width: 160 }}>Absent</th>
               </tr>
             </thead>
             <tbody>
@@ -239,7 +239,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
         </div>
       ) : (
         <div style={{ padding: 60, textAlign: "center", background: "#fafafa", borderRadius: 12, border: `1px dashed ${C.border}` }}>
-          <p style={{ color: C.textMut, margin: 0, fontSize: 15 }}>No attendance records found for this date.</p>
+          <p style={{ color: C.textMuted, margin: 0, fontSize: 15 }}>No attendance records found for this date.</p>
         </div>
       )}
     </div>
