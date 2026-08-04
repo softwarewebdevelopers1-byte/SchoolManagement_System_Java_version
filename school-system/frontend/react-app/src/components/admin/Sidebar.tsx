@@ -94,26 +94,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          {!collapsed && (
-            <div>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#e8dcc8",
-                  letterSpacing: ".07em",
-                  textTransform: "uppercase",
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
-                Admin Portal
-              </p>
-              <p style={{ fontSize: 9, color: "#4a6b5a", margin: 0 }}>
-                School Administration
-              </p>
-            </div>
-          )}
         </div>
         {!isMobile && (
           <button

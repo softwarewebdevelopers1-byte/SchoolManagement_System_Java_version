@@ -5,6 +5,8 @@ import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { getStoredSession } from "./api";
+import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherDashboard";
+import ClassTeacherDashboard from "./components/classteacher/ClassTeacherDashboard";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!getStoredSession()) return <Navigate to="/login" replace />;
@@ -17,10 +19,26 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-        
+
+        <Route
+          path="/edunex-org"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/subject-teacher" element={<SubjectTeacherDashboard />} />
+
+        <Route path="/classTeacher" element={<ClassTeacherDashboard />} />
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </BrowserRouter>

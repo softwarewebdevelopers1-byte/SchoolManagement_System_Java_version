@@ -91,5 +91,5 @@ export const hasAnyRole = (
 
 export const getDefaultDashboardPath = (user: AuthUser | null | undefined) => {
   void user;
-  return "/admin";
+  return "/edunex-org";
 };
