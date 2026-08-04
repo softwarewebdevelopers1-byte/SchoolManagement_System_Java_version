@@ -8,11 +8,23 @@ import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherD
 import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
+import { getDefaultDashboardPath, normalizeUser } from "./lib/api";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
   if (!saved) return <Navigate to="/login" replace />;
   return <>{children}</>;
+};
+
+const DashboardRedirect = () => {
+  const saved = localStorage.getItem("user");
+  if (!saved) return <Navigate to="/login" replace />;
+  try {
+    const session = JSON.parse(saved);
+    return <Navigate to={getDefaultDashboardPath(normalizeUser(session.user || session))} replace />;
+  } catch {
+    return <Navigate to="/login" replace />;
+  }
 };
 
 function App() {
@@ -21,6 +33,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>} />
         
         <Route path="/students" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
         <Route path="/classTeacher" element={<ProtectedRoute><ClassTeacherDashboard /></ProtectedRoute>} />

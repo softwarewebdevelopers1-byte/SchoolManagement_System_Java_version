@@ -25,7 +25,7 @@ import {
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import { api, normalizeRoles } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 
 const NAV = [
@@ -244,13 +244,13 @@ export default function ClassTeacherDashboard() {
   };
 
   // Roles check — guard against roles being a non-array
-  const rolesArray = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
-  const isSubjectTeacher = rolesArray.includes("subjectteacher");
+  const rolesArray = normalizeRoles(currentUser?.roles);
+  const isSubjectTeacher = rolesArray.includes("SUBJECTTEACHER");
   const hasSubjectAssignments = currentUser?.subjects?.length > 0;
   const canSwitchToSubjectDashboard = isSubjectTeacher && hasSubjectAssignments;
 
   useEffect(() => {
-    if (!currentUser || !rolesArray.includes("classteacher")) {
+    if (!currentUser || !rolesArray.includes("CLASSTEACHER")) {
       navigate("/login");
     }
   }, [currentUser, navigate, rolesArray]);

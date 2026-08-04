@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
-import { api } from "../../lib/api";
+import { api, getDefaultDashboardPath, normalizeUser } from "../../lib/api";
 
 // Role labels removed
 
@@ -142,26 +142,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         password,
       });
 
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(response));
-
-      const user = response.data.user;
+      const user = normalizeUser(response.user);
+      const session = { ...response, user };
+      localStorage.setItem("user", JSON.stringify(session));
 
       if (onLogin) {
         onLogin(user);
       } else {
-        const primaryRole = user.roles;
-        const paths: Record<string, string> = {
-          superadmin: "/admin",
-          admin: "/admin",
-          headteacher: "/headteacher",
-          deputyteacher: "/deputyHead",
-          classteacher: "/classTeacher",
-          subjectteacher: "/subjectTeacher",
-          student: "/students",
-        };
-        window.location.href =
-          paths[primaryRole[0].toLowerCase()] || "/dashboard";
+        window.location.href = getDefaultDashboardPath(user);
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");

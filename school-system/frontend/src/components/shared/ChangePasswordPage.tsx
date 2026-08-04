@@ -1,22 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ChangePassword } from "./ChangePassword";
-
-const dashboardPaths: Record<string, string> = {
-  superadmin: "/admin",
-  admin: "/admin",
-  headteacher: "/headteacher",
-  deputyteacher: "/deputyHead",
-  classteacher: "/classTeacher",
-  subjectteacher: "/subjectTeacher",
-  student: "/students",
-};
+import { getDefaultDashboardPath, normalizeUser } from "../../lib/api";
 
 const getReturnPath = () => {
   try {
     const saved = JSON.parse(localStorage.getItem("user") || "{}");
-    const role = saved?.user?.primaryRole || saved?.primaryRole;
-    return dashboardPaths[role] || "/admin";
+    return getDefaultDashboardPath(normalizeUser(saved.user || saved));
   } catch {
     return "/admin";
   }

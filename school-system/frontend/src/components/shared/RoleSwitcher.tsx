@@ -1,28 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { normalizeRoles } from "../../lib/api";
 
 interface RoleSwitcherProps {
   user: any;
 }
 
 const rolePaths: Record<string, string> = {
-  admin: "/admin",
-  superadmin: "/admin",
-  headteacher: "/headteacher",
-  deputyteacher: "/deputyHead",
-  classteacher: "/classTeacher",
-  subjectteacher: "/subjectTeacher",
-  student: "/students",
+  ADMIN: "/admin",
+  SUPERADMIN: "/admin",
+  HEADTEACHER: "/headteacher",
+  DEPUTYTEACHER: "/deputyHead",
+  CLASSTEACHER: "/classTeacher",
+  SUBJECTTEACHER: "/subjectTeacher",
+  STUDENT: "/students",
 };
 
 const roleLabels: Record<string, string> = {
-  admin: "Admin",
-  superadmin: "Super Admin",
-  headteacher: "Head Teacher",
-  deputyteacher: "Deputy Head",
-  classteacher: "Class Teacher",
-  subjectteacher: "Subject Teacher",
-  student: "Student",
+  ADMIN: "Admin",
+  SUPERADMIN: "Super Admin",
+  HEADTEACHER: "Head Teacher",
+  DEPUTYTEACHER: "Deputy Head",
+  CLASSTEACHER: "Class Teacher",
+  SUBJECTTEACHER: "Subject Teacher",
+  STUDENT: "Student",
 };
 
 export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
@@ -33,25 +34,8 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
   );
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  // Robustly extract roles array
-  let roles: string[] = [];
-  if (user?.roles) {
-    if (Array.isArray(user.roles)) {
-      roles = user.roles;
-    } else {
-      // Handle object format { role1, role2, role3 }
-      roles = [user.roles.role1, user.roles.role2, user.roles.role3].filter(
-        Boolean,
-      );
-    }
-  }
-
-  if (user?.role && !roles.includes(user.role)) {
-    roles.push(user.role);
-  }
-
-  // Remove duplicates and filter to valid dashboard roles
-  const validRoles = Array.from(new Set(roles)).filter((r) => rolePaths[r]);
+  let roles = normalizeRoles(user?.roles || user?.role);
+  const validRoles = roles.filter((r) => rolePaths[r]);
 
   // Keep only one role per unique path (e.g. if admin and superadmin both point to /admin)
   const uniquePathRoles: string[] = [];

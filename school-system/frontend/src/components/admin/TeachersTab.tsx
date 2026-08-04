@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Class, Teacher } from "./types";
 
 const roleOptions = [
-  { value: "subjectteacher", label: "Subject Teacher" },
-  { value: "classteacher", label: "Class Teacher" },
-  { value: "headteacher", label: "Head Teacher" },
-  { value: "deputyteacher", label: "Deputy Teacher" },
-  { value: "admin", label: "Admin" },
+  { value: "SUBJECTTEACHER", label: "Subject Teacher" },
+  { value: "CLASSTEACHER", label: "Class Teacher" },
+  { value: "HEADTEACHER", label: "Head Teacher" },
+  { value: "DEPUTYTEACHER", label: "Deputy Teacher" },
+  { value: "ADMIN", label: "Admin" },
 ];
 
 const eyebrowStyle: React.CSSProperties = {
@@ -257,7 +257,7 @@ const StaffFormModal: React.FC<{
           </datalist>
         </div>
 
-        {role.includes("classteacher") && (
+        {role.includes("CLASSTEACHER") && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: "1rem" }}>
             <div>
               <label style={labelStyle}>Class grade</label>
@@ -290,7 +290,7 @@ const StaffFormModal: React.FC<{
           </div>
         )}
 
-        {role.includes("subjectteacher") && (
+        {role.includes("SUBJECTTEACHER") && (
           <div style={{ marginTop: "1rem" }}>
             <label style={labelStyle}>Subjects</label>
             <input
