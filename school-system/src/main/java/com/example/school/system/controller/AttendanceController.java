@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,4 +64,25 @@ public class AttendanceController {
         return ResponseEntity.status(200).body(response);
     }
 
+    @GetMapping("/attendance/class-teacher/today")
+    public ResponseEntity<?> getClassTeacherTodayAttendance() {
+        return ResponseEntity.ok(SchoolApiResponse.success(null, "no attendance sheet yet"));
+    }
+
+    @GetMapping("/attendance/class-teacher/history")
+    public ResponseEntity<?> getClassTeacherAttendanceHistory(
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) String studentId) {
+        return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "attendance history loaded"));
+    }
+
+    @GetMapping("/attendance/class-teacher/summary")
+    public ResponseEntity<?> getClassTeacherAttendanceSummary(
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return ResponseEntity.ok(SchoolApiResponse.success(Map.of(), "attendance summary loaded"));
+    }
 }
+

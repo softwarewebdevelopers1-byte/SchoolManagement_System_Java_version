@@ -53,6 +53,9 @@ public class SchoolSettings {
   @OneToOne(mappedBy = "schoolSettings",cascade = CascadeType.ALL)
   private ExamSettings examSettings;
 
+  @Column(name = "final_grade")
+  private String finalGrade;
+
   @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<SchoolBreak> breaks = new ArrayList<>();
 

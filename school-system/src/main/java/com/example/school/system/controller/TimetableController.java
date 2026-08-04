@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -28,6 +30,20 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/timetables")
 public class TimetableController {
     private final TimetableGenerationService timetableGenerationService;
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyTimetable(
+            @RequestParam(defaultValue = "teacher") String view,
+            @RequestHeader("Authorization") String authHeader) {
+        var response = timetableGenerationService.getTeacherTimetable(authHeader, view);
+        return ResponseEntity.ok(SchoolApiResponse.success(response, "timetable loaded"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTimetable(@PathVariable UUID id) {
+        timetableGenerationService.deleteTimetableEntry(id);
+        return ResponseEntity.ok(SchoolApiResponse.success("timetable deleted"));
+    }
 
     @PutMapping("/settings")
     public ResponseEntity<?> configureSettings(@Valid @RequestBody SchoolTimetableSettingsRequest request) {
@@ -72,7 +88,7 @@ public class TimetableController {
     }
 
     @DeleteMapping("/{schoolId}")
-    public ResponseEntity<?> deleteTimetable(@PathVariable UUID schoolId) {
+    public ResponseEntity<?> deleteTermTimetable(@PathVariable UUID schoolId) {
         timetableGenerationService.deleteTermTimetable(schoolId);
         return ResponseEntity.ok(SchoolApiResponse.success("timetable deleted"));
     }
@@ -87,5 +103,17 @@ public class TimetableController {
     public ResponseEntity<?> conflictReport(@PathVariable UUID generationHistoryId) {
         var response = timetableGenerationService.conflictReport(generationHistoryId);
         return ResponseEntity.ok(SchoolApiResponse.success(response, "conflict report loaded"));
+    }
+
+    @GetMapping("/school/timetables/my")
+    public ResponseEntity<?> getMyTimetable(@RequestParam(required = false) String view) {
+        var response = timetableGenerationService.getActiveTimetable(null);
+        return ResponseEntity.ok(SchoolApiResponse.success(response, "my timetable loaded"));
+    }
+
+    @DeleteMapping("/school/timetables/{id}")
+    public ResponseEntity<?> deleteTimetableById(@PathVariable UUID id) {
+        timetableGenerationService.deleteTermTimetable(id);
+        return ResponseEntity.ok(SchoolApiResponse.success("timetable deleted"));
     }
 }

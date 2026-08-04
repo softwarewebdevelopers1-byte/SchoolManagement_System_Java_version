@@ -18,6 +18,8 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                         @Param("studentId") UUID studentProfileId, @Param("marksSheetId") UUID marksSheetId);
 
         List<MarksRow> findAllByMarksSheetId(UUID sheetId);
+
+        List<MarksRow> findByStudentProfileId(UUID studentProfileId);
 }
 
 

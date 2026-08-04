@@ -21,4 +21,5 @@ public interface StudentSubjectSelectionRepo extends JpaRepository<StudentSubjec
             WHERE sj.schoolClass.school.id = :schoolId
             """)
     List<StudentSubjectSelection> findAllBySchoolId(@Param("schoolId") UUID schoolId);
+    int deleteByElectiveCodeAndStudentProfileId(String code,UUID profileId);
 }

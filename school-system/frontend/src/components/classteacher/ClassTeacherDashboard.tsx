@@ -27,6 +27,8 @@ import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, normalizeRoles } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
+import { AttendanceTab } from "./AttendanceTab";
+import { Calendar1Icon } from "lucide-react";
 
 const NAV = [
   {
@@ -46,6 +48,12 @@ const NAV = [
     label: "Subject assignments",
     desc: "See subjects and the assigned teachers.",
     Icon: HomeIcon,
+  },
+  {
+    id: "attendance",
+    label: "Attendance",
+    desc: "Mark and review student attendance.",
+    Icon: Calendar1Icon,
   },
   {
     id: "timetable",
@@ -255,26 +263,13 @@ export default function ClassTeacherDashboard() {
     }
   }, [currentUser, navigate, rolesArray]);
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 900);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      setCollapsed(false);
-    } else {
-      setMobileMenuOpen(false);
-    }
-  }, [isMobile]);
-
-  const activeNav = NAV.find((n) => n.id === tab) || NAV[0];
   const handleSelectTab = (t: string) => {
     setTab(t);
     setSelectedStudent(null);
     setMobileMenuOpen(false);
   };
+
+  const activeNav = NAV.find((n) => n.id === tab) || NAV[0];
 
   const renderContent = () => {
     if (loading)
@@ -331,6 +326,8 @@ export default function ClassTeacherDashboard() {
             onToggleSubjectOffering={toggleSubjectOffering}
           />
         );
+      case "attendance":
+        return <AttendanceTab user={currentUser} />;
       case "timetable":
         return (
           <TimetableLibrary
@@ -378,7 +375,7 @@ export default function ClassTeacherDashboard() {
             user={currentUser}
             studentsCount={students.length}
             onUserUpdate={() => {
-              window.location.reload(); // Simplest way to refresh everything with new term info
+              window.location.reload();
             }}
           />
         );

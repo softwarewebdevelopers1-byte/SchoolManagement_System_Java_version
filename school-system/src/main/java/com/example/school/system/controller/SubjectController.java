@@ -23,9 +23,11 @@ import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
@@ -33,6 +35,25 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RequestMapping("/api")
 public class SubjectController {
     private final SubjectService subjectService;
+
+    @PostMapping("/school/subjects")
+    public ResponseEntity<?> createSubject(@Valid @RequestBody SubjectDTO subjectCreationDTO) {
+        var singleSubjectRes = subjectService.createSingleSubject(subjectCreationDTO);
+        return ResponseEntity.status(201).body(singleSubjectRes);
+    }
+
+    @PutMapping("/school/subjects/{id}")
+    public ResponseEntity<?> updateSubject(@PathVariable UUID id, @Valid @RequestBody SubjectDTO subjectDTO) {
+        SubjectUpdateDTO updateDTO = new SubjectUpdateDTO(subjectDTO.subjectName(), subjectDTO.schoolId(), id);
+        var updateSubjectRes = subjectService.updateSubject(updateDTO);
+        return ResponseEntity.ok(updateSubjectRes);
+    }
+
+    @DeleteMapping("/school/subjects/{id}")
+    public ResponseEntity<?> deleteSubject(@PathVariable UUID id) {
+        subjectService.deleteSubject(id);
+        return ResponseEntity.ok(SchoolApiResponse.success("subject deleted"));
+    }
 
     @PostMapping("/assign/subject/teacher")
     public ResponseEntity<?> assignTeacher(@Valid @RequestBody AssignSubjectTeacherDTO assignSubjectTeacherDTO) {

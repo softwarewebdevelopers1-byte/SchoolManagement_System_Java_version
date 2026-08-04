@@ -41,6 +41,15 @@ public class StudentProfile {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "guardian_name")
+    private String guardianName;
+
+    @Column(name = "guardian_phone")
+    private String guardianPhone;
+
+    @Column(name = "gender")
+    private String gender;
+
     @OneToMany(mappedBy = "studentProfile")
     List<StudentSubjectSelection> studentSubjectSelections;
 

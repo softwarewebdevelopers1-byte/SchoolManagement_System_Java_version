@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
+import { normalizeRoles } from "../../lib/api";
+import { RoleSwitcher } from "../shared/RoleSwitcher";
 import styles from "./StudentDashboard.module.css";
 import { buildStudentReportSlipPdf } from "../shared/studentReportSlip";
 
@@ -96,6 +98,16 @@ function StudentDashboard() {
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageNotice, setMessageNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.user || parsed;
+      } catch (e) {}
+    }
+    return null;
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -386,6 +398,7 @@ function StudentDashboard() {
               >
                 Download results
               </button>
+              <RoleSwitcher user={user} />
             </div>
           )}
         </header>

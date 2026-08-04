@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
-import { api, getDefaultDashboardPath, normalizeUser } from "../../lib/api";
+import { api, getDefaultDashboardPath, normalizeRoles, normalizeUser } from "../../lib/api";
+
 
 // Role labels removed
 
@@ -149,7 +150,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       if (onLogin) {
         onLogin(user);
       } else {
-        window.location.href = getDefaultDashboardPath(user);
+        const roles = normalizeRoles(user.roles);
+        if (roles.length > 1) {
+          window.location.href = "/dashboard";
+        } else {
+          window.location.href = getDefaultDashboardPath(user);
+        }
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");
@@ -157,6 +163,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       setLoading(false);
     }
   };
+
 
   // Demo login removed
 

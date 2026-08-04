@@ -87,3 +87,10 @@ export const TimetableIcon = () => (
     d2="M3 4h18v18H3z"
   />
 );
+
+export const CalendarIcon = () => (
+  <Icon
+    d="M8 6H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-3M8 6V4M16 6V4M8 6h8"
+    d2="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"
+  />
+);

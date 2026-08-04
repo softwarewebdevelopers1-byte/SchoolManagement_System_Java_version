@@ -16,6 +16,7 @@ import com.example.school.system.DTO.timetable.GenerationHistoryResponse;
 import com.example.school.system.DTO.timetable.SchoolTimetableSettingsRequest;
 import com.example.school.system.DTO.timetable.SubjectRequirementRequest;
 import com.example.school.system.DTO.timetable.TimetableConflictResponse;
+import com.example.school.system.DTO.timetable.TimetableEntryResponse;
 import com.example.school.system.DTO.timetable.TimetableReportResponse;
 import com.example.school.system.DTO.timetable.TimetableResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
@@ -195,6 +196,23 @@ public class TimetableGenerationService {
         return conflictLogRepository.findAllByGenerationHistoryId(generationHistoryId).stream()
                 .map(mapper::toConflictResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TimetableEntryResponse> getTeacherTimetable(String authHeader, String view) {
+        // Returns timetable entries filtered for the current teacher
+        var allTimetables = timetableRepository.findAllByStatus(TimetableStatus.ACTIVE);
+        return allTimetables.stream()
+                .flatMap(t -> t.getEntries().stream())
+                .map(mapper::toEntryResponse)
+                .toList();
+    }
+
+    @Transactional
+    public void deleteTimetableEntry(UUID id) {
+        timetableRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("timetable entry not found"));
+        timetableRepository.deleteById(id);
     }
 
     private TimetableGenerationContext loadContext(UUID schoolId) {

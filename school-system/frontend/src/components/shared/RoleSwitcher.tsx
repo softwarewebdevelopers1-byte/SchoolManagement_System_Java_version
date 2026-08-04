@@ -1,20 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { normalizeRoles } from "../../lib/api";
+import { useNavigate, useLocation } from "react-router-dom";
+import { normalizeRoles, ROLE_PATHS } from "../../lib/api";
 
 interface RoleSwitcherProps {
   user: any;
 }
-
-const rolePaths: Record<string, string> = {
-  ADMIN: "/admin",
-  SUPERADMIN: "/admin",
-  HEADTEACHER: "/headteacher",
-  DEPUTYTEACHER: "/deputyHead",
-  CLASSTEACHER: "/classTeacher",
-  SUBJECTTEACHER: "/subjectTeacher",
-  STUDENT: "/students",
-};
 
 const roleLabels: Record<string, string> = {
   ADMIN: "Admin",
@@ -28,6 +18,7 @@ const roleLabels: Record<string, string> = {
 
 export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isCompact, setIsCompact] = React.useState(
     () => typeof window !== "undefined" && window.innerWidth <= 640,
@@ -35,14 +26,13 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   let roles = normalizeRoles(user?.roles || user?.role);
-  const validRoles = roles.filter((r) => rolePaths[r]);
+  const validRoles = roles.filter((r) => ROLE_PATHS[r]);
 
-  // Keep only one role per unique path (e.g. if admin and superadmin both point to /admin)
   const uniquePathRoles: string[] = [];
   const seenPaths = new Set<string>();
 
   for (const r of validRoles) {
-    const path = rolePaths[r];
+    const path = ROLE_PATHS[r];
     if (path && !seenPaths.has(path)) {
       uniquePathRoles.push(r);
       seenPaths.add(path);
@@ -51,7 +41,6 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
 
   roles = uniquePathRoles;
 
-  // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -77,10 +66,10 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
 
   if (roles.length <= 1) return null;
 
-  const currentPath = window.location.pathname;
+  const currentPath = location.pathname;
   const currentRole =
     roles.find(
-      (r) => rolePaths[r]?.toLowerCase() === currentPath.toLowerCase(),
+      (r) => ROLE_PATHS[r]?.toLowerCase() === currentPath.toLowerCase(),
     ) || roles[0];
 
   return (
@@ -188,7 +177,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
             </div>
           )}
           {roles.map((r: string) => {
-            const path = rolePaths[r];
+            const path = ROLE_PATHS[r];
             if (!path) return null;
             const isActive = currentPath.toLowerCase() === path.toLowerCase();
 

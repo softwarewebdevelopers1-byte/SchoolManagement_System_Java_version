@@ -155,6 +155,13 @@ public class SubjectService {
         return SchoolApiResponse.success(skipped, "checkout the skipped subjects in data object above");
     }
 
+    public SchoolApiResponse<?> deleteSubject(UUID id) {
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject not found"));
+        subjectRepository.delete(subject);
+        return SchoolApiResponse.success("subject deleted");
+    }
+
     public SchoolApiResponse<?> getSubjects(UUID schoolId) {
         schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));

@@ -8,7 +8,7 @@ import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherD
 import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
-import { getDefaultDashboardPath, normalizeUser } from "./lib/api";
+import { getDefaultDashboardPath, normalizeUser, normalizeRoles, ROLE_PATHS } from "./lib/api";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -16,12 +16,104 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const DashboardRedirect = () => {
+const DashboardSelector = () => {
   const saved = localStorage.getItem("user");
   if (!saved) return <Navigate to="/login" replace />;
   try {
     const session = JSON.parse(saved);
-    return <Navigate to={getDefaultDashboardPath(normalizeUser(session.user || session))} replace />;
+    const user = normalizeUser(session.user || session);
+    const roles = normalizeRoles(user?.roles || user?.role);
+    const validRoles = roles.filter((r) => ROLE_PATHS[r]);
+    
+    if (validRoles.length <= 1) {
+      return <Navigate to={getDefaultDashboardPath(user)} replace />;
+    }
+
+    const roleLabels: Record<string, string> = {
+      ADMIN: "Admin",
+      SUPERADMIN: "Super Admin",
+      HEADTEACHER: "Head Teacher",
+      DEPUTYTEACHER: "Deputy Head",
+      CLASSTEACHER: "Class Teacher",
+      SUBJECTTEACHER: "Subject Teacher",
+      STUDENT: "Student"
+    };
+
+    return (
+      <div style={{ 
+        minHeight: "100vh", 
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "#163325",
+        fontFamily: "system-ui, sans-serif"
+      }}>
+        <div style={{
+          background: "rgba(255,255,255,0.95)",
+          borderRadius: 24,
+          padding: "48px 40px",
+          boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
+          textAlign: "center",
+          maxWidth: 520,
+          width: "90%"
+        }}>
+          <h1 style={{
+            fontSize: "1.8rem",
+            fontWeight: 700,
+            color: "#0f2e22",
+            margin: "0 0 8px"
+          }}>
+            Welcome back
+          </h1>
+          <p style={{
+            fontSize: "0.95rem",
+            color: "#5d665f",
+            margin: "0 0 28px"
+          }}>
+            Choose a dashboard to continue
+          </p>
+          <div style={{
+            display: "grid",
+            gap: 12
+          }}>
+            {validRoles.map((role) => {
+              const path = ROLE_PATHS[role];
+              return (
+                <a
+                  key={role}
+                  href={path}
+                  style={{
+                    display: "block",
+                    padding: "16px 20px",
+                    background: "#f3f4f3",
+                    border: "2px solid #e5e7e5",
+                    borderRadius: 14,
+                    textDecoration: "none",
+                    color: "#0f2e22",
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    transition: "all 0.15s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#c9963d";
+                    e.currentTarget.style.color = "#fff";
+                    e.currentTarget.style.borderColor = "#c9963d";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f3f4f3";
+                    e.currentTarget.style.color = "#0f2e22";
+                    e.currentTarget.style.borderColor = "#e5e7e5";
+                  }}
+                >
+                  {roleLabels[role] || role}
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   } catch {
     return <Navigate to="/login" replace />;
   }
@@ -33,7 +125,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardSelector /></ProtectedRoute>} />
         
         <Route path="/students" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
         <Route path="/classTeacher" element={<ProtectedRoute><ClassTeacherDashboard /></ProtectedRoute>} />
