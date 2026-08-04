@@ -1653,8 +1653,8 @@ const LandingPage: React.FC = () => {
             >
               <div className={styles.testiStars}>★★★★★</div>
               <div className={styles.testiQuote}>
-               Edunex has transformed how we run reports. What used to take
-                our staff three days at the end of term now takes two hours. The
+                Edunex has transformed how we run reports. What used to take our
+                staff three days at the end of term now takes two hours. The
                 class teacher dashboard is particularly well thought out.
               </div>
               <div className={styles.testiAuthor}>
@@ -1928,8 +1928,8 @@ const LandingPage: React.FC = () => {
               <em>better-organised school?</em>
             </h2>
             <p className={styles.ctaSub}>
-              Join 240+ schools already using Edunex. Get your whole team set
-              up in under a day — no IT background required.
+              Join 240+ schools already using Edunex. Get your whole team set up
+              in under a day — no IT background required.
             </p>
             <div className={styles.ctaActions}>
               <a
@@ -1993,7 +1993,7 @@ const LandingPage: React.FC = () => {
               </p>
               <div className={styles.footerContact}>
                 <p>
-                  <strong>Contact Developer:</strong> Carlos Technologies
+                  <strong>Contact Developer:</strong> Carloz Technologies
                 </p>
                 <p>
                   <strong>Phone:</strong> 0757475316
@@ -2069,8 +2069,8 @@ const LandingPage: React.FC = () => {
           </div>
           <div className={styles.footerBottom}>
             <span className={styles.footerCopy}>
-              © 2024 Edunex. Built with care for Kenyan schools by Carlos
-              Technologies.
+              @ {new Date().getFullYear()} Edunex. Built with care for Kenyan
+              schools by Carloz Technologies.
             </span>
             <div className={styles.footerSocials}>
               <div className={styles.footerSocial}>
