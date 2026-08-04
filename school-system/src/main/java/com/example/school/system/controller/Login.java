@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
-@RequestMapping("/api/auth/login")
+@RequestMapping("/api/login")
 @RequiredArgsConstructor
 public class Login {
     private final LoginService loginUserService;
-
-    @PostMapping("/login-user")
+    
+    @PostMapping
     public ResponseEntity<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
         LoginResponse loginRes = loginUserService.LoginUser(userLogin);
         return ResponseEntity.status(200).body(SchoolApiResponse.success(loginRes, "User logged in"));

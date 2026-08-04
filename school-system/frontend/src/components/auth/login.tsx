@@ -137,22 +137,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response: any = await api.post("/users/login", {
-        identifier: loginIdentifier.trim(),
+      const response: any = await api.post("/login", {
+        email: loginIdentifier.trim(),
         password,
       });
-      
-      // Store user data in localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response),
-      );
 
-      const user = response.user;
+      // Store user data in localStorage
+      localStorage.setItem("user", JSON.stringify(response));
+
+      const user = response.data.user;
+
       if (onLogin) {
         onLogin(user);
       } else {
-        const primaryRole = user.primaryRole;
+        const primaryRole = user.roles;
         const paths: Record<string, string> = {
           superadmin: "/admin",
           admin: "/admin",
@@ -162,7 +160,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           subjectteacher: "/subjectTeacher",
           student: "/students",
         };
-        window.location.href = paths[primaryRole] || "/dashboard";
+        window.location.href =
+          paths[primaryRole[0].toLowerCase()] || "/dashboard";
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");
@@ -342,7 +341,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 {loading ? <span className={styles.loader} /> : "Sign In"}
               </button>
             </form>
-
           </div>
         </div>
       </div>
