@@ -27,10 +27,9 @@ public class RequestFilter {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
-                        .requestMatchers("/api/auth/login").permitAll().requestMatchers("/api/reset/password/token**")
+                        .requestMatchers("/api/auth/login/**").permitAll().requestMatchers("/api/reset/password/token**")
                         .permitAll()
-                        .requestMatchers("/api/auth/register").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/teacher/create-account").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/debug/**").permitAll()

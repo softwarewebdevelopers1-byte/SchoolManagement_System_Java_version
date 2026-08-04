@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.TeacherAddProfile;
+import com.example.school.system.DTO.TeacherCreateDTO;
 import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
@@ -16,10 +17,12 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.TeacherProfileRepository;
+import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.UserRoles;
+import com.example.school.system.types.AccountStatus;
 
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class TeachersService {
     private final UserRepository userRepository;
     private final TeacherProfileRepository teacherProfileRepository;
+    private final SchoolRepository schoolRepository;
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
     private String schoolNotFound = "school not found";
@@ -143,6 +147,29 @@ public class TeachersService {
     public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile) {
         toTeacherProfile(teacherAddProfile, teacherAddProfile.userId());
         return SchoolApiResponse.success("Teacher profile added");
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> createTeacher(TeacherCreateDTO request, String authHeader) {
+        if (userRepository.existsByEmail(request.email().trim().toLowerCase())) {
+            throw new SchoolResourceExistsExceptionHandler("user already exists");
+        }
+        var school = schoolRepository.findById(schoolUuid(authHeader))
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        Users teacher = new Users();
+        teacher.setEmail(request.email().trim().toLowerCase());
+        teacher.setPassword(passwordHashing.PasswordEncoder().encode(request.password()));
+        teacher.setRoles(request.roles());
+        teacher.setStatus(AccountStatus.ACTIVE);
+        teacher.setSchool(school);
+        teacher = userRepository.save(teacher);
+
+        TeacherProfile profile = new TeacherProfile();
+        profile.setFirstName(request.firstName().trim());
+        profile.setLastName(request.lastName().trim());
+        profile.setTeacher(teacher);
+        teacherProfileRepository.save(profile);
+        return SchoolApiResponse.success("Teacher created");
     }
 
     @Transactional

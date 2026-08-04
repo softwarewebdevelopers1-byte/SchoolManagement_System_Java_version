@@ -5,5 +5,6 @@ export * from "./endpoints";
 export * from "./http";
 export * from "./marks.api";
 export * from "./school.api";
+export * from "./students.api";
 export * from "./timetable.api";
 export * from "./users.api";

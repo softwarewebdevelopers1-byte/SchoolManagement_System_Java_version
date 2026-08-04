@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.TeacherAddProfile;
+import com.example.school.system.DTO.TeacherCreateDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.services.TeachersService;
@@ -34,6 +35,13 @@ public class TeachersController {
         SchoolApiResponse<?> addTeacherRes = teachersService.addProfile(teacherAddProfile);
         return ResponseEntity.status(201).body(addTeacherRes);
 
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/teacher")
+    public ResponseEntity<?> createTeacher(@RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody TeacherCreateDTO teacherCreateDTO) {
+        return ResponseEntity.status(201).body(teachersService.createTeacher(teacherCreateDTO, authHeader));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

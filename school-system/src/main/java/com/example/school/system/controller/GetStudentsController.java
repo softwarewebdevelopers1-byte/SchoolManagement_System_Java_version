@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,17 +22,17 @@ public class GetStudentsController {
 
     @GetMapping("/students")
     public ResponseEntity<?> getStudentsOfSpecificClass(
-            @Valid @RequestBody GetStudentsOfSpecificClass getStudentsOfSpecificClass,
+            @RequestParam java.util.UUID classId,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getStudentByClass(getStudentsOfSpecificClass, page, size);
+        List<?> res = getStudentsService.getStudentByClass(new GetStudentsOfSpecificClass(classId), page, size);
         return ResponseEntity.status(200).body(res);
     }
 
     @GetMapping("/all/students")
-    public ResponseEntity<?> getAllStudents(@Valid @RequestBody GetAllStudentsDTO getAllStudentsDTO,
+    public ResponseEntity<?> getAllStudents(@RequestParam java.util.UUID schoolId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getAllStudents(getAllStudentsDTO, page, size);
+        List<?> res = getStudentsService.getAllStudents(new GetAllStudentsDTO(schoolId), page, size);
         return ResponseEntity.status(200).body(res);
     }
 }

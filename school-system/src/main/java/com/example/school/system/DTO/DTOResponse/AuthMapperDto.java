@@ -15,7 +15,7 @@ public class AuthMapperDto {
         return new LoginResponse(token, toUserDto(user));
     }
 
-    private UserDto toUserDto(Users user) {
+    public UserDto toUserDto(Users user) {
         return UserDto.builder().userId(user.getId()).email(user.getEmail()).roles(user.getRoles())
                 .schoolId(user.getSchool().getId())
                 .teacherProfileDto(

@@ -1,8 +1,6 @@
 import {
   clearStoredSession,
   getAuthToken,
-  getStoredSession,
-  storeSession,
   type AuthSession,
 } from "./auth";
 
@@ -29,39 +27,6 @@ export class ApiError extends Error {
     this.data = data;
   }
 }
-
-const pathAliases: Record<string, string> = {
-  "/users/login": "/auth/login/login-user",
-  "/school/timetables/generate": "/timetables/generate",
-  "/school/subjects": "/create/subject",
-  "/school/assignments": "/assign/subject/teacher",
-};
-
-const resolvePath = (input: string) => pathAliases[input] || input;
-
-const normalizeRequestBody = (path: string, init?: RequestInit) => {
-  if (path !== "/auth/login/login-user" || typeof init?.body !== "string") {
-    return init;
-  }
-
-  try {
-    const body = JSON.parse(init.body);
-    if (body.identifier && !body.email) {
-      return {
-        ...init,
-        body: JSON.stringify({
-          email: body.identifier,
-          password: body.password,
-          captchaToken: body.captchaToken || body.recaptchaToken || "",
-        }),
-      };
-    }
-  } catch {
-    return init;
-  }
-
-  return init;
-};
 
 const parseBody = async (response: Response) => {
   const text = await response.text();
@@ -126,46 +91,21 @@ export const normalizeSession = (response: unknown): AuthSession => {
   };
 };
 
-const refreshToken = async () => {
-  const session = getStoredSession();
-  if (!session?.refreshToken) return false;
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
-    });
-
-    if (!response.ok) return false;
-    const data = await parseBody(response);
-    storeSession(normalizeSession(data));
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 export const request = async <T>(
   input: string,
   init?: RequestInit,
-  retry = true,
 ): Promise<T> => {
-  const resolvedPath = resolvePath(input);
-  const target = resolvedPath.startsWith("http")
-    ? resolvedPath
-    : `${API_BASE_URL}${resolvedPath}`;
+  const target = input.startsWith("http") ? input : `${API_BASE_URL}${input}`;
   const token = getAuthToken();
-  const requestInit = normalizeRequestBody(resolvedPath, init);
 
   let response: Response;
   try {
     response = await fetch(target, {
-      ...requestInit,
+      ...init,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(requestInit?.headers || {}),
+        ...(init?.headers || {}),
       },
     });
   } catch (error) {
@@ -174,13 +114,8 @@ export const request = async <T>(
 
   const data = await parseBody(response);
 
-  if (response.status === 401 && retry && !resolvedPath.includes("/login")) {
-    const refreshed = await refreshToken();
-    if (refreshed) return request<T>(input, init, false);
-  }
-
   if (!response.ok) {
-    if (response.status === 401 && !resolvedPath.includes("/login")) {
+    if (response.status === 401 && !input.includes("/login")) {
       clearStoredSession();
       window.location.href = "/login";
     }
@@ -205,6 +140,11 @@ export const api = {
     }
     return request<T>(url);
   },
+  getWithBody: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "GET",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: "POST",
@@ -220,13 +160,9 @@ export const api = {
       method: "PATCH",
       body: body === undefined ? undefined : JSON.stringify(body),
     }),
-  getWithBody: <T>(path: string, body?: unknown) =>
-    request<T>(path, {
-      method: "GET",
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }),
-  delete: <T>(path: string) =>
+  delete: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: "DELETE",
+      body: body === undefined ? undefined : JSON.stringify(body),
     }),
 };

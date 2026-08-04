@@ -5,11 +5,11 @@ import { ChangePassword } from "./ChangePassword";
 const dashboardPaths: Record<string, string> = {
   superadmin: "/admin",
   admin: "/admin",
-  headteacher: "/headteacher",
-  deputyteacher: "/deputyHead",
-  classteacher: "/classTeacher",
-  subjectteacher: "/subjectTeacher",
-  student: "/students",
+  headteacher: "/admin",
+  deputyteacher: "/admin",
+  classteacher: "/admin",
+  subjectteacher: "/admin",
+  student: "/admin",
 };
 
 const getReturnPath = () => {

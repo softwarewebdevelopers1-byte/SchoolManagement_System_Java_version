@@ -4,6 +4,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDate;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,13 +27,16 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @GetMapping("/sheet")
-    public ResponseEntity<?> loadAttendanceSheet(@Valid @RequestBody ClassAttendanceDTO classAttendanceDTO) {
+    public ResponseEntity<?> loadAttendanceSheet(@RequestParam UUID classId, @RequestParam UUID teacherId) {
+        ClassAttendanceDTO classAttendanceDTO = new ClassAttendanceDTO(classId, teacherId);
         AttendanceSheetDTO sheet = attendanceService.getOrCreateSheet(classAttendanceDTO);
         return ResponseEntity.status(200).body(SchoolApiResponse.success(sheet, "sheet loaded"));
     }
 
     @GetMapping("/student/attendance/record")
-    public ResponseEntity<?> getStudentAttendanceRecord(@Valid @RequestBody FetchSingleDayStudentAttendance record) {
+    public ResponseEntity<?> getStudentAttendanceRecord(@RequestParam String studentAdm, @RequestParam UUID teacherId,
+            @RequestParam LocalDate date) {
+        FetchSingleDayStudentAttendance record = new FetchSingleDayStudentAttendance(date, studentAdm, teacherId);
         var studentRecord = attendanceService.getStudentSingleDayRecord(record);
         return ResponseEntity.status(200).body(studentRecord);
     }
@@ -50,7 +56,8 @@ public class AttendanceController {
 
     @GetMapping("/get/attendance-sheet")
     public ResponseEntity<?> getAttendanceSheet(
-            @Valid @RequestBody LoadAttendaceSheetSpecificDate loadAttendaceSheetSpecificDate) {
+            @RequestParam UUID classId, @RequestParam UUID teacherId, @RequestParam LocalDate date) {
+        LoadAttendaceSheetSpecificDate loadAttendaceSheetSpecificDate = new LoadAttendaceSheetSpecificDate(classId, date, teacherId);
         var response = attendanceService.getAttendaceSheetSPecificDate(loadAttendaceSheetSpecificDate);
         return ResponseEntity.status(200).body(response);
     }

@@ -1,34 +1,81 @@
 import { api } from "./http";
+import { getStoredSession } from "./auth";
+import { endpoints } from "./endpoints";
+
+const unavailable = <T>(message: string): Promise<T> =>
+  Promise.reject(new Error(message));
 
 export const usersApi = {
-  dashboard<T>() {
-    return api.get<T>("/users");
+  async dashboard<T>() {
+    const schoolId = getStoredSession()?.user.schoolId;
+    if (!schoolId) {
+      return unavailable<T>("The authenticated user does not include a school ID.");
+    }
+
+    const [staff, subjects, assignments] = await Promise.all([
+      api.get<unknown[]>(endpoints.users.teachers(schoolId)),
+      api.get<unknown[]>(endpoints.subjects.subjects(schoolId)),
+      api.get<unknown[]>(endpoints.subjects.subjectJoints(schoolId)),
+    ]);
+
+    return {
+      staff: Array.isArray(staff) ? staff : [],
+      students: [],
+      subjects: Array.isArray(subjects) ? subjects : [],
+      assignments: Array.isArray(assignments) ? assignments : [],
+      exitedStudents: [],
+    } as T;
   },
   byId<T>(id: string) {
-    return api.get<T>(`/users/${id}`);
+    return unavailable<T>(`No backend endpoint exposes user ${id} by ID.`);
   },
   create<T>(payload: unknown) {
-    return api.post<T>("/users", payload);
+    return unavailable<T>(`No backend endpoint creates generic users: ${JSON.stringify(payload)}`);
+  },
+  teachers<T>(schoolId: string) {
+    return api.get<T>(endpoints.users.teachers(schoolId));
+  },
+  invites<T>(schoolId: string) {
+    return api.get<T>(endpoints.users.teacherInvites(schoolId));
+  },
+  addTeacherProfile<T>(payload: unknown) {
+    return api.post<T>(endpoints.users.addTeacherProfile, payload);
+  },
+  createTeacher<T>(payload: unknown) {
+    return api.post<T>(endpoints.users.createTeacher, payload);
+  },
+  updateTeacher<T>(payload: unknown) {
+    return api.patch<T>(endpoints.users.updateTeacher, payload);
   },
   update<T>(id: string, payload: unknown) {
-    return api.put<T>(`/users/${id}`, payload);
+    void id;
+    return api.patch<T>(endpoints.users.update, payload);
   },
   remove<T>(id: string) {
-    return api.delete<T>(`/users/${id}`);
+    return api.patch<T>(`${endpoints.users.remove}?id=${encodeURIComponent(id)}`);
   },
-  changePassword(payload: { oldPassword: string; newPassword: string }) {
-    return api.put("/users/password", payload);
+  suspend<T>(id: string) {
+    return api.patch<T>(`${endpoints.users.suspend}?id=${encodeURIComponent(id)}`);
+  },
+  deactivate<T>(id: string) {
+    return api.patch<T>(`${endpoints.users.deactivate}?id=${encodeURIComponent(id)}`);
+  },
+  dangerZoneDelete<T>(payload: unknown) {
+    return unavailable<T>(`The delete-account backend contract requires a request body: ${JSON.stringify(payload)}`);
+  },
+  changePassword<T>(payload: unknown) {
+    return unavailable<T>(`No authenticated password-change endpoint exists: ${JSON.stringify(payload)}`);
   },
   graduationSettings<T>() {
-    return api.get<T>("/users/graduation-settings");
+    return unavailable<T>("No graduation-settings endpoint exists.");
   },
-  updateGraduationSettings<T>(payload: { finalGrade: string }) {
-    return api.put<T>("/users/graduation-settings", payload);
+  updateGraduationSettings<T>(payload: unknown) {
+    return unavailable<T>(`No graduation-settings endpoint exists: ${JSON.stringify(payload)}`);
   },
-  bulkUpdateTerm<T>(payload: { term: number; year: number; examType: string }) {
-    return api.put<T>("/users/bulk-update-term", payload);
+  bulkUpdateTerm<T>(payload: unknown) {
+    return unavailable<T>(`No bulk-term-update endpoint exists: ${JSON.stringify(payload)}`);
   },
   bulkEnrollElective<T>(payload: unknown) {
-    return api.put<T>("/users/bulk-enroll-elective", payload);
+    return unavailable<T>(`No bulk-elective-enrollment endpoint exists: ${JSON.stringify(payload)}`);
   },
 };

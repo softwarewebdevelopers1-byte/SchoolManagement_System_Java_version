@@ -17,10 +17,7 @@ import { CbcGradingConfigTab } from "./CbcGradingConfigTab";
 import { ArchivesView } from "../shared/ArchivesView";
 import { ExitedStudentsView } from "../shared/ExitedStudentsView";
 import {
-  ApiStudent,
-  ApiTeacher,
   Teacher,
-  UsersDashboardResponse,
   ApiAssignment,
   ClassSubjectSetting,
   NavItem,
@@ -33,9 +30,11 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import {
   api,
   clearStoredSession,
+  getSchoolId,
   getStoredSession,
   getUserRoles,
   schoolApi,
+  studentsApi,
   usersApi,
 } from "../../api";
 import {
@@ -151,32 +150,6 @@ const normalizeStatus = (value?: string) => {
 };
 
 const isActiveStudent = (student: Student) => student.status === "Active";
-
-const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
-  staff.map((member) => ({
-    ...member,
-    status: normalizeStatus(member.status),
-    subjects: member.subjects || [],
-  }));
-
-const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
-  students.map((student) => ({
-    id: student.id,
-    admissionNo: student.admissionNo,
-    adm: student.admissionNo || (student as any).adm,
-    name: student.name,
-    gender: student.gender,
-    guardianName: student.guardianName,
-    guardianPhone: student.guardianPhone,
-    classId: buildClassId(student.classGrade, student.classStream),
-    classGrade: student.classGrade,
-    classStream: student.classStream || "",
-    enrolledSubjects: student.enrolledSubjects || [],
-    status: normalizeStatus(student.status),
-    term: student.term,
-    year: student.year,
-    examType: student.examType,
-  }));
 
 const deriveClasses = (
   students: Student[],
@@ -432,27 +405,133 @@ const AdminDashboard: React.FC = () => {
   );
 
   const loadDashboardUsers = async () => {
+    const schoolId = getSchoolId();
+    if (!schoolId) {
+      setError("Unable to determine school. Please log in again.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
-      const [response, subjectSettings, graduationSettings] = await Promise.all([
-        usersApi.dashboard<UsersDashboardResponse>(),
-        schoolApi.classSubjectSettings<ClassSubjectSetting[]>(),
-        usersApi.graduationSettings<{ finalGrade: string }>(),
-      ]);
-      const mappedStudents = mapStudentsFromApi(response.students);
-      setTeachers(mapStaffToTeachers(response.staff));
-      setStudents(
-        mappedStudents.filter((student) => student.status !== "Completed"),
+
+      const [classesRes, subjectsRes, jointsRes, teachersRes, studentsRes] =
+        await Promise.all([
+          schoolApi.classes<any[]>(schoolId),
+          schoolApi.subjects<any[]>(schoolId),
+          schoolApi.subjectJoints<any[]>(schoolId),
+          usersApi.teachers<any[]>(schoolId),
+          studentsApi.all<any[]>(schoolId),
+        ]);
+
+      void classesRes;
+      const subjectsList = subjectsRes || [];
+      const jointsList = jointsRes || [];
+      const teachersList = teachersRes || [];
+      const studentsList = studentsRes || [];
+
+      setSubjects(
+        (subjectsList as Array<{ subjectId: string; subjectName: string }>).map(
+          (subject) => ({
+            id: subject.subjectId,
+            name: subject.subjectName,
+            department: "",
+            isOffered: true,
+          }),
+        ),
       );
-      setSubjects(response.subjects || []);
-      setAssignments(response.assignments || []);
-      setExitedStudents(response.exitedStudents || []);
-      setFinalGrade(graduationSettings.finalGrade || "");
-      setClassSubjectSettings(subjectSettings || []);
-    } catch (err) {
+
+      setTeachers(
+        (teachersList as Array<{
+          email: string;
+          status: string;
+          firstName: string;
+          lastName: string;
+          roles: string[];
+          schoolClass?: string;
+          usersId: string;
+        }>).map((teacher) => {
+          const schoolClass = teacher.schoolClass || "";
+          const classParts = schoolClass.split(" ");
+          return {
+            id: teacher.usersId,
+            name: `${teacher.firstName || ""} ${teacher.lastName || ""}`.trim(),
+            email: teacher.email,
+            phone: "",
+            status: teacher.status?.toLowerCase() || "active",
+            department: "",
+            roles: (teacher.roles || []).map((r: string) =>
+              r.toLowerCase().replace(/^role_/, ""),
+            ),
+            roleLabel: (teacher.roles || [])
+              .map((r: string) => r.toLowerCase().replace(/^role_/, ""))
+              .join(", "),
+            classGrade: classParts[0] || "",
+            classStream: classParts[1] || "",
+            subjects: [],
+          };
+        }),
+      );
+
+      setAssignments(
+        (jointsList as Array<{
+          subjectName: string;
+          subjectJointId: string;
+          className: string;
+          subjectTeacherId?: string;
+          subjectTeacherName?: string;
+          subjectType: string;
+          electiveCode?: string;
+        }>).map((joint) => {
+          const className = joint.className?.toString() || "";
+          const classParts = className.split(" ");
+          return {
+            id: joint.subjectJointId,
+            subjectId: joint.subjectJointId,
+            teacherId: joint.subjectTeacherId || "",
+            classGrade: classParts[0] || "",
+            classStream: classParts[1] || "",
+            subjectName: joint.subjectName,
+            subjectType: joint.subjectType,
+            electiveCode: joint.electiveCode || "",
+            pushed: false,
+          };
+        }),
+      );
+
+      setStudents(
+        (studentsList as Array<{
+          fullName: string;
+          adm: string;
+          status: string;
+          userId: string;
+          email: string;
+        }>).map((student) => ({
+          id: student.userId,
+          admissionNo: student.adm,
+          adm: student.adm,
+          name: student.fullName,
+          gender: "",
+          guardianName: "",
+          guardianPhone: "",
+          classId: "",
+          classGrade: "",
+          classStream: "",
+          enrolledSubjects: [],
+          status: normalizeStatus(student.status || ""),
+          term: 1,
+          year: new Date().getFullYear(),
+          examType: "opener",
+        })).filter((student) => student.status !== "Completed"),
+      );
+
+      setExitedStudents([]);
+      setClassSubjectSettings([]);
+      setFinalGrade("");
+    } catch (err: any) {
       setError(
-        err instanceof Error ? err.message : "Unable to load dashboard data.",
+        err.message || "Unable to load dashboard data from the backend.",
       );
     } finally {
       setLoading(false);
@@ -460,33 +539,11 @@ const AdminDashboard: React.FC = () => {
   };
 
   const refreshUser = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      const freshUser: any = await usersApi.byId(user.id);
-      if (freshUser) {
-        // Ensure roles is always an array
-        let rolesArr = freshUser.roles;
-        if (rolesArr && !Array.isArray(rolesArr)) {
-          rolesArr = [rolesArr.role1, rolesArr.role2, rolesArr.role3].filter(
-            Boolean,
-          );
-        }
-        const updatedUser = {
-          ...user,
-          ...freshUser,
-          id: freshUser.id || freshUser.userId || user.id,
-          roles: rolesArr || user.roles || [],
-        };
-        const savedItem = localStorage.getItem("user");
-        if (savedItem) {
-          const parsed = JSON.parse(savedItem);
-          parsed.user = updatedUser;
-          localStorage.setItem("user", JSON.stringify(parsed));
-        }
-        setUserState(updatedUser);
-      }
-    } catch (e) {}
-  }, [user?.id]);
+    const session = getStoredSession();
+    if (session?.user) {
+      setUserState(session.user);
+    }
+  }, []);
 
   useEffect(() => {
     void loadDashboardUsers();

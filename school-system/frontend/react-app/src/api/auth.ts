@@ -42,6 +42,11 @@ export const storeSession = (session: AuthSession) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 };
 
+export const updateStoredUser = (user: AuthUser) => {
+  const session = getStoredSession();
+  if (session) storeSession({ ...session, user });
+};
+
 export const clearStoredSession = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
@@ -49,6 +54,16 @@ export const clearStoredSession = () => {
 export const getAuthToken = () => getStoredSession()?.token || "";
 
 export const getCurrentUser = () => getStoredSession()?.user || null;
+
+export const getSchoolId = (): string | undefined => {
+  const user = getCurrentUser();
+  const schoolId = user?.schoolId;
+  if (typeof schoolId === "string") return schoolId;
+  if (schoolId && typeof schoolId === "object" && "uuid" in schoolId) {
+    return (schoolId as { uuid: string }).uuid;
+  }
+  return schoolId ? String(schoolId) : undefined;
+};
 
 export const getUserRoles = (user: AuthUser | null | undefined): string[] => {
   const roles = new Set<string>();
@@ -75,18 +90,6 @@ export const hasAnyRole = (
 };
 
 export const getDefaultDashboardPath = (user: AuthUser | null | undefined) => {
-  const roles = getUserRoles(user);
-  if (roles.some((role) => ["admin", "administrator", "superadmin"].includes(role))) {
-    return "/dashboard";
-  }
-  if (roles.some((role) => ["headteacher", "deputyteacher", "deputyhead"].includes(role))) {
-    return "/dashboard";
-  }
-  if (roles.some((role) => ["classteacher", "subjectteacher"].includes(role))) {
-    return "/dashboard";
-  }
-  if (roles.includes("parent") || roles.includes("student")) {
-    return "/students";
-  }
-  return "/dashboard";
+  void user;
+  return "/admin";
 };

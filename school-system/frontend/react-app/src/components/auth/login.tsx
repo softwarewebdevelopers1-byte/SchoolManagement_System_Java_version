@@ -1,6 +1,7 @@
 // components/auth/LoginPage.tsx
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./LoginPage.module.css";
 import { authApi, getDefaultDashboardPath } from "../../api";
 
@@ -118,6 +119,7 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -137,17 +139,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await authApi.login({
+      await authApi.login({
         email: loginIdentifier.trim(),
         password,
         captchaToken: "",
       });
 
-      const user = response.user;
+      const user = await authApi.hydrate();
       if (onLogin) {
         onLogin(user);
       } else {
-        window.location.href = getDefaultDashboardPath(user);
+        navigate(getDefaultDashboardPath(user), { replace: true });
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");
