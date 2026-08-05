@@ -122,7 +122,7 @@ export class ApiError extends Error {
   }
 }
 
-const request = async <T>(
+export const request = async <T>(
   input: string,
   init?: RequestInit,
 ): Promise<T> => {

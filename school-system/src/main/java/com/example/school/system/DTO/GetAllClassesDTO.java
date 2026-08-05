@@ -12,6 +12,9 @@ import lombok.Getter;
 public class GetAllClassesDTO {
     private UUID classId;
     private String className;
+    private String grade;
+    private String stream;
     private String classTeacher;
     private long totalStudents;
 }
+

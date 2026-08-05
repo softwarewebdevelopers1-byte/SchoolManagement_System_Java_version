@@ -55,7 +55,8 @@ public class SchoolClassService {
         List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId);
         List<GetAllClassesDTO> allClasses = classes.stream().map(c -> {
             long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
-            return GetAllClassesDTO.builder().classId(c.getClassId())
+            return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
+                    .stream(c.getClassStream())
                     .className(c.getClassGrade().toString() + " " + c.getClassStream())
                     .classTeacher(
                             c.getTeacher() != null ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()

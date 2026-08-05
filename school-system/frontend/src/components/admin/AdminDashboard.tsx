@@ -205,53 +205,54 @@ const deriveClasses = (
   students
     .filter((student) => student.classId && isActiveStudent(student))
     .forEach((student) => {
-    const [grade, stream = ""] = student.classId.split("::");
-    const classTeacher = teachers.find(
-      (teacher) =>
-        (teacher.classGrade || "").trim() === grade &&
-        (teacher.classStream || "").trim() === stream,
-    );
-    const subjectSettings = getSubjectSettingsForClass(grade, stream);
-    const droppedSubjectIds = Object.values(subjectSettings)
-      .filter((setting) => setting.isOffered === false)
-      .map((setting) => setting.subjectId);
-    const offeredSubjectIds = allSubjectIds.filter(
-      (subjectId) => !droppedSubjectIds.includes(subjectId),
-    );
-    const compulsorySubjectIds = offeredSubjectIds.filter(
-      (subjectId) =>
-        (subjectSettings[subjectId]?.enrollmentMode || "compulsory") ===
-        "compulsory",
-    );
-    const electiveSubjectIds = offeredSubjectIds.filter(
-      (subjectId) =>
-        (subjectSettings[subjectId]?.enrollmentMode || "compulsory") ===
-        "elective",
-    );
+      const [grade, stream = ""] = student.classId.split("::");
+      const classTeacher = teachers.find(
+        (teacher) =>
+          (teacher.classGrade || "").trim() === grade &&
+          (teacher.classStream || "").trim() === stream,
+      );
+      const subjectSettings = getSubjectSettingsForClass(grade, stream);
+      const droppedSubjectIds = Object.values(subjectSettings)
+        .filter((setting) => setting.isOffered === false)
+        .map((setting) => setting.subjectId);
+      const offeredSubjectIds = allSubjectIds.filter(
+        (subjectId) => !droppedSubjectIds.includes(subjectId),
+      );
+      const compulsorySubjectIds = offeredSubjectIds.filter(
+        (subjectId) =>
+          (subjectSettings[subjectId]?.enrollmentMode || "compulsory") ===
+          "compulsory",
+      );
+      const electiveSubjectIds = offeredSubjectIds.filter(
+        (subjectId) =>
+          (subjectSettings[subjectId]?.enrollmentMode || "compulsory") ===
+          "elective",
+      );
 
-    classMap.set(student.classId, {
-      id: student.classId,
-      name: `Grade ${grade}${stream ? ` ${stream}` : ""}`,
-      grade,
-      stream,
-      students: students.filter(
-        (current) => current.classId === student.classId && isActiveStudent(current),
-      ).length,
-      classTeacherId: classTeacher?.id || "",
-      subjectAssignments: getAssignmentsForClass(
+      classMap.set(student.classId, {
+        id: student.classId,
+        name: `Grade ${grade}${stream ? ` ${stream}` : ""}`,
         grade,
         stream,
+        students: students.filter(
+          (current) =>
+            current.classId === student.classId && isActiveStudent(current),
+        ).length,
+        classTeacherId: classTeacher?.id || "",
+        subjectAssignments: getAssignmentsForClass(
+          grade,
+          stream,
+          offeredSubjectIds,
+        ),
+        subjectSettings,
         offeredSubjectIds,
-      ),
-      subjectSettings,
-      offeredSubjectIds,
-      droppedSubjectIds,
-      compulsorySubjectIds,
-      electiveSubjectIds,
-      term: classTeacher?.term || student.term || 1,
-      year: classTeacher?.year || student.year || 2024,
-      examType: classTeacher?.examType || student.examType || "opener",
-    });
+        droppedSubjectIds,
+        compulsorySubjectIds,
+        electiveSubjectIds,
+        term: classTeacher?.term || student.term || 1,
+        year: classTeacher?.year || student.year || 2024,
+        examType: classTeacher?.examType || student.examType || "opener",
+      });
     });
 
   teachers
@@ -399,11 +400,13 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError("");
-      const [response, subjectSettings, graduationSettings] = await Promise.all([
-        api.get<UsersDashboardResponse>("/users"),
-        api.get<ClassSubjectSetting[]>("/school/class-subjects"),
-        api.get<{ finalGrade: string }>("/users/graduation-settings"),
-      ]);
+      const [response, subjectSettings, graduationSettings] = await Promise.all(
+        [
+          api.get<UsersDashboardResponse>("/users"),
+          api.get<ClassSubjectSetting[]>("/school/class-subjects"),
+          api.get<{ finalGrade: string }>("/users/graduation-settings"),
+        ],
+      );
       const mappedStudents = mapStudentsFromApi(response.students);
       setTeachers(mapStaffToTeachers(response.staff));
       setStudents(
@@ -739,15 +742,20 @@ const AdminDashboard: React.FC = () => {
     action: "enroll" | "unenroll",
   ) => {
     try {
-      const response = await api.put<{ message?: string }>("/users/bulk-enroll-elective", {
-        studentIds,
-        subjectId,
-        classGrade,
-        classStream,
-        action,
-      });
+      const response = await api.put<{ message?: string }>(
+        "/users/bulk-enroll-elective",
+        {
+          studentIds,
+          subjectId,
+          classGrade,
+          classStream,
+          action,
+        },
+      );
       await loadDashboardUsers();
-      showSuccess(response.message || "Elective enrollments updated successfully.");
+      showSuccess(
+        response.message || "Elective enrollments updated successfully.",
+      );
     } catch (err) {
       showError(
         err instanceof Error
@@ -819,7 +827,9 @@ const AdminDashboard: React.FC = () => {
       setFinalGrade(response.finalGrade);
       showSuccess(response.message || "Final grade setting updated.");
     } catch (err) {
-      showError(err instanceof Error ? err.message : "Failed to update final grade.");
+      showError(
+        err instanceof Error ? err.message : "Failed to update final grade.",
+      );
     }
   };
 
@@ -906,12 +916,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const avatar = (name: string, size: number) => {
-    const initials = name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+    const initials = name ? name.toUpperCase() : "user";
     return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#163325;color:#fff;display:flex;align-items:center;justify-content:center;font-size:${Math.max(
       10,
       size / 2.4,
@@ -1049,7 +1054,9 @@ const AdminDashboard: React.FC = () => {
           onFinalGradeUpdate={handleFinalGradeUpdate}
           initialData={currentPeriod}
           finalGrade={finalGrade}
-          gradeOptions={Array.from(new Set(classes.map((current) => current.grade)))}
+          gradeOptions={Array.from(
+            new Set(classes.map((current) => current.grade)),
+          )}
         />
       );
     }
@@ -1083,18 +1090,7 @@ const AdminDashboard: React.FC = () => {
       );
     }
 
-    return (
-      <OverviewTab
-        // classes={classes}
-        // subjects={subjects}
-        // teachers={teachers}
-        // students={students}
-        // assignments={assignments}
-        onSwitchTab={setActiveTab}
-        // pill={pill}
-        // avatar={avatar}
-      />
-    );
+    return <OverviewTab onSwitchTab={setActiveTab} />;
   };
 
   return (

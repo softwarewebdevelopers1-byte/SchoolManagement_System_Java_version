@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { api, getSchoolId } from "./api";
+import { api, getSchoolId, request } from "./api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -459,6 +459,8 @@ export const useClassesData = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<ApiAssignment[]>([]);
+  const [classesFound, setClassesFound] = useState<Class[]>([]);
+
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
@@ -469,6 +471,12 @@ export const useClassesData = () => {
     setLoading(true);
     setError("");
     try {
+      const classesFound = async function classes() {
+        let res: any = await request(
+          `/all/classes/${encodeURIComponent(getSchoolId()!)}`,
+        );
+        return res;
+      };
       const fetchedStudents = await fetchStudents();
       setStudents(fetchedStudents);
       const fetchedTeachers = await fetchTeachers();
@@ -487,6 +495,8 @@ export const useClassesData = () => {
         fetchedSettings,
       );
       setClasses(derivedClasses);
+      setClassesFound(await classesFound());
+      console.log(await classesFound());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load data.");
     } finally {
@@ -503,6 +513,7 @@ export const useClassesData = () => {
   }, [load]);
 
   return {
+    classesFound,
     classes,
     students,
     teachers,
