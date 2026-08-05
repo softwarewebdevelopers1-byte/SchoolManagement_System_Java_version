@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
-import { api, getDefaultDashboardPath, normalizeRoles, normalizeUser } from "../../lib/api";
-
+import {
+  api,
+  getDefaultDashboardPath,
+  normalizeRoles,
+  normalizeUser,
+} from "../../lib/api";
 
 // Role labels removed
 
@@ -164,7 +168,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-
   // Demo login removed
 
   const features = [
@@ -199,7 +202,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {/* Logo */}
             <div className={styles.logo}>
               <div className={styles.logoIcon}>
-                <HomeIcon />
+                <img
+                  src="/EdunexImage.png"
+                  style={{ width: "100%", height: "100%" }}
+                  alt=""
+                />
               </div>
               <span className={styles.logoText}>School Management</span>
             </div>

@@ -3,12 +3,12 @@
   "name": "School Management System",
   "icons": [
     {
-      "src": "/primary_icon.jpeg",
+      "src": "/EdunexImage.png",
       "sizes": "192x192",
       "type": "image/jpeg"
     },
     {
-      "src": "/Icon.png",
+      "src": "/EdunexImage.png",
       "sizes": "512x512",
       "type": "image/png"
     }

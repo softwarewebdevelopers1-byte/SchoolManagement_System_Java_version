@@ -5,8 +5,7 @@ const urlsToCache = [
   '/',
   '/index.html',
   OFFLINE_URL,
-  '/primary_icon.jpeg',
-  '/Icon.png'
+  '/EdunexImage.png',
 ];
 
 self.addEventListener('install', event => {
