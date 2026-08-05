@@ -1,16 +1,16 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { Class, Student, Subject, Teacher } from "./types";
+import {
+  useClassesData,
+  avatar,
+  pill,
+  emptyStateStyle,
+  primaryButtonStyle,
+} from "../../lib/adminData";
 
 interface OverviewTabProps {
-  classes: Class[];
-  subjects: Subject[];
-  teachers: Teacher[];
-  students: Student[];
-  assignments: any[];
   onSwitchTab: (tab: string) => void;
-  pill: (text: string, color: string) => string;
-  avatar: (name: string, size: number) => string;
 }
 
 const MetricCard: React.FC<{
@@ -34,23 +34,26 @@ const MetricCard: React.FC<{
   </div>
 );
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({
-  classes,
-  subjects,
-  teachers,
-  students,
-  assignments,
-  onSwitchTab,
-  pill,
-  avatar,
-}) => {
-  const unassignedCT = classes.filter((currentClass) => !currentClass.classTeacherId)
-    .length;
-  const activeTeachers = teachers.filter((teacher) => teacher.status === "Active")
-    .length;
-  const assignedSubjectsCount = new Set(assignments.map(a => a.subjectId)).size;
-  const classesWithStudents = classes.filter((currentClass) => currentClass.students > 0)
-    .length;
+export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
+  const { classes, students, teachers, subjects, assignments, loading, error, refresh } =
+    useClassesData();
+
+  const unassignedCT = useMemo(
+    () => classes.filter((currentClass) => !currentClass.classTeacherId).length,
+    [classes],
+  );
+  const activeTeachers = useMemo(
+    () => teachers.filter((teacher) => teacher.status === "Active").length,
+    [teachers],
+  );
+  const assignedSubjectsCount = useMemo(
+    () => new Set(assignments.map((a) => a.subjectId)).size,
+    [assignments],
+  );
+  const classesWithStudents = useMemo(
+    () => classes.filter((currentClass) => currentClass.students > 0).length,
+    [classes],
+  );
 
   const quickActions = [
     {
@@ -78,6 +81,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       color: "var(--gold)",
     },
   ];
+
+  if (loading) {
+    return <div style={emptyStateStyle}>Loading overview statistics...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={emptyStateStyle}>
+        <p style={{ margin: 0 }}>{error}</p>
+        <button onClick={refresh} style={primaryButtonStyle}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.anim}>

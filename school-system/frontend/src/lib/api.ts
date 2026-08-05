@@ -450,6 +450,134 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
   } as T;
 };
 
+const fetchStudentsData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  return request<T>(
+    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+  );
+};
+
+const fetchTeachersData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  return request<T>(`/users/${encodeURIComponent(schoolId)}/teachers`);
+};
+
+const fetchSubjectsData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  const subjects = await request<any[]>(
+    `/getAll/subjects/${encodeURIComponent(schoolId)}`,
+  );
+  return (subjects || []).map((subject: any) => ({
+    id: subject.subjectId || subject.id,
+    name: subject.subjectName || subject.name,
+    department: subject.department || "General",
+  })) as T;
+};
+
+const fetchExitedStudentsData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  const data = await request<any[]>(
+    `/users/exited-students?schoolId=${encodeURIComponent(schoolId)}`,
+  );
+  return data as T;
+};
+
+const fetchDashboardStatsData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+
+  const students = await request<any[]>(
+    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+  );
+  const teachers = await request<any[]>(
+    `/users/${encodeURIComponent(schoolId)}/teachers`,
+  );
+  const subjects = await request<any[]>(
+    `/getAll/subjects/${encodeURIComponent(schoolId)}`,
+  );
+  const subjectJoints = await request<any[]>(
+    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
+  );
+  const classSubjectSettings = await loadSubjectJoints();
+
+  const mappedStudents = (students || []).map((student: any) => ({
+    id: student.userId || student.id,
+    admissionNo: student.adm || student.admissionNo,
+    name: student.fullName || student.name,
+    status: student.status,
+    classGrade: student.classGrade,
+    classStream: student.classStream,
+    term: student.term,
+    year: student.year,
+    examType: student.examType,
+  }));
+  const mappedTeachers = (teachers || []).map((teacher: any) => {
+    const roles = normalizeRoles(teacher.roles);
+    return {
+      id: teacher.teacherProfileId || teacher.usersId || teacher.id,
+      name: [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") || teacher.email,
+      roles,
+      status: teacher.status,
+      classGrade: teacher.schoolClass,
+      classStream: teacher.classStream,
+      department: teacher.department,
+      term: teacher.term,
+      year: teacher.year,
+      examType: teacher.examType,
+    };
+  });
+
+  const classes = new Set<string>();
+  const classTeacherSet = new Set<string>();
+  mappedStudents.forEach((s) => {
+    if (s.classGrade && s.status?.toLowerCase() !== "completed") {
+      classes.add(`${s.classGrade}::${s.classStream || ""}`);
+    }
+  });
+  mappedTeachers.forEach((t) => {
+    if (t.classGrade) {
+      const cid = `${t.classGrade}::${t.classStream || ""}`;
+      if (classes.has(cid)) {
+        classTeacherSet.add(cid);
+      } else {
+        classes.add(cid);
+      }
+    }
+  });
+
+  const teachersWithClass = mappedTeachers.filter((t) => t.classGrade).length;
+
+  return {
+    classesCount: classes.size,
+    subjectsCount: (subjects || []).length,
+    teachersCount: (teachers || []).length,
+    assignedCT: classTeacherSet.size,
+    totalClasses: classes.size,
+    unassignedCount: classes.size - classTeacherSet.size,
+    studentsCount: mappedStudents.filter(
+      (s) => s.status?.toLowerCase() !== "completed",
+    ).length,
+    activeTeachers: mappedTeachers.filter(
+      (t) => t.status?.toLowerCase() !== "inactive",
+    ).length,
+    assignedSubjectsCount: new Set(
+      (subjectJoints || []).map((a: any) => a.subjectId),
+    ).size,
+  } as T;
+};
+
+const fetchAssignmentsData = async <T>(): Promise<T> => {
+  const schoolId = getSchoolId();
+  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  return request<T>(
+    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
+  );
+};
+
 export const api = {
   get: <T>(path: string, params?: Record<string, any>) => {
     if (path === "/users" && !params) {
@@ -461,6 +589,21 @@ export const api = {
     if (/^\/users\/[^/]+$/.test(path) && path !== "/users/student-dashboard") {
       const userId = path.split("/").pop();
       return request<any>(`/users/${userId}`).then((context) => normalizeUser(context)) as Promise<T>;
+    }
+    if (path === "/users/students") {
+      return fetchStudentsData<T>();
+    }
+    if (path === "/users/teachers") {
+      return fetchTeachersData<T>();
+    }
+    if (path === "/users/exited") {
+      return fetchExitedStudentsData<T>();
+    }
+    if (path === "/school/subjects") {
+      return fetchSubjectsData<T>();
+    }
+    if (path === "/dashboard/stats") {
+      return fetchDashboardStatsData<T>();
     }
     if (path === "/users/student-dashboard") {
       return request<T>("/users/student-dashboard");
@@ -475,6 +618,9 @@ export const api = {
     }
     if (path === "/school/class-subjects") {
       return loadSubjectJoints() as Promise<T>;
+    }
+    if (path === "/school/assignments") {
+      return fetchAssignmentsData<T>();
     }
     if (path.startsWith("/school/assignments/teacher/")) {
       return composeTeacherAssignments<T>(path.split("/").pop() || "");

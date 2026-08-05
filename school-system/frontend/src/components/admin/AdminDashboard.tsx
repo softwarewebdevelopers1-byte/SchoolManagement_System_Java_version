@@ -1085,14 +1085,14 @@ const AdminDashboard: React.FC = () => {
 
     return (
       <OverviewTab
-        classes={classes}
-        subjects={subjects}
-        teachers={teachers}
-        students={students}
-        assignments={assignments}
+        // classes={classes}
+        // subjects={subjects}
+        // teachers={teachers}
+        // students={students}
+        // assignments={assignments}
         onSwitchTab={setActiveTab}
-        pill={pill}
-        avatar={avatar}
+        // pill={pill}
+        // avatar={avatar}
       />
     );
   };
