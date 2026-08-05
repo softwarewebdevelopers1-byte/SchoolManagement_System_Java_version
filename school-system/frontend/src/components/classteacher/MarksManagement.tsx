@@ -556,18 +556,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
             }),
         ),
       );
-      console.log("saving marks response ", res);
-
-      // if (summaryData.length > 0) {
-      //   await api.post("/marks/summary-save", {
-      //     classGrade: user.classGrade,
-      //     classStream: user.classStream,
-      //     term,
-      //     year,
-      //     examType,
-      //     marksData: summaryData,
-      //   });
-      // }
 
       setMsg({ text: "Marks saved successfully!", type: "success" });
       if (onRefresh) onRefresh();

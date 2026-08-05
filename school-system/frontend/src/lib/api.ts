@@ -294,7 +294,6 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
 const saveLegacyMarks = async <T>(body: any): Promise<T> => {
   const schoolId = getSchoolId();
   const subjectJointId = body?.subjectJointId;
-  console.log("-->subject joint", subjectJointId, " school id --> ", schoolId);
 
   if (!schoolId || !subjectJointId) {
     throw new ApiError(
