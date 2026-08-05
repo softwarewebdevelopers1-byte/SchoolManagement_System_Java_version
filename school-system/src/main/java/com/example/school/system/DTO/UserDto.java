@@ -18,4 +18,6 @@ public class UserDto {
     private Set<UserRoles> roles;
     private UUID schoolId;
     private TeacherProfileDto teacherProfileDto;
+    private String classGrade;
+    private String classStream;
 }

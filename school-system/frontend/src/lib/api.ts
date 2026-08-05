@@ -38,6 +38,18 @@ export const getCurrentUserId = (): string | null => {
   const user = normalizeUser(session.user || session);
   return user?.userId || user?.id || null;
 };
+export const getCurrentTeacherProfileId = (): string | null => {
+  const session = getStoredSession();
+  if (!session) return null;
+  const user = normalizeUser(session.user || session);
+  return user?.teacherProfileDto.teacherProfileId || null;
+};
+export const getClassId = (): string | null => {
+  const session = getStoredSession();
+  if (!session) return null;
+  const user = normalizeUser(session.user || session);
+  return user?.classDto.id || null;
+};
 
 const getStoredSession = () => {
   const saved = localStorage.getItem("user");
@@ -75,15 +87,21 @@ export const normalizeUser = (user: any) => {
   return {
     ...user,
     ...teacherProfile,
-    id: user.userId || user.id || user.usersId || teacherProfile.teacherProfileId,
+    id:
+      user.userId || user.id || user.usersId || teacherProfile.teacherProfileId,
     userId: user.userId || user.id || user.usersId,
-    teacherId: teacherProfile.teacherProfileId || teacherProfile.id || user.teacherId,
+    teacherId:
+      teacherProfile.teacherProfileId || teacherProfile.id || user.teacherId,
     schoolId: user.schoolId || user.schoolId,
     email: user.email,
     roles,
     firstName: user.firstName || teacherProfile.firstName || "",
     lastName: user.lastName || teacherProfile.lastName || "",
-    name: user.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || teacherProfile.name || "",
+    name:
+      user.name ||
+      [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+      teacherProfile.name ||
+      "",
   };
 };
 
@@ -95,7 +113,6 @@ export const getDefaultDashboardPath = (user: any) => {
 export const getRoleFromPath = (path: string): string => {
   return PATH_TO_ROLE[path] || "";
 };
-
 
 const unwrapResponse = <T>(data: any): T => {
   if (
@@ -147,7 +164,11 @@ export const request = async <T>(
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
-    throw new ApiError(data.message || "Request failed.", response.status, data);
+    throw new ApiError(
+      data.message || "Request failed.",
+      response.status,
+      data,
+    );
   }
 
   return unwrapResponse<T>(data);
@@ -172,7 +193,9 @@ const splitClassName = (className: unknown) => {
 const loadClasses = async () => {
   const schoolId = getSchoolId();
   if (!schoolId) return [];
-  const classes = await request<any[]>(`/all/classes/${encodeURIComponent(schoolId)}`);
+  const classes = await request<any[]>(
+    `/all/classes/${encodeURIComponent(schoolId)}`,
+  );
   return (classes || []).map((item: any) => {
     const parsed = splitClassName(item.className);
     return {
@@ -192,7 +215,9 @@ const loadClasses = async () => {
 const loadSubjectJoints = async () => {
   const schoolId = getSchoolId();
   if (!schoolId) return [];
-  const joints = await request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`);
+  const joints = await request<any[]>(
+    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
+  );
   return (joints || []).map((joint: any) => {
     const parsed = splitClassName(joint.className);
     return {
@@ -209,7 +234,8 @@ const loadSubjectJoints = async () => {
       teacherId: joint.subjectTeacherId,
       subjectTeacherId: joint.subjectTeacherId,
       teacherName: joint.subjectTeacherName,
-      enrollmentMode: joint.subjectType === "ELECTIVE" ? "elective" : "compulsory",
+      enrollmentMode:
+        joint.subjectType === "ELECTIVE" ? "elective" : "compulsory",
       isOffered: joint.subjectType !== "DROPPED",
       sharedSlotId: joint.electiveCode || null,
     };
@@ -229,13 +255,17 @@ const findClassId = async (grade?: string | number, stream?: string) => {
 
 const composeTeacherAssignments = async <T>(teacherId: string): Promise<T> => {
   const joints = await loadSubjectJoints();
-  return joints.filter((joint) => String(joint.subjectTeacherId || "") === String(teacherId)) as T;
+  return joints.filter(
+    (joint) => String(joint.subjectTeacherId || "") === String(teacherId),
+  ) as T;
 };
 
 const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
-  const sheet = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}`);
+  const sheet = await request<any>(
+    `/marks/${encodeURIComponent(subjectJointId)}`,
+  );
   return (sheet?.marksRow || []).map((row: any) => ({
     studentId: row.studentId,
     admissionNo: row.studentAdm,
@@ -264,7 +294,11 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
   const schoolId = getSchoolId();
   const subjectJointId = body?.subjectJointId || body?.subjectId;
   if (!schoolId || !subjectJointId) {
-    throw new ApiError("Missing school or subject assignment for marks entry.", 400, body);
+    throw new ApiError(
+      "Missing school or subject assignment for marks entry.",
+      400,
+      body,
+    );
   }
 
   const rows = Array.isArray(body?.marksData) ? body.marksData : [];
@@ -291,7 +325,8 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
 const createLegacyUser = async <T>(body: any): Promise<T> => {
   const schoolId = getSchoolId();
   if (body?.role === "student") {
-    const classId = body.classId || (await findClassId(body.classGrade, body.classStream));
+    const classId =
+      body.classId || (await findClassId(body.classGrade, body.classStream));
     return request<T>("/register/students", {
       method: "POST",
       body: JSON.stringify({
@@ -320,9 +355,10 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
 
 const updateLegacyUser = async <T>(path: string, body: any): Promise<T> => {
   const id = path.split("/").filter(Boolean)[1];
-  
+
   if (body?.role === "student" || body?.admissionNo || body?.adm) {
-    const classId = body.classId || (await findClassId(body.classGrade, body.classStream));
+    const classId =
+      body.classId || (await findClassId(body.classGrade, body.classStream));
     return request<T>("/update/id", {
       method: "PATCH",
       body: JSON.stringify({
@@ -375,7 +411,8 @@ const updateLegacySubject = async <T>(path: string, body: any): Promise<T> => {
 };
 
 const createLegacyAssignment = async <T>(body: any): Promise<T> => {
-  const classId = body.classId || (await findClassId(body.classGrade, body.classStream));
+  const classId =
+    body.classId || (await findClassId(body.classGrade, body.classStream));
   if (!body.teacherId && classId && body.classTeacherId) {
     return request<T>("/update/class", {
       method: "PATCH",
@@ -392,12 +429,13 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
   let subjectJointId = body.subjectJointId;
   if (!subjectJointId) {
     const joints = await loadSubjectJoints();
-    subjectJointId = joints.find(
-      (joint) =>
-        String(joint.classGrade) === String(body.classGrade) &&
-        String(joint.classStream || "") === String(body.classStream || "") &&
-        String(joint.subjectId?.id || joint.id) === String(body.subjectId),
-    )?.id || body.subjectId;
+    subjectJointId =
+      joints.find(
+        (joint) =>
+          String(joint.classGrade) === String(body.classGrade) &&
+          String(joint.classStream || "") === String(body.classStream || "") &&
+          String(joint.subjectId?.id || joint.id) === String(body.subjectId),
+      )?.id || body.subjectId;
   }
   return request<T>("/assign/subject/teacher", {
     method: "POST",
@@ -410,10 +448,13 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
 
 const composeUsersDashboard = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
 
   const [students, teachers, subjects, subjectJoints] = await Promise.all([
-    request<any[]>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`),
+    request<any[]>(
+      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+    ),
     request<any[]>(`/users/${encodeURIComponent(schoolId)}/teachers`),
     request<any[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
     request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
@@ -434,7 +475,9 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         id: teacher.teacherProfileId || teacher.usersId || teacher.id,
         userId: teacher.usersId,
         email: teacher.email,
-        name: [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") || teacher.email,
+        name:
+          [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") ||
+          teacher.email,
         roles,
         roleLabel: roles.join(", "),
         status: teacher.status,
@@ -452,7 +495,8 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
 
 const fetchStudentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
   return request<T>(
     `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
   );
@@ -460,13 +504,15 @@ const fetchStudentsData = async <T>(): Promise<T> => {
 
 const fetchTeachersData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
   return request<T>(`/users/${encodeURIComponent(schoolId)}/teachers`);
 };
 
 const fetchSubjectsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
   const subjects = await request<any[]>(
     `/getAll/subjects/${encodeURIComponent(schoolId)}`,
   );
@@ -479,7 +525,8 @@ const fetchSubjectsData = async <T>(): Promise<T> => {
 
 const fetchExitedStudentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
   const data = await request<any[]>(
     `/users/exited-students?schoolId=${encodeURIComponent(schoolId)}`,
   );
@@ -488,7 +535,8 @@ const fetchExitedStudentsData = async <T>(): Promise<T> => {
 
 const fetchDashboardStatsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
 
   const students = await request<any[]>(
     `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
@@ -519,7 +567,9 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
     const roles = normalizeRoles(teacher.roles);
     return {
       id: teacher.teacherProfileId || teacher.usersId || teacher.id,
-      name: [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") || teacher.email,
+      name:
+        [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") ||
+        teacher.email,
       roles,
       status: teacher.status,
       classGrade: teacher.schoolClass,
@@ -572,10 +622,9 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
 
 const fetchAssignmentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
-  if (!schoolId) throw new ApiError("No school is linked to this account.", 400, null);
-  return request<T>(
-    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
-  );
+  if (!schoolId)
+    throw new ApiError("No school is linked to this account.", 400, null);
+  return request<T>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`);
 };
 
 export const api = {
@@ -584,11 +633,15 @@ export const api = {
       return composeUsersDashboard<T>();
     }
     if (path === "/auth/me") {
-      return request<any>("/auth/me").then((context) => normalizeUser(context?.user || context)) as Promise<T>;
+      return request<any>("/auth/me").then((context) =>
+        normalizeUser(context?.user || context),
+      ) as Promise<T>;
     }
     if (/^\/users\/[^/]+$/.test(path) && path !== "/users/student-dashboard") {
       const userId = path.split("/").pop();
-      return request<any>(`/users/${userId}`).then((context) => normalizeUser(context)) as Promise<T>;
+      return request<any>(`/users/${userId}`).then((context) =>
+        normalizeUser(context),
+      ) as Promise<T>;
     }
     if (path === "/users/students") {
       return fetchStudentsData<T>();
@@ -613,7 +666,11 @@ export const api = {
       const grade = parts[3];
       const stream = parts[4] || "";
       return findClassId(grade, stream).then((classId) =>
-        classId ? request<T>(`/get/students?classId=${encodeURIComponent(classId)}&size=500`) : ([] as T),
+        classId
+          ? request<T>(
+              `/get/students?classId=${encodeURIComponent(classId)}&size=500`,
+            )
+          : ([] as T),
       );
     }
     if (path === "/school/class-subjects") {
@@ -627,7 +684,9 @@ export const api = {
     }
     if (path.startsWith("/marks/averages/teacher/")) {
       const teacherId = path.split("/").pop();
-      return request<T>(`/marks/averages/teacher/${teacherId}`, { method: "GET" });
+      return request<T>(`/marks/averages/teacher/${teacherId}`, {
+        method: "GET",
+      });
     }
     if (path === "/marks") {
       return loadLegacyMarks<T>(params);
@@ -697,7 +756,12 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({
           subjectJointId: body.subjectId,
-          subjectType: body.isOffered === false ? "DROPPED" : body.enrollmentMode === "elective" ? "ELECTIVE" : "COMPULSORY",
+          subjectType:
+            body.isOffered === false
+              ? "DROPPED"
+              : body.enrollmentMode === "elective"
+                ? "ELECTIVE"
+                : "COMPULSORY",
           electiveCode: body.sharedSlotId,
         }),
       });
@@ -720,7 +784,10 @@ export const api = {
         body: JSON.stringify(body),
       });
     }
-    if (path.startsWith("/users/parent-concerns/") && path.endsWith("/status")) {
+    if (
+      path.startsWith("/users/parent-concerns/") &&
+      path.endsWith("/status")
+    ) {
       return request<T>(path, {
         method: "PUT",
         body: JSON.stringify(body),
@@ -746,9 +813,15 @@ export const api = {
     if (path.startsWith("/school/assignments/")) {
       const assignmentId = path.split("/").pop();
       return loadSubjectJoints().then((joints) => {
-        const joint = joints.find((item) => String(item.id) === String(assignmentId));
+        const joint = joints.find(
+          (item) => String(item.id) === String(assignmentId),
+        );
         if (!joint?.subjectTeacherId) {
-          throw new ApiError("This subject is not assigned to a teacher.", 400, { assignmentId });
+          throw new ApiError(
+            "This subject is not assigned to a teacher.",
+            400,
+            { assignmentId },
+          );
         }
         return request<T>("/unassign/subject/teacher", {
           method: "PATCH",

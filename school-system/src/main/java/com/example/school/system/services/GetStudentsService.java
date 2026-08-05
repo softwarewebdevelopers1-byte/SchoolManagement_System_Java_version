@@ -41,7 +41,7 @@ public class GetStudentsService {
         Page<StudentProfile> studentProfiles = studentProfileRepo.findBySchoolClassClassId(schoolClassDTO.classId(),
                 pageable);
         List<?> students = studentProfiles.stream().map(s -> {
-            return GetStudentByClassDTO.builder().fullName(s.getStudentFullName()).adm(s.getStudentAdm())
+            return GetStudentByClassDTO.builder().name(s.getStudentFullName()).adm(s.getStudentAdm())
                    .build();
         }).toList();
         return students;
@@ -66,3 +66,4 @@ public class GetStudentsService {
     }
 
 }
+

@@ -29,9 +29,10 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @GetMapping("/sheet")
-    public ResponseEntity<?> loadAttendanceSheet(@RequestParam UUID classId, @RequestParam UUID teacherId) {
-        ClassAttendanceDTO classAttendanceDTO = new ClassAttendanceDTO(classId, teacherId);
-        AttendanceSheetDTO sheet = attendanceService.getOrCreateSheet(classAttendanceDTO);
+    public ResponseEntity<?> loadAttendanceSheet(@RequestParam(required = true) UUID classId,
+            @RequestParam(required = true) UUID teacherId) {
+        AttendanceSheetDTO sheet = attendanceService
+                .getOrCreateSheet(ClassAttendanceDTO.builder().teacherId(teacherId).classId(classId).build());
         return ResponseEntity.status(200).body(SchoolApiResponse.success(sheet, "sheet loaded"));
     }
 
@@ -59,7 +60,8 @@ public class AttendanceController {
     @GetMapping("/get/attendance-sheet")
     public ResponseEntity<?> getAttendanceSheet(
             @RequestParam UUID classId, @RequestParam UUID teacherId, @RequestParam LocalDate date) {
-        LoadAttendaceSheetSpecificDate loadAttendaceSheetSpecificDate = new LoadAttendaceSheetSpecificDate(classId, date, teacherId);
+        LoadAttendaceSheetSpecificDate loadAttendaceSheetSpecificDate = new LoadAttendaceSheetSpecificDate(classId,
+                date, teacherId);
         var response = attendanceService.getAttendaceSheetSPecificDate(loadAttendaceSheetSpecificDate);
         return ResponseEntity.status(200).body(response);
     }
@@ -85,4 +87,3 @@ public class AttendanceController {
         return ResponseEntity.ok(SchoolApiResponse.success(Map.of(), "attendance summary loaded"));
     }
 }
-

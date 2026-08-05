@@ -29,8 +29,10 @@ import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.types.ClassAttendanceStatus;
 import com.example.school.system.types.WholeAttendanceSheetStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AttendanceService {
         private final AttendanceSheetRepository attendanceSheetRepository;

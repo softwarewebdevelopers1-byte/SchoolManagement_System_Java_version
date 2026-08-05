@@ -8,6 +8,6 @@ import lombok.Setter;
 @Getter
 @Builder
 public class GetStudentByClassDTO {
-    String fullName;
+    String name;
     String adm;
 }

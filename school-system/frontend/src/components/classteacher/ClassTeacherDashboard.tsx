@@ -25,7 +25,7 @@ import {
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api, normalizeRoles } from "../../lib/api";
+import { api, getClassId, normalizeRoles } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 import { AttendanceTab } from "./AttendanceTab";
 import { Calendar1Icon } from "lucide-react";
@@ -135,9 +135,11 @@ export default function ClassTeacherDashboard() {
           classGrade: currentUser.classGrade,
           classStream: currentUser.classStream,
         }),
-        api.get("/users"), // Get assignments and staff names
+        api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`), // Get assignments and staff names
       ])) as [any[], any[], any];
       setStudents(studentsData);
+      console.log("students set", studentsData);
+
       const mappedSubjects = subjectsData.map((subject: any) => ({
         ...subject,
         id: subject.id || subject._id,
@@ -680,7 +682,6 @@ export default function ClassTeacherDashboard() {
           </div>
         </div>
       </div>
-
     </>
   );
 }
