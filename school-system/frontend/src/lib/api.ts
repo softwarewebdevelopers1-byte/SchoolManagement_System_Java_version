@@ -51,7 +51,7 @@ export const getClassId = (): string | null => {
   return user?.classDto.id || null;
 };
 
-const getStoredSession = () => {
+export const getStoredSession = () => {
   const saved = localStorage.getItem("user");
   if (!saved) return null;
   try {

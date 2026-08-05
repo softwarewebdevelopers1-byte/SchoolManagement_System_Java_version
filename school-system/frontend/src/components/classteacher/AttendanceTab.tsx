@@ -38,10 +38,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
   );
 
   const fetchClassId = getClassId();
-  console.log("class id", fetchClassId);
 
   const teacherId = getCurrentTeacherProfileId();
-  console.log("teacher profile id", teacherId);
   useEffect(() => {
     fetchClassId;
   }, [fetchClassId]);
@@ -58,8 +56,6 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           method: "GET",
         },
       );
-      console.log("Data collected is --> ", data);
-
       // Ensure we extract the nested payload correctly since backend returns SchoolApiResponse
       const unwrappedData = data?.status === "Success" ? data.data : data;
       setSheet(unwrappedData || null);
@@ -89,14 +85,15 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
   };
 
   const handleSave = async () => {
-    if (!sheet || !classId) return;
+    if (!sheet || !fetchClassId) return;
     setMessage(null);
     try {
-      await api.patch("/attendance/update/sheet", {
-        classId: classId,
+      let res: any = await api.patch("/attendance/update/sheet", {
+        classId: fetchClassId,
         attendanceSheetId: sheet.sheetId,
         attendanceRecordDTOs: sheet.records,
       });
+
       setMessage({
         text: "Attendance sheet updated successfully.",
         type: "success",
@@ -104,7 +101,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
       setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
       setMessage({
-        text: err.message || "Failed to update attendance.",
+        text: "Failed to update attendance.",
         type: "error",
       });
     }
@@ -174,6 +171,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           <div style={{ position: "relative" }}>
             <input
               type="date"
+              disabled
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
               style={{
