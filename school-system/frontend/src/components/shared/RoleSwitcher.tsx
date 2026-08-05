@@ -140,85 +140,85 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
               }}
             />
           )}
-        <div
-          style={{
-            position: isCompact ? "fixed" : "absolute",
-            top: isCompact ? "auto" : "120%",
-            right: isCompact ? 12 : 0,
-            left: isCompact ? 12 : "auto",
-            bottom: isCompact ? 12 : "auto",
-            background: "var(--white)",
-            border: "1px solid var(--border)",
-            borderRadius: isCompact ? 14 : 10,
-            boxShadow: "0 16px 36px rgba(11, 32, 24, 0.16)",
-            padding: isCompact ? "10px" : "6px",
-            minWidth: isCompact ? "auto" : "180px",
-            maxHeight: isCompact ? "min(70dvh, 360px)" : undefined,
-            overflowY: isCompact ? "auto" : undefined,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            zIndex: 1000,
-            animation: "scaleIn 0.2s ease-out",
-          }}
-        >
-          {isCompact && (
-            <div
-              style={{
-                padding: "4px 6px 10px",
-                fontSize: 11,
-                fontWeight: 800,
-                color: "var(--textMut)",
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-              }}
-            >
-              Switch dashboard
-            </div>
-          )}
-          {roles.map((r: string) => {
-            const path = ROLE_PATHS[r];
-            if (!path) return null;
-            const isActive = currentPath.toLowerCase() === path.toLowerCase();
-
-            return (
-              <button
-                key={r}
-                onClick={() => {
-                  navigate(path);
-                  setIsOpen(false);
-                }}
+          <div
+            style={{
+              position: isCompact ? "fixed" : "absolute",
+              top: isCompact ? "auto" : "120%",
+              right: isCompact ? 12 : 0,
+              left: isCompact ? 12 : "auto",
+              bottom: isCompact ? 12 : "auto",
+              background: "var(--white)",
+              border: "1px solid var(--border)",
+              borderRadius: isCompact ? 14 : 10,
+              boxShadow: "0 16px 36px rgba(11, 32, 24, 0.16)",
+              padding: isCompact ? "10px" : "6px",
+              minWidth: isCompact ? "auto" : "180px",
+              maxHeight: isCompact ? "min(70dvh, 360px)" : undefined,
+              overflowY: isCompact ? "auto" : undefined,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              zIndex: 1000,
+              animation: "scaleIn 0.2s ease-out",
+            }}
+          >
+            {isCompact && (
+              <div
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 6,
-                  border: "none",
-                  background: isActive ? "var(--goldP)" : "transparent",
-                  color: isActive ? "var(--gold)" : "var(--text)",
-                  textAlign: "left",
-                  fontSize: "12.5px",
-                  fontWeight: isActive ? 700 : 500,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  padding: "4px 6px 10px",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "var(--textMut)",
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
                 }}
               >
-                {roleLabels[r] || r}
-                {isActive && (
-                  <div
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "var(--gold)",
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+                Switch dashboard
+              </div>
+            )}
+            {roles.map((r: string) => {
+              const path = ROLE_PATHS[r];
+              if (!path) return null;
+              const isActive = currentPath.toLowerCase() === path.toLowerCase();
+
+              return (
+                <button
+                  key={r}
+                  onClick={() => {
+                    navigate(`/edunex-org${path}`);
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: isActive ? "var(--goldP)" : "transparent",
+                    color: isActive ? "var(--gold)" : "var(--text)",
+                    textAlign: "left",
+                    fontSize: "12.5px",
+                    fontWeight: isActive ? 700 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {roleLabels[r] || r}
+                  {isActive && (
+                    <div
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "var(--gold)",
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </>
       )}
       <style>{`

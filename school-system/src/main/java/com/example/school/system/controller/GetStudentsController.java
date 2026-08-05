@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.school.system.DTO.GetAllStudentsDTO;
 import com.example.school.system.DTO.GetStudentsOfSpecificClass;
 import com.example.school.system.services.GetStudentsService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
