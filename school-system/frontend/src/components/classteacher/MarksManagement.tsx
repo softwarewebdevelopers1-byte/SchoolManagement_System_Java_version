@@ -300,22 +300,21 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           }),
         })),
       );
-      console.log("Marks data", subjectPayloads);
 
+      
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {
         marksByActualSubject.set(
           subjectId,
           new Map(
             (data as any[]).map((item) => {
-              console.log("Issue:", item, "<-->", item.studentId.toString());
+              
 
               return [item.studentId.toString(), item];
             }),
           ),
         );
       });
-      console.log("New data", marksByActualSubject);
 
       const relevantStudents: Student[] = [];
 
@@ -337,17 +336,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         const markRecord = marksByActualSubject
           .get(actualSubjectId)
           ?.get(String(student.id));
-        console.log(
-          "markRecord-->",
-          markRecord,
-          "student object --> ",
-          student,
-          "active subject id -->",
-          activeSubjectId,
-          "subject record --> ",
-          subjectRecord,
-        );
-
         relevantStudents.push({
           id: String(student.id),
           name: student.name,
@@ -363,7 +351,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           pushed: false,
         });
       });
-      console.log("roster data --> ", rosterStudents);
 
       setMarksData((prev) => ({
         ...prev,
@@ -375,7 +362,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           {} as MarksData[string],
         ),
       }));
-      console.log("new 2 data", marksData);
 
       setSubjectStudents((prev) => ({
         ...prev,
@@ -555,11 +541,11 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
     setMsg(null);
     try {
-      await Promise.all(
+      let res = await Promise.all(
         Array.from(marksByActualSubject.entries()).map(
           ([actualSubjectId, actualSubjectMarks]) =>
             api.post("/marks/save", {
-              subjectId: actualSubjectId,
+              subjectJointId: actualSubjectId,
               classGrade: user.classGrade,
               classStream: user.classStream,
               term,
@@ -570,17 +556,18 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
             }),
         ),
       );
+      console.log("saving marks response ", res);
 
-      if (summaryData.length > 0) {
-        await api.post("/marks/summary-save", {
-          classGrade: user.classGrade,
-          classStream: user.classStream,
-          term,
-          year,
-          examType,
-          marksData: summaryData,
-        });
-      }
+      // if (summaryData.length > 0) {
+      //   await api.post("/marks/summary-save", {
+      //     classGrade: user.classGrade,
+      //     classStream: user.classStream,
+      //     term,
+      //     year,
+      //     examType,
+      //     marksData: summaryData,
+      //   });
+      // }
 
       setMsg({ text: "Marks saved successfully!", type: "success" });
       if (onRefresh) onRefresh();

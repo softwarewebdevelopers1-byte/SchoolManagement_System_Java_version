@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.services.MarksEntryService;
 
@@ -31,6 +29,7 @@ public class MarksEntryController {
         return ResponseEntity.ok(res);
     }
 
+    // I will eliminate it in future
     @GetMapping("/marks")
     public ResponseEntity<?> getMarks(
             @RequestParam(required = false) UUID subjectId,
@@ -45,19 +44,6 @@ public class MarksEntryController {
         var res = marksEntryService.loadMarksEntrySheet(subjectId);
         return ResponseEntity.ok(res);
     }
-
-    @PostMapping("/marks/save")
-    public ResponseEntity<?> saveMarks(@Valid @RequestBody MarksheetSaveRequest marksheetSaveRequest) {
-        var res = marksEntryService.saveMarks(marksheetSaveRequest);
-        return ResponseEntity.ok(res);
-    }
-
-    @PostMapping("/marks/summary-save")
-    public ResponseEntity<?> saveSummaryMarks(@Valid @RequestBody MarksheetSaveRequest marksheetSaveRequest) {
-        var res = marksEntryService.saveMarks(marksheetSaveRequest);
-        return ResponseEntity.ok(res);
-    }
-
     @PostMapping("/marks/entry")
     public ResponseEntity<?> marksEntry(@Valid @RequestBody MarksheetSaveRequest marksheetSaveRequest) {
         var res = marksEntryService.saveMarks(marksheetSaveRequest);
