@@ -131,14 +131,11 @@ export default function ClassTeacherDashboard() {
             examType: currentUser.examType,
           },
         ),
-        api.get("/school/class-subjects", {
-          classGrade: currentUser.classGrade,
-          classStream: currentUser.classStream,
-        }),
+        api.get(`/class/subject/${encodeURIComponent(getClassId()!)}`),
         api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`), // Get assignments and staff names
       ])) as [any[], any[], any];
       setStudents(studentsData);
-      console.log("students set", studentsData);
+      console.log("students set", subjectsData);
 
       const mappedSubjects = subjectsData.map((subject: any) => ({
         ...subject,
@@ -148,6 +145,7 @@ export default function ClassTeacherDashboard() {
       setSubjects(
         mappedSubjects.filter((subject: any) => subject.isOffered !== false),
       );
+      
 
       // Filter assignments for THIS class
       const classAssignments = (staffData.assignments || [])

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
+import com.example.school.system.DTO.SubjectJointRes;
 import com.example.school.system.DTO.SubjectUpdateDTO;
 import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
 import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
@@ -253,4 +254,15 @@ public class SubjectService {
         subjectJoint.setSubjectType(subjectType);
         subjectJointRepo.save(subjectJoint);
     }
+
+    public List<SubjectJointRes> getSubjectJointForClass(UUID classId) {
+        List<SubjectJoint> subjectJoints = subjectJointRepo.findAllBySchoolClassClassId(classId);
+        return subjectJoints.stream().map(s -> {
+            return SubjectJointRes.builder().id(s.getId()).name(s.getSubject().getSubjectName())
+                    .enrollmentMode(s.getSubjectType()).sharedSlotId(s.getElectiveCode())
+                    .build();
+        }).toList();
+    }
 }
+
+

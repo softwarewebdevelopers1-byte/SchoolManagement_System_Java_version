@@ -263,9 +263,10 @@ const composeTeacherAssignments = async <T>(teacherId: string): Promise<T> => {
 const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
-  const sheet = await request<any>(
-    `/marks/${encodeURIComponent(subjectJointId)}`,
-  );
+  const sheet = await request<any>(`/marks/${subjectJointId}`);
+  for (let i = 0; i < sheet?.marksRow.length; i++) {
+    console.log(sheet?.marksRow[i]);
+  }
   return (sheet?.marksRow || []).map((row: any) => ({
     studentId: row.studentId,
     admissionNo: row.studentAdm,

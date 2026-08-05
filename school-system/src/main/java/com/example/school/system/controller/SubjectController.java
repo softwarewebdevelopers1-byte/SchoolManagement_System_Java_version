@@ -124,4 +124,11 @@ public class SubjectController {
         var res = subjectService.getAllSubjectJoints(schoolId);
         return ResponseEntity.ok(res);
     }
+
+    @GetMapping("/class/subject/{id}")
+    public ResponseEntity<?> getSubjectsJointForClass(@PathVariable(required = true) UUID id) {
+        var res = subjectService.getSubjectJointForClass(id);
+        System.out.println();
+        return ResponseEntity.status(200).body(res);
+    }
 }

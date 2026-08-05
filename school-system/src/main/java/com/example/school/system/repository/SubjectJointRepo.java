@@ -10,22 +10,24 @@ import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.types.SubjectType;
 
 public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
-    Optional<SubjectJoint> findByIdAndSchoolClassClassId(UUID id, UUID classId);
+        Optional<SubjectJoint> findByIdAndSchoolClassClassId(UUID id, UUID classId);
 
-    boolean existsBySubjectIdAndSchoolClassClassId(UUID subjectId, UUID classId);
+        boolean existsBySubjectIdAndSchoolClassClassId(UUID subjectId, UUID classId);
 
-    List<SubjectJoint> findAllBySchoolClass_schoolId(UUID schoolId);
+        List<SubjectJoint> findAllBySchoolClass_schoolId(UUID schoolId);
 
-    Optional<SubjectJoint> findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(UUID subjectJointId,
-            String electiveCode,
-            SubjectType subjectType,
-            UUID schoolId);
+        List<SubjectJoint> findAllBySchoolClassClassId(UUID classId);;
 
-    List<SubjectJoint> findAllBySubjectTypeAndSchoolClassClassId(SubjectType subjectType, UUID classId);
+        Optional<SubjectJoint> findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(UUID subjectJointId,
+                        String electiveCode,
+                        SubjectType subjectType,
+                        UUID schoolId);
 
-    @Query("""
-            SELECT s FROM SubjectJoint s WHERE NOT s.subjectType = :subjectType AND id = :id
-            """)
-    Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
-            @Param("subjectType") SubjectType subjectType);
+        List<SubjectJoint> findAllBySubjectTypeAndSchoolClassClassId(SubjectType subjectType, UUID classId);
+
+        @Query("""
+                        SELECT s FROM SubjectJoint s WHERE NOT s.subjectType = :subjectType AND id = :id
+                        """)
+        Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
+                        @Param("subjectType") SubjectType subjectType);
 }

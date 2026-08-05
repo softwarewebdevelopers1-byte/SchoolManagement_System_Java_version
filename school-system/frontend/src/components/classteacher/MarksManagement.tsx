@@ -16,9 +16,15 @@ const hasAnyStoredValue = (marks: {
   exam: number | string | null;
   finalScore: number | string | null;
 }) =>
-  [marks.cat1, marks.cat2, marks.cat3, marks.cat4, marks.cat5, marks.exam, marks.finalScore].some(
-    (value) => value !== null && value !== "",
-  );
+  [
+    marks.cat1,
+    marks.cat2,
+    marks.cat3,
+    marks.cat4,
+    marks.cat5,
+    marks.exam,
+    marks.finalScore,
+  ].some((value) => value !== null && value !== "");
 
 const createEmptyMarks = () => ({
   cat1: null,
@@ -36,12 +42,18 @@ const createEmptyMarks = () => ({
   finalScore: null,
 });
 
-const normalizeValue = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+const normalizeValue = (value: unknown) =>
+  typeof value === "string" ? value.trim() : "";
 
-const getRawSubjectId = (subject: any) => String(subject?.id || subject?._id || "").trim();
+const getRawSubjectId = (subject: any) =>
+  String(subject?.id || subject?._id || "").trim();
 
 const getStudentAdmissionNumber = (student: any) =>
-  student?.admissionNumber || student?.admissionNo || student?.ADM || student?.adm || "";
+  student?.admissionNumber ||
+  student?.admissionNo ||
+  student?.ADM ||
+  student?.adm ||
+  "";
 
 const isActiveStudent = (student: any) =>
   String(student?.status || "Active").toLowerCase() === "active";
@@ -67,28 +79,38 @@ const resolveStudentSubjectSelection = (
     return subject.actualSubjects[0]?.id || null;
   }
 
-  const activeEnrollment = (student?.enrolledSubjects || []).find((entry: any) => {
-    const enrollmentClassGrade = normalizeValue(entry?.classGrade);
-    const enrollmentClassStream = normalizeValue(entry?.classStream);
+  const activeEnrollment = (student?.enrolledSubjects || []).find(
+    (entry: any) => {
+      const enrollmentClassGrade = normalizeValue(entry?.classGrade);
+      const enrollmentClassStream = normalizeValue(entry?.classStream);
 
-    return (
-      entry?.isActive !== false &&
-      subject.actualSubjects.some((actualSubject) => actualSubject.id === String(entry?.subjectId || "").trim()) &&
-      enrollmentClassGrade === normalizeValue(classGrade) &&
-      enrollmentClassStream === normalizeValue(classStream)
-    );
-  });
+      return (
+        entry?.isActive !== false &&
+        subject.actualSubjects.some(
+          (actualSubject) =>
+            actualSubject.id === String(entry?.subjectId || "").trim(),
+        ) &&
+        enrollmentClassGrade === normalizeValue(classGrade) &&
+        enrollmentClassStream === normalizeValue(classStream)
+      );
+    },
+  );
 
   if (activeEnrollment) {
     return String(activeEnrollment.subjectId).trim();
   }
 
-  const legacyEnrollment = (student?.enrolledSubjects || []).find((entry: any) => {
-    return (
-      entry?.isActive !== false &&
-      subject.actualSubjects.some((actualSubject) => actualSubject.id === String(entry?.subjectId || "").trim())
-    );
-  });
+  const legacyEnrollment = (student?.enrolledSubjects || []).find(
+    (entry: any) => {
+      return (
+        entry?.isActive !== false &&
+        subject.actualSubjects.some(
+          (actualSubject) =>
+            actualSubject.id === String(entry?.subjectId || "").trim(),
+        )
+      );
+    },
+  );
 
   return legacyEnrollment ? String(legacyEnrollment.subjectId).trim() : null;
 };
@@ -101,8 +123,13 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 }) => {
   const [activeSubjectId, setActiveSubjectId] = useState("");
   const [marksData, setMarksData] = useState<MarksData>({});
-  const [subjectStudents, setSubjectStudents] = useState<Record<string, Student[]>>({});
-  const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [subjectStudents, setSubjectStudents] = useState<
+    Record<string, Student[]>
+  >({});
+  const [msg, setMsg] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const [term, setTerm] = useState<number>(user?.term || 1);
   const [year, setYear] = useState<number>(user?.year || 2024);
   const [examType, setExamType] = useState<string>(user?.examType || "opener");
@@ -118,7 +145,9 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       .filter((subject) => subject.id && subject.isOffered !== false);
 
     const electiveGroups = buildElectiveSubjectGroups(activeSubjects);
-    const electiveGroupsByKey = new Map(electiveGroups.map((group) => [group.key, group]));
+    const electiveGroupsByKey = new Map(
+      electiveGroups.map((group) => [group.key, group]),
+    );
     const seenKeys = new Set<string>();
 
     const buildOption = (subject: {
@@ -157,13 +186,15 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
     activeSubjects.forEach((subject) => {
       if ((subject.enrollmentMode || "compulsory") !== "elective") {
-        result.push(buildOption({
-          id: subject.id,
-          name: subject.name,
-          enrollmentMode: "compulsory",
-          sharedSlotId: subject.sharedSlotId || null,
-          actualSubjects: [{ id: subject.id, name: subject.name }],
-        }));
+        result.push(
+          buildOption({
+            id: subject.id,
+            name: subject.name,
+            enrollmentMode: "compulsory",
+            sharedSlotId: subject.sharedSlotId || null,
+            actualSubjects: [{ id: subject.id, name: subject.name }],
+          }),
+        );
         return;
       }
 
@@ -176,42 +207,61 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
       const group = electiveGroupsByKey.get(groupKey);
       if (!group || !group.isLinkedGroup) {
-        result.push(buildOption({
-          id: subject.id,
-          name: subject.name,
-          enrollmentMode: "elective",
-          sharedSlotId: subject.sharedSlotId || null,
-          actualSubjects: [{ id: subject.id, name: subject.name }],
-        }));
+        result.push(
+          buildOption({
+            id: subject.id,
+            name: subject.name,
+            enrollmentMode: "elective",
+            sharedSlotId: subject.sharedSlotId || null,
+            actualSubjects: [{ id: subject.id, name: subject.name }],
+          }),
+        );
         return;
       }
 
-      const groupSubjectNames = group.subjects.map((groupSubject) => groupSubject.name);
-      result.push(buildOption({
-        id: `elective-group:${group.key}`,
-        name: group.label,
-        displayName: group.label,
-        enrollmentMode: "elective",
-        sharedSlotId: group.sharedSlotId,
-        groupedSubjectIds: group.subjects.map((groupSubject) => groupSubject.id),
-        groupedSubjectNames: groupSubjectNames,
-        isLinkedElectiveGroup: true,
-        actualSubjects: group.subjects.map((groupSubject) => ({
-          id: groupSubject.id,
-          name: groupSubject.name,
-        })),
-      }));
+      const groupSubjectNames = group.subjects.map(
+        (groupSubject) => groupSubject.name,
+      );
+      result.push(
+        buildOption({
+          id: `elective-group:${group.key}`,
+          name: group.label,
+          displayName: group.label,
+          enrollmentMode: "elective",
+          sharedSlotId: group.sharedSlotId,
+          groupedSubjectIds: group.subjects.map(
+            (groupSubject) => groupSubject.id,
+          ),
+          groupedSubjectNames: groupSubjectNames,
+          isLinkedElectiveGroup: true,
+          actualSubjects: group.subjects.map((groupSubject) => ({
+            id: groupSubject.id,
+            name: groupSubject.name,
+          })),
+        }),
+      );
     });
 
     return result;
   }, [subjects, user.classGrade, user.classStream, year]);
 
-  const countEligibleStudents = useCallback((subject: DisplaySubjectOption) => {
-    return rosterStudents.filter((student) =>
-      isActiveStudent(student) &&
-      Boolean(resolveStudentSubjectSelection(student, subject, user.classGrade, user.classStream)),
-    ).length;
-  }, [rosterStudents, user.classGrade, user.classStream]);
+  const countEligibleStudents = useCallback(
+    (subject: DisplaySubjectOption) => {
+      return rosterStudents.filter(
+        (student) =>
+          isActiveStudent(student) &&
+          Boolean(
+            resolveStudentSubjectSelection(
+              student,
+              subject,
+              user.classGrade,
+              user.classStream,
+            ),
+          ),
+      ).length;
+    },
+    [rosterStudents, user.classGrade, user.classStream],
+  );
 
   useEffect(() => {
     if (user) {
@@ -222,13 +272,18 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   }, [user]);
 
   useEffect(() => {
-    if (displaySubjects.length > 0 && !displaySubjects.some((subject) => subject.id === activeSubjectId)) {
+    if (
+      displaySubjects.length > 0 &&
+      !displaySubjects.some((subject) => subject.id === activeSubjectId)
+    ) {
       setActiveSubjectId(displaySubjects[0].id);
     }
   }, [displaySubjects, activeSubjectId]);
 
   const loadDetailedMarks = useCallback(async () => {
-    const currentSubject = displaySubjects.find((subject) => subject.id === activeSubjectId);
+    const currentSubject = displaySubjects.find(
+      (subject) => subject.id === activeSubjectId,
+    );
     if (!currentSubject) return;
 
     try {
@@ -245,16 +300,22 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           }),
         })),
       );
+      console.log("Marks data", subjectPayloads);
 
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {
         marksByActualSubject.set(
           subjectId,
           new Map(
-            (data as any[]).map((item) => [item.studentId.toString(), item]),
+            (data as any[]).map((item) => {
+              console.log("Issue:", item, "<-->", item.studentId.toString());
+
+              return [item.studentId.toString(), item];
+            }),
           ),
         );
       });
+      console.log("New data", marksByActualSubject);
 
       const relevantStudents: Student[] = [];
 
@@ -273,7 +334,19 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         const subjectRecord = currentSubject.actualSubjects.find(
           (actualSubject) => actualSubject.id === actualSubjectId,
         );
-        const markRecord = marksByActualSubject.get(actualSubjectId)?.get(String(student.id));
+        const markRecord = marksByActualSubject
+          .get(actualSubjectId)
+          ?.get(String(student.id));
+        console.log(
+          "markRecord-->",
+          markRecord,
+          "student object --> ",
+          student,
+          "active subject id -->",
+          activeSubjectId,
+          "subject record --> ",
+          subjectRecord,
+        );
 
         relevantStudents.push({
           id: String(student.id),
@@ -283,19 +356,27 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           enrolledSubjects: student.enrolledSubjects || [],
           enrollmentSubjectId: actualSubjectId,
           enrollmentSubjectName:
-            currentSubject.actualSubjects.length > 1 ? subjectRecord?.name || null : null,
+            currentSubject.actualSubjects.length > 1
+              ? subjectRecord?.name || null
+              : null,
           marks: markRecord?.marks || createEmptyMarks(),
           pushed: false,
         });
       });
+      console.log("roster data --> ", rosterStudents);
 
       setMarksData((prev) => ({
         ...prev,
-        [activeSubjectId]: relevantStudents.reduce((acc, student) => {
-          acc[student.id] = student.marks;
-          return acc;
-        }, {} as MarksData[string]),
+        [activeSubjectId]: relevantStudents.reduce(
+          (acc, student) => {
+            acc[student.id] = student.marks;
+            return acc;
+          },
+          {} as MarksData[string],
+        ),
       }));
+      console.log("new 2 data", marksData);
+
       setSubjectStudents((prev) => ({
         ...prev,
         [activeSubjectId]: relevantStudents,
@@ -328,7 +409,12 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     }
   }, [activeSubjectId, loadDetailedMarks, term, year, examType]);
 
-  const handleMarkUpdate = (subjectId: string, studentId: string, key: string, value: string) => {
+  const handleMarkUpdate = (
+    subjectId: string,
+    studentId: string,
+    key: string,
+    value: string,
+  ) => {
     setMarksData((prev) => {
       const updatedSubjectMarks = { ...(prev[subjectId] || {}) };
       const updatedStudentMarks = {
@@ -342,7 +428,11 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         const num = Number(n);
         if (!Number.isNaN(num)) {
           const maxKey = `${key}Max`;
-          const max = key === "finalScore" ? 100 : (updatedStudentMarks as any)[maxKey] || (key === "exam" ? 100 : 40);
+          const max =
+            key === "finalScore"
+              ? 100
+              : (updatedStudentMarks as any)[maxKey] ||
+                (key === "exam" ? 100 : 40);
           if (num > max) {
             n = max;
           } else if (num < 0) {
@@ -363,7 +453,11 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     });
   };
 
-  const handleConfigUpdate = (subjectId: string, key: string, value: number | string | null) => {
+  const handleConfigUpdate = (
+    subjectId: string,
+    key: string,
+    value: number | string | null,
+  ) => {
     setMarksData((prev) => {
       const newData = { ...prev };
       if (!newData[subjectId]) return prev;
@@ -398,30 +492,44 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   };
 
   const handleSaveMarks = async (subjectId: string, catConfigs?: any) => {
-    const currentSubject = displaySubjects.find((subject) => subject.id === subjectId);
+    const currentSubject = displaySubjects.find(
+      (subject) => subject.id === subjectId,
+    );
     if (!currentSubject) return;
 
     const subjectMarks = marksData[subjectId];
     if (!subjectMarks) return;
 
     const studentRows = subjectStudents[subjectId] || [];
-    const studentLookup = new Map(studentRows.map((student) => [student.id, student]));
-    const marksByActualSubject = new Map<string, Array<{ studentId: string } & Student["marks"]>>();
-    const summaryData: Array<{ studentId: string; subjectId: string; finalScore: number | string | null }> = [];
+    const studentLookup = new Map(
+      studentRows.map((student) => [student.id, student]),
+    );
+    const marksByActualSubject = new Map<
+      string,
+      Array<{ studentId: string } & Student["marks"]>
+    >();
+    const summaryData: Array<{
+      studentId: string;
+      subjectId: string;
+      finalScore: number | string | null;
+    }> = [];
     const missingSelections: string[] = [];
 
     Object.entries(subjectMarks).forEach(([studentId, marks]) => {
       const student = studentLookup.get(studentId);
       const actualSubjectId =
         student?.enrollmentSubjectId ||
-        (currentSubject.actualSubjects.length === 1 ? currentSubject.actualSubjects[0].id : null);
+        (currentSubject.actualSubjects.length === 1
+          ? currentSubject.actualSubjects[0].id
+          : null);
 
       if (!actualSubjectId) {
         missingSelections.push(student?.name || studentId);
         return;
       }
 
-      const currentSubjectMarks = marksByActualSubject.get(actualSubjectId) || [];
+      const currentSubjectMarks =
+        marksByActualSubject.get(actualSubjectId) || [];
       currentSubjectMarks.push({
         studentId,
         ...marks,
@@ -448,17 +556,18 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     setMsg(null);
     try {
       await Promise.all(
-        Array.from(marksByActualSubject.entries()).map(([actualSubjectId, actualSubjectMarks]) =>
-          api.post("/marks/save", {
-            subjectId: actualSubjectId,
-            classGrade: user.classGrade,
-            classStream: user.classStream,
-            term,
-            year,
-            examType,
-            marksData: actualSubjectMarks,
-            catConfigs,
-          }),
+        Array.from(marksByActualSubject.entries()).map(
+          ([actualSubjectId, actualSubjectMarks]) =>
+            api.post("/marks/save", {
+              subjectId: actualSubjectId,
+              classGrade: user.classGrade,
+              classStream: user.classStream,
+              term,
+              year,
+              examType,
+              marksData: actualSubjectMarks,
+              catConfigs,
+            }),
         ),
       );
 
@@ -481,11 +590,12 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     }
   };
 
-
   const activeSubjectStudents = subjectStudents[activeSubjectId] || [];
   const mappedStudents: Student[] = activeSubjectStudents.map((student) => {
     const sid = String(student.id);
-    const studentMarks = (marksData[activeSubjectId] && marksData[activeSubjectId][sid]) || createEmptyMarks();
+    const studentMarks =
+      (marksData[activeSubjectId] && marksData[activeSubjectId][sid]) ||
+      createEmptyMarks();
 
     return {
       ...student,
@@ -496,7 +606,8 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
   const mappedSubjects: Subject[] = displaySubjects.map((subject) => ({
     ...subject,
-    students: subjectStudents[subject.id]?.length ?? countEligibleStudents(subject),
+    students:
+      subjectStudents[subject.id]?.length ?? countEligibleStudents(subject),
     avg: 0,
     pushed: false,
     term: 1,
@@ -504,7 +615,9 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   }));
 
   if (displaySubjects.length === 0) {
-    return <div style={{ padding: 40, textAlign: "center" }}>No subjects found.</div>;
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>No subjects found.</div>
+    );
   }
 
   return (
@@ -524,7 +637,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           {msg.text}
         </div>
       )}
-
 
       <MarksEntry
         mode="class"
