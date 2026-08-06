@@ -28,6 +28,8 @@ import com.example.school.system.types.SubjectType;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
@@ -39,6 +41,7 @@ import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class SubjectService {
     private final SubjectRepository subjectRepository;
@@ -245,6 +248,31 @@ public class SubjectService {
         subjectSelection.setStudentProfile(studentProfile);
         subjectSelection.setSubjectJoint(subjectJointFound);
         studentSubjectSelectionRepo.save(subjectSelection);
+    }
+
+    @Transactional
+    public void registerMultipleStudentsToSubject(List<UUID> studentId, UUID subjectJoint, UUID schoolId,
+            String electiveCode) {
+        SubjectJoint subjectJointFound = subjectJointRepo
+                .findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(subjectJoint, electiveCode,
+                        SubjectType.ELECTIVE, schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
+        studentId.forEach(id -> {
+            StudentProfile studentProfile = studentRepository.findById(id)
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("some students not found"));
+            if (studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, id)) {
+                log.info("elective code {}, students id {}, elective selection exists {}", electiveCode, id,
+                        studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, id));
+                throw new SchoolResourceExistsExceptionHandler(
+                        "Some students already enrolled in the same elective pair");
+            }
+            StudentSubjectSelection subjectSelection = new StudentSubjectSelection();
+            subjectSelection.setElectiveCode(electiveCode);
+            subjectSelection.setStudentProfile(studentProfile);
+            subjectSelection.setSubjectJoint(subjectJointFound);
+            studentSubjectSelectionRepo.save(subjectSelection);
+        });
+
     }
 
     public void updateSubjectJointStatus(UUID subjectJointId, SubjectType subjectType, String electiveCode) {

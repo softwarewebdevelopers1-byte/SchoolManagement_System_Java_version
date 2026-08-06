@@ -2,19 +2,19 @@
 // Class teacher can enroll students of their class into elective subjects
 import React, { useState, useCallback, useEffect } from "react";
 import { C, FONT } from "./shared/constants";
-import { api } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
 import { Avatar } from "./shared/Avatar";
 
 interface ElectiveEnrollmentTabProps {
   students: any[];
-  subjects: any[];   // classSubjectCatalog (includes isOffered, enrollmentMode)
+  subjects: any[]; // classSubjectCatalog (includes isOffered, enrollmentMode)
   user: any;
   onRefresh: () => void;
 }
 
 const buildElectiveGroups = (subjects: any[]) => {
   const electives = subjects.filter(
-    (s) => s.isOffered !== false && s.enrollmentMode === "elective",
+    (s) => s.isOffered !== false && s.enrollmentMode === "ELECTIVE",
   );
   // Group by sharedSlotId
   const groups: Record<string, any[]> = {};
@@ -46,7 +46,10 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   onRefresh,
 }) => {
   const [saving, setSaving] = useState<string | null>(null); // subjectId being saved
-  const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [msg, setMsg] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [search, setSearch] = useState("");
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
@@ -71,7 +74,10 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
 
   const currentSubject = electives.find((e) => e.id === selectedSubjectId);
 
-  const handleEnrollOne = async (studentId: string, action: "enroll" | "unenroll") => {
+  const handleEnrollOne = async (
+    studentId: string,
+    action: "enroll" | "unenroll",
+  ) => {
     if (!selectedSubjectId) return;
     setSaving(studentId);
     try {
@@ -83,7 +89,9 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
         action,
       });
       showMsg(
-        action === "enroll" ? "Student enrolled successfully." : "Student unenrolled.",
+        action === "enroll"
+          ? "Student enrolled successfully."
+          : "Student unenrolled.",
         "success",
       );
       onRefresh();
@@ -97,13 +105,27 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   const handleBulkAction = async (action: "enroll" | "unenroll") => {
     if (!selectedSubjectId || bulkSelected.size === 0) return;
     setSaving("bulk");
+    const enrolledSubjectCode = subjects.filter(
+      (v) => v.id == selectedSubjectId,
+    );
+    console.log(
+      "ordered",
+      subjects,
+      selectedSubjectId,
+      "<-->",
+      enrolledSubjectCode[0].sharedSlotId,
+      "bulk selected <-->",
+      bulkSelected,
+    );
     try {
-      await api.put("/users/bulk-enroll-elective", {
-        studentIds: Array.from(bulkSelected),
-        subjectId: selectedSubjectId,
-        classGrade: user.classGrade,
-        classStream: user.classStream || "",
-        action,
+      await request("/register/multpile/students/subject-joint", {
+        method: "POST",
+        body: JSON.stringify({
+          studentsId: Array.from(bulkSelected),
+          subjectId: selectedSubjectId,
+          schoolId: getSchoolId(),
+          electiveCode: enrolledSubjectCode[0]?.sharedSlotId,
+        }),
       });
       showMsg(
         `${bulkSelected.size} student(s) ${action === "enroll" ? "enrolled" : "unenrolled"}.`,
@@ -143,7 +165,10 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   }, [electives, selectedSubjectId]);
 
   return (
-    <div className="ct-anim" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div
+      className="ct-anim"
+      style={{ display: "flex", flexDirection: "column", gap: 20 }}
+    >
       {/* Header */}
       <div>
         <p
@@ -178,7 +203,8 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
             margin: 0,
           }}
         >
-          Enroll or unenroll students of Grade {user?.classGrade} {user?.classStream} into elective subjects.
+          Enroll or unenroll students of Grade {user?.classGrade}{" "}
+          {user?.classStream} into elective subjects.
         </p>
       </div>
 
@@ -325,7 +351,14 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
 
             {/* Bulk actions */}
             {bulkSelected.size > 0 && (
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-end", paddingTop: 18 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-end",
+                  paddingTop: 18,
+                }}
+              >
                 <button
                   onClick={() => handleBulkAction("enroll")}
                   disabled={saving === "bulk"}
@@ -388,7 +421,15 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                   flexWrap: "wrap",
                 }}
               >
-                <p style={{ fontFamily: FONT.sans, fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>
+                <p
+                  style={{
+                    fontFamily: FONT.sans,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: C.text,
+                    margin: 0,
+                  }}
+                >
                   {currentSubject.name}
                 </p>
                 {currentSubject.sharedSlotId && (
@@ -414,14 +455,24 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                     marginLeft: "auto",
                   }}
                 >
-                  {activeStudents.filter((s) => isEnrolled(s, selectedSubjectId)).length} enrolled
-                  {" "}/ {activeStudents.length} total
+                  {
+                    activeStudents.filter((s) =>
+                      isEnrolled(s, selectedSubjectId),
+                    ).length
+                  }{" "}
+                  enrolled / {activeStudents.length} total
                 </span>
               </div>
             )}
 
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: 480,
+                }}
+              >
                 <thead>
                   <tr style={{ background: C.sand }}>
                     <th
@@ -488,7 +539,13 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                           />
                         </td>
                         <td style={{ padding: "10px 14px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 9,
+                            }}
+                          >
                             <Avatar name={student.name} size={30} />
                             <span
                               style={{

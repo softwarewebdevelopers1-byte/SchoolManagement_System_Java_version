@@ -3,6 +3,7 @@ package com.example.school.system.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.AssignSubjectTeacherDTO;
+import com.example.school.system.DTO.RegMultipleStudentsToSubjectJoint;
 import com.example.school.system.DTO.RegisterStudentsToSubjectDTO;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
@@ -119,6 +120,16 @@ public class SubjectController {
         return ResponseEntity.ok(SchoolApiResponse.success("student registered successfully"));
     }
 
+    @PostMapping("/register/multpile/students/subject-joint")
+    public ResponseEntity<?> multipleStudentsSubjectJointReg(
+            @Valid @RequestBody RegMultipleStudentsToSubjectJoint registerStudentsToSubjectDTO) {
+        subjectService.registerMultipleStudentsToSubject(registerStudentsToSubjectDTO.studentsId(),
+                registerStudentsToSubjectDTO.subjectId(), registerStudentsToSubjectDTO.schoolId(),
+                registerStudentsToSubjectDTO.electiveCode());
+        ;
+        return ResponseEntity.ok(SchoolApiResponse.success("students registered successfully"));
+    }
+
     @GetMapping("/get/all/subject-joints/{schoolId}")
     public ResponseEntity<?> getAllSubjectJoints(@PathVariable(required = true) UUID schoolId) {
         var res = subjectService.getAllSubjectJoints(schoolId);
@@ -132,3 +143,4 @@ public class SubjectController {
         return ResponseEntity.status(200).body(res);
     }
 }
+

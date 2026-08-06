@@ -9,5 +9,4 @@ public record RegisterStudentsToSubjectDTO(@NotNull(message = "student id is req
         @NotNull(message = "subject joint id is required") UUID subjectJoint,
         @NotNull(message = "school id is required") UUID schoolId,
         @NotBlank(message = "elective code is required") String electiveCode) {
-
 }
