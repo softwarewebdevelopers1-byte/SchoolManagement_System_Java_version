@@ -132,53 +132,64 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
     cat5Max: null,
     examMax: null,
   });
-  console.log("Newer data", marksData);
 
-  useEffect(() => {
-    if (students.length === 0) {
-      setCatsCount(0);
-      return;
-    }
+  // Track which cats are enabled (from backend state or local additions)
+  const [enabledCats, setEnabledCats] = useState<Set<number>>(new Set());
 
-    const firstStudentMarks = subjectMarks[students[0]?.id || ""];
-    if (firstStudentMarks) {
-      const nextConfigs: Record<ConfigKey, number | string | null> = {
-        cat1Max: firstStudentMarks.cat1Max,
-        cat2Max: firstStudentMarks.cat2Max,
-        cat3Max: firstStudentMarks.cat3Max,
-        cat4Max: firstStudentMarks.cat4Max,
-        cat5Max: firstStudentMarks.cat5Max,
-        examMax: firstStudentMarks.examMax,
-      };
+  // useEffect(() => {
+  //   if (students.length === 0) {
+  //     setCatsCount(0);
+  //     setEnabledCats(new Set());
+  //     return;
+  //   }
 
-      setCatConfigs((previous) =>
-        JSON.stringify(previous) === JSON.stringify(nextConfigs)
-          ? previous
-          : nextConfigs,
-      );
-    }
+  //   const firstStudentMarks = subjectMarks[students[0]?.id || ""];
+  //   if (firstStudentMarks) {
+  //     const nextConfigs: Record<ConfigKey, number | string | null> = {
+  //       cat1Max: firstStudentMarks.cat1Max,
+  //       cat2Max: firstStudentMarks.cat2Max,
+  //       cat3Max: firstStudentMarks.cat3Max,
+  //       cat4Max: firstStudentMarks.cat4Max,
+  //       cat5Max: firstStudentMarks.cat5Max,
+  //       examMax: firstStudentMarks.examMax,
+  //     };
 
-    let maxCat = 0;
-    students.forEach((student) => {
-      const studentMarks = subjectMarks[student.id];
-      if (!studentMarks) {
-        return;
-      }
+  //     setCatConfigs((previous) =>
+  //       JSON.stringify(previous) === JSON.stringify(nextConfigs)
+  //         ? previous
+  //         : nextConfigs,
+  //     );
+  //   }
 
-      if (studentMarks.cat5 !== null && studentMarks.cat5 !== undefined)
-        maxCat = Math.max(maxCat, 5);
-      else if (studentMarks.cat4 !== null && studentMarks.cat4 !== undefined)
-        maxCat = Math.max(maxCat, 4);
-      else if (studentMarks.cat3 !== null && studentMarks.cat3 !== undefined)
-        maxCat = Math.max(maxCat, 3);
-      else if (studentMarks.cat2 !== null && studentMarks.cat2 !== undefined)
-        maxCat = Math.max(maxCat, 2);
-      else if (studentMarks.cat1 !== null && studentMarks.cat1 !== undefined)
-        maxCat = Math.max(maxCat, 1);
-    });
+  //   // Determine enabled cats from the marks data (catMax values that are not null)
+  //   const nextEnabled = new Set<number>();
+  //   students.forEach((student) => {
+  //     const studentMarks = subjectMarks[student.id];
+  //     if (!studentMarks) return;
 
-    setCatsCount(maxCat);
-  }, [students, subjectMarks]);
+  //     for (let i = 1; i <= 5; i++) {
+  //       const maxKey = getCatMaxKey(i);
+  //       const maxVal = (studentMarks as any)[maxKey];
+  //       if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
+  //         nextEnabled.add(i);
+  //       }
+  //     }
+  //   });
+
+  //   // If no cats are enabled but we have cat configs with values, use those
+  //   if (nextEnabled.size === 0) {
+  //     for (let i = 1; i <= 5; i++) {
+  //       const maxKey = getCatMaxKey(i);
+  //       const maxVal = catConfigs[maxKey];
+  //       if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
+  //         nextEnabled.add(i);
+  //       }
+  //     }
+  //   }
+
+  //   setEnabledCats(nextEnabled);
+  //   setCatsCount(nextEnabled.size);
+  // }, [students, subjectMarks]);
 
   const allFilled = students.every((student) => {
     const marks = subjectMarks[student.id];
@@ -191,6 +202,18 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
 
   const addCat = () => {
     if (catsCount < 3) {
+      const newIndex = catsCount + 1;
+      const newKey = getCatMaxKey(newIndex) as ConfigKey;
+      // Pre-fill with 40 so the column never collapses
+      setCatConfigs((prev) => ({
+        ...prev,
+        [newKey]: prev[newKey] !== null && prev[newKey] !== undefined ? prev[newKey] : 40,
+      }));
+      setEnabledCats((prev) => {
+        const next = new Set(prev);
+        next.add(newIndex);
+        return next;
+      });
       setCatsCount((previous) => previous + 1);
     }
   };
@@ -200,6 +223,11 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
     }
 
     onRemoveCat?.(activeSubjectId, catsCount);
+    setEnabledCats((prev) => {
+      const next = new Set(prev);
+      next.delete(catsCount);
+      return next;
+    });
     setCatsCount((previous) => previous - 1);
   };
 
@@ -371,7 +399,6 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
               className={styles.btnGhost}
               onClick={() => {
                 onSaveMarks(activeSubjectId, catConfigs);
-                console.log("cat configs", catConfigs);
               }}
             >
               Save Progress
@@ -435,7 +462,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                 {Array.from({ length: catsCount }).map((_, index) => {
                   const key = getCatMaxKey(index + 1);
                   return (
-                    <th key={key}>
+                    <th key={key} style={{ minWidth: 90, whiteSpace: "nowrap" }}>
                       CAT {index + 1}
                       <div style={{ marginTop: 4 }}>
                         <input
@@ -443,6 +470,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                           inputMode="numeric"
                           className={styles.maxInput}
                           value={catConfigs[key] ?? ""}
+                          placeholder="40"
                           onWheel={preventNumberWheelChange}
                           onChange={(event) =>
                             updateConfig(key, event.target.value)
@@ -452,7 +480,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                     </th>
                   );
                 })}
-                <th>
+                <th style={{ minWidth: 90, whiteSpace: "nowrap" }}>
                   Exam
                   <div style={{ marginTop: 4 }}>
                     <input
@@ -460,6 +488,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                       inputMode="numeric"
                       className={styles.maxInput}
                       value={catConfigs.examMax ?? ""}
+                      placeholder="100"
                       onWheel={preventNumberWheelChange}
                       onChange={(event) =>
                         updateConfig("examMax", event.target.value)

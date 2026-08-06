@@ -126,11 +126,14 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
   return (
     <div
       style={{
-        padding: "32px 40px",
+        padding: "clamp(16px, 3vw, 40px)",
         background: "#ffffff",
         borderRadius: 16,
         border: `1px solid ${C.border}`,
         boxShadow: "0 12px 36px rgba(0,0,0,0.03)",
+        width: "100%",
+        boxSizing: "border-box",
+        minWidth: 0,
       }}
     >
       <div
@@ -138,17 +141,20 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: 32,
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 12,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h2
             style={{
               margin: "0 0 8px",
               fontFamily: FONT.serif,
-              fontSize: "2rem",
+              fontSize: "clamp(1.4rem, 3vw, 2rem)",
               color: C.text,
               letterSpacing: "-0.02em",
+              overflowWrap: "anywhere",
             }}
           >
             Attendance Management
@@ -167,7 +173,14 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
             </strong>
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <div style={{ position: "relative" }}>
             <input
               type="date"
@@ -185,6 +198,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                 outline: "none",
                 transition: "all 0.2s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                width: "100%",
+                boxSizing: "border-box",
               }}
               onFocus={(e) => (e.target.style.borderColor = C.gold)}
               onBlur={(e) => (e.target.style.borderColor = C.border)}
@@ -203,6 +218,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
               cursor: "pointer",
               boxShadow: "0 4px 12px rgba(201, 150, 61, 0.25)",
               transition: "transform 0.2s, box-shadow 0.2s",
+              whiteSpace: "nowrap",
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = "translateY(-1px)";
@@ -227,7 +243,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
             background: message.type === "success" ? C.greenLight : "#fdeaea",
             color: message.type === "success" ? C.successText : C.dangerText,
             borderRadius: 8,
-            marginBottom: 24,
+            marginBottom: 20,
             fontSize: 14,
             fontWeight: 600,
             display: "flex",
@@ -246,151 +262,171 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
             borderRadius: 12,
             overflow: "hidden",
             border: `1px solid ${C.border}`,
+            width: "100%",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead style={{ background: "#f8f9fa" }}>
-              <tr>
-                <th
-                  style={{
-                    textAlign: "left",
-                    padding: "16px 20px",
-                    borderBottom: `1px solid ${C.border}`,
-                    color: C.textMuted,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Student Name
-                </th>
-                <th
-                  style={{
-                    textAlign: "center",
-                    padding: "16px 20px",
-                    borderBottom: `1px solid ${C.border}`,
-                    color: C.textMuted,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    width: 160,
-                  }}
-                >
-                  Present
-                </th>
-                <th
-                  style={{
-                    textAlign: "center",
-                    padding: "16px 20px",
-                    borderBottom: `1px solid ${C.border}`,
-                    color: C.textMuted,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    width: 160,
-                  }}
-                >
-                  Absent
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.records.map((record) => (
-                <tr
-                  key={record.recordId}
-                  style={{
-                    borderBottom: `1px solid ${C.border}`,
-                    background: "#fff",
-                    transition: "background 0.2s",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "#fcfcfc")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "#fff")
-                  }
-                >
-                  <td
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                minWidth: 420,
+              }}
+            >
+              <thead style={{ background: "#f8f9fa" }}>
+                <tr>
+                  <th
                     style={{
-                      padding: "16px 20px",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: C.text,
+                      textAlign: "left",
+                      padding: "14px 16px",
+                      borderBottom: `1px solid ${C.border}`,
+                      color: C.textMuted,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      position: "sticky",
+                      left: 0,
+                      background: "#f8f9fa",
+                      zIndex: 5,
+                      minWidth: 160,
                     }}
                   >
-                    {record.studentName}
-                  </td>
-                  <td style={{ padding: "16px 20px", textAlign: "center" }}>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
-                        background:
-                          record.status === "PRESENT"
-                            ? "rgba(40,167,69,0.1)"
-                            : "transparent",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name={`attendance-${record.recordId}`}
-                        checked={record.status === "PRESENT"}
-                        onChange={() =>
-                          handleStatusChange(record.recordId, "PRESENT")
-                        }
-                        style={{
-                          cursor: "pointer",
-                          width: 18,
-                          height: 18,
-                          accentColor: "#28a745",
-                        }}
-                      />
-                    </div>
-                  </td>
-                  <td style={{ padding: "16px 20px", textAlign: "center" }}>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
-                        background:
-                          record.status === "ABSENT"
-                            ? "rgba(220,53,69,0.1)"
-                            : "transparent",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name={`attendance-${record.recordId}`}
-                        checked={record.status === "ABSENT"}
-                        onChange={() =>
-                          handleStatusChange(record.recordId, "ABSENT")
-                        }
-                        style={{
-                          cursor: "pointer",
-                          width: 18,
-                          height: 18,
-                          accentColor: "#dc3545",
-                        }}
-                      />
-                    </div>
-                  </td>
+                    Student Name
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      padding: "14px 16px",
+                      borderBottom: `1px solid ${C.border}`,
+                      color: C.textMuted,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      width: 100,
+                    }}
+                  >
+                    Present
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      padding: "14px 16px",
+                      borderBottom: `1px solid ${C.border}`,
+                      color: C.textMuted,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      width: 100,
+                    }}
+                  >
+                    Absent
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sheet.records.map((record) => (
+                  <tr
+                    key={record.recordId}
+                    style={{
+                      borderBottom: `1px solid ${C.border}`,
+                      background: "#fff",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.background = "#fcfcfc")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.background = "#fff")
+                    }
+                  >
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: C.text,
+                        position: "sticky",
+                        left: 0,
+                        background: "#fff",
+                        zIndex: 2,
+                        boxShadow: "2px 0 5px rgba(0,0,0,0.03)",
+                        minWidth: 160,
+                      }}
+                    >
+                      {record.studentName}
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          background:
+                            record.status === "PRESENT"
+                              ? "rgba(40,167,69,0.1)"
+                              : "transparent",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`attendance-${record.recordId}`}
+                          checked={record.status === "PRESENT"}
+                          onChange={() =>
+                            handleStatusChange(record.recordId, "PRESENT")
+                          }
+                          style={{
+                            cursor: "pointer",
+                            width: 18,
+                            height: 18,
+                            accentColor: "#28a745",
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          background:
+                            record.status === "ABSENT"
+                              ? "rgba(220,53,69,0.1)"
+                              : "transparent",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`attendance-${record.recordId}`}
+                          checked={record.status === "ABSENT"}
+                          onChange={() =>
+                            handleStatusChange(record.recordId, "ABSENT")
+                          }
+                          style={{
+                            cursor: "pointer",
+                            width: 18,
+                            height: 18,
+                            accentColor: "#dc3545",
+                          }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -59,6 +59,90 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   const [msg, setMsg] = React.useState<{ text: string; type: "success" | "error" } | null>(null);
   const [rankingMode, setRankingMode] = React.useState<"total_points" | "total_marks">("total_points");
   const [isSendingWhatsapp, setIsSendingWhatsapp] = React.useState(false);
+  const [marksLoading, setMarksLoading] = React.useState(true);
+  const [studentsWithMarks, setStudentsWithMarks] = React.useState<any[]>(students);
+
+  // Load marks from backend for each subject and attach to students
+  const loadMarks = useCallback(async () => {
+    if (!students.length || !subjects.length) {
+      setStudentsWithMarks(students);
+      setMarksLoading(false);
+      return;
+    }
+
+    setMarksLoading(true);
+    try {
+      // Build a map of studentId -> { subjectId -> mark }
+      const marksByStudent: Record<string, Record<string, number>> = {};
+
+      // Fetch marks for each subject
+      const subjectResults = await Promise.allSettled(
+        subjects.map(async (subject: any) => {
+          const subjectId = getSubId(subject?.id || subject?._id);
+          if (!subjectId) return null;
+          try {
+            const data: any = await api.get("/marks", {
+              subjectId,
+              classGrade,
+              classStream,
+              term,
+              year,
+              examType,
+            });
+            return { subjectId, data: Array.isArray(data) ? data : [] };
+          } catch {
+            return { subjectId, data: [] };
+          }
+        }),
+      );
+
+      subjectResults.forEach((result) => {
+        if (result.status !== "fulfilled" || !result.value) return;
+        const { subjectId, data } = result.value;
+        (data as any[]).forEach((row: any) => {
+          const studentId = String(row.studentId || "");
+          if (!studentId) return;
+          const finalScore = row.marks?.finalScore;
+          const totalMarks = row.marks?.totalMarks;
+          const avgPercentage = row.marks?.avgPercentage;
+          // Use finalScore if available, otherwise totalMarks, otherwise avgPercentage
+          let mark: number | null = null;
+          if (finalScore !== null && finalScore !== undefined && finalScore !== "") {
+            mark = Number(finalScore);
+          } else if (totalMarks !== null && totalMarks !== undefined && totalMarks !== "") {
+            mark = Number(totalMarks);
+          } else if (avgPercentage !== null && avgPercentage !== undefined) {
+            const parsed = parseFloat(String(avgPercentage).replace("%", ""));
+            if (!Number.isNaN(parsed)) mark = parsed;
+          }
+          if (mark !== null && !Number.isNaN(mark)) {
+            marksByStudent[studentId] = marksByStudent[studentId] || {};
+            marksByStudent[studentId][subjectId] = mark;
+          }
+        });
+      });
+
+      // Attach marks to students
+      const enrichedStudents = students.map((student: any) => {
+        const studentId = String(student.id || student.userId || "");
+        return {
+          ...student,
+          marks: marksByStudent[studentId] || {},
+        };
+      });
+
+      setStudentsWithMarks(enrichedStudents);
+    } catch (err) {
+      // Fall back to students without marks
+      setStudentsWithMarks(students);
+    } finally {
+      setMarksLoading(false);
+    }
+  }, [students, subjects, classGrade, classStream, term, year, examType]);
+
+  useEffect(() => {
+    void loadMarks();
+  }, [loadMarks]);
 
   const buildMetrics = (student: any) => {
     const marks = marksForStudentSubjects(student, subjects);
@@ -69,7 +153,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   };
 
   // Sort strictly by the chosen ranking field only
-  const sortedStudents = [...students].sort((a, b) => {
+  const sortedStudents = [...studentsWithMarks].sort((a, b) => {
     const left = buildMetrics(a);
     const right = buildMetrics(b);
 
@@ -216,6 +300,12 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   return (
     <div className="ct-anim" style={{ display: "grid", gap: 30 }}>
       <SectionHeader eyebrow="Reports" title="Results & reports" sub={`Download and review CBC summaries for Term ${term}, ${year} (${examType}).`} />
+
+      {marksLoading && (
+        <div style={{ padding: "20px", textAlign: "center", color: C.textMuted, fontFamily: FONT.sans, fontSize: 13 }}>
+          Loading marks data...
+        </div>
+      )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div />

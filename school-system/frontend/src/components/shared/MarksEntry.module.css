@@ -176,8 +176,9 @@
 }
 
 .maxInput {
-  width: 45px;
-  padding: 2px 4px;
+  width: 54px;
+  min-width: 54px;
+  padding: 3px 5px;
   border: 1px solid rgba(201, 150, 61, 0.3);
   border-radius: 4px;
   font-family: var(--sans);
@@ -185,6 +186,7 @@
   color: var(--gold);
   background: rgba(201, 150, 61, 0.05);
   text-align: center;
+  box-sizing: border-box;
 }
 
 .btnPrimary {

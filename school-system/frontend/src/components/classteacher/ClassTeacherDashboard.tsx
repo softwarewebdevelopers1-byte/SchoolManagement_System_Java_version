@@ -13,6 +13,9 @@ import { Settings } from "./Settings";
 import { SubjectAssignments } from "./SubjectAssignments";
 import { ArchivesView } from "../shared/ArchivesView";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
+import { ClassOverview } from "./ClassOverview";
+import { SubjectJointTab } from "./SubjectJointTab";
+import { ElectiveEnrollmentTab } from "./ElectiveEnrollmentTab";
 import {
   UsersIcon,
   MarkIcon,
@@ -28,32 +31,56 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getClassId, normalizeRoles } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 import { AttendanceTab } from "./AttendanceTab";
-import { Calendar1Icon } from "lucide-react";
+import { Calendar1Icon, BookOpen, ListChecks, LayoutDashboard } from "lucide-react";
+
+// Wrapper icons for lucide components to match existing Icon interface
+const OverviewIcon = () => <LayoutDashboard size={16} />;
+const BookOpenIcon = () => <BookOpen size={16} />;
+const ListChecksIcon = () => <ListChecks size={16} />;
+const CalIcon = () => <Calendar1Icon size={16} />;
 
 const NAV = [
   {
+    id: "overview",
+    label: "Overview",
+    desc: "Class summary, quick actions and subject roster.",
+    Icon: OverviewIcon,
+  },
+  {
     id: "students",
-    label: "Student records",
+    label: "Student Roster",
     desc: "Rosters, contacts, and learner profiles.",
     Icon: UsersIcon,
   },
   {
     id: "marks",
-    label: "Marks management",
+    label: "Marks Management",
     desc: "Capture marks and review class performance.",
     Icon: MarkIcon,
   },
   {
     id: "assignments",
-    label: "Subject assignments",
+    label: "Subject Assignments",
     desc: "See subjects and the assigned teachers.",
     Icon: HomeIcon,
+  },
+  {
+    id: "subject-joint",
+    label: "Subject Registration",
+    desc: "Register or drop subjects for this class.",
+    Icon: BookOpenIcon,
+  },
+  {
+    id: "elective-enrollment",
+    label: "Elective Enrollment",
+    desc: "Enroll students into elective subjects.",
+    Icon: ListChecksIcon,
   },
   {
     id: "attendance",
     label: "Attendance",
     desc: "Mark and review student attendance.",
-    Icon: Calendar1Icon,
+    Icon: CalIcon,
   },
   {
     id: "timetable",
@@ -63,7 +90,7 @@ const NAV = [
   },
   {
     id: "results",
-    label: "Results & reports",
+    label: "Results & Reports",
     desc: "Downloadable reports for this stream.",
     Icon: FileIcon,
   },
@@ -100,7 +127,7 @@ export default function ClassTeacherDashboard() {
     return null;
   });
 
-  const [tab, setTab] = useState("students");
+  const [tab, setTab] = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
@@ -295,6 +322,16 @@ export default function ClassTeacherDashboard() {
       );
     }
     switch (tab) {
+      case "overview":
+        return (
+          <ClassOverview
+            students={students}
+            subjects={subjects}
+            assignments={assignments}
+            user={currentUser}
+            onNavigate={handleSelectTab}
+          />
+        );
       case "students":
         return (
           <StudentRecords
@@ -324,6 +361,23 @@ export default function ClassTeacherDashboard() {
             canSwitchToSubjectDashboard={canSwitchToSubjectDashboard}
             onSwitchToSubjectDashboard={() => navigate("/subjectTeacher")}
             onToggleSubjectOffering={toggleSubjectOffering}
+          />
+        );
+      case "subject-joint":
+        return (
+          <SubjectJointTab
+            subjects={classSubjectCatalog}
+            user={currentUser}
+            onRefresh={loadData}
+          />
+        );
+      case "elective-enrollment":
+        return (
+          <ElectiveEnrollmentTab
+            students={students}
+            subjects={classSubjectCatalog}
+            user={currentUser}
+            onRefresh={loadData}
           />
         );
       case "attendance":
@@ -444,230 +498,39 @@ export default function ClassTeacherDashboard() {
             onRefresh={handleManualRefresh}
           />
 
-          {/* Hero panel */}
-          {tab === "students" && !selectedStudent && (
+          {/* Subject teacher switch banner */}
+          {canSwitchToSubjectDashboard && tab !== "overview" && (
             <div
               style={{
-                background: C.green,
-                padding: "22px 24px",
-                flexShrink: 0,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <svg
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  opacity: 0.05,
-                  pointerEvents: "none",
-                }}
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <pattern
-                    id="hg"
-                    width="40"
-                    height="40"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <path
-                      d="M 40 0 L 0 0 0 40"
-                      fill="none"
-                      stroke="#c9963d"
-                      strokeWidth=".8"
-                    />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#hg)" />
-              </svg>
-              <div
-                style={{
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 16,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <p
-                    style={{
-                      fontFamily: FONT.sans,
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: C.gold,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.09em",
-                      margin: "0 0 5px",
-                    }}
-                  >
-                    Today's focus
-                  </p>
-                  <h1
-                    style={{
-                      fontFamily: FONT.serif,
-                      fontSize: "1.6rem",
-                      fontWeight: 600,
-                      color: "#fdf9f2",
-                      margin: "0 0 6px",
-                      letterSpacing: "-0.01em",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    Keep Grade {currentUser?.classGrade || ""}{" "}
-                    {currentUser?.classStream || ""} organized and ready for
-                    reporting.
-                  </h1>
-                  <p
-                    style={{
-                      fontFamily: FONT.sans,
-                      fontSize: 13,
-                      color: "#9eb8aa",
-                      margin: 0,
-                      maxWidth: 520,
-                    }}
-                  >
-                    {students.length} learners enrolled · Term{" "}
-                    {currentUser?.term || 1} well underway
-                  </p>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {[
-                    { label: "Subject assignments", tab: "assignments" },
-                    { label: "Review marks", tab: "marks" },
-                    { label: "Download results", tab: "results" },
-                  ].map(({ label, tab: t }) => (
-                    <button
-                      key={t}
-                      onClick={() => handleSelectTab(t)}
-                      style={{
-                        padding: "9px 16px",
-                        background: "rgba(201,150,61,0.15)",
-                        border: `1px solid rgba(201,150,61,0.3)`,
-                        borderRadius: 9,
-                        fontFamily: FONT.sans,
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        color: "#e8dcc8",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        transition: "background 0.18s",
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  {canSwitchToSubjectDashboard && (
-                    <button
-                      onClick={() => navigate("/subjectTeacher")}
-                      style={{
-                        padding: "9px 16px",
-                        background: C.gold,
-                        border: `1px solid ${C.gold}`,
-                        borderRadius: 9,
-                        fontFamily: FONT.sans,
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        color: "#fff",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        transition: "background 0.18s",
-                      }}
-                    >
-                      Subject dashboard
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Metric strip */}
-          {tab === "students" && !selectedStudent && (
-            <div
-              className="ct-metricStrip"
-              style={{
-                padding: "14px 24px",
-                background: C.cream,
-                borderBottom: `1px solid ${C.border}`,
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                padding: "8px 24px",
+                background: "rgba(201,150,61,0.08)",
+                borderBottom: `1px solid rgba(201,150,61,0.2)`,
+                display: "flex",
+                alignItems: "center",
                 gap: 12,
                 flexShrink: 0,
               }}
             >
-              {[
-                {
-                  label: "Students enrolled",
-                  value: students.length,
-                  note: "Full roster visibility",
-                },
-                {
-                  label: "Active roles",
-                  value: currentUser?.roles?.length || 0,
-                  note: "Management scope",
-                },
-                {
-                  label: "Report readiness",
-                  value: "85%",
-                  note: "Grading on track",
-                },
-                {
-                  label: "Reports",
-                  value: students.length,
-                  note: "Learners available",
-                },
-              ].map(({ label, value, note }) => (
-                <div
-                  key={label}
-                  style={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 11,
-                    padding: "12px 14px",
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: FONT.sans,
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: C.textFaint,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      margin: "0 0 4px",
-                    }}
-                  >
-                    {label}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: FONT.serif,
-                      fontSize: "1.7rem",
-                      fontWeight: 600,
-                      color: C.text,
-                      margin: "0 0 2px",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {value}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: FONT.sans,
-                      fontSize: 11.5,
-                      color: C.textFaint,
-                      margin: 0,
-                    }}
-                  >
-                    {note}
-                  </p>
-                </div>
-              ))}
+              <p style={{ fontFamily: FONT.sans, fontSize: 12.5, color: C.textMuted, margin: 0, flex: 1 }}>
+                You also have subject teacher assignments.
+              </p>
+              <button
+                onClick={() => navigate("/subjectTeacher")}
+                style={{
+                  padding: "6px 14px",
+                  background: C.gold,
+                  border: "none",
+                  borderRadius: 8,
+                  fontFamily: FONT.sans,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#fff",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Switch to Subject Dashboard
+              </button>
             </div>
           )}
 

@@ -263,10 +263,12 @@ const composeTeacherAssignments = async <T>(teacherId: string): Promise<T> => {
 const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
-  const sheet = await request<any>(`/marks/${subjectJointId}`);
-  for (let i = 0; i < sheet?.marksRow.length; i++) {
-    console.log(sheet?.marksRow[i]);
-  }
+  const sheet = await request<any>(
+    `/marks/${encodeURIComponent(subjectJointId)}`,
+  );
+  const cat1Enabled = sheet?.cat1Entry === true;
+  const cat2Enabled = sheet?.cat2Entry === true;
+  const cat3Enabled = sheet?.cat3Entry === true;
   return (sheet?.marksRow || []).map((row: any) => ({
     studentId: row.studentId,
     admissionNo: row.studentAdm,
@@ -277,11 +279,11 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
       cat3: row.cat3,
       cat4: null,
       cat5: null,
-      cat1Max: sheet.maxCat1 || 40,
-      cat2Max: sheet.maxCat2 || 40,
-      cat3Max: sheet.maxCat3 || 40,
-      cat4Max: 40,
-      cat5Max: 40,
+      cat1Max: cat1Enabled ? sheet.maxCat1 || 40 : 0,
+      cat2Max: cat2Enabled ? sheet.maxCat2 || 40 : 0,
+      cat3Max: cat3Enabled ? sheet.maxCat3 || 40 : 0,
+      cat4Max: 0,
+      cat5Max: 0,
       exam: row.exam,
       examMax: sheet.maxExam || 100,
       finalScore: row.totalMarks,
@@ -304,15 +306,41 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
   }
 
   const rows = Array.isArray(body?.marksData) ? body.marksData : [];
+  const catConfigs = body?.catConfigs || {};
+  const firstRow = rows[0] || {};
+
+  // Determine which cats are enabled based on catConfigs or row max values
+  const cat1Enabled =
+    catConfigs.cat1Max !== null &&
+    catConfigs.cat1Max !== undefined &&
+    Number(catConfigs.cat1Max) > 0;
+  const cat2Enabled =
+    catConfigs.cat2Max !== null &&
+    catConfigs.cat2Max !== undefined &&
+    Number(catConfigs.cat2Max) > 0;
+  const cat3Enabled =
+    catConfigs.cat3Max !== null &&
+    catConfigs.cat3Max !== undefined &&
+    Number(catConfigs.cat3Max) > 0;
+
   return request<T>("/marks/entry", {
     method: "POST",
     body: JSON.stringify({
       schoolId,
       subjectJointId,
-      maxCat1: body?.catConfigs?.cat1Max || rows[0]?.cat1Max || 40,
-      maxCat2: body?.catConfigs?.cat2Max || rows[0]?.cat2Max || 40,
-      maxCat3: body?.catConfigs?.cat3Max || rows[0]?.cat3Max || 40,
-      maxExam: body?.catConfigs?.examMax || rows[0]?.examMax || 100,
+      maxCat1: cat1Enabled
+        ? catConfigs.cat1Max || firstRow.cat1Max || 40
+        : null,
+      maxCat2: cat2Enabled
+        ? catConfigs.cat2Max || firstRow.cat2Max || 40
+        : null,
+      maxCat3: cat3Enabled
+        ? catConfigs.cat3Max || firstRow.cat3Max || 40
+        : null,
+      maxExam: catConfigs.examMax || firstRow.examMax || 100,
+      cat1Entry: cat1Enabled,
+      cat2Entry: cat2Enabled,
+      cat3Entry: cat3Enabled,
       markInputDTOs: rows.map((row: any) => ({
         studentId: row.studentId,
         cat1: row.cat1 ?? null,

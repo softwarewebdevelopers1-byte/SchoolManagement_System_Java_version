@@ -24,4 +24,8 @@ public class MarksSheetDTO {
     private Integer maxCat2;
     private Integer maxCat3;
     private Integer maxExam;
+    private boolean cat1Entry;
+    private boolean cat2Entry;
+    private boolean cat3Entry;
+    private boolean examEntry;
 }

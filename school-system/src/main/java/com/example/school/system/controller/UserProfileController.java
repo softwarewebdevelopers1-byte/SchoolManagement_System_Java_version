@@ -12,19 +12,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.school.system.DTO.GetAllStudentsDTO;
+import com.example.school.system.DTO.BulkEnrollElectiveDTO;
+import com.example.school.system.DTO.BulkUpdateTermDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.AuthenticatedUserService;
 import com.example.school.system.services.GetStudentsService;
 import com.example.school.system.services.DashboardService;
+import com.example.school.system.services.SubjectService;
+import com.example.school.system.services.TeachersService;
+import com.example.school.system.services.UserUpdate;
+import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.models.SchoolClass;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -33,6 +39,10 @@ public class UserProfileController {
     private final AuthenticatedUserService authenticatedUserService;
     private final GetStudentsService getStudentsService;
     private final DashboardService dashboardService;
+    private final SubjectService subjectService;
+    private final TeachersService teachersService;
+    private final UserUpdate userUpdate;
+    private final SchoolClassRepository schoolClassRepository;
 
     @GetMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','CLASSTEACHER','DEPUTYTEACHER','SUBJECTTEACHER','STUDENT')")
@@ -40,23 +50,6 @@ public class UserProfileController {
         var user = authenticatedUserService.currentUser();
         return ResponseEntity.ok(SchoolApiResponse.success(user.user(), "user profile loaded"));
     }
-
-    // @GetMapping("/users/student-dashboard")
-    // @PreAuthorize("hasAnyRole('STUDENT')")
-    // public ResponseEntity<?> getStudentDashboard(GetAllStudentsDTO getAllStudentsDTO) {
-    //     UUID userId = authenticatedUserService.currentUserId();
-    //     var user = authenticatedUserService.currentUser();
-    //     UUID schoolId = user.user().getSchoolId();
-        
-    //     var students = getStudentsService.getAllStudents(
-    //        getAllStudentsDTO (schoolId), 0, 100);
-        
-    //     var dashboardData = new HashMap<String, Object>();
-    //     dashboardData.put("parent", Map.of("name", "Parent", "phone", ""));
-    //     dashboardData.put("students", students);
-        
-    //     return ResponseEntity.ok(SchoolApiResponse.success(dashboardData, "student dashboard loaded"));
-    // }
 
     @GetMapping("/users/class/{grade}/{stream}")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
@@ -66,7 +59,22 @@ public class UserProfileController {
             @RequestParam(required = false) Integer term,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) String examType) {
-        return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class students loaded"));
+        var schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        if (schoolId == null) {
+            return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class students loaded"));
+        }
+        // Find classId by grade and stream
+        var classes = schoolClassRepository.findBySchoolId(schoolId).stream()
+                .filter(c -> String.valueOf(c.getClassGrade()).equals(grade))
+                .filter(c -> c.getClassStream().equalsIgnoreCase(stream))
+                .toList();
+        if (classes.isEmpty()) {
+            return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class students loaded"));
+        }
+        var classId = classes.get(0).getClassId();
+        var students = getStudentsService.getStudentByClass(
+                new com.example.school.system.DTO.GetStudentsOfSpecificClass(classId), 0, 100);
+        return ResponseEntity.ok(SchoolApiResponse.success(students, "class students loaded"));
     }
 
     @GetMapping("/users/graduation-settings")
@@ -82,15 +90,60 @@ public class UserProfileController {
     }
 
     @PostMapping("/users/bulk-enroll-elective")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     public ResponseEntity<?> bulkEnrollElective(@RequestBody Map<String, Object> payload) {
-        return ResponseEntity.ok(SchoolApiResponse.success("Elective enrollments updated successfully"));
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> studentIdsRaw = (List<String>) payload.get("studentIds");
+            String subjectId = String.valueOf(payload.get("subjectId"));
+            String action = String.valueOf(payload.get("action"));
+
+            if (studentIdsRaw == null || studentIdsRaw.isEmpty()) {
+                return ResponseEntity.ok(SchoolApiResponse.success("No students provided for enrollment update"));
+            }
+
+            List<UUID> studentIds = studentIdsRaw.stream()
+                    .map(UUID::fromString)
+                    .collect(Collectors.toList());
+
+            BulkEnrollElectiveDTO dto = BulkEnrollElectiveDTO.builder()
+                    .studentIds(studentIds)
+                    .subjectId(UUID.fromString(subjectId))
+                    .action(action)
+                    .build();
+
+            userUpdate.bulkEnrollElective(dto);
+            return ResponseEntity.ok(SchoolApiResponse.success(
+                    Map.of("updated", studentIds.size()),
+                    "Elective enrollments updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    SchoolApiResponse.error("Failed to update elective enrollments: " + e.getMessage()));
+        }
     }
 
     @PutMapping("/users/bulk-update-term")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> bulkUpdateTerm(@RequestBody Map<String, Object> payload) {
-        return ResponseEntity.ok(SchoolApiResponse.success("Term updated for all classes"));
+        try {
+            Integer term = payload.get("term") != null ? Integer.valueOf(String.valueOf(payload.get("term"))) : 1;
+            Integer year = payload.get("year") != null ? Integer.valueOf(String.valueOf(payload.get("year"))) : null;
+            String examType = payload.get("examType") != null ? String.valueOf(payload.get("examType")) : "opener";
+
+            BulkUpdateTermDTO dto = BulkUpdateTermDTO.builder()
+                    .term(term)
+                    .year(year)
+                    .examType(examType)
+                    .build();
+
+            userUpdate.bulkUpdateTerm(dto);
+            return ResponseEntity.ok(SchoolApiResponse.success(
+                    Map.of("updated", 1),
+                    "Term updated for all classes"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    SchoolApiResponse.error("Failed to update academic cycle: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/users/parent-concerns")
@@ -127,14 +180,26 @@ public class UserProfileController {
 
         var students = getStudentsService.getAllStudents(
             new com.example.school.system.DTO.GetAllStudentsDTO(schoolId), 0, 500);
-        
+        var staff = teachersService.getTeachers(schoolId, "Bearer " + getAuthToken());
+        var subjects = subjectService.getSubjects(schoolId);
+        var assignments = subjectService.getAllSubjectJoints(schoolId);
+
         var dashboardData = new HashMap<String, Object>();
         dashboardData.put("students", students);
-        dashboardData.put("staff", List.of());
-        dashboardData.put("subjects", List.of());
-        dashboardData.put("assignments", List.of());
+        dashboardData.put("staff", staff);
+        dashboardData.put("subjects", subjects);
+        dashboardData.put("assignments", assignments);
         dashboardData.put("exitedStudents", List.of());
 
         return ResponseEntity.ok(SchoolApiResponse.success(dashboardData, "dashboard loaded"));
+    }
+
+    private String getAuthToken() {
+        var request = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (request instanceof org.springframework.web.context.request.ServletRequestAttributes servletRequest) {
+            var header = servletRequest.getRequest().getHeader("Authorization");
+            return header != null ? header : "";
+        }
+        return "";
     }
 }

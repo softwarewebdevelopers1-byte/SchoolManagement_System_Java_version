@@ -461,12 +461,10 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     setMarksData((prev) => {
       const updatedSubjectMarks = { ...(prev[subjectId] || {}) };
       Object.keys(updatedSubjectMarks).forEach((studentId) => {
-        console.log(catIndex);
-
         updatedSubjectMarks[studentId] = {
           ...updatedSubjectMarks[studentId],
           [`cat${catIndex}`]: null,
-          [`cat${catIndex}Max`]: 40,
+          [`cat${catIndex}Max`]: 0,
         };
       });
       return {

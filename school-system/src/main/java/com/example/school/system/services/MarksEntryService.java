@@ -88,7 +88,12 @@ public class MarksEntryService {
                 .maxCat1(existingMarkSheet.isCat1Entry() ? existingMarkSheet.getMaxCat1() : null)
                 .maxCat2(existingMarkSheet.isCat2Entry() ? existingMarkSheet.getMaxCat2() : null)
                 .maxCat3(existingMarkSheet.isCat3Entry() ? existingMarkSheet.getMaxCat3() : null)
-                .maxExam(existingMarkSheet.getMaxExam()).build();
+                .maxExam(existingMarkSheet.getMaxExam())
+                .cat1Entry(existingMarkSheet.isCat1Entry())
+                .cat2Entry(existingMarkSheet.isCat2Entry())
+                .cat3Entry(existingMarkSheet.isCat3Entry())
+                .examEntry(existingMarkSheet.isExamEntry())
+                .build();
     }
 
     private MarksSheet createMarksSheet(SubjectJoint subjectJoint,
@@ -167,6 +172,29 @@ public class MarksEntryService {
             if (marksheetSaveRequest.maxExam() != null) {
                 marksSheet.setMaxExam(marksheetSaveRequest.maxExam());
             }
+        }
+
+        // Handle explicit cat entry state changes (e.g. removing a cat)
+        if (marksheetSaveRequest.cat1Entry() != null) {
+            marksSheet.setCat1Entry(marksheetSaveRequest.cat1Entry());
+            if (!marksheetSaveRequest.cat1Entry()) {
+                marksSheet.setMaxCat1(null);
+            }
+            rubricChanged = true;
+        }
+        if (marksheetSaveRequest.cat2Entry() != null) {
+            marksSheet.setCat2Entry(marksheetSaveRequest.cat2Entry());
+            if (!marksheetSaveRequest.cat2Entry()) {
+                marksSheet.setMaxCat2(null);
+            }
+            rubricChanged = true;
+        }
+        if (marksheetSaveRequest.cat3Entry() != null) {
+            marksSheet.setCat3Entry(marksheetSaveRequest.cat3Entry());
+            if (!marksheetSaveRequest.cat3Entry()) {
+                marksSheet.setMaxCat3(null);
+            }
+            rubricChanged = true;
         }
         int skippedStudentsCount = 0;
         for (MarkInputDTO input : marksheetSaveRequest.markInputDTOs()) {
