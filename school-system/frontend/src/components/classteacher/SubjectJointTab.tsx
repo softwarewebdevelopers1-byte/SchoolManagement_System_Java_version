@@ -5,7 +5,7 @@ import { C, FONT } from "./shared/constants";
 import { api, getClassId, getSchoolId, request } from "../../lib/api";
 
 interface SubjectJointTabProps {
-  subjects: any[];       // classSubjectCatalog — already loaded by parent
+  subjects: any[]; // classSubjectCatalog — already loaded by parent
   user: any;
   onRefresh: () => void;
 }
@@ -45,12 +45,17 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
 }) => {
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [msg, setMsg] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // Form state for adding a new subject joint
   const [addMode, setAddMode] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
-  const [subjectType, setSubjectType] = useState<"COMPULSORY" | "ELECTIVE">("COMPULSORY");
+  const [subjectType, setSubjectType] = useState<"COMPULSORY" | "ELECTIVE">(
+    "COMPULSORY",
+  );
   const [electiveCode, setElectiveCode] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -106,6 +111,30 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
     }
   };
 
+  const handleAdd = async (subjectId: string, currentIsOffered: boolean) => {
+    try {
+      console.log("offered subjects ", offeredSubjects);
+
+      await request("/update/subject-joint", {
+        method: "PATCH",
+        body: JSON.stringify({
+          subjectType: "COMPULSORY",
+          subjectJointId: subjectId,
+        }),
+      });
+
+      showMsg(
+        currentIsOffered
+          ? "Subject added from this class."
+          : "Subject restored for this class.",
+        "success",
+      );
+      onRefresh();
+    } catch (err: any) {
+      showMsg(err.message || "Failed to update subject.", "error");
+    }
+  };
+
   const handleChangeType = async (
     subjectId: string,
     newMode: "compulsory" | "elective",
@@ -141,7 +170,10 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         classStream: user.classStream || "",
         isOffered: true,
         enrollmentMode: subjectType === "ELECTIVE" ? "elective" : "compulsory",
-        sharedSlotId: subjectType === "ELECTIVE" && electiveCode ? electiveCode.trim() : null,
+        sharedSlotId:
+          subjectType === "ELECTIVE" && electiveCode
+            ? electiveCode.trim()
+            : null,
       });
       showMsg("Subject registered for this class.", "success");
       setAddMode(false);
@@ -160,7 +192,10 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   const droppedSubjects = subjects.filter((s) => s.isOffered === false);
 
   return (
-    <div className="ct-anim" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div
+      className="ct-anim"
+      style={{ display: "flex", flexDirection: "column", gap: 20 }}
+    >
       {/* Header */}
       <div>
         <p
@@ -195,7 +230,9 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             margin: 0,
           }}
         >
-          Manage subjects offered for Grade {user?.classGrade} {user?.classStream}. Add, drop, or change type (compulsory / elective).
+          Manage subjects offered for Grade {user?.classGrade}{" "}
+          {user?.classStream}. Add, drop, or change type (compulsory /
+          elective).
         </p>
       </div>
 
@@ -226,13 +263,30 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             padding: "1.4rem",
           }}
         >
-          <p style={{ fontFamily: FONT.sans, fontSize: 13, fontWeight: 700, color: C.text, margin: "0 0 14px" }}>
+          <p
+            style={{
+              fontFamily: FONT.sans,
+              fontSize: 13,
+              fontWeight: 700,
+              color: C.text,
+              margin: "0 0 14px",
+            }}
+          >
             Register a New Subject
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
             <div>
               <label
-                style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 700, color: C.textMuted, display: "block", marginBottom: 5 }}
+                style={{
+                  fontFamily: FONT.sans,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.textMuted,
+                  display: "block",
+                  marginBottom: 5,
+                }}
               >
                 Select Subject
               </label>
@@ -258,7 +312,14 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                 ))}
               </select>
               {unregistered.length === 0 && allSubjects.length > 0 && (
-                <p style={{ fontFamily: FONT.sans, fontSize: 11, color: C.textMuted, margin: "4px 0 0" }}>
+                <p
+                  style={{
+                    fontFamily: FONT.sans,
+                    fontSize: 11,
+                    color: C.textMuted,
+                    margin: "4px 0 0",
+                  }}
+                >
                   All school subjects are already registered for this class.
                 </p>
               )}
@@ -266,13 +327,22 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
 
             <div>
               <label
-                style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 700, color: C.textMuted, display: "block", marginBottom: 5 }}
+                style={{
+                  fontFamily: FONT.sans,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.textMuted,
+                  display: "block",
+                  marginBottom: 5,
+                }}
               >
                 Subject Type
               </label>
               <select
                 value={subjectType}
-                onChange={(e) => setSubjectType(e.target.value as "COMPULSORY" | "ELECTIVE")}
+                onChange={(e) =>
+                  setSubjectType(e.target.value as "COMPULSORY" | "ELECTIVE")
+                }
                 style={{
                   width: "100%",
                   padding: "9px 12px",
@@ -292,9 +362,17 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             {subjectType === "ELECTIVE" && (
               <div style={{ gridColumn: "1 / -1" }}>
                 <label
-                  style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 700, color: C.textMuted, display: "block", marginBottom: 5 }}
+                  style={{
+                    fontFamily: FONT.sans,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.textMuted,
+                    display: "block",
+                    marginBottom: 5,
+                  }}
                 >
-                  Elective Slot Code (optional — groups electives sharing the same time slot)
+                  Elective Slot Code (optional — groups electives sharing the
+                  same time slot)
                 </label>
                 <input
                   type="text"
@@ -330,13 +408,18 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                 fontFamily: FONT.sans,
                 fontSize: 13,
                 fontWeight: 700,
-                cursor: saving || !selectedSubjectId ? "not-allowed" : "pointer",
+                cursor:
+                  saving || !selectedSubjectId ? "not-allowed" : "pointer",
               }}
             >
               {saving ? "Saving…" : "Register Subject"}
             </button>
             <button
-              onClick={() => { setAddMode(false); setSelectedSubjectId(""); setElectiveCode(""); }}
+              onClick={() => {
+                setAddMode(false);
+                setSelectedSubjectId("");
+                setElectiveCode("");
+              }}
               style={{
                 padding: "9px 18px",
                 background: "transparent",
@@ -413,18 +496,34 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         </div>
 
         {loading ? (
-          <div style={{ padding: 32, textAlign: "center", color: C.textMuted, fontFamily: FONT.sans, fontSize: 13 }}>
+          <div
+            style={{
+              padding: 32,
+              textAlign: "center",
+              color: C.textMuted,
+              fontFamily: FONT.sans,
+              fontSize: 13,
+            }}
+          >
             Loading…
           </div>
         ) : offeredSubjects.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", color: C.textMuted, fontFamily: FONT.sans, fontSize: 13 }}>
+          <div
+            style={{
+              padding: 32,
+              textAlign: "center",
+              color: C.textMuted,
+              fontFamily: FONT.sans,
+              fontSize: 13,
+            }}
+          >
             No subjects registered yet. Click "Register Subject" to add one.
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: C.sand }}>
-                {["Subject", "Type", "Slot Code", "Actions"].map((h) => (
+                {["Subject", "Status", "Slot Code", "Actions"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -446,7 +545,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             </thead>
             <tbody>
               {offeredSubjects.map((sub) => {
-                const isElective = sub.enrollmentMode === "elective";
+                const isElective = sub.enrollmentMode === "ELECTIVE";
                 return (
                   <tr
                     key={sub.id}
@@ -464,7 +563,10 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                       {sub.name}
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      {pill(isElective ? "Elective" : "Compulsory", isElective ? "blue" : "gold")}
+                      {pill(
+                        isElective ? "Elective" : sub.enrollmentMode,
+                        isElective ? "blue" : "gold",
+                      )}
                     </td>
                     <td
                       style={{
@@ -477,14 +579,16 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                       {sub.sharedSlotId || "—"}
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                      >
                         {/* Toggle type */}
                         <button
                           onClick={() =>
                             handleChangeType(
                               sub.id || sub._id,
                               isElective ? "compulsory" : "elective",
-                              isElective ? null : (sub.sharedSlotId || null),
+                              isElective ? null : sub.sharedSlotId || null,
                             )
                           }
                           style={{
@@ -502,24 +606,43 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                           Make {isElective ? "Compulsory" : "Elective"}
                         </button>
                         {/* Drop */}
-                        <button
-                          onClick={() =>
-                            handleToggleOffering(sub.id || sub._id, true)
-                          }
-                          style={{
-                            padding: "4px 10px",
-                            background: "transparent",
-                            border: "1px solid #a32d2d",
-                            borderRadius: 7,
-                            fontFamily: FONT.sans,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#a32d2d",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Drop
-                        </button>
+                        {sub.enrollmentMode !== "DROPPED" ? (
+                          <button
+                            onClick={() =>
+                              handleToggleOffering(sub.id || sub._id, true)
+                            }
+                            style={{
+                              padding: "4px 10px",
+                              background: "transparent",
+                              border: "1px solid #a32d2d",
+                              borderRadius: 7,
+                              fontFamily: FONT.sans,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "#a32d2d",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Drop
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAdd(sub.id || sub._id, true)}
+                            style={{
+                              padding: "4px 10px",
+                              background: "transparent",
+                              border: "1px solid #2da350",
+                              borderRadius: 7,
+                              fontFamily: FONT.sans,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "#2da350",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Add
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -586,7 +709,10 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             </thead>
             <tbody>
               {droppedSubjects.map((sub) => (
-                <tr key={sub.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <tr
+                  key={sub.id}
+                  style={{ borderBottom: `1px solid ${C.border}` }}
+                >
                   <td
                     style={{
                       padding: "12px 14px",

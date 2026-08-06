@@ -162,7 +162,7 @@ export default function ClassTeacherDashboard() {
         api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`), // Get assignments and staff names
       ])) as [any[], any[], any];
       setStudents(studentsData);
-      console.log("students set", subjectsData);
+      console.log("subjects set", subjectsData);
 
       const mappedSubjects = subjectsData.map((subject: any) => ({
         ...subject,
