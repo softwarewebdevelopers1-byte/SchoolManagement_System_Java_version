@@ -139,11 +139,11 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       .map((subject) => ({
         ...subject,
         id: getRawSubjectId(subject),
-        enrollmentMode: subject.enrollmentMode || "compulsory",
+        enrollmentMode: subject.enrollmentMode,
         sharedSlotId: subject.sharedSlotId || null,
       }))
       .filter((subject) => subject.id && subject.isOffered !== false);
-
+    console.log("display subjects", activeSubjects);
     const electiveGroups = buildElectiveSubjectGroups(activeSubjects);
     const electiveGroupsByKey = new Map(
       electiveGroups.map((group) => [group.key, group]),
@@ -185,7 +185,9 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     const result: DisplaySubjectOption[] = [];
 
     activeSubjects.forEach((subject) => {
-      if ((subject.enrollmentMode || "compulsory") !== "elective") {
+      console.log("each subject --> ", subject);
+
+      if (subject.enrollmentMode !== "ELECTIVE") {
         result.push(
           buildOption({
             id: subject.id,
@@ -300,8 +302,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           }),
         })),
       );
-      console.log("subject data: ", subjectPayloads);
-
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {
         marksByActualSubject.set(

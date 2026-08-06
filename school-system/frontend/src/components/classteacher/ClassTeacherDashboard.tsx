@@ -31,7 +31,12 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getClassId, normalizeRoles } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 import { AttendanceTab } from "./AttendanceTab";
-import { Calendar1Icon, BookOpen, ListChecks, LayoutDashboard } from "lucide-react";
+import {
+  Calendar1Icon,
+  BookOpen,
+  ListChecks,
+  LayoutDashboard,
+} from "lucide-react";
 
 // Wrapper icons for lucide components to match existing Icon interface
 const OverviewIcon = () => <LayoutDashboard size={16} />;
@@ -162,7 +167,6 @@ export default function ClassTeacherDashboard() {
         api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`), // Get assignments and staff names
       ])) as [any[], any[], any];
       setStudents(studentsData);
-      console.log("subjects set", subjectsData);
 
       const mappedSubjects = subjectsData.map((subject: any) => ({
         ...subject,
@@ -172,7 +176,6 @@ export default function ClassTeacherDashboard() {
       setSubjects(
         mappedSubjects.filter((subject: any) => subject.isOffered !== false),
       );
-      
 
       // Filter assignments for THIS class
       const classAssignments = (staffData.assignments || [])
@@ -511,7 +514,15 @@ export default function ClassTeacherDashboard() {
                 flexShrink: 0,
               }}
             >
-              <p style={{ fontFamily: FONT.sans, fontSize: 12.5, color: C.textMuted, margin: 0, flex: 1 }}>
+              <p
+                style={{
+                  fontFamily: FONT.sans,
+                  fontSize: 12.5,
+                  color: C.textMuted,
+                  margin: 0,
+                  flex: 1,
+                }}
+              >
                 You also have subject teacher assignments.
               </p>
               <button
