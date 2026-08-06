@@ -164,16 +164,17 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
     setSaving(true);
     try {
       // Register the subject for this class via class-subjects endpoint
-      await api.put("/school/class-subjects", {
-        subjectId: selectedSubjectId,
-        classGrade: user.classGrade,
-        classStream: user.classStream || "",
-        isOffered: true,
-        enrollmentMode: subjectType === "ELECTIVE" ? "elective" : "compulsory",
-        sharedSlotId:
-          subjectType === "ELECTIVE" && electiveCode
-            ? electiveCode.trim()
-            : null,
+      await request("/register/subject-joint", {
+        method:"POST",
+        body: JSON.stringify({
+          subjectId: selectedSubjectId,
+          classId: getClassId(),
+          enrollmentMode: subjectType,
+          sharedSlotId:
+            subjectType === "ELECTIVE" && electiveCode
+              ? electiveCode.trim()
+              : null,
+        }),
       });
       showMsg("Subject registered for this class.", "success");
       setAddMode(false);

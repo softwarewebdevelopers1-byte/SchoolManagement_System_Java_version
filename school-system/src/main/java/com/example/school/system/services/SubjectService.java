@@ -13,6 +13,7 @@ import com.example.school.system.DTO.SubjectUpdateDTO;
 import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
 import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.repository.SchoolClassRepository;
@@ -189,10 +190,20 @@ public class SubjectService {
             throw new SchoolResourceExistsExceptionHandler("subject joint already exists");
         }
         SubjectJoint newSubjectJoint = new SubjectJoint();
-        newSubjectJoint.setSubjectType(SubjectType.COMPULSORY);
+        newSubjectJoint
+                .setSubjectType(registerSubjectJoint.enrollmentMode() != null ? registerSubjectJoint.enrollmentMode()
+                        : SubjectType.COMPULSORY);
+        if (registerSubjectJoint.enrollmentMode() == SubjectType.ELECTIVE) {
+            if (registerSubjectJoint.sharedSlotId().isBlank() || registerSubjectJoint.sharedSlotId().isEmpty()
+                    || registerSubjectJoint.sharedSlotId() == null) {
+                throw new SchoolResourceBadInputExceptionHandler("elective code is required");
+            }
+            newSubjectJoint.setElectiveCode(registerSubjectJoint.sharedSlotId());
+        }
         newSubjectJoint.setSchoolClass(classFound);
         newSubjectJoint.setSubject(subjectFound);
         subjectJointRepo.save(newSubjectJoint);
+
     }
 
     public List<?> getAllSubjectJoints(UUID schoolId) {
@@ -264,5 +275,3 @@ public class SubjectService {
         }).toList();
     }
 }
-
-
