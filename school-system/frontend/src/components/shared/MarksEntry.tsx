@@ -123,14 +123,14 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
 
   const [catsCount, setCatsCount] = useState(0);
   const [catConfigs, setCatConfigs] = useState<
-    Record<ConfigKey, number | string | null>
+    Record<ConfigKey, number | null | string | null>
   >({
-    cat1Max: 100,
-    cat2Max: 100,
-    cat3Max: 100,
-    cat4Max: 100,
-    cat5Max: 100,
-    examMax: 100,
+    cat1Max: null,
+    cat2Max: null,
+    cat3Max: null,
+    cat4Max: null,
+    cat5Max: null,
+    examMax: null,
   });
   console.log("Newer data", marksData);
 
@@ -143,12 +143,12 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
     const firstStudentMarks = subjectMarks[students[0]?.id || ""];
     if (firstStudentMarks) {
       const nextConfigs: Record<ConfigKey, number | string | null> = {
-        cat1Max: firstStudentMarks.cat1Max ?? 100,
-        cat2Max: firstStudentMarks.cat2Max ?? 100,
-        cat3Max: firstStudentMarks.cat3Max ?? 100,
-        cat4Max: firstStudentMarks.cat4Max ?? 100,
-        cat5Max: firstStudentMarks.cat5Max ?? 100,
-        examMax: firstStudentMarks.examMax ?? 100,
+        cat1Max: firstStudentMarks.cat1Max,
+        cat2Max: firstStudentMarks.cat2Max,
+        cat3Max: firstStudentMarks.cat3Max,
+        cat4Max: firstStudentMarks.cat4Max,
+        cat5Max: firstStudentMarks.cat5Max,
+        examMax: firstStudentMarks.examMax,
       };
 
       setCatConfigs((previous) =>
@@ -190,7 +190,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
   });
 
   const addCat = () => {
-    if (catsCount < 5) {
+    if (catsCount < 3) {
       setCatsCount((previous) => previous + 1);
     }
   };
@@ -353,13 +353,15 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
             <button
               className={styles.btnAdd}
               onClick={addCat}
-              disabled={catsCount >= 5}
+              disabled={catsCount >= 3}
             >
               + CAT
             </button>
             <button
               className={styles.btnAdd}
-              onClick={removeCat}
+              onClick={() => {
+                removeCat();
+              }}
               disabled={catsCount <= 0}
               style={{ borderColor: "var(--dText)", color: "var(--dText)" }}
             >
@@ -367,7 +369,10 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
             </button>
             <button
               className={styles.btnGhost}
-              onClick={() => onSaveMarks(activeSubjectId, catConfigs)}
+              onClick={() => {
+                onSaveMarks(activeSubjectId, catConfigs);
+                console.log("cat configs", catConfigs);
+              }}
             >
               Save Progress
             </button>

@@ -84,8 +84,10 @@ public class MarksEntryService {
                 .subjectName(subjectJoint.getSubject().getSubjectName()).subjectType(subjectJoint.getSubjectType())
                 .classId(schoolClass.getClassId())
                 .className(schoolClass.getClassGrade() + " " + schoolClass.getClassStream())
-                .electiveCode(subjectJoint.getElectiveCode()).marksRow(marksRow).maxCat1(existingMarkSheet.getMaxCat1())
-                .maxCat2(existingMarkSheet.getMaxCat2()).maxCat3(existingMarkSheet.getMaxCat3())
+                .electiveCode(subjectJoint.getElectiveCode()).marksRow(marksRow)
+                .maxCat1(existingMarkSheet.isCat1Entry() ? existingMarkSheet.getMaxCat1() : null)
+                .maxCat2(existingMarkSheet.isCat2Entry() ? existingMarkSheet.getMaxCat2() : null)
+                .maxCat3(existingMarkSheet.isCat3Entry() ? existingMarkSheet.getMaxCat3() : null)
                 .maxExam(existingMarkSheet.getMaxExam()).build();
     }
 
@@ -150,10 +152,21 @@ public class MarksEntryService {
                         && !Objects.equals(marksSheet.getMaxExam(), marksheetSaveRequest.maxExam());
 
         if (rubricChanged) {
-            marksSheet.setMaxCat1(marksheetSaveRequest.maxCat1());
-            marksSheet.setMaxCat2(marksheetSaveRequest.maxCat2());
-            marksSheet.setMaxCat3(marksheetSaveRequest.maxCat3());
-            marksSheet.setMaxExam(marksheetSaveRequest.maxExam());
+            if (marksheetSaveRequest.maxCat1() != null) {
+                marksSheet.setMaxCat1(marksheetSaveRequest.maxCat1());
+                marksSheet.setCat1Entry(true);
+            }
+            if (marksheetSaveRequest.maxCat2() != null) {
+                marksSheet.setMaxCat2(marksheetSaveRequest.maxCat2());
+                marksSheet.setCat2Entry(true);
+            }
+            if (marksheetSaveRequest.maxCat3() != null) {
+                marksSheet.setMaxCat3(marksheetSaveRequest.maxCat3());
+                marksSheet.setCat3Entry(true);
+            }
+            if (marksheetSaveRequest.maxExam() != null) {
+                marksSheet.setMaxExam(marksheetSaveRequest.maxExam());
+            }
         }
         int skippedStudentsCount = 0;
         for (MarkInputDTO input : marksheetSaveRequest.markInputDTOs()) {
@@ -171,15 +184,15 @@ public class MarksEntryService {
                         return newMarks;
                     });
             boolean changed = false;
-            if (marksSheet.isCat1Entry() && !Objects.equals(marks.getCat1(), input.cat1())) {
+            if (!Objects.equals(marks.getCat1(), input.cat1())) {
                 marks.setCat1(input.cat1());
                 changed = true;
             }
-            if (marksSheet.isCat2Entry() && !Objects.equals(marks.getCat2(), input.cat2())) {
+            if (!Objects.equals(marks.getCat2(), input.cat2())) {
                 marks.setCat2(input.cat2());
                 changed = true;
             }
-            if (marksSheet.isCat3Entry() && !Objects.equals(marks.getCat3(), input.cat3())) {
+            if (!Objects.equals(marks.getCat3(), input.cat3())) {
                 marks.setCat3(input.cat3());
                 changed = true;
             }
@@ -245,4 +258,3 @@ public class MarksEntryService {
         marksRow.setGrade(band.getGrade());
     }
 }
-

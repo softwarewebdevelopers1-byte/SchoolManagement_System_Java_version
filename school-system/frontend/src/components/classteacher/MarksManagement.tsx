@@ -32,13 +32,13 @@ const createEmptyMarks = () => ({
   cat3: null,
   cat4: null,
   cat5: null,
-  cat1Max: 100,
-  cat2Max: 100,
-  cat3Max: 100,
-  cat4Max: 100,
-  cat5Max: 100,
+  cat1Max: null,
+  cat2Max: null,
+  cat3Max: null,
+  cat4Max: null,
+  cat5Max: null,
   exam: null,
-  examMax: 100,
+  examMax: null,
   finalScore: null,
 });
 
@@ -301,15 +301,12 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         })),
       );
 
-      
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {
         marksByActualSubject.set(
           subjectId,
           new Map(
             (data as any[]).map((item) => {
-              
-
               return [item.studentId.toString(), item];
             }),
           ),
@@ -464,6 +461,8 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     setMarksData((prev) => {
       const updatedSubjectMarks = { ...(prev[subjectId] || {}) };
       Object.keys(updatedSubjectMarks).forEach((studentId) => {
+        console.log(catIndex);
+
         updatedSubjectMarks[studentId] = {
           ...updatedSubjectMarks[studentId],
           [`cat${catIndex}`]: null,
