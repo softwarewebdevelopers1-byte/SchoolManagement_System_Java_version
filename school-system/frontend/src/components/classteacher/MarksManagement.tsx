@@ -186,7 +186,9 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
     activeSubjects.forEach((subject) => {
       console.log("each subject --> ", subject);
-
+      if (subject.enrollmentMode === "DROPPED") {
+        return;
+      }
       if (subject.enrollmentMode !== "ELECTIVE") {
         result.push(
           buildOption({
@@ -208,6 +210,18 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       seenKeys.add(groupKey);
 
       const group = electiveGroupsByKey.get(groupKey);
+      console.log(
+        "verified",
+        " group ",
+        group,
+        " group key ",
+        groupKey,
+        " elective groups key ",
+        electiveGroupsByKey,
+        " is linked group ",
+        group?.isLinkedGroup,
+      );
+
       if (!group || !group.isLinkedGroup) {
         result.push(
           buildOption({

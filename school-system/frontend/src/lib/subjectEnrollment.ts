@@ -1,4 +1,8 @@
-export type SubjectEnrollmentMode = "compulsory" | "elective";
+export type SubjectEnrollmentMode =
+  | "compulsory"
+  | "elective"
+  | "COMPULSORY"
+  | "ELECTIVE";
 
 export interface StudentSubjectEnrollment {
   subjectId: string;
@@ -25,7 +29,9 @@ export interface EnrollableSubjectLike {
   sharedSlotId?: string | null;
 }
 
-export interface ElectiveSubjectGroup<T extends EnrollableSubjectLike = EnrollableSubjectLike> {
+export interface ElectiveSubjectGroup<
+  T extends EnrollableSubjectLike = EnrollableSubjectLike,
+> {
   key: string;
   sharedSlotId: string | null;
   label: string;
@@ -74,7 +80,9 @@ export const getClassSubjectSetting = <T extends ClassSubjectSettingLike>(
   };
 };
 
-export const getElectiveSubjectIdsForClass = <T extends ClassSubjectSettingLike>(
+export const getElectiveSubjectIdsForClass = <
+  T extends ClassSubjectSettingLike,
+>(
   settings: T[],
   classGrade: string,
   classStream?: string,
@@ -82,10 +90,12 @@ export const getElectiveSubjectIdsForClass = <T extends ClassSubjectSettingLike>
   settings
     .filter(
       (setting) =>
-        normalizeClassValue(setting.classGrade) === normalizeClassValue(classGrade) &&
-        normalizeClassValue(setting.classStream) === normalizeClassValue(classStream) &&
+        normalizeClassValue(setting.classGrade) ===
+          normalizeClassValue(classGrade) &&
+        normalizeClassValue(setting.classStream) ===
+          normalizeClassValue(classStream) &&
         setting.isOffered !== false &&
-        (setting.enrollmentMode || "compulsory") === "elective",
+        setting.enrollmentMode === "ELECTIVE",
     )
     .map((setting) => setting.subjectId);
 
@@ -99,7 +109,7 @@ export const buildElectiveSubjectGroups = <T extends EnrollableSubjectLike>(
   const order: string[] = [];
 
   subjects.forEach((subject) => {
-    if (subject.isOffered === false || (subject.enrollmentMode || "compulsory") !== "elective") {
+    if (subject.isOffered === false || subject.enrollmentMode !== "ELECTIVE") {
       return;
     }
 
@@ -116,7 +126,8 @@ export const buildElectiveSubjectGroups = <T extends EnrollableSubjectLike>(
 
   return order.map((key) => {
     const groupSubjects = grouped.get(key) || [];
-    const normalizedSharedSlotId = (groupSubjects[0]?.sharedSlotId || "").trim() || null;
+    const normalizedSharedSlotId =
+      (groupSubjects[0]?.sharedSlotId || "").trim() || null;
     const subjectNames = groupSubjects.map((subject) => subject.name);
 
     return {
@@ -124,7 +135,9 @@ export const buildElectiveSubjectGroups = <T extends EnrollableSubjectLike>(
       sharedSlotId: normalizedSharedSlotId,
       label: formatElectivePairLabel(subjectNames),
       subjects: groupSubjects,
-      isLinkedGroup: Boolean(normalizedSharedSlotId && groupSubjects.length > 1),
+      isLinkedGroup: Boolean(
+        normalizedSharedSlotId && groupSubjects.length > 1,
+      ),
     };
   });
 };
@@ -148,7 +161,7 @@ export const formatSubjectOfferingTag = (
   sharedSlotId?: string | null,
 ) => {
   const mode = enrollmentMode || "compulsory";
-  if (mode === "elective" && sharedSlotId) {
+  if (mode === "ELECTIVE" && sharedSlotId) {
     return `Elective | Block ${sharedSlotId}`;
   }
 

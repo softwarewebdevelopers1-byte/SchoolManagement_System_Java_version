@@ -289,7 +289,7 @@ public class SubjectService {
             }
             subjectJoint.setElectiveCode(null);
         }
-        subjectJoint.setSubjectType(subjectType);
+        subjectJoint.setSubjectType(subjectType != null ? subjectType : SubjectType.COMPULSORY);
         subjectJointRepo.save(subjectJoint);
     }
 
