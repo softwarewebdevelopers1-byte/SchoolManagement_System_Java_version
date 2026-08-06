@@ -3,6 +3,7 @@ package com.example.school.system.DTO;
 import java.util.Set;
 import java.util.UUID;
 
+import com.example.school.system.types.ExamType;
 import com.example.school.system.types.UserRoles;
 
 import lombok.Builder;
@@ -20,4 +21,7 @@ public class UserDto {
     private TeacherProfileDto teacherProfileDto;
     private String classGrade;
     private String classStream;
+    private String term;
+    private String year;
+    private ExamType examType;
 }

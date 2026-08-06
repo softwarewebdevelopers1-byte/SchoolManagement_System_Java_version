@@ -16,7 +16,10 @@ public class AuthMapperDto {
     }
 
     public UserDto toUserDto(Users user) {
-        return UserDto.builder().userId(user.getId()).email(user.getEmail()).roles(user.getRoles())
+        return UserDto.builder().term(user.getSchool().getSchoolSettings().getCurrentSchoolTerm().toString())
+                .year(user.getSchool().getSchoolSettings().getAcademicYear())
+                .examType(user.getSchool().getSchoolSettings().getExamSettings().getExamType())
+                .userId(user.getId()).email(user.getEmail()).roles(user.getRoles())
                 .schoolId(user.getSchool().getId())
                 .classGrade(user.getTeacherProfile().getSchoolClass().getClassGrade().toString())
                 .classStream(user.getTeacherProfile().getSchoolClass().getClassStream())
@@ -28,7 +31,8 @@ public class AuthMapperDto {
     private TeacherProfileDto toTeacherProfileDto(TeacherProfile teacherProfile) {
         return TeacherProfileDto.builder().firstName(teacherProfile.getFirstName())
                 .lastName(teacherProfile.getLastName())
-                .classDto(teacherProfile.getSchoolClass() != null ? toClassDto(teacherProfile.getSchoolClass()) : null).teacherProfileId(teacherProfile.getTeacher()!=null?teacherProfile.getId():null)
+                .classDto(teacherProfile.getSchoolClass() != null ? toClassDto(teacherProfile.getSchoolClass()) : null)
+                .teacherProfileId(teacherProfile.getTeacher() != null ? teacherProfile.getId() : null)
                 .build();
     }
 
