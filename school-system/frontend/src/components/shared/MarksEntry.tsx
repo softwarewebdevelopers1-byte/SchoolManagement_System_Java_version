@@ -136,60 +136,60 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
   // Track which cats are enabled (from backend state or local additions)
   const [enabledCats, setEnabledCats] = useState<Set<number>>(new Set());
 
-  // useEffect(() => {
-  //   if (students.length === 0) {
-  //     setCatsCount(0);
-  //     setEnabledCats(new Set());
-  //     return;
-  //   }
+  useEffect(() => {
+    if (students.length === 0) {
+      setCatsCount(0);
+      setEnabledCats(new Set());
+      return;
+    }
 
-  //   const firstStudentMarks = subjectMarks[students[0]?.id || ""];
-  //   if (firstStudentMarks) {
-  //     const nextConfigs: Record<ConfigKey, number | string | null> = {
-  //       cat1Max: firstStudentMarks.cat1Max,
-  //       cat2Max: firstStudentMarks.cat2Max,
-  //       cat3Max: firstStudentMarks.cat3Max,
-  //       cat4Max: firstStudentMarks.cat4Max,
-  //       cat5Max: firstStudentMarks.cat5Max,
-  //       examMax: firstStudentMarks.examMax,
-  //     };
+    const firstStudentMarks = subjectMarks[students[0]?.id || ""];
+    if (firstStudentMarks) {
+      const nextConfigs: Record<ConfigKey, number | string | null> = {
+        cat1Max: firstStudentMarks.cat1Max,
+        cat2Max: firstStudentMarks.cat2Max,
+        cat3Max: firstStudentMarks.cat3Max,
+        cat4Max: firstStudentMarks.cat4Max,
+        cat5Max: firstStudentMarks.cat5Max,
+        examMax: firstStudentMarks.examMax,
+      };
 
-  //     setCatConfigs((previous) =>
-  //       JSON.stringify(previous) === JSON.stringify(nextConfigs)
-  //         ? previous
-  //         : nextConfigs,
-  //     );
-  //   }
+      setCatConfigs((previous) =>
+        JSON.stringify(previous) === JSON.stringify(nextConfigs)
+          ? previous
+          : nextConfigs,
+      );
+    }
 
-  //   // Determine enabled cats from the marks data (catMax values that are not null)
-  //   const nextEnabled = new Set<number>();
-  //   students.forEach((student) => {
-  //     const studentMarks = subjectMarks[student.id];
-  //     if (!studentMarks) return;
+    // Determine enabled cats from the marks data (catMax values that are not null)
+    const nextEnabled = new Set<number>();
+    students.forEach((student) => {
+      const studentMarks = subjectMarks[student.id];
+      if (!studentMarks) return;
 
-  //     for (let i = 1; i <= 5; i++) {
-  //       const maxKey = getCatMaxKey(i);
-  //       const maxVal = (studentMarks as any)[maxKey];
-  //       if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
-  //         nextEnabled.add(i);
-  //       }
-  //     }
-  //   });
+      for (let i = 1; i <= 5; i++) {
+        const maxKey = getCatMaxKey(i);
+        const maxVal = (studentMarks as any)[maxKey];
+        if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
+          nextEnabled.add(i);
+        }
+      }
+    });
 
-  //   // If no cats are enabled but we have cat configs with values, use those
-  //   if (nextEnabled.size === 0) {
-  //     for (let i = 1; i <= 5; i++) {
-  //       const maxKey = getCatMaxKey(i);
-  //       const maxVal = catConfigs[maxKey];
-  //       if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
-  //         nextEnabled.add(i);
-  //       }
-  //     }
-  //   }
+    // If no cats are enabled but we have cat configs with values, use those
+    if (nextEnabled.size === 0) {
+      for (let i = 1; i <= 5; i++) {
+        const maxKey = getCatMaxKey(i);
+        const maxVal = catConfigs[maxKey];
+        if (maxVal !== null && maxVal !== undefined && Number(maxVal) > 0) {
+          nextEnabled.add(i);
+        }
+      }
+    }
 
-  //   setEnabledCats(nextEnabled);
-  //   setCatsCount(nextEnabled.size);
-  // }, [students, subjectMarks]);
+    setEnabledCats(nextEnabled);
+    setCatsCount(nextEnabled.size);
+  }, [students, subjectMarks]);
 
   const allFilled = students.every((student) => {
     const marks = subjectMarks[student.id];

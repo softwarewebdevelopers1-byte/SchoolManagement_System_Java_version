@@ -266,6 +266,8 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const sheet = await request<any>(
     `/marks/${encodeURIComponent(subjectJointId)}`,
   );
+  console.log("marks sheet", await sheet);
+
   const cat1Enabled = sheet?.cat1Entry === true;
   const cat2Enabled = sheet?.cat2Entry === true;
   const cat3Enabled = sheet?.cat3Entry === true;

@@ -300,6 +300,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           }),
         })),
       );
+      console.log("subject data: ", subjectPayloads);
 
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {

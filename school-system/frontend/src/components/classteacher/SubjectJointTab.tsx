@@ -118,7 +118,6 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       await request("/update/subject-joint", {
         method: "PATCH",
         body: JSON.stringify({
-          subjectType: "COMPULSORY",
           subjectJointId: subjectId,
         }),
       });
