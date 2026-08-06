@@ -194,8 +194,7 @@ public class SubjectService {
                 .setSubjectType(registerSubjectJoint.enrollmentMode() != null ? registerSubjectJoint.enrollmentMode()
                         : SubjectType.COMPULSORY);
         if (registerSubjectJoint.enrollmentMode() == SubjectType.ELECTIVE) {
-            if (registerSubjectJoint.sharedSlotId().isBlank() || registerSubjectJoint.sharedSlotId().isEmpty()
-                    || registerSubjectJoint.sharedSlotId() == null) {
+            if (registerSubjectJoint.sharedSlotId() == null) {
                 throw new SchoolResourceBadInputExceptionHandler("elective code is required");
             }
             newSubjectJoint.setElectiveCode(registerSubjectJoint.sharedSlotId());
