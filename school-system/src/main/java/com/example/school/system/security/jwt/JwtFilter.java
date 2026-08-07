@@ -83,7 +83,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 // Extract roles from claims (they already have "ROLE_" prefix)
                 @SuppressWarnings("unchecked")
                 List<String> roles = claims.get("roles", List.class);
-                System.out.println(roles);
                 // Convert to Spring Security authorities
                 Collection<GrantedAuthority> authorities = roles.stream()
                         .map(role -> new SimpleGrantedAuthority(role)) // Already has "ROLE_"

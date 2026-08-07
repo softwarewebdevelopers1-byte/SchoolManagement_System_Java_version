@@ -10,6 +10,8 @@ import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectJointRes;
 import com.example.school.system.DTO.SubjectUpdateDTO;
+import com.example.school.system.DTO.UnenrollMultipleStudents;
+import com.example.school.system.DTO.UnenrollStudent;
 import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
 import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -291,6 +293,25 @@ public class SubjectService {
         }
         subjectJoint.setSubjectType(subjectType != null ? subjectType : SubjectType.COMPULSORY);
         subjectJointRepo.save(subjectJoint);
+    }
+
+    @Transactional
+    public void deleteSingleSubjectSelection(String electiveCode, UUID studentId) {
+        if (!studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, studentId)) {
+            throw new SchoolResourceNotFoundExceptionHandler("student not registered");
+        }
+        studentSubjectSelectionRepo.deleteByElectiveCodeAndStudentProfileId(electiveCode, studentId);
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> deleteMultipleSubjectSelection(UnenrollMultipleStudents unenrollStudents) {
+        unenrollStudents.getStudentIds().stream().forEach(u -> {
+            log.info("students unenrolled {}", u);
+            studentSubjectSelectionRepo.deleteByElectiveCodeAndStudentProfileId(
+                    unenrollStudents.getEnrollmentCode(),
+                    u);
+        });
+        return SchoolApiResponse.success("deleted above count of students");
     }
 
     public List<SubjectJointRes> getSubjectJointForClass(UUID classId) {

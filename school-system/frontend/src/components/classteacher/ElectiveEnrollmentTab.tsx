@@ -32,8 +32,6 @@ const buildElectiveGroups = (subjects: any[]) => {
 };
 
 const isEnrolled = (student: any, subjectId: string) => {
-  console.log("student", student, "subjectId", subjectId);
-
   return (student.enrolledSubjects || []).some(
     (e: any) => String(e.enrolledSubjectId).trim() === String(subjectId).trim(),
   );
@@ -81,13 +79,26 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
     if (!selectedSubjectId) return;
     setSaving(studentId);
     try {
-      await api.put("/users/bulk-enroll-elective", {
-        studentIds: [studentId],
-        subjectId: selectedSubjectId,
-        classGrade: user.classGrade,
-        classStream: user.classStream || "",
-        action,
-      });
+      action === "enroll"
+        ? await request("/register/singlestudent/subject-joint", {
+            method: "POST",
+            body: JSON.stringify({
+              schoolId: getSchoolId(),
+              subjectJoint: selectedSubjectId,
+              studentId: studentId,
+              electiveCode: currentSubject?.sharedSlotId,
+            }),
+          })
+        : await request("/delete/single/enrollment", {
+            method: "DELETE",
+            body: JSON.stringify({
+              schoolId: getSchoolId(),
+              subjectJointId: selectedSubjectId,
+              studentId: studentId,
+              enrollmentCode: currentSubject?.sharedSlotId,
+            }),
+          });
+
       showMsg(
         action === "enroll"
           ? "Student enrolled successfully."
@@ -103,21 +114,33 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   };
 
   const handleBulkAction = async (action: "enroll" | "unenroll") => {
+    console.log("Bulk action hitted, enrollment mode ", action);
     if (!selectedSubjectId || bulkSelected.size === 0) return;
     setSaving("bulk");
     const enrolledSubjectCode = subjects.filter(
       (v) => v.id == selectedSubjectId,
     );
     try {
-      await request("/register/multpile/students/subject-joint", {
-        method: "POST",
-        body: JSON.stringify({
-          studentsId: Array.from(bulkSelected),
-          subjectId: selectedSubjectId,
-          schoolId: getSchoolId(),
-          electiveCode: enrolledSubjectCode[0]?.sharedSlotId,
-        }),
-      });
+      console.log(Array.from(bulkSelected));
+
+      action === "enroll"
+        ? await request("/register/multpile/students/subject-joint", {
+            method: "POST",
+            body: JSON.stringify({
+              studentsId: Array.from(bulkSelected),
+              subjectId: selectedSubjectId,
+              schoolId: getSchoolId(),
+              electiveCode: enrolledSubjectCode[0]?.sharedSlotId,
+            }),
+          })
+        : await request("/delete/multiple/enrollment", {
+            method: "DELETE",
+            body: JSON.stringify({
+              studentIds: Array.from(bulkSelected),
+              schoolId: getSchoolId(),
+              enrollmentCode: enrolledSubjectCode[0]?.sharedSlotId,
+            }),
+          });
       showMsg(
         `${bulkSelected.size} student(s) ${action === "enroll" ? "enrolled" : "unenrolled"}.`,
         "success",
@@ -504,8 +527,6 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                 </thead>
                 <tbody>
                   {filteredStudents.map((student) => {
-                    console.log("student ", student);
-
                     const enrolled = selectedSubjectId
                       ? isEnrolled(student, selectedSubjectId)
                       : false;

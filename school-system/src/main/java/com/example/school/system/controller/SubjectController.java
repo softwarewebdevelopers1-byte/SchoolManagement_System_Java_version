@@ -9,6 +9,8 @@ import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectUnassignment;
 import com.example.school.system.DTO.SubjectUpdateDTO;
+import com.example.school.system.DTO.UnenrollMultipleStudents;
+import com.example.school.system.DTO.UnenrollStudent;
 import com.example.school.system.DTO.UpdateSubjectJoint;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SubjectService;
@@ -142,5 +144,18 @@ public class SubjectController {
         System.out.println();
         return ResponseEntity.status(200).body(res);
     }
-}
 
+    @DeleteMapping("/delete/single/enrollment")
+    public ResponseEntity<?> deleteSingleSubjectSelection(@Valid @RequestBody UnenrollStudent unenrollStudent) {
+        subjectService.deleteSingleSubjectSelection(unenrollStudent.enrollmentCode(),
+                unenrollStudent.studentId());
+        return ResponseEntity.status(204).body(SchoolApiResponse.success("student unenrolled"));
+    }
+
+    @DeleteMapping("/delete/multiple/enrollment")
+    public ResponseEntity<?> deleteMultipleSubjectSelection(
+            @Valid @RequestBody UnenrollMultipleStudents unenrollStudents) {
+        var deleteCount = subjectService.deleteMultipleSubjectSelection(unenrollStudents);
+        return ResponseEntity.status(204).body(SchoolApiResponse.success(deleteCount, "student unenrolled"));
+    }
+}
