@@ -32,10 +32,10 @@ const buildElectiveGroups = (subjects: any[]) => {
 };
 
 const isEnrolled = (student: any, subjectId: string) => {
+  console.log("student", student, "subjectId", subjectId);
+
   return (student.enrolledSubjects || []).some(
-    (e: any) =>
-      String(e.subjectId).trim() === String(subjectId).trim() &&
-      e.isActive !== false,
+    (e: any) => String(e.enrolledSubjectId).trim() === String(subjectId).trim(),
   );
 };
 
@@ -107,15 +107,6 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
     setSaving("bulk");
     const enrolledSubjectCode = subjects.filter(
       (v) => v.id == selectedSubjectId,
-    );
-    console.log(
-      "ordered",
-      subjects,
-      selectedSubjectId,
-      "<-->",
-      enrolledSubjectCode[0].sharedSlotId,
-      "bulk selected <-->",
-      bulkSelected,
     );
     try {
       await request("/register/multpile/students/subject-joint", {
@@ -513,6 +504,8 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                 </thead>
                 <tbody>
                   {filteredStudents.map((student) => {
+                    console.log("student ", student);
+
                     const enrolled = selectedSubjectId
                       ? isEnrolled(student, selectedSubjectId)
                       : false;

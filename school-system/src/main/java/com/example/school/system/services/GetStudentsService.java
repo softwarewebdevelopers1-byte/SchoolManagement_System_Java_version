@@ -8,12 +8,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.EnrolledSubjects;
 import com.example.school.system.DTO.GetAllStudentsDTO;
 import com.example.school.system.DTO.GetStudentsOfSpecificClass;
 import com.example.school.system.DTO.DTOResponse.GetAllStudentsDTORes;
 import com.example.school.system.DTO.DTOResponse.GetStudentByClassDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.StudentProfile;
+import com.example.school.system.models.StudentSubjectSelection;
+import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
@@ -41,10 +44,18 @@ public class GetStudentsService {
         Page<StudentProfile> studentProfiles = studentProfileRepo.findBySchoolClassClassId(schoolClassDTO.classId(),
                 pageable);
         List<?> students = studentProfiles.stream().map(s -> {
-            return GetStudentByClassDTO.builder().id(s.getId()).name(s.getStudentFullName()).adm(s.getStudentAdm())
+            return GetStudentByClassDTO.builder().enrolledSubjects(toEnrolledSubjects(s.getStudentSubjectSelections()))
+                    .id(s.getId()).name(s.getStudentFullName()).adm(s.getStudentAdm())
                     .build();
         }).toList();
+
         return students;
+    }
+
+    private List<EnrolledSubjects> toEnrolledSubjects(List<StudentSubjectSelection> studentSubjectSelections) {
+        return studentSubjectSelections.stream().map(e -> {
+            return EnrolledSubjects.builder().enrolledSubjectId(e.getSubjectJoint().getId()).build();
+        }).toList();
     }
 
     public List<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
