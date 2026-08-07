@@ -300,10 +300,11 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     const currentSubject = displaySubjects.find(
       (subject) => subject.id === activeSubjectId,
     );
+
     if (!currentSubject) return;
 
     try {
-      const subjectPayloads = await Promise.all(
+      let subjectPayloads = await Promise.all(
         currentSubject.actualSubjects.map(async (actualSubject) => ({
           subjectId: actualSubject.id,
           data: await api.get("/marks", {
@@ -313,6 +314,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
             term,
             year,
             examType,
+            isLinkedElectiveGroup: currentSubject.isLinkedElectiveGroup,
           }),
         })),
       );

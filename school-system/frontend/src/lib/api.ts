@@ -263,9 +263,12 @@ const composeTeacherAssignments = async <T>(teacherId: string): Promise<T> => {
 const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
-  const sheet = await request<any>(
-    `/marks/${encodeURIComponent(subjectJointId)}`,
-  );
+  let sheet: any;
+  if (params.isLinkedElectiveGroup) {
+    console.log("Is Linked Elective Group", params.isLinkedElectiveGroup);
+  } else {
+    sheet = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}`);
+  }
   console.log("marks sheet", await sheet);
 
   const cat1Enabled = sheet?.cat1Entry === true;

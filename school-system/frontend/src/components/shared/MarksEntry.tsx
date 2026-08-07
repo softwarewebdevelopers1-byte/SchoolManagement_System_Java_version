@@ -207,7 +207,10 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
       // Pre-fill with 40 so the column never collapses
       setCatConfigs((prev) => ({
         ...prev,
-        [newKey]: prev[newKey] !== null && prev[newKey] !== undefined ? prev[newKey] : 40,
+        [newKey]:
+          prev[newKey] !== null && prev[newKey] !== undefined
+            ? prev[newKey]
+            : 40,
       }));
       setEnabledCats((prev) => {
         const next = new Set(prev);
@@ -308,7 +311,10 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
           <select
             className={styles.dhInput}
             value={activeSubjectId}
-            onChange={(event) => onSubjectChange(event.target.value)}
+            onChange={(event) => {
+              console.log("targeted subject", event.target.value);
+              onSubjectChange(event.target.value);
+            }}
           >
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
@@ -462,7 +468,10 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                 {Array.from({ length: catsCount }).map((_, index) => {
                   const key = getCatMaxKey(index + 1);
                   return (
-                    <th key={key} style={{ minWidth: 90, whiteSpace: "nowrap" }}>
+                    <th
+                      key={key}
+                      style={{ minWidth: 90, whiteSpace: "nowrap" }}
+                    >
                       CAT {index + 1}
                       <div style={{ marginTop: 4 }}>
                         <input

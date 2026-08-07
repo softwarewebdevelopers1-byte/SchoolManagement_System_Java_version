@@ -30,4 +30,6 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
                         """)
         Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
                         @Param("subjectType") SubjectType subjectType);
+
+        List<SubjectJoint> findBySubjectTypeAndElectiveCode(SubjectType subjectType, String electiveCode);
 }
