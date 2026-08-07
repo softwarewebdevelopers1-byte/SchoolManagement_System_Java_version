@@ -75,7 +75,7 @@ const resolveStudentSubjectSelection = (
   classGrade: string,
   classStream: string,
 ) => {
-  if ((subject.enrollmentMode || "compulsory") === "compulsory") {
+  if (subject.enrollmentMode) {
     return subject.actualSubjects[0]?.id || null;
   }
 
@@ -154,7 +154,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       id: string;
       name: string;
       displayName?: string;
-      enrollmentMode: "compulsory" | "elective";
+      enrollmentMode: "COMPULSORY" | "ELECTIVE";
       sharedSlotId?: string | null;
       groupedSubjectIds?: string[];
       groupedSubjectNames?: string[];
@@ -189,73 +189,21 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       if (subject.enrollmentMode === "DROPPED") {
         return;
       }
-      if (subject.enrollmentMode !== "ELECTIVE") {
+      if (
+        subject.enrollmentMode == "ELECTIVE" ||
+        subject.enrollmentMode == "COMPULSORY"
+      ) {
         result.push(
           buildOption({
             id: subject.id,
             name: subject.name,
-            enrollmentMode: "compulsory",
+            enrollmentMode: subject.enrollmentMode,
             sharedSlotId: subject.sharedSlotId || null,
             actualSubjects: [{ id: subject.id, name: subject.name }],
           }),
         );
         return;
       }
-
-      const normalizedSharedSlotId = normalizeValue(subject.sharedSlotId);
-      const groupKey = normalizedSharedSlotId || `subject:${subject.id}`;
-      if (seenKeys.has(groupKey)) {
-        return;
-      }
-      seenKeys.add(groupKey);
-
-      const group = electiveGroupsByKey.get(groupKey);
-      console.log(
-        "verified",
-        " group ",
-        group,
-        " group key ",
-        groupKey,
-        " elective groups key ",
-        electiveGroupsByKey,
-        " is linked group ",
-        group?.isLinkedGroup,
-      );
-
-      if (!group || !group.isLinkedGroup) {
-        result.push(
-          buildOption({
-            id: subject.id,
-            name: subject.name,
-            enrollmentMode: "elective",
-            sharedSlotId: subject.sharedSlotId || null,
-            actualSubjects: [{ id: subject.id, name: subject.name }],
-          }),
-        );
-        return;
-      }
-
-      const groupSubjectNames = group.subjects.map(
-        (groupSubject) => groupSubject.name,
-      );
-      result.push(
-        buildOption({
-          id: `elective-group:${group.key}`,
-          name: group.label,
-          displayName: group.label,
-          enrollmentMode: "elective",
-          sharedSlotId: group.sharedSlotId,
-          groupedSubjectIds: group.subjects.map(
-            (groupSubject) => groupSubject.id,
-          ),
-          groupedSubjectNames: groupSubjectNames,
-          isLinkedElectiveGroup: true,
-          actualSubjects: group.subjects.map((groupSubject) => ({
-            id: groupSubject.id,
-            name: groupSubject.name,
-          })),
-        }),
-      );
     });
 
     return result;
@@ -318,6 +266,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           }),
         })),
       );
+
       const marksByActualSubject = new Map<string, Map<string, any>>();
       subjectPayloads.forEach(({ subjectId, data }) => {
         marksByActualSubject.set(
@@ -329,7 +278,14 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           ),
         );
       });
-
+      console.log(
+        "subject payloads for now ",
+        subjectPayloads,
+        "students involved",
+        subjectStudents,
+        "marks by actual subject",
+        marksByActualSubject,
+      );
       const relevantStudents: Student[] = [];
 
       rosterStudents.filter(isActiveStudent).forEach((student) => {
@@ -339,6 +295,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
           user.classGrade,
           user.classStream,
         );
+        console.log("actual subject id ", actualSubjectId);
 
         if (!actualSubjectId) {
           return;
@@ -350,20 +307,23 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         const markRecord = marksByActualSubject
           .get(actualSubjectId)
           ?.get(String(student.id));
-        relevantStudents.push({
-          id: String(student.id),
-          name: student.name,
-          adm: getStudentAdmissionNumber(student),
-          gender: student.gender || "N/A",
-          enrolledSubjects: student.enrolledSubjects || [],
-          enrollmentSubjectId: actualSubjectId,
-          enrollmentSubjectName:
-            currentSubject.actualSubjects.length > 1
-              ? subjectRecord?.name || null
-              : null,
-          marks: markRecord?.marks || createEmptyMarks(),
-          pushed: false,
-        });
+
+        if (markRecord) {
+          relevantStudents.push({
+            id: String(student.id),
+            name: student.name,
+            adm: getStudentAdmissionNumber(student),
+            gender: student.gender || "N/A",
+            enrolledSubjects: student.enrolledSubjects || [],
+            enrollmentSubjectId: actualSubjectId,
+            enrollmentSubjectName:
+              currentSubject.actualSubjects.length > 1
+                ? subjectRecord?.name || null
+                : null,
+            marks: markRecord?.marks || createEmptyMarks(),
+            pushed: false,
+          });
+        }
       });
 
       setMarksData((prev) => ({
