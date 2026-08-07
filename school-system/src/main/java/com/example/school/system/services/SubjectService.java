@@ -11,7 +11,6 @@ import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectJointRes;
 import com.example.school.system.DTO.SubjectUpdateDTO;
 import com.example.school.system.DTO.UnenrollMultipleStudents;
-import com.example.school.system.DTO.UnenrollStudent;
 import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
 import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;

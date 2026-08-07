@@ -16,7 +16,6 @@ import com.example.school.system.DTO.DTOResponse.GetStudentByClassDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.StudentSubjectSelection;
-import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;

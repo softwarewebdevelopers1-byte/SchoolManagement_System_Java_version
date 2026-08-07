@@ -14,7 +14,6 @@ import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
-import com.example.school.system.repository.ExamSettingsRepo;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
@@ -32,7 +31,6 @@ public class SchoolService {
     private final OtpService otpService;
     private final RandomValuesService randomValues;
     private final JwtValidator jwtValidator;
-    private final ExamSettingsRepo examSettingsRepo;
 
     public SchoolApiResponse<?> getSchool(String code) {
         School schoolName = schoolRepository.findBySchoolCode(code)

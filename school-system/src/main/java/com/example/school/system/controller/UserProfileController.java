@@ -17,12 +17,10 @@ import com.example.school.system.DTO.BulkUpdateTermDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.AuthenticatedUserService;
 import com.example.school.system.services.GetStudentsService;
-import com.example.school.system.services.DashboardService;
 import com.example.school.system.services.SubjectService;
 import com.example.school.system.services.TeachersService;
 import com.example.school.system.services.UserUpdate;
 import com.example.school.system.repository.SchoolClassRepository;
-import com.example.school.system.models.SchoolClass;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,7 +36,6 @@ import java.util.stream.Collectors;
 public class UserProfileController {
     private final AuthenticatedUserService authenticatedUserService;
     private final GetStudentsService getStudentsService;
-    private final DashboardService dashboardService;
     private final SubjectService subjectService;
     private final TeachersService teachersService;
     private final UserUpdate userUpdate;

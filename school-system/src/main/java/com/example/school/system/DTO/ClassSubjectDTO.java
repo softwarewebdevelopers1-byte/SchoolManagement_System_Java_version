@@ -2,7 +2,6 @@ package com.example.school.system.DTO;
 
 import java.util.UUID;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

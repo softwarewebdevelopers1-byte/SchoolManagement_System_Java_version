@@ -32,7 +32,6 @@ import com.example.school.system.models.Subject;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.MarksRepo;
-import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
@@ -62,7 +61,6 @@ public class UserUpdate {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SubjectJointRepo subjectJointRepo;
     private final MarksRepo marksRepo;
-    private final MarksSheetRepo marksSheetRepo;
     private final StudentSubjectSelectionRepo studentSubjectSelectionRepo;
     private final TeacherProfileRepository teacherProfileRepository;
 

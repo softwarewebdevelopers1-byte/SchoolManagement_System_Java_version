@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.services.SubjectService;
-import com.example.school.system.services.SchoolClassService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -24,9 +21,6 @@ import java.util.UUID;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ClassSubjectController {
-    private final SubjectService subjectService;
-    private final SchoolClassService schoolClassService;
-
     @GetMapping("/school/class-subjects")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER','SUBJECTTEACHER')")
     public ResponseEntity<?> getClassSubjects(
@@ -36,7 +30,6 @@ public class ClassSubjectController {
         if (classGrade == null || classStream == null) {
             return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class subjects loaded"));
         }
-        var students = schoolClassService.getAllClasses(null);
         return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class subjects loaded"));
     }
 
