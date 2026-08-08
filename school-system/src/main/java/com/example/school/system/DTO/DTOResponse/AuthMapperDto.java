@@ -21,8 +21,12 @@ public class AuthMapperDto {
                 .examType(user.getSchool().getSchoolSettings().getExamSettings().getExamType())
                 .userId(user.getId()).email(user.getEmail()).roles(user.getRoles())
                 .schoolId(user.getSchool().getId())
-                .classGrade(user.getTeacherProfile().getSchoolClass().getClassGrade().toString())
-                .classStream(user.getTeacherProfile().getSchoolClass().getClassStream())
+                .classGrade(user.getTeacherProfile() != null && user.getTeacherProfile().getSchoolClass() != null
+                        ? user.getTeacherProfile().getSchoolClass().getClassGrade().toString()
+                        : null)
+                .classStream(user.getTeacherProfile() != null && user.getTeacherProfile().getSchoolClass() != null
+                        ? user.getTeacherProfile().getSchoolClass().getClassStream()
+                        : null)
                 .teacherProfileDto(
                         user.getTeacherProfile() == null ? null : toTeacherProfileDto(user.getTeacherProfile()))
                 .build();
