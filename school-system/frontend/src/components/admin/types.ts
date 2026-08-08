@@ -51,6 +51,13 @@ export interface Class {
   examType?: string;
 }
 
+export interface ClassFound {
+  classId: string;
+  className: string;
+  classTeacher: string;
+  totalStudents:string
+}
+
 export interface Student {
   id: string;
   admissionNo: string;

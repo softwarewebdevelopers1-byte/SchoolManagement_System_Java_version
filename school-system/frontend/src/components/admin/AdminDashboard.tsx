@@ -10,8 +10,8 @@ import { TeachersTab } from "./TeachersTab";
 import { TopBar } from "./TopBar";
 import { CycleTab } from "./CycleTab";
 import { TimetableTab } from "./TimetableTab";
-import { AdminMarksTab } from "./AdminMarksTab";
-import { BulkElectiveEnrollmentTab } from "./BulkElectiveEnrollmentTab";
+// import { AdminMarksTab } from "./AdminMarksTab";
+// import { BulkElectiveEnrollmentTab } from "./BulkElectiveEnrollmentTab";
 import { PerformanceTab } from "./PerformanceTab";
 import { CbcGradingConfigTab } from "./CbcGradingConfigTab";
 import { ArchivesView } from "../shared/ArchivesView";
@@ -54,11 +54,11 @@ const navItems: NavItem[] = [
     label: "Students",
     svg: "<path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/>",
   },
-  {
-    id: "marks",
-    label: "Marks Entry",
-    svg: "<path d='M3 3v18h18'/><path d='M7 14l3-3 3 2 5-6'/>",
-  },
+  // {
+  //   id: "marks",
+  //   label: "Marks Entry",
+  //   svg: "<path d='M3 3v18h18'/><path d='M7 14l3-3 3 2 5-6'/>",
+  // },
   {
     id: "performance",
     label: "Performance & Analytics",
@@ -69,11 +69,11 @@ const navItems: NavItem[] = [
     label: "Subjects",
     svg: "<path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/>",
   },
-  {
-    id: "elective-enrollment",
-    label: "Elective Enrollment",
-    svg: "<path d='M9 12l2 2 4-4'/><path d='M4 6h16'/><path d='M4 12h3'/><path d='M4 18h16'/>",
-  },
+  // {
+  //   id: "elective-enrollment",
+  //   label: "Elective Enrollment",
+  //   svg: "<path d='M9 12l2 2 4-4'/><path d='M4 6h16'/><path d='M4 12h3'/><path d='M4 18h16'/>",
+  // },
   {
     id: "teachers",
     label: "Staff",
@@ -395,6 +395,10 @@ const AdminDashboard: React.FC = () => {
       ),
     [students, teachers, subjects, assignments, classSubjectSettings],
   );
+
+
+
+
 
   const loadDashboardUsers = async () => {
     try {
@@ -927,7 +931,6 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "classes") {
       return (
         <ClassesTab
-          classes={classes}
           teachers={teachers}
           onSaveClassTeacher={saveTeacher}
           onUnassignClassTeacher={unassignClassTeacher}
@@ -972,28 +975,28 @@ const AdminDashboard: React.FC = () => {
       );
     }
 
-    if (activeTab === "elective-enrollment") {
-      return (
-        <BulkElectiveEnrollmentTab
-          classes={classes}
-          students={students}
-          subjects={subjects}
-          onBulkEnrollElective={bulkEnrollElective}
-        />
-      );
-    }
+    // if (activeTab === "elective-enrollment") {
+    //   return (
+    //     <BulkElectiveEnrollmentTab
+    //       classes={classes}
+    //       students={students}
+    //       subjects={subjects}
+    //       onBulkEnrollElective={bulkEnrollElective}
+    //     />
+    //   );
+    // }
 
-    if (activeTab === "marks") {
-      return (
-        <AdminMarksTab
-          classes={classes}
-          students={students}
-          subjects={subjects}
-          onRefresh={loadDashboardUsers}
-          avatar={avatar}
-        />
-      );
-    }
+    // if (activeTab === "marks") {
+    //   return (
+    //     <AdminMarksTab
+    //       classes={classes}
+    //       students={students}
+    //       subjects={subjects}
+    //       onRefresh={loadDashboardUsers}
+    //       avatar={avatar}
+    //     />
+    //   );
+    // }
 
     if (activeTab === "performance") {
       return (

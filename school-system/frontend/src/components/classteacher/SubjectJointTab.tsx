@@ -59,6 +59,10 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   const [electiveCode, setElectiveCode] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [configSharedSlot, setConfigSharedSlot] = useState("");
+  const [configSharedSlotCopied, setConfigSharedSlotCopied] = useState(false);
+  const generateElectivePairId = () => `EL-${crypto.randomUUID()}`;
+
   // Load all available subjects (global school subjects)
   const loadAllSubjects = useCallback(async () => {
     setLoading(true);
@@ -164,7 +168,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
     try {
       // Register the subject for this class via class-subjects endpoint
       await request("/register/subject-joint", {
-        method:"POST",
+        method: "POST",
         body: JSON.stringify({
           subjectId: selectedSubjectId,
           classId: getClassId(),
@@ -194,8 +198,114 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   return (
     <div
       className="ct-anim"
-      style={{ display: "flex", flexDirection: "column", gap: 20 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        position: "relative",
+      }}
     >
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          position: "absolute",
+          zIndex: 1000,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
+      >
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            borderRadius: 16,
+            width: 400,
+            height: 400,
+          }}
+        >
+          <label
+            style={{
+              marginBottom: 8,
+              fontFamily: FONT.sans,
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            Shared Slot ID (for paired subjects)
+          </label>
+          <input
+            type="text"
+            value={configSharedSlot}
+            onChange={(e) => {
+              setConfigSharedSlot(e.target.value);
+              setConfigSharedSlotCopied(false);
+            }}
+            placeholder="Generated automatically for linked electives"
+            style={{
+              width: "50%",
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              boxSizing: "border-box",
+              marginBottom: 8,
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setConfigSharedSlot(generateElectivePairId());
+                setConfigSharedSlotCopied(false);
+              }}
+              style={{
+                padding: "7px 12px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.cream,
+                cursor: "pointer",
+              }}
+            >
+              Generate
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!configSharedSlot.trim()) return;
+                try {
+                  await navigator.clipboard.writeText(configSharedSlot.trim());
+                  setConfigSharedSlotCopied(true);
+                } catch (error) {
+                  setConfigSharedSlotCopied(false);
+                }
+              }}
+              disabled={!configSharedSlot.trim()}
+              style={{
+                padding: "7px 12px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.cream,
+                cursor: configSharedSlot.trim() ? "pointer" : "default",
+                opacity: configSharedSlot.trim() ? 1 : 0.55,
+              }}
+            >
+              {configSharedSlotCopied ? "Copied" : "Copy ID"}
+            </button>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div>
         <p

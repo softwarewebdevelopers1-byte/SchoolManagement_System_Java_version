@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
-import { Class, Teacher } from "./types";
+import { Class, ClassFound, Teacher } from "./types";
 import { useClassesData } from "../../lib/adminData";
+import { getClassId, getSchoolId, request } from "../../lib/api";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -150,7 +151,7 @@ const emptyStateStyle: React.CSSProperties = {
 
 const ClassTeacherModal: React.FC<{
   currentClass: Class;
-  teachers: Teacher[];
+  teachers: any;
   onClose: () => void;
   onSave: (teacherId: string) => Promise<void>;
 }> = ({ currentClass, teachers, onClose, onSave }) => {
@@ -158,7 +159,7 @@ const ClassTeacherModal: React.FC<{
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId);
+  const selectedTeacher = teachers.find((t: any) => t.id === selectedTeacherId);
   const isBusy =
     selectedTeacher &&
     selectedTeacher.classGrade &&
@@ -204,17 +205,17 @@ const ClassTeacherModal: React.FC<{
             style={inputStyle}
           >
             <option value="">-- Choose a teacher --</option>
-            {teachers.map((teacher) => {
+            {teachers.map((teacher: any) => {
               const alreadyAssigned =
                 teacher.classGrade &&
                 (teacher.classGrade !== currentClass.grade ||
                   teacher.classStream !== currentClass.stream);
               return (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}{" "}
+                <option key={teacher.usersId} value={teacher.usersId}>
+                  {`${teacher?.firstName ? teacher.firstName : teacher?.email} ${teacher?.lastName ? teacher.lastName : " "}`}{" "}
                   {alreadyAssigned
                     ? `(Already assigned to ${teacher.classGrade}${teacher.classStream})`
-                    : `(${teacher.roleLabel})`}
+                    : ``}
                 </option>
               );
             })}
@@ -264,8 +265,7 @@ const ClassTeacherModal: React.FC<{
 };
 
 interface ClassesTabProps {
-  classes: Class[];
-  teachers: Teacher[];
+  teachers: any;
   onSaveClassTeacher: (payload: any, teacherId?: string) => Promise<void>;
   onUnassignClassTeacher: (teacherId: string) => Promise<void>;
   avatar: (name: string, size: number) => string;
@@ -282,7 +282,6 @@ interface ClassesTabProps {
 
 export const ClassesTab: React.FC<ClassesTabProps> = ({
   onSaveClassTeacher,
-  onUnassignClassTeacher,
   avatar,
   showModal,
   closeModal,
@@ -291,6 +290,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const { teachers, classesFound } = useClassesData();
+  console.log(teachers[1], "<--teachers found");
 
   const openAssignModal = (currentClass: Class) => {
     showModal(
@@ -299,39 +299,38 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
         teachers={teachers}
         onClose={closeModal}
         onSave={async (teacherId) => {
-          const teacher = teachers.find((t) => t.id === teacherId);
-          if (teacher) {
-            const existingRoles = teacher.roles || [];
-            const newRoles = existingRoles.includes("classteacher")
-              ? existingRoles
-              : [...existingRoles, "classteacher"];
+          console.log("assigned class teacher id ", teacherId);
 
-            await onSaveClassTeacher(
-              {
-                ...teacher,
-                roles: newRoles,
-                classGrade: currentClass.grade,
-                classStream: currentClass.stream,
-              },
-              teacher.id,
-            );
-          }
+          await request("/update/class", {
+            method: "PATCH",
+            body: JSON.stringify({
+              classId: getClassId(),
+              schoolId: getSchoolId(),
+              classTeacherId: teacherId,
+            }),
+          });
         }}
       />,
     );
   };
 
-  const handleUnassign = (teacher: Teacher) => {
+  const handleUnassign = (classId: any, currentClass: any) => {
     showConfirm(
-      `Unassign <strong>${teacher.name}</strong> from this class?`,
+      `Unassign <strong>${currentClass.classTeacher}</strong> from this class?`,
       async () => {
-        await onUnassignClassTeacher(teacher.id);
+        await request(`/unassign/classteacher`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            classId: classId,
+            schoolId: getSchoolId(),
+          }),
+        });
       },
       true,
     );
   };
 
-  const filteredClasses = classesFound.filter((currentClass) => {
+  const filteredClasses = classesFound?.filter((currentClass: any) => {
     const query = search.toLowerCase();
     return (
       currentClass.grade.toLowerCase().includes(query) ||
@@ -403,14 +402,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
             </tr>
           </thead>
           <tbody>
-            {filteredClasses.map((currentClass) => {
-              const classTeacher = teachers.find(
-                (teacher) => teacher.id === currentClass.classTeacherId,
-              );
-
+            {filteredClasses?.map((currentClass: any) => {
               return (
                 <tr
-                  key={currentClass.id}
+                  key={currentClass.classId}
                   style={{
                     borderTop: "1px solid var(--borderL)",
                     transition: "background 0.2s",
@@ -424,12 +419,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   }
                 >
                   <td style={{ padding: "10px 13px" }}>
-                    <p style={rowPrimaryTextStyle}>{currentClass.name}</p>
-                    <p style={rowMetaTextStyle}>
-                      {currentClass.stream
-                        ? `Stream ${currentClass.stream}`
-                        : "No stream added"}
-                    </p>
+                    <p style={rowPrimaryTextStyle}>{currentClass.className}</p>
                   </td>
                   <td style={bodyTextStyle}>{currentClass.grade}</td>
                   <td style={bodyTextStyle}>
@@ -443,7 +433,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                         marginLeft: 4,
                       }}
                     >
-                      {currentClass.year || 2024}
+                      {currentClass.year || new Date().getFullYear()}
                     </span>
                   </td>
                   <td
@@ -453,10 +443,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                       color: "var(--text)",
                     }}
                   >
-                    {currentClass.students}
+                    {currentClass.totalStudents}
                   </td>
                   <td style={{ padding: "10px 13px" }}>
-                    {classTeacher ? (
+                    {currentClass?.classTeacher ? (
                       <div
                         style={{
                           display: "flex",
@@ -474,21 +464,20 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                         >
                           <div
                             dangerouslySetInnerHTML={{
-                              __html: avatar(classTeacher.name, 26),
+                              __html: avatar(currentClass.classTeacher, 26),
                             }}
                           />
                           <div>
                             <p style={rowPrimaryTextStyle}>
-                              {classTeacher.name}
-                            </p>
-                            <p style={rowMetaTextStyle}>
-                              {classTeacher.roleLabel}
+                              {currentClass.classTeacher}
                             </p>
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 5 }}>
                           <button
-                            onClick={() => handleUnassign(classTeacher)}
+                            onClick={() =>
+                              handleUnassign(currentClass.classId, currentClass)
+                            }
                             style={{
                               ...miniButtonStyle,
                               background: "var(--dBg)",
@@ -510,13 +499,15 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                     )}
                   </td>
                   <td style={bodyTextStyle}>
-                    {currentClass.offeredSubjectIds ? currentClass.offeredSubjectIds.length : 0}
+                    {currentClass.offeredSubjectIds
+                      ? currentClass.offeredSubjectIds.length
+                      : 0}
                   </td>
                 </tr>
               );
             })}
 
-            {filteredClasses.length === 0 && (
+            {filteredClasses?.length === 0 && (
               <tr>
                 <td colSpan={5} style={emptyStateStyle}>
                   No classes found.
