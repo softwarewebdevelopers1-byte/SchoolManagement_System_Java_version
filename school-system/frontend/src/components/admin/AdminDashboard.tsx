@@ -396,10 +396,6 @@ const AdminDashboard: React.FC = () => {
     [students, teachers, subjects, assignments, classSubjectSettings],
   );
 
-
-
-
-
   const loadDashboardUsers = async () => {
     try {
       setLoading(true);
@@ -536,14 +532,12 @@ const AdminDashboard: React.FC = () => {
   const saveTeacher = async (
     payload: {
       roles: string[];
-      name: string;
+      firstName: string;
+      lastName: string;
       email: string;
       phone: string;
-      department: string;
       status: string;
-      classGrade?: string;
-      classStream?: string;
-      subjects?: string[];
+      password: string;
     },
     teacherId?: string,
   ) => {
@@ -932,7 +926,6 @@ const AdminDashboard: React.FC = () => {
       return (
         <ClassesTab
           teachers={teachers}
-          onSaveClassTeacher={saveTeacher}
           onUnassignClassTeacher={unassignClassTeacher}
           onBulkTermUpdate={handleBulkTermUpdate}
           onSwitchTab={setActiveTab}

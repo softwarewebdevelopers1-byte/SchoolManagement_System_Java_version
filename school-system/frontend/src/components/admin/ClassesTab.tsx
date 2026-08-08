@@ -266,7 +266,6 @@ const ClassTeacherModal: React.FC<{
 
 interface ClassesTabProps {
   teachers: any;
-  onSaveClassTeacher: (payload: any, teacherId?: string) => Promise<void>;
   onUnassignClassTeacher: (teacherId: string) => Promise<void>;
   avatar: (name: string, size: number) => string;
   showModal: (content: React.ReactNode) => void;
@@ -281,7 +280,6 @@ interface ClassesTabProps {
 }
 
 export const ClassesTab: React.FC<ClassesTabProps> = ({
-  onSaveClassTeacher,
   avatar,
   showModal,
   closeModal,

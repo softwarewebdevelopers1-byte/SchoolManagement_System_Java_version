@@ -26,8 +26,10 @@ import com.example.school.system.types.AccountStatus;
 
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TeachersService {
     private final UserRepository userRepository;
@@ -82,6 +84,7 @@ public class TeachersService {
     @Transactional
     public void EditTeacher(TeacherEditDTO editTeacher, String authHeader) {
         // 1. Find the user
+        log.info("teacher updated {}", editTeacher.teacherId());
         Users user = userRepository.findById(editTeacher.teacherId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
         if (!schoolUuid(authHeader).equals(user.getSchool().getId())) {

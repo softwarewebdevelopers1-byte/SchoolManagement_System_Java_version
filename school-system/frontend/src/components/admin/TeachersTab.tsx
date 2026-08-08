@@ -142,32 +142,30 @@ const emptyCellStyle: React.CSSProperties = {
 };
 
 const StaffFormModal: React.FC<{
-  teacher: Teacher | null;
+  teacher: any;
   classes: Class[];
   onClose: () => void;
   onSave: (payload: {
     roles: string[];
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
-    department: string;
     status: string;
-    classGrade?: string;
-    classStream?: string;
-    subjects?: string[];
+    password: string;
   }) => Promise<void>;
 }> = ({ teacher, classes, onClose, onSave }) => {
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
   const [name, setName] = useState(teacher?.name || "");
   const [email, setEmail] = useState(teacher?.email || "");
   const [phone, setPhone] = useState(teacher?.phone || "");
-  const [department, setDepartment] = useState(teacher?.department || "");
+  const [password, setPassword] = useState(teacher?.password || "");
   const [status, setStatus] = useState(teacher?.status || "Active");
   const [classGrade, setClassGrade] = useState(teacher?.classGrade || "");
   const [classStream, setClassStream] = useState(teacher?.classStream || "");
-  const [subjects, setSubjects] = useState((teacher?.subjects || []).join(", "));
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  console.log(teacher);
 
   return (
     <div
@@ -178,7 +176,9 @@ const StaffFormModal: React.FC<{
       }}
     >
       <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>{teacher ? "Edit staff member" : "Add staff member"}</h3>
+        <h3 style={modalTitleStyle}>
+          {teacher ? "Edit staff member" : "Add staff member"}
+        </h3>
         <button onClick={onClose} style={closeButtonStyle}>
           x
         </button>
@@ -186,20 +186,55 @@ const StaffFormModal: React.FC<{
 
       <div style={{ padding: "18px 22px", overflowY: "auto" }}>
         {errorMsg && (
-          <div style={{ padding: "10px", marginBottom: "15px", background: "#fdeaea", color: "#a32d2d", borderRadius: "8px", fontSize: "13px", fontWeight: 600 }}>
+          <div
+            style={{
+              padding: "10px",
+              marginBottom: "15px",
+              background: "#fdeaea",
+              color: "#a32d2d",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
             {errorMsg}
           </div>
         )}
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Roles (Select up to 3)</label>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "8px", background: "var(--sand)", borderRadius: "8px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "8px",
+              padding: "8px",
+              background: "var(--sand)",
+              borderRadius: "8px",
+            }}
+          >
             {roleOptions.map((option) => (
-              <label key={option.value} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12.5px", color: "var(--textM)" }}>
+              <label
+                key={option.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  fontSize: "12.5px",
+                  color: "var(--textM)",
+                }}
+              >
                 <input
                   type="checkbox"
-                  checked={Array.isArray(role) ? role.includes(option.value) : role === option.value}
+                  checked={
+                    Array.isArray(role)
+                      ? role.includes(option.value)
+                      : role === option.value
+                  }
                   onChange={(e) => {
-                    const currentRoles = Array.isArray(role) ? [...role] : [role];
+                    const currentRoles = Array.isArray(role)
+                      ? [...role]
+                      : [role];
                     if (e.target.checked) {
                       if (currentRoles.length < 3) {
                         setRole([...currentRoles, option.value]);
@@ -208,7 +243,7 @@ const StaffFormModal: React.FC<{
                         setErrorMsg("Maximum 3 roles allowed");
                       }
                     } else {
-                      setRole(currentRoles.filter(r => r !== option.value));
+                      setRole(currentRoles.filter((r) => r !== option.value));
                     }
                   }}
                 />
@@ -219,30 +254,56 @@ const StaffFormModal: React.FC<{
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label style={labelStyle}>Full name</label>
-          <input value={name} onChange={(event) => setName(event.target.value)} style={inputStyle} />
+          <label style={labelStyle}>First name</label>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            style={inputStyle}
+          />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Email address</label>
-          <input value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} />
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            style={inputStyle}
+          />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+        >
           <div>
             <label style={labelStyle}>Phone</label>
-            <input value={phone} onChange={(event) => setPhone(event.target.value)} style={inputStyle} />
+            <input
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              style={inputStyle}
+            />
           </div>
           <div>
             <label style={labelStyle}>Status</label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)} style={inputStyle}>
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              style={inputStyle}
+            >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
           </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={labelStyle}>password</label>
+            <input
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              style={inputStyle}
+            />
+          </div>
         </div>
 
-        <div style={{ marginTop: "1rem" }}>
+        {/* <div style={{ marginTop: "1rem" }}>
           <label style={labelStyle}>Department</label>
           <input
             list="staff-departments"
@@ -251,14 +312,30 @@ const StaffFormModal: React.FC<{
             style={inputStyle}
           />
           <datalist id="staff-departments">
-            {["Sciences", "Languages", "Humanities", "Arts", "Sports", "Technology", "Mathematics", "Administration"].map((item) => (
+            {[
+              "Sciences",
+              "Languages",
+              "Humanities",
+              "Arts",
+              "Sports",
+              "Technology",
+              "Mathematics",
+              "Administration",
+            ].map((item) => (
               <option key={item} value={item} />
             ))}
           </datalist>
-        </div>
+        </div> */}
 
         {role.includes("CLASSTEACHER") && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: "1rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              marginTop: "1rem",
+            }}
+          >
             <div>
               <label style={labelStyle}>Class grade</label>
               <input
@@ -268,7 +345,9 @@ const StaffFormModal: React.FC<{
                 style={inputStyle}
               />
               <datalist id="staff-grade-options">
-                {Array.from(new Set(classes.map((current) => current.grade))).map((grade) => (
+                {Array.from(
+                  new Set(classes.map((current) => current.grade)),
+                ).map((grade) => (
                   <option key={grade} value={grade} />
                 ))}
               </datalist>
@@ -282,26 +361,19 @@ const StaffFormModal: React.FC<{
                 style={inputStyle}
               />
               <datalist id="staff-stream-options">
-                {Array.from(new Set(classes.map((current) => current.stream || "").filter(Boolean))).map((stream) => (
+                {Array.from(
+                  new Set(
+                    classes
+                      .map((current) => current.stream || "")
+                      .filter(Boolean),
+                  ),
+                ).map((stream) => (
                   <option key={stream} value={stream} />
                 ))}
               </datalist>
             </div>
           </div>
         )}
-
-        {role.includes("SUBJECTTEACHER") && (
-          <div style={{ marginTop: "1rem" }}>
-            <label style={labelStyle}>Subjects</label>
-            <input
-              value={subjects}
-              onChange={(event) => setSubjects(event.target.value)}
-              placeholder="Comma separated, e.g. Mathematics, Science"
-              style={inputStyle}
-            />
-          </div>
-        )}
-
       </div>
       <div
         style={{
@@ -326,19 +398,15 @@ const StaffFormModal: React.FC<{
 
             setSaving(true);
             try {
+              let splitNames = name.split(" ");
               await onSave({
                 roles: role,
-                name: name.trim(),
+                firstName: splitNames[0].trim(),
+                lastName: splitNames[1].trim(),
+                password: password?.trim(),
                 email: email.trim(),
                 phone: phone.trim(),
-                department: department.trim() || "General",
                 status,
-                classGrade: classGrade.trim(),
-                classStream: classStream.trim(),
-                subjects: subjects
-                  .split(",")
-                  .map((item) => item.trim())
-                  .filter(Boolean),
               });
             } finally {
               setSaving(false);
@@ -355,19 +423,17 @@ const StaffFormModal: React.FC<{
 };
 
 interface TeachersTabProps {
-  teachers: Teacher[];
+  teachers: any;
   classes: Class[];
   onSaveTeacher: (
     payload: {
       roles: string[];
-      name: string;
+      firstName: string;
+      lastName: string;
       email: string;
       phone: string;
-      department: string;
       status: string;
-      classGrade?: string;
-      classStream?: string;
-      subjects?: string[];
+      password: string;
     },
     teacherId?: string,
   ) => Promise<void>;
@@ -395,7 +461,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   const pageSize = 50;
 
   const filteredTeachers = teachers.filter(
-    (teacher) =>
+    (teacher:any) =>
       teacher.name.toLowerCase().includes(search.toLowerCase()) ||
       teacher.department.toLowerCase().includes(search.toLowerCase()) ||
       teacher.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -413,7 +479,10 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   }, [search]);
 
   const openAddTeacher = (editId?: string) => {
-    const teacher = editId ? teachers.find((current) => current.id === editId) || null : null;
+    const teacher = editId
+      ? teachers.find((current:any) => current.id === editId) || null
+      : null;
+    console.log("editable teacher ", editId, "<---> teacher ", teacher);
 
     showModal(
       <StaffFormModal
@@ -421,7 +490,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
         classes={classes}
         onClose={closeModal}
         onSave={async (payload) => {
-          await onSaveTeacher(payload, teacher?.id);
+          await onSaveTeacher(payload, teacher?.userId);
         }}
       />,
     );
@@ -475,16 +544,32 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           WebkitOverflowScrolling: "touch",
         }}
       >
-        <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
+        <table
+          style={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}
+        >
           <thead>
             <tr style={{ background: "var(--sand)" }}>
-              {["Staff", "First assigned Role", "Department", "Contact", "Scope", "Status", ""].map((heading) => (
+              {[
+                "Staff",
+                "First assigned Role",
+                "Department",
+                "Contact",
+                "Scope",
+                "Status",
+                "",
+              ].map((heading) => (
                 <th
                   key={heading}
                   style={{
                     ...tableHeadingStyle,
                     ...(heading === "Staff"
-                      ? { position: "sticky", left: 0, zIndex: 2, background: "var(--sand)", minWidth: 230 }
+                      ? {
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 2,
+                          background: "var(--sand)",
+                          minWidth: 230,
+                        }
                       : {}),
                   }}
                 >
@@ -494,11 +579,30 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
             </tr>
           </thead>
           <tbody>
-            {pagedTeachers.map((teacher) => (
-              <tr key={teacher.id} style={{ borderTop: "1px solid var(--borderL)" }}>
-                <td style={{ padding: "10px 13px", position: "sticky", left: 0, zIndex: 1, background: "var(--white)", minWidth: 230, boxShadow: "1px 0 0 var(--borderL)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                    <div dangerouslySetInnerHTML={{ __html: avatar(teacher.name, 30) }} />
+            {pagedTeachers.map((teacher:any) => (
+              <tr
+                key={teacher.id}
+                style={{ borderTop: "1px solid var(--borderL)" }}
+              >
+                <td
+                  style={{
+                    padding: "10px 13px",
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 1,
+                    background: "var(--white)",
+                    minWidth: 230,
+                    boxShadow: "1px 0 0 var(--borderL)",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 9 }}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: avatar(teacher.name, 30),
+                      }}
+                    />
                     <div>
                       <p style={rowPrimaryTextStyle}>{teacher.name}</p>
                       <p style={rowMetaTextStyle}>{teacher.email}</p>
@@ -516,18 +620,26 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                         ? teacher.subjects.join(", ")
                         : "General"}
                   </p>
-                  <p style={rowMetaTextStyle}>{teacher.teacherNumber || teacher.joinDate || ""}</p>
+                  <p style={rowMetaTextStyle}>
+                    {teacher.teacherNumber || teacher.joinDate || ""}
+                  </p>
                 </td>
                 <td style={{ padding: "10px 13px" }}>
                   <span
                     dangerouslySetInnerHTML={{
-                      __html: pill(teacher.status, teacher.status === "Active" ? "green" : "gray"),
+                      __html: pill(
+                        teacher.status,
+                        teacher.status === "Active" ? "green" : "gray",
+                      ),
                     }}
                   />
                 </td>
                 <td style={{ padding: "10px 13px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => openAddTeacher(teacher.id)} style={iconButtonStyle}>
+                    <button
+                      onClick={() => openAddTeacher(teacher.id)}
+                      style={iconButtonStyle}
+                    >
                       Edit
                     </button>
                     <button
@@ -557,8 +669,19 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
         </table>
       </div>
       {filteredTeachers.length > pageSize && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
+          >
             Page {currentPage} of {totalPages} | {filteredTeachers.length} staff
           </span>
           <div style={{ display: "flex", gap: 8 }}>
@@ -572,7 +695,9 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
             <button
               style={secondaryButtonStyle}
               disabled={currentPage >= totalPages}
-              onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
+              onClick={() =>
+                setPage((previous) => Math.min(totalPages, previous + 1))
+              }
             >
               Next
             </button>
