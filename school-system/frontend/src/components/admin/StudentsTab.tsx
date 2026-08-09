@@ -219,7 +219,7 @@ const StudentFormModal: React.FC<{
   // const [stream, setStream] = useState(currentClass?.stream || "");
   const [gender, setGender] = useState(student?.gender || "");
   const [status, setStatus] = useState(student?.status || "");
-  const [email, setEmail] = useState(student?.gender);
+  const [email, setEmail] = useState(student?.email);
   const [guardianPhone, setGuardianPhone] = useState(
     student?.phoneNumber || "",
   );
@@ -294,8 +294,9 @@ const StudentFormModal: React.FC<{
               onChange={(event) => setGender(event.target.value)}
               style={inputStyle}
             >
-              <option value="Female">Female</option>
-              <option value="Male">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="MALE">Male</option>
+              <option value="">Not set</option>
             </select>
           </div>
         </div>
@@ -321,6 +322,7 @@ const StudentFormModal: React.FC<{
               }}
               style={inputStyle}
             >
+              <option value="">--select--</option>
               {classesFound.map((c: any) => {
                 return (
                   <option key={c.classId} value={c.className}>
@@ -483,6 +485,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   }, [search, classFilter]);
 
   const openStudentModal = (studentId?: string) => {
+    console.log("id--->");
     const student = studentId
       ? students.find((current) => current?.userId === studentId) || null
       : null;
