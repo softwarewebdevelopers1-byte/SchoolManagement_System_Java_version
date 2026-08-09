@@ -505,11 +505,11 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
     0,
   );
   const totalDroppedSubjects = classes.reduce(
-    (count, currentClass) => count + currentClass.droppedSubjectIds.length,
+    (count, currentClass) => count + currentClass?.droppedSubjectIds?.length,
     0,
   );
-  const totalElectiveSubjects = classes.reduce(
-    (count, currentClass) => count + currentClass.electiveSubjectIds.length,
+  const totalElectiveSubjects = classes?.reduce(
+    (count, currentClass) => count + currentClass?.electiveSubjectIds?.length,
     0,
   );
 
@@ -558,29 +558,29 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
         {filteredClasses.map((currentClass) => {
-          const availableSubjects = subjects.filter((subject) =>
-            currentClass.offeredSubjectIds.includes(subject.id),
+          const availableSubjects = subjects?.filter((subject) =>
+            currentClass.offeredSubjectIds?.includes(subject.id),
           );
-          const droppedSubjects = subjects.filter((subject) =>
-            currentClass.droppedSubjectIds.includes(subject.id),
+          const droppedSubjects = subjects?.filter((subject) =>
+            currentClass?.droppedSubjectIds?.includes(subject.id),
           );
-          const assignedCount = Object.keys(currentClass.subjectAssignments || {}).length;
+          const assignedCount = Object.keys(currentClass?.subjectAssignments || {})?.length;
           const statusText =
-            availableSubjects.length === 0
+            availableSubjects?.length === 0
               ? "No active subjects"
-              : assignedCount === availableSubjects.length
+              : assignedCount === availableSubjects?.length
                 ? "Complete"
                 : "In progress";
           const statusColor =
-            availableSubjects.length === 0
+            availableSubjects?.length === 0
               ? "gray"
-              : assignedCount === availableSubjects.length
+              : assignedCount === availableSubjects?.length
                 ? "green"
                 : "amber";
 
           return (
             <div
-              key={currentClass.id}
+              key={currentClass?.id}
               style={{
                 background: "var(--white)",
                 border: "1px solid var(--border)",
@@ -599,9 +599,9 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                 }}
               >
                 <div>
-                  <p style={cardTitleStyle}>{currentClass.name}</p>
+                  <p style={cardTitleStyle}>{currentClass?.name}</p>
                   <p style={rowMetaTextStyle}>
-                    {currentClass.stream
+                    {currentClass?.stream
                       ? `Grade ${currentClass.grade} - Stream ${currentClass.stream}`
                       : `Grade ${currentClass.grade}`}
                   </p>
@@ -614,24 +614,24 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
               </div>
 
               <div style={{ padding: "14px 16px" }}>
-                {availableSubjects.map((subject) => {
-                const assignedTeacherId = currentClass.subjectAssignments?.[subject.id] || "";
+                {availableSubjects?.map((subject) => {
+                const assignedTeacherId = currentClass?.subjectAssignments?.[subject.id] || "";
                 const assignedTeacher = assignedTeacherId
                   ? teacherLookup[assignedTeacherId]
                   : undefined;
-                const subjectSetting = currentClass.subjectSettings[subject.id];
+                const subjectSetting = currentClass?.subjectSettings[subject.id];
                 const eligibleStudentCount =
                   (subjectSetting?.enrollmentMode || "compulsory") === "elective"
                     ? students.filter(
                         (student) =>
-                          student.classId === currentClass.id &&
-                          student.status === "Active" ,
+                          student?.classId === currentClass.id &&
+                          student?.status === "Active" ,
                       ).length
-                    : currentClass.students;
+                    : currentClass?.students;
 
                 return (
                   <div
-                    key={`${currentClass.id}-${subject.id}`}
+                    key={`${currentClass?.id}-${subject?.id}`}
                     style={{
                       padding: "10px 0",
                       borderTop: availableSubjects[0]?.id === subject.id ? "none" : "1px solid var(--borderL)",
@@ -649,7 +649,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                       <div style={{ minWidth: 0, flex: "1 1 180px" }}>
                         <p style={rowPrimaryTextStyle}>{subject.name}</p>
                         <p style={rowMetaTextStyle}>
-                          {subject.department} | {formatSubjectOfferingTag(subjectSetting?.enrollmentMode, subjectSetting?.sharedSlotId)} | {eligibleStudentCount} learner{eligibleStudentCount === 1 ? "" : "s"}
+                          {subject?.department} | {formatSubjectOfferingTag(subjectSetting?.enrollmentMode, subjectSetting?.sharedSlotId)} | {eligibleStudentCount} learner{eligibleStudentCount === 1 ? "" : "s"}
                         </p>
                       </div>
                       {assignedTeacher ? (
@@ -665,10 +665,10 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 180px" }}>
-                            <div dangerouslySetInnerHTML={{ __html: avatar(assignedTeacher.name, 26) }} />
+                            <div dangerouslySetInnerHTML={{ __html: avatar(assignedTeacher?.name, 26) }} />
                             <div style={{ minWidth: 0 }}>
                               <p style={rowPrimaryTextStyle}>{assignedTeacher.name}</p>
-                              <p style={rowMetaTextStyle}>{assignedTeacher.department}</p>
+                              <p style={rowMetaTextStyle}>{assignedTeacher?.department}</p>
                             </div>
                           </div>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", flex: "0 0 auto" }}>
