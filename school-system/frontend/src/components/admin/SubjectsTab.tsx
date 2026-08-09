@@ -130,13 +130,17 @@ const SubjectFormModal: React.FC<{
   onSave: (name: string, department: string) => Promise<void>;
 }> = ({ subject, onClose, onSave }) => {
   const [name, setName] = useState(subject?.name || "");
-  const [department, setDepartment] = useState(subject?.department || "General");
+  const [department, setDepartment] = useState(
+    subject?.department || "General",
+  );
   const [saving, setSaving] = useState(false);
 
   return (
     <div>
       <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>{subject ? "Edit subject" : "Add new subject"}</h3>
+        <h3 style={modalTitleStyle}>
+          {subject ? "Edit subject" : "Add new subject"}
+        </h3>
         <button onClick={onClose} style={closeButtonStyle}>
           x
         </button>
@@ -171,7 +175,14 @@ const SubjectFormModal: React.FC<{
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: "1.5rem",
+          }}
+        >
           <button onClick={onClose} style={secondaryButtonStyle}>
             Cancel
           </button>
@@ -199,7 +210,11 @@ const SubjectFormModal: React.FC<{
 interface SubjectsTabProps {
   subjects: Subject[];
   classes: Class[];
-  onSaveSubject: (name: string, department: string, subjectId?: string) => Promise<void>;
+  onSaveSubject: (
+    name: string,
+    department: string,
+    subjectId?: string,
+  ) => Promise<void>;
   onDeleteSubject: (subjectId: string) => Promise<void>;
   showModal: (content: React.ReactNode) => void;
   closeModal: () => void;
@@ -235,7 +250,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
       async () => {
         await onDeleteSubject(subject.id);
       },
-      true
+      true,
     );
   };
 
@@ -248,9 +263,9 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   });
 
   const getUsageCount = (subjectId: string) =>
-    classes.reduce(
+    classes?.reduce(
       (count, currentClass) =>
-        count + (currentClass.offeredSubjectIds.includes(subjectId) ? 1 : 0),
+        count + (currentClass?.offeredSubjectIds?.includes(subjectId) ? 1 : 0),
       0,
     );
 
@@ -284,7 +299,9 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
       </div>
 
       <div style={noticeStyle}>
-        New subjects are available to every class by default. Admins and class teachers can drop a subject for a specific class, then add it back later from the Assignments view.
+        New subjects are available to every class by default. Admins and class
+        teachers can drop a subject for a specific class, then add it back later
+        from the Assignments view.
       </div>
 
       <div
@@ -299,8 +316,10 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {["Subject Name", "Department", "Offered Classes", "Dropped Elsewhere", "Actions"].map((h) => (
-                <th key={h} style={tableHeadingStyle}>{h}</th>
+              {["Subject Name", "Actions"].map((h) => (
+                <th key={h} style={tableHeadingStyle}>
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -308,46 +327,64 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
             {filteredSubjects.map((subject) => {
               const usageCount = getUsageCount(subject.id);
               return (
-                <tr 
+                <tr
                   key={subject.id}
                   style={{ transition: "background 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--ct-hover, rgba(0,0,0,0.02))"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--ct-hover, rgba(0,0,0,0.02))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   <td style={tableCellStyle}>
-                    <p style={{ margin: 0, fontWeight: 700, color: "var(--text)", fontFamily: "var(--serif)", fontSize: "1rem" }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontWeight: 700,
+                        color: "var(--text)",
+                        fontFamily: "var(--serif)",
+                        fontSize: "1rem",
+                      }}
+                    >
                       {subject.name}
                     </p>
                   </td>
-                  <td style={tableCellStyle}>
-                    <span style={{ 
-                      padding: "2px 8px", 
-                      borderRadius: 9, 
-                      fontSize: 10, 
-                      fontWeight: 700, 
-                      background: "var(--goldL)", 
-                      color: "var(--gold)" 
-                    }}>
+                  {/* <td style={tableCellStyle}>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: 9,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: "var(--goldL)",
+                        color: "var(--gold)",
+                      }}
+                    >
                       {subject.department}
                     </span>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <span style={{ fontWeight: 700 }}>{usageCount}</span> classes
-                  </td>
-                  <td style={tableCellStyle}>
-                    <span style={{ color: "var(--textMut)" }}>{Math.max(classes.length - usageCount, 0)}</span> classes
-                  </td>
+                  </td> */}
                   <td style={tableCellStyle}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button 
+                      <button
                         onClick={() => openSubjectModal(subject)}
-                        style={{ ...miniButtonStyle, background: "var(--cream)", border: "1px solid var(--border)" }}
+                        style={{
+                          ...miniButtonStyle,
+                          background: "var(--cream)",
+                          border: "1px solid var(--border)",
+                        }}
                       >
                         Edit
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteSubject(subject)}
-                        style={{ ...miniButtonStyle, background: "var(--dBg)", color: "var(--dText)", border: "1px solid var(--dText)" }}
+                        style={{
+                          ...miniButtonStyle,
+                          background: "var(--dBg)",
+                          color: "var(--dText)",
+                          border: "1px solid var(--dText)",
+                        }}
                       >
                         Delete
                       </button>
@@ -358,7 +395,14 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
             })}
             {filteredSubjects.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: "3rem", textAlign: "center", color: "var(--textF)" }}>
+                <td
+                  colSpan={5}
+                  style={{
+                    padding: "3rem",
+                    textAlign: "center",
+                    color: "var(--textF)",
+                  }}
+                >
                   No subjects found. Add one to get started.
                 </td>
               </tr>
