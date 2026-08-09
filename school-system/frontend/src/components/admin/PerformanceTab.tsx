@@ -134,9 +134,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
   }, [classes, selectedId]);
 
-  const isGradeSelected = selectedId.startsWith("grade:");
-  const currentGrade = isGradeSelected ? selectedId.replace("grade:", "") : "";
-  const currentClass = !isGradeSelected ? classes.find(c => c.id === selectedId) : null;
+  const isGradeSelected = selectedId?.startsWith("grade:");
+  const currentGrade = isGradeSelected ? selectedId?.replace("grade:", "") : "";
+  const currentClass = !isGradeSelected ? classes?.find(c => c.id === selectedId) : null;
 
   // For grade-wide, we combine all subjects offered in any stream of that grade
   const targetClasses = isGradeSelected ? classes.filter(c => c.grade === currentGrade) : (currentClass ? [currentClass] : []);

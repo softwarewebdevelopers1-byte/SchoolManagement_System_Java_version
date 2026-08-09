@@ -32,8 +32,9 @@ public class UpdateStudentService {
 
     @Transactional
     public void updateStudent(UpdateStudentDTO updateStudentDTO) {
-        log.info("Id update trial {}, student details \n name: {} \n email: {} ", updateStudentDTO.studentId(),
-                updateStudentDTO.studentFullName(), updateStudentDTO.email());
+        log.info("Id update trial {}, student details \n name: {} \n email: {} \n status: {} ",
+                updateStudentDTO.studentId(),
+                updateStudentDTO.studentFullName(), updateStudentDTO.email(), updateStudentDTO.status());
         Users student = userRepository.findByIdAndRolesContaining(updateStudentDTO.studentId(), UserRoles.STUDENT)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
         StudentProfile studentProfile = student.getStudentProfile();

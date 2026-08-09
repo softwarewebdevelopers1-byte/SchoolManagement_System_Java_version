@@ -199,6 +199,7 @@ const StudentFormModal: React.FC<{
     classId: string;
     schoolId: string;
     gender?: string;
+    status?: string;
   }) => Promise<void>;
 }> = ({ student, onClose, onSave }) => {
   const [isCompact, setIsCompact] = React.useState(
@@ -339,9 +340,9 @@ const StudentFormModal: React.FC<{
               onChange={(event) => setStatus(event.target.value)}
               style={inputStyle}
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Completed">Completed</option>
+              <option value="ACTIVE">active</option>
+              <option value="INACTIVE">inactive</option>
+              <option value="DELETED">deleted</option>
             </select>
           </div>
         )}
@@ -355,34 +356,6 @@ const StudentFormModal: React.FC<{
             style={inputStyle}
           />
         </div>
-
-        <div
-          style={{
-            marginTop: "1rem",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            padding: "12px 14px",
-            background: "var(--sand)",
-            display: "grid",
-            gap: 10,
-          }}
-        >
-          <div>
-            <p style={{ ...labelStyle, marginBottom: 4 }}>Subject enrollment</p>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 12,
-                color: "var(--textMut)",
-                lineHeight: 1.5,
-              }}
-            >
-              Compulsory subjects apply to the whole class automatically.
-              Elective subjects must be selected per student.
-            </p>
-          </div>
-        </div>
-
         <div
           style={{
             display: "flex",
@@ -413,6 +386,7 @@ const StudentFormModal: React.FC<{
                   classId: classSelectedId || "",
                   schoolId: getSchoolId()!,
                   email: "",
+                  status: status,
                 });
               } finally {
                 setSaving(false);
@@ -431,7 +405,7 @@ const StudentFormModal: React.FC<{
 
 interface StudentsTabProps {
   students: Student[];
-  classes: Class[];
+  classes: any;
   subjects: Subject[];
   classSubjectSettings: ClassSubjectSetting[];
   onSaveStudent: (
@@ -443,6 +417,7 @@ interface StudentsTabProps {
       classId: string;
       schoolId: string;
       gender?: string;
+      status?: string;
     },
     studentId?: string,
   ) => Promise<void>;
@@ -470,14 +445,6 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const [students, setStudents] = useState<Student[]>([]);
   const pageSize = 50;
 
-  const classLookup = useMemo(
-    () =>
-      classes.reduce<Record<string, Class>>((acc, current) => {
-        acc[current.id] = current;
-        return acc;
-      }, {}),
-    [classes],
-  );
   useEffect(() => {
     (async () => {
       async function getStudents(): Promise<Student[]> {
@@ -528,10 +495,10 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         student={student}
         currentClass={currentClass}
         gradeOptions={Array.from(
-          new Set(classes.map((current) => current.grade)),
+          new Set(classes.map((current: any) => current.grade)),
         )}
         streamOptions={Array.from(
-          new Set(classes.map((current) => current.stream || "")),
+          new Set(classes.map((current: any) => current.stream || "")),
         )}
         subjects={subjects}
         classSubjectSettings={classSubjectSettings}
@@ -554,7 +521,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   };
 
   const totalActive = students.filter(
-    (student) => student.status === "Active",
+    (student) => student.status === "ACTIVE",
   ).length;
 
   return (
@@ -594,9 +561,9 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
             style={{ ...inputStyle, width: 170 }}
           >
             <option value="all">All classes</option>
-            {classes.map((currentClass) => (
-              <option key={currentClass.id} value={currentClass.id}>
-                {currentClass.name}
+            {classes.map((currentClass: any) => (
+              <option key={currentClass.classId} value={currentClass.classId}>
+                {currentClass.className}
               </option>
             ))}
           </select>
@@ -690,7 +657,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
             {pagedStudents.map((student) => {
               return (
                 <tr
-                  key={student.id}
+                  key={student.userId}
                   style={{ borderTop: "1px solid var(--borderL)" }}
                 >
                   <td
@@ -746,7 +713,10 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                   <td style={{ padding: "10px 13px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button
-                        onClick={() => openStudentModal(student.userId)}
+                        onClick={() => {
+                          openStudentModal(student.userId);
+                          console.log(student);
+                        }}
                         style={iconButtonStyle}
                       >
                         Edit
@@ -754,7 +724,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                       <button
                         onClick={() =>
                           confirmDeleteStudent(
-                            student.id,
+                            student.userId!,
                             student.studentFullName,
                           )
                         }

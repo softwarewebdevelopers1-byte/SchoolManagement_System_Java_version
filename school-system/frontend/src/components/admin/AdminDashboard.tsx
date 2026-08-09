@@ -37,6 +37,7 @@ import {
   type StudentSubjectEnrollment,
   type SubjectEnrollmentMode,
 } from "../../lib/subjectEnrollment";
+import { useClassesData } from "../../lib/adminData";
 
 const navItems: NavItem[] = [
   {
@@ -383,17 +384,7 @@ const AdminDashboard: React.FC = () => {
     window.location.href = "/change-password";
   };
 
-  const classes = useMemo(
-    () =>
-      deriveClasses(
-        students,
-        teachers,
-        subjects,
-        assignments,
-        classSubjectSettings,
-      ),
-    [students, teachers, subjects, assignments, classSubjectSettings],
-  );
+  const { classesFound } = useClassesData();
 
   const loadDashboardUsers = async () => {
     try {
@@ -490,6 +481,7 @@ const AdminDashboard: React.FC = () => {
       classId: string;
       schoolId: string;
       gender?: string;
+      status?: string;
     },
     studentId?: string,
   ) => {
@@ -500,7 +492,7 @@ const AdminDashboard: React.FC = () => {
 
     try {
       if (studentId) {
-        console.log("payload :", payload);
+        console.log("payload :", payload.status);
 
         await request(`/update/student`, {
           method: "PATCH",
@@ -522,6 +514,8 @@ const AdminDashboard: React.FC = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
+      console.log("Id to be deleted ", studentId);
+
       await api.delete(`/users/${studentId}`);
       await loadDashboardUsers();
       showSuccess("Student record deleted.");
@@ -877,10 +871,10 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
-  const unassignedCount = classes.filter(
+  const unassignedCount = classesFound.filter(
     (currentClass) => !currentClass.classTeacherId,
   ).length;
-  const assignedCT = classes.filter(
+  const assignedCT = classesFound.filter(
     (currentClass) => currentClass.classTeacherId,
   ).length;
   const tabTitle = useMemo(() => {
@@ -942,7 +936,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <StudentsTab
           students={students}
-          classes={classes}
+          classes={classesFound}
           subjects={subjects}
           classSubjectSettings={classSubjectSettings}
           onSaveStudent={saveStudent}
@@ -959,7 +953,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <SubjectsTab
           subjects={subjects}
-          classes={classes}
+          classes={classesFound}
           onSaveSubject={saveSubject}
           onDeleteSubject={deleteSubject}
           showModal={showModal}
@@ -995,7 +989,7 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "performance") {
       return (
         <PerformanceTab
-          classes={classes}
+          classes={classesFound}
           students={students}
           subjects={subjects}
           avatar={avatar}
@@ -1007,7 +1001,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <TeachersTab
           teachers={teachers}
-          classes={classes}
+          classes={classesFound}
           onSaveTeacher={saveTeacher}
           onDeleteTeacher={deleteTeacher}
           avatar={avatar}
@@ -1022,7 +1016,7 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "assignments") {
       return (
         <AssignmentsTab
-          classes={classes}
+          classes={classesFound}
           teachers={teachers}
           subjects={subjects}
           students={students}
@@ -1051,7 +1045,7 @@ const AdminDashboard: React.FC = () => {
           initialData={currentPeriod}
           finalGrade={finalGrade}
           gradeOptions={Array.from(
-            new Set(classes.map((current) => current.grade)),
+            new Set(classesFound.map((current) => current.grade)),
           )}
         />
       );
@@ -1062,7 +1056,9 @@ const AdminDashboard: React.FC = () => {
         term: teachers[0]?.term || 1,
         year: teachers[0]?.year || new Date().getFullYear(),
       };
-      return <TimetableTab classes={classes} currentPeriod={currentPeriod} />;
+      return (
+        <TimetableTab classes={classesFound} currentPeriod={currentPeriod} />
+      );
     }
 
     if (activeTab === "cbc-grading") {
@@ -1107,11 +1103,11 @@ const AdminDashboard: React.FC = () => {
         mobileOpen={mobileMenuOpen}
         activeTab={activeTab}
         navItems={navItems}
-        classesCount={classes.length}
+        classesCount={classesFound.length}
         subjectsCount={subjects.length}
         teachersCount={teachers.length}
         assignedCT={assignedCT}
-        totalClasses={classes.length}
+        totalClasses={classesFound.length}
         unassignedCount={unassignedCount}
         onToggleCollapse={() => setCollapsed((current) => !current)}
         onSelectTab={handleSelectTab}
