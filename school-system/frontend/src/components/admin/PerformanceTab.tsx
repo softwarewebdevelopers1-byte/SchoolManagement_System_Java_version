@@ -161,8 +161,8 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       targetStudents.forEach(s => {
         rowsByStudent.set(s.id, {
           id: s.id,
-          name: s.name,
-          admissionNo: s.adm || s.admissionNo || "-",
+          name: s.studentFullName,
+          admissionNo: s.studentAdm || "-",
           stream: s.classStream || "",
           marks: {},
           total: 0,

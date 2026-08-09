@@ -3,6 +3,7 @@ package com.example.school.system.DTO.DTOResponse;
 import java.util.UUID;
 
 import com.example.school.system.types.AccountStatus;
+import com.example.school.system.types.Gender;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -12,9 +13,13 @@ import lombok.Setter;
 @Setter
 @Builder
 public class GetAllStudentsDTORes {
-    String fullName;
-    String adm;
+    String studentFullName;
+    String studentAdm;
     AccountStatus status;
     UUID userId;
     String email;
+    String classStream;
+    String classGrade;
+    String classId;
+    Gender gender;
 }

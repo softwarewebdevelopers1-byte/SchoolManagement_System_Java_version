@@ -68,9 +68,18 @@ public class GetStudentsService {
 
         return allStudents.stream().map(s -> {
             StudentProfile studentProfile = s.getStudentProfile();
-            return GetAllStudentsDTORes.builder().fullName(studentProfile.getStudentFullName())
-                    .adm(studentProfile.getStudentAdm()).status(s.getStatus()).userId(s.getId())
+            return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
+                    .studentAdm(studentProfile.getStudentAdm()).status(s.getStatus()).userId(s.getId())
                     .email(s.getEmail())
+                    .classGrade(s.getStudentProfile().getSchoolClass() != null
+                            ? s.getStudentProfile().getSchoolClass().getClassGrade().toString()
+                            : null)
+                    .classStream(s.getStudentProfile().getSchoolClass() != null
+                            ? s.getStudentProfile().getSchoolClass().getClassStream()
+                            : null)
+                    .classId(s.getStudentProfile() != null
+                            ? s.getStudentProfile().getSchoolClass().getClassId().toString()
+                            : null)
                     .build();
         }).toList();
     }

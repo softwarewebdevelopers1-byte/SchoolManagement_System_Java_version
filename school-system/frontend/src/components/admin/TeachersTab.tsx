@@ -401,8 +401,8 @@ const StaffFormModal: React.FC<{
               let splitNames = name.split(" ");
               await onSave({
                 roles: role,
-                firstName: splitNames[0].trim(),
-                lastName: splitNames[1].trim(),
+                firstName: splitNames[0]?.trim(),
+                lastName: splitNames[1]?.trim(),
                 password: password?.trim(),
                 email: email.trim(),
                 phone: phone.trim(),

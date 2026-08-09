@@ -3,11 +3,14 @@ package com.example.school.system.models;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.school.system.types.Gender;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -48,10 +51,11 @@ public class StudentProfile {
     private String guardianPhone;
 
     @Column(name = "gender")
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @OneToMany(mappedBy = "studentProfile")
-    List<StudentSubjectSelection> studentSubjectSelections;
+    private List<StudentSubjectSelection> studentSubjectSelections;
 
     @OneToMany(mappedBy = "StudentProfile")
     List<MarksRow> marks;

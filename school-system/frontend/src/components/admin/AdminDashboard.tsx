@@ -30,7 +30,7 @@ import {
   ExitedStudent,
 } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import { api, request } from "../../lib/api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -130,12 +130,11 @@ const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
     subjects: member.subjects || [],
   }));
 
-const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
-  students.map((student) => ({
+const mapStudentsFromApi = (students: any): Student[] =>
+  students.map((student: any) => ({
     id: student.id,
-    admissionNo: student.admissionNo,
-    adm: student.admissionNo || (student as any).adm,
-    name: student.name,
+    studentAdm: student.admissionNo,
+    studentFullName: student.name,
     gender: student.gender,
     guardianName: student.guardianName,
     guardianPhone: student.guardianPhone,
@@ -249,9 +248,9 @@ const deriveClasses = (
         droppedSubjectIds,
         compulsorySubjectIds,
         electiveSubjectIds,
-        term: classTeacher?.term || student.term || 1,
-        year: classTeacher?.year || student.year || 2024,
-        examType: classTeacher?.examType || student.examType || "opener",
+        term: classTeacher?.term || 1,
+        year: classTeacher?.year || 2024,
+        examType: classTeacher?.examType || "opener",
       });
     });
 
@@ -484,27 +483,29 @@ const AdminDashboard: React.FC = () => {
 
   const saveStudent = async (
     payload: {
-      name: string;
-      admissionNo: string;
-      gender: string;
-      guardianName: string;
-      guardianPhone: string;
-      classGrade: string;
-      classStream: string;
-      status: string;
-      enrolledSubjects: StudentSubjectEnrollment[];
+      studentFullName: string;
+      studentAdm: string;
+      // email: string;
+      phoneNumber: string;
+      classId: string;
+      schoolId: string;
+      gender?: string;
     },
     studentId?: string,
   ) => {
     const body = {
       role: "student",
       ...payload,
-      status: payload.status.toLowerCase(),
     };
 
     try {
       if (studentId) {
-        await api.put(`/users/${studentId}`, body);
+        console.log("payload :", payload);
+
+        await request(`/update/student`, {
+          method: "PATCH",
+          body: JSON.stringify({ ...payload, studentId }),
+        });
       } else {
         await api.post("/users", body);
       }
@@ -1039,10 +1040,9 @@ const AdminDashboard: React.FC = () => {
 
     if (activeTab === "cycle") {
       const currentPeriod = {
-        term: teachers[0]?.term || students[0]?.term || 1,
-        year:
-          teachers[0]?.year || students[0]?.year || new Date().getFullYear(),
-        examType: teachers[0]?.examType || students[0]?.examType || "opener",
+        term: teachers[0]?.term || 1,
+        year: teachers[0]?.year || new Date().getFullYear(),
+        examType: teachers[0]?.examType || "opener",
       };
       return (
         <CycleTab
@@ -1059,9 +1059,8 @@ const AdminDashboard: React.FC = () => {
 
     if (activeTab === "timetables") {
       const currentPeriod = {
-        term: teachers[0]?.term || students[0]?.term || 1,
-        year:
-          teachers[0]?.year || students[0]?.year || new Date().getFullYear(),
+        term: teachers[0]?.term || 1,
+        year: teachers[0]?.year || new Date().getFullYear(),
       };
       return <TimetableTab classes={classes} currentPeriod={currentPeriod} />;
     }

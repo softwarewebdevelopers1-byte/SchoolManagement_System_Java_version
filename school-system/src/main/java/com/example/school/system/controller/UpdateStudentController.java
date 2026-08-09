@@ -1,6 +1,5 @@
 package com.example.school.system.controller;
 
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -12,6 +11,7 @@ import com.example.school.system.DTO.UpdateStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.UpdateStudentService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -21,8 +21,8 @@ public class UpdateStudentController {
     private final UpdateStudentService UpdateStudentService;
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/id")
-    public ResponseEntity<?> updateStudent(@RequestBody UpdateStudentDTO updateStudentDTO) {
+    @PatchMapping("/student")
+    public ResponseEntity<?> updateStudent(@Valid @RequestBody UpdateStudentDTO updateStudentDTO) {
         UpdateStudentService.updateStudent(updateStudentDTO);
         return ResponseEntity.status(200).body(SchoolApiResponse.success("student updated"));
     }

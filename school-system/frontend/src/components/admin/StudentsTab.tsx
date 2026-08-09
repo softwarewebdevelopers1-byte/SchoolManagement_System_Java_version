@@ -7,6 +7,8 @@ import {
   getClassSubjectSetting,
   getElectiveSubjectIdsForClass,
 } from "../../lib/subjectEnrollment";
+import { useClassesData } from "../../lib/adminData";
+import { getSchoolId, request } from "../../lib/api";
 
 const eyebrowStyle: React.CSSProperties = {
   fontSize: 10,
@@ -183,89 +185,45 @@ const StatCard: React.FC<{
 
 const StudentFormModal: React.FC<{
   student: Student | null;
-  currentClass: Class | null;
+  currentClass: any;
   gradeOptions: string[];
   streamOptions: string[];
   subjects: Subject[];
   classSubjectSettings: ClassSubjectSetting[];
   onClose: () => void;
   onSave: (payload: {
-    name: string;
-    admissionNo: string;
-    gender: string;
-    guardianName: string;
-    guardianPhone: string;
-    classGrade: string;
-    classStream: string;
-    status: string;
-    enrolledSubjects: Student["enrolledSubjects"];
+    studentFullName: string;
+    studentAdm: string;
+    email: string;
+    phoneNumber: string;
+    classId: string;
+    schoolId: string;
+    gender?: string;
   }) => Promise<void>;
-}> = ({
-  student,
-  currentClass,
-  gradeOptions,
-  streamOptions,
-  subjects,
-  classSubjectSettings,
-  onClose,
-  onSave,
-}) => {
+}> = ({ student, onClose, onSave }) => {
   const [isCompact, setIsCompact] = React.useState(
     () => typeof window !== "undefined" && window.innerWidth <= 640,
   );
-  const [name, setName] = useState(student?.name || "");
-  const [admissionNo, setAdmissionNo] = useState(student?.admissionNo || "");
-  const [grade, setGrade] = useState(currentClass?.grade || "");
-  const [stream, setStream] = useState(currentClass?.stream || "");
-  const [gender, setGender] = useState(student?.gender || "Female");
-  const [status, setStatus] = useState(student?.status || "Active");
-  const [guardianName, setGuardianName] = useState(student?.guardianName || "");
-  const [guardianPhone, setGuardianPhone] = useState(student?.guardianPhone || "");
-  const [selectedElectiveIds, setSelectedElectiveIds] = useState<string[]>(
-    (student?.enrolledSubjects || []).filter((item) => item.isActive !== false).map((item) => item.subjectId),
+  const [name, setName] = useState(student?.studentFullName || "");
+  const [admissionNo, setAdmissionNo] = useState(student?.studentAdm || "");
+  const [grade, setGrade] = useState(
+    `${student?.classGrade} ${student?.classStream}`,
+  );
+  const { classesFound } = useClassesData() as any;
+
+  const [classSelectedId, setclassSelectedId] = useState(() => {
+    let c = classesFound?.filter((c: any) => c.className === grade);
+    return c[0]?.classId;
+  });
+  // const [stream, setStream] = useState(currentClass?.stream || "");
+  const [gender, setGender] = useState(student?.gender || "");
+  const [status, setStatus] = useState(student?.status || "");
+  const [email, setEmail] = useState(student?.gender);
+  const [guardianPhone, setGuardianPhone] = useState(
+    student?.phoneNumber || "",
   );
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const electiveSubjectIds = useMemo(
-    () => getElectiveSubjectIdsForClass(classSubjectSettings, grade, stream),
-    [classSubjectSettings, grade, stream],
-  );
-  const electiveSubjects = useMemo(
-    () =>
-      subjects
-        .filter((subject) => electiveSubjectIds.includes(subject.id))
-        .map((subject) => {
-          const setting = getClassSubjectSetting(classSubjectSettings, subject.id, grade, stream);
-          return {
-            ...subject,
-            isOffered: setting.isOffered,
-            enrollmentMode: setting.enrollmentMode,
-            sharedSlotId: setting.sharedSlotId,
-          };
-        }),
-    [classSubjectSettings, electiveSubjectIds, grade, stream, subjects],
-  );
-  const electiveGroups = useMemo(
-    () => buildElectiveSubjectGroups(electiveSubjects),
-    [electiveSubjects],
-  );
-  const linkedElectiveGroups = useMemo(
-    () => electiveGroups.filter((group) => group.isLinkedGroup),
-    [electiveGroups],
-  );
-  const standaloneElectives = useMemo(
-    () => electiveGroups.filter((group) => !group.isLinkedGroup).flatMap((group) => group.subjects),
-    [electiveGroups],
-  );
-  const compulsorySubjects = useMemo(
-    () =>
-      subjects.filter((subject) => {
-        const setting = getClassSubjectSetting(classSubjectSettings, subject.id, grade, stream);
-        return setting.isOffered !== false && (setting.enrollmentMode || "compulsory") === "compulsory";
-      }),
-    [classSubjectSettings, grade, stream, subjects],
-  );
 
   React.useEffect(() => {
     const handleResize = () => setIsCompact(window.innerWidth <= 640);
@@ -273,38 +231,12 @@ const StudentFormModal: React.FC<{
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  React.useEffect(() => {
-    setSelectedElectiveIds((current) =>
-      current.filter((subjectId) => electiveSubjectIds.includes(subjectId)),
-    );
-  }, [electiveSubjectIds]);
-
-  React.useEffect(() => {
-    const validSubjectIds = new Set(electiveSubjects.map((subject) => subject.id));
-
-    setSelectedElectiveIds((current) => {
-      let next = current.filter((subjectId) => validSubjectIds.has(subjectId));
-
-      linkedElectiveGroups.forEach((group) => {
-        const groupSubjectIds = new Set(group.subjects.map((subject) => subject.id));
-        const selectedWithinGroup = next.filter((subjectId) => groupSubjectIds.has(subjectId));
-
-        if (selectedWithinGroup.length > 1) {
-          const [keepSubjectId] = selectedWithinGroup;
-          next = next.filter(
-            (subjectId) => !groupSubjectIds.has(subjectId) || subjectId === keepSubjectId,
-          );
-        }
-      });
-
-      return next;
-    });
-  }, [electiveSubjects, linkedElectiveGroups]);
-
   return (
     <div>
       <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>{student ? "Update student" : "Add student"}</h3>
+        <h3 style={modalTitleStyle}>
+          {student ? "Update student" : "Add student"}
+        </h3>
         <button onClick={onClose} style={closeButtonStyle}>
           x
         </button>
@@ -312,7 +244,17 @@ const StudentFormModal: React.FC<{
 
       <div style={{ padding: isCompact ? "14px 14px 18px" : "18px 22px 22px" }}>
         {errorMsg && (
-          <div style={{ padding: "10px", marginBottom: "15px", background: "#fdeaea", color: "#a32d2d", borderRadius: "8px", fontSize: "13px", fontWeight: 600 }}>
+          <div
+            style={{
+              padding: "10px",
+              marginBottom: "15px",
+              background: "#fdeaea",
+              color: "#a32d2d",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
             {errorMsg}
           </div>
         )}
@@ -327,7 +269,13 @@ const StudentFormModal: React.FC<{
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr", gap: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr",
+            gap: 12,
+          }}
+        >
           <div>
             <label style={labelStyle}>Admission no.</label>
             <input
@@ -340,68 +288,63 @@ const StudentFormModal: React.FC<{
           </div>
           <div>
             <label style={labelStyle}>Gender</label>
-            <select value={gender} onChange={(event) => setGender(event.target.value)} style={inputStyle}>
+            <select
+              value={gender}
+              onChange={(event) => setGender(event.target.value)}
+              style={inputStyle}
+            >
               <option value="Female">Female</option>
               <option value="Male">Male</option>
             </select>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr", gap: 12, marginTop: "1rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr",
+            gap: 12,
+            marginTop: "1rem",
+          }}
+        >
           <div>
-            <label style={labelStyle}>Grade</label>
-            <input
-              list="student-grade-options"
+            <label style={labelStyle}>class</label>
+            <select
               value={grade}
-              onChange={(event) => setGrade(event.target.value)}
-              placeholder="e.g. 7"
+              onChange={(event) => {
+                setGrade(event.target.value);
+                let c = classesFound?.filter(
+                  (c: any) => c.className === event.target.value,
+                );
+                setclassSelectedId(c[0].classId);
+              }}
               style={inputStyle}
-            />
-            <datalist id="student-grade-options">
-              {gradeOptions.map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
-          </div>
-          <div>
-            <label style={labelStyle}>Stream</label>
-            <input
-              list="student-stream-options"
-              value={stream}
-              onChange={(event) => setStream(event.target.value)}
-              placeholder="e.g. North"
-              style={inputStyle}
-            />
-            <datalist id="student-stream-options">
-              {streamOptions.filter(Boolean).map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
+            >
+              {classesFound.map((c: any) => {
+                return (
+                  <option key={c.classId} value={c.className}>
+                    {c.className}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         </div>
 
         {student && (
           <div style={{ marginTop: "1rem" }}>
             <label style={labelStyle}>Status</label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)} style={inputStyle}>
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              style={inputStyle}
+            >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
               <option value="Completed">Completed</option>
             </select>
           </div>
         )}
-
-        <div style={{ marginTop: "1rem" }}>
-          <label style={labelStyle}>Guardian name</label>
-          <input
-            type="text"
-            value={guardianName}
-            onChange={(event) => setGuardianName(event.target.value)}
-            placeholder="e.g. Mary Wanjiru"
-            style={inputStyle}
-          />
-        </div>
-
         <div style={{ marginTop: "1rem" }}>
           <label style={labelStyle}>Guardian phone</label>
           <input
@@ -426,145 +369,17 @@ const StudentFormModal: React.FC<{
         >
           <div>
             <p style={{ ...labelStyle, marginBottom: 4 }}>Subject enrollment</p>
-            <p style={{ margin: 0, fontSize: 12, color: "var(--textMut)", lineHeight: 1.5 }}>
-              Compulsory subjects apply to the whole class automatically. Elective subjects must be selected per student.
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                color: "var(--textMut)",
+                lineHeight: 1.5,
+              }}
+            >
+              Compulsory subjects apply to the whole class automatically.
+              Elective subjects must be selected per student.
             </p>
-          </div>
-
-          <div>
-            <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-              Compulsory subjects ({compulsorySubjects.length})
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: "var(--textMut)", lineHeight: 1.5 }}>
-              {compulsorySubjects.length > 0
-                ? compulsorySubjects.map((subject) => subject.name).join(", ")
-                : "No compulsory subjects are active for this class yet."}
-            </p>
-          </div>
-
-          <div>
-            <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-              Electives ({electiveSubjects.length})
-            </p>
-            {electiveSubjects.length === 0 ? (
-              <p style={{ margin: 0, fontSize: 12, color: "var(--textMut)" }}>
-                No elective subjects are configured for Grade {grade || "-"} {stream || ""}.
-              </p>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {linkedElectiveGroups.map((group) => {
-                  const selectedSubjectId =
-                    group.subjects.find((subject) => selectedElectiveIds.includes(subject.id))?.id || "";
-
-                  return (
-                    <div
-                      key={group.key}
-                      style={{
-                        border: "1px solid var(--border)",
-                        borderRadius: 10,
-                        background: "var(--white)",
-                        padding: "10px 12px",
-                        display: "grid",
-                        gap: 8,
-                      }}
-                    >
-                      <div>
-                        <p style={{ margin: "0 0 3px", fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
-                          {group.label}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--textMut)" }}>
-                          Linked elective pair{group.sharedSlotId ? ` | Block ${group.sharedSlotId}` : ""}
-                        </p>
-                      </div>
-
-                      <div style={{ display: "grid", gap: 8 }}>
-                        {group.subjects.map((subject) => (
-                          <label
-                            key={subject.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              gap: 10,
-                              padding: "8px 10px",
-                              borderRadius: 8,
-                              border: "1px solid var(--border)",
-                              background:
-                                selectedSubjectId === subject.id ? "rgba(201,150,61,0.10)" : "var(--sand)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <input
-                              type="radio"
-                              name={`elective-group-${group.key}`}
-                              checked={selectedSubjectId === subject.id}
-                              onChange={() =>
-                                setSelectedElectiveIds((current) => {
-                                  const groupSubjectIds = new Set(
-                                    group.subjects.map((groupSubject) => groupSubject.id),
-                                  );
-                                  const withoutGroup = current.filter(
-                                    (value) => !groupSubjectIds.has(value),
-                                  );
-                                  return [...withoutGroup, subject.id];
-                                })
-                              }
-                            />
-                            <span style={{ display: "grid", gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
-                                {subject.name}
-                              </span>
-                              <span style={{ fontSize: 11, color: "var(--textMut)" }}>
-                                {formatSubjectOfferingTag(subject.enrollmentMode, subject.sharedSlotId)}
-                              </span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {standaloneElectives.map((subject) => {
-                  const checked = selectedElectiveIds.includes(subject.id);
-
-                  return (
-                    <label
-                      key={subject.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 10,
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        border: "1px solid var(--border)",
-                        background: "var(--white)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) =>
-                          setSelectedElectiveIds((current) =>
-                            event.target.checked
-                              ? [...current, subject.id]
-                              : current.filter((value) => value !== subject.id),
-                          )
-                        }
-                      />
-                      <span style={{ display: "grid", gap: 2 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
-                          {subject.name}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--textMut)" }}>
-                          {formatSubjectOfferingTag(subject.enrollmentMode, subject.sharedSlotId)}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
 
@@ -582,13 +397,7 @@ const StudentFormModal: React.FC<{
           </button>
           <button
             onClick={async () => {
-              if (
-                !name.trim() ||
-                !admissionNo.trim() ||
-                !grade.trim() ||
-                !guardianName.trim() ||
-                !guardianPhone.trim()
-              ) {
+              if (!name.trim() || !grade.trim()) {
                 setErrorMsg("Fill in the required student details.");
                 return;
               }
@@ -597,15 +406,13 @@ const StudentFormModal: React.FC<{
               setSaving(true);
               try {
                 await onSave({
-                  name: name.trim(),
-                  admissionNo: admissionNo.trim(),
-                  gender,
-                  guardianName: guardianName.trim(),
-                  guardianPhone: guardianPhone.trim(),
-                  classGrade: grade.trim(),
-                  classStream: stream.trim(),
-                  status,
-                  enrolledSubjects: buildEnrolledSubjectsPayload(selectedElectiveIds, grade.trim(), stream.trim()),
+                  studentFullName: name.trim(),
+                  studentAdm: admissionNo.trim(),
+                  gender: gender,
+                  phoneNumber: guardianPhone.trim(),
+                  classId: classSelectedId || "",
+                  schoolId: getSchoolId()!,
+                  email: "",
                 });
               } finally {
                 setSaving(false);
@@ -629,15 +436,13 @@ interface StudentsTabProps {
   classSubjectSettings: ClassSubjectSetting[];
   onSaveStudent: (
     payload: {
-      name: string;
-      admissionNo: string;
-      gender: string;
-      guardianName: string;
-      guardianPhone: string;
-      classGrade: string;
-      classStream: string;
-      status: string;
-      enrolledSubjects: Student["enrolledSubjects"];
+      studentFullName: string;
+      studentAdm: string;
+      email: string;
+      phoneNumber: string;
+      classId: string;
+      schoolId: string;
+      gender?: string;
     },
     studentId?: string,
   ) => Promise<void>;
@@ -649,20 +454,20 @@ interface StudentsTabProps {
 }
 
 export const StudentsTab: React.FC<StudentsTabProps> = ({
-  students,
   classes,
   subjects,
   classSubjectSettings,
   onSaveStudent,
   onDeleteStudent,
-  pill,
   showModal,
   closeModal,
   showConfirm,
+  pill,
 }) => {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [students, setStudents] = useState<Student[]>([]);
   const pageSize = 50;
 
   const classLookup = useMemo(
@@ -673,6 +478,14 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
       }, {}),
     [classes],
   );
+  useEffect(() => {
+    (async () => {
+      async function getStudents(): Promise<Student[]> {
+        return await request(`/get/all/students?schoolId=${getSchoolId()!}`);
+      }
+      setStudents(await getStudents());
+    })();
+  }, []);
   const subjectLookup = useMemo(
     () =>
       subjects.reduce<Record<string, Subject>>((acc, subject) => {
@@ -685,9 +498,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const filteredStudents = students.filter((student) => {
     const query = search.toLowerCase();
     const matchesSearch =
-      student.name.toLowerCase().includes(query) ||
-      student.admissionNo.toLowerCase().includes(query) ||
-      student.guardianName.toLowerCase().includes(query);
+      student.studentFullName?.toLowerCase().includes(query) ||
+      student.studentAdm?.toLowerCase().includes(query);
     const matchesClass =
       classFilter === "all" || student.classId === classFilter;
     return matchesSearch && matchesClass;
@@ -705,21 +517,27 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
 
   const openStudentModal = (studentId?: string) => {
     const student = studentId
-      ? students.find((current) => current.id === studentId) || null
+      ? students.find((current) => current?.userId === studentId) || null
       : null;
-    const currentClass = student ? classLookup[student.classId] : null;
+    const currentClass = student
+      ? `${student?.classGrade} ${student?.classStream}`
+      : null;
 
     showModal(
       <StudentFormModal
         student={student}
         currentClass={currentClass}
-        gradeOptions={Array.from(new Set(classes.map((current) => current.grade)))}
-        streamOptions={Array.from(new Set(classes.map((current) => current.stream || "")))}
+        gradeOptions={Array.from(
+          new Set(classes.map((current) => current.grade)),
+        )}
+        streamOptions={Array.from(
+          new Set(classes.map((current) => current.stream || "")),
+        )}
         subjects={subjects}
         classSubjectSettings={classSubjectSettings}
         onClose={closeModal}
         onSave={async (payload) => {
-          await onSaveStudent(payload, student?.id);
+          await onSaveStudent(payload, studentId);
         }}
       />,
     );
@@ -735,8 +553,9 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
     );
   };
 
-  const totalActive = students.filter((student) => student.status === "Active")
-    .length;
+  const totalActive = students.filter(
+    (student) => student.status === "Active",
+  ).length;
 
   return (
     <div className="anim">
@@ -755,7 +574,14 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
           <h2 style={pageTitleStyle}>Student management</h2>
         </div>
 
-        <div style={{ display: "flex", gap: 9, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 9,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -789,10 +615,16 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         }}
       >
         <StatCard label="Enrolled students" value={students.length} />
-        <StatCard label="Active students" value={totalActive} accent="var(--sText)" />
+        <StatCard
+          label="Active students"
+          value={totalActive}
+          accent="var(--sText)"
+        />
         <StatCard
           label="Classes with learners"
-          value={classes.filter((currentClass) => currentClass.students > 0).length}
+          value={
+            students.filter((s) => s.status?.toLowerCase() === "active").length
+          }
           accent="#1a4a99"
         />
       </div>
@@ -806,7 +638,9 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
           WebkitOverflowScrolling: "touch",
         }}
       >
-        <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
+        <table
+          style={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}
+        >
           <thead>
             <tr style={{ background: "var(--sand)" }}>
               {[
@@ -822,9 +656,21 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                   style={{
                     ...tableHeadingStyle,
                     ...(heading === "Student"
-                      ? { position: "sticky", left: 0, zIndex: 2, background: "var(--sand)", minWidth: 210 }
+                      ? {
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 2,
+                          background: "var(--sand)",
+                          minWidth: 210,
+                        }
                       : heading === "Admission no."
-                        ? { position: "sticky", left: 210, zIndex: 2, background: "var(--sand)", minWidth: 130 }
+                        ? {
+                            position: "sticky",
+                            left: 210,
+                            zIndex: 2,
+                            background: "var(--sand)",
+                            minWidth: 130,
+                          }
                         : {}),
                   }}
                 >
@@ -834,43 +680,54 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
             </tr>
           </thead>
           <tbody>
+            {filteredStudents.length === 0 && (
+              <tr>
+                <td colSpan={6} style={emptyCellStyle}>
+                  No enrolled students match this filter.
+                </td>
+              </tr>
+            )}
             {pagedStudents.map((student) => {
-              const currentClass = classLookup[student.classId];
-              const classElectives = (student.enrolledSubjects || [])
-                .filter(
-                  (entry) =>
-                    entry.isActive !== false &&
-                    entry.classGrade === student.classGrade &&
-                    (entry.classStream || "") === (student.classStream || ""),
-                )
-                .map((entry) => subjectLookup[entry.subjectId]?.name || "Unknown subject");
-
               return (
-                <tr key={student.id} style={{ borderTop: "1px solid var(--borderL)" }}>
-                  <td style={{ padding: "10px 13px", position: "sticky", left: 0, zIndex: 1, background: "var(--white)", minWidth: 210, boxShadow: "1px 0 0 var(--borderL)" }}>
-                    <p style={rowPrimaryTextStyle}>{student.name}</p>
+                <tr
+                  key={student.id}
+                  style={{ borderTop: "1px solid var(--borderL)" }}
+                >
+                  <td
+                    style={{
+                      padding: "10px 13px",
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 1,
+                      background: "var(--white)",
+                      minWidth: 210,
+                      boxShadow: "1px 0 0 var(--borderL)",
+                    }}
+                  >
+                    <p style={rowPrimaryTextStyle}>{student.studentFullName}</p>
                     <p style={rowMetaTextStyle}>{student.gender}</p>
                   </td>
-                  <td style={{ ...bodyTextStyle, position: "sticky", left: 210, zIndex: 1, background: "var(--white)", minWidth: 130, boxShadow: "1px 0 0 var(--borderL)" }}>{student.admissionNo}</td>
-                  <td style={{ padding: "10px 13px" }}>
-                    <p style={{ ...rowPrimaryTextStyle, fontWeight: 600 }}>
-                      {currentClass?.name || "Not assigned"}
-                    </p>
-                    <p style={rowMetaTextStyle}>
-                      Grade {currentClass?.grade || "-"}
-                      {currentClass?.stream ? ` - Stream ${currentClass.stream}` : ""}
-                    </p>
-                    <p style={rowMetaTextStyle}>
-                      {classElectives.length > 0
-                        ? `Electives: ${classElectives.join(", ")}`
-                        : "Electives: Compulsory only"}
-                    </p>
+                  <td
+                    style={{
+                      ...bodyTextStyle,
+                      position: "sticky",
+                      left: 210,
+                      zIndex: 1,
+                      background: "var(--white)",
+                      minWidth: 130,
+                      boxShadow: "1px 0 0 var(--borderL)",
+                    }}
+                  >
+                    {student.studentAdm}
                   </td>
                   <td style={{ padding: "10px 13px" }}>
                     <p style={{ ...rowPrimaryTextStyle, fontWeight: 600 }}>
-                      {student.guardianName}
+                      {`${student?.classGrade} ${student?.classStream}` ||
+                        "Not assigned"}
                     </p>
-                    <p style={rowMetaTextStyle}>{student.guardianPhone}</p>
+                  </td>
+                  <td style={{ padding: "10px 13px" }}>
+                    <p style={rowMetaTextStyle}>{student.phoneNumber}</p>
                   </td>
                   <td style={{ padding: "10px 13px" }}>
                     <span
@@ -888,11 +745,19 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                   </td>
                   <td style={{ padding: "10px 13px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => openStudentModal(student.id)} style={iconButtonStyle}>
+                      <button
+                        onClick={() => openStudentModal(student.userId)}
+                        style={iconButtonStyle}
+                      >
                         Edit
                       </button>
                       <button
-                        onClick={() => confirmDeleteStudent(student.id, student.name)}
+                        onClick={() =>
+                          confirmDeleteStudent(
+                            student.id,
+                            student.studentFullName,
+                          )
+                        }
                         style={{
                           ...iconButtonStyle,
                           background: "var(--dBg)",
@@ -907,21 +772,25 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                 </tr>
               );
             })}
-
-            {filteredStudents.length === 0 && (
-              <tr>
-                <td colSpan={6} style={emptyCellStyle}>
-                  No enrolled students match this filter.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
       {filteredStudents.length > pageSize && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
-            Page {currentPage} of {totalPages} | {filteredStudents.length} students
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
+          >
+            Page {currentPage} of {totalPages} | {filteredStudents.length}{" "}
+            students
           </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -934,7 +803,9 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
             <button
               style={secondaryButtonStyle}
               disabled={currentPage >= totalPages}
-              onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
+              onClick={() =>
+                setPage((previous) => Math.min(totalPages, previous + 1))
+              }
             >
               Next
             </button>

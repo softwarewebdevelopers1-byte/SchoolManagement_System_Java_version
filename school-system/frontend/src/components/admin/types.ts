@@ -55,25 +55,22 @@ export interface ClassFound {
   classId: string;
   className: string;
   classTeacher: string;
-  totalStudents:string
+  totalStudents: string;
 }
 
 export interface Student {
   id: string;
-  admissionNo: string;
-  adm?: string;
-  name: string;
-  gender: string;
-  guardianName: string;
-  guardianPhone: string;
+  studentFullName: string;
+  studentAdm: string;
+  email: string;
+  phoneNumber: string;
   classId: string;
+  schoolId: string;
+  gender?: string;
   classGrade: string;
-  classStream?: string;
-  enrolledSubjects: StudentSubjectEnrollment[];
-  status?: string;
-  term?: number;
-  year?: number;
-  examType?: string;
+  classStream: string;
+  status: string;
+  userId?: string;
 }
 
 export interface ApiTeacher {
@@ -97,20 +94,16 @@ export interface ApiTeacher {
 
 export interface ApiStudent {
   id: string;
-  admissionNo: string;
-  adm?: string;
-  name: string;
-  gender: string;
-  guardianName: string;
-  guardianPhone: string;
-  status?: string;
+  studentFullName: string;
+  studentAdm: string;
+  email: string;
+  phoneNumber: string;
+  classId: string;
+  schoolId: string;
+  gender?: string;
   classGrade: string;
-  classStream?: string;
-  joinDate?: string;
-  enrolledSubjects?: StudentSubjectEnrollment[];
-  term?: number;
-  year?: number;
-  examType?: string;
+  classStream: string;
+  status: string;
 }
 
 export interface ApiAssignment {

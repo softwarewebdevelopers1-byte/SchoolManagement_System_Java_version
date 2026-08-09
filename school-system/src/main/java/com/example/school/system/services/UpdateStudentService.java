@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.UpdateStudentDTO;
+import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.StudentProfile;
@@ -18,8 +19,10 @@ import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UpdateStudentService {
     private final UserRepository userRepository;
@@ -29,6 +32,8 @@ public class UpdateStudentService {
 
     @Transactional
     public void updateStudent(UpdateStudentDTO updateStudentDTO) {
+        log.info("Id update trial {}, student details \n name: {} \n email: {} ", updateStudentDTO.studentId(),
+                updateStudentDTO.studentFullName(), updateStudentDTO.email());
         Users student = userRepository.findByIdAndRolesContaining(updateStudentDTO.studentId(), UserRoles.STUDENT)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
         StudentProfile studentProfile = student.getStudentProfile();
@@ -39,7 +44,10 @@ public class UpdateStudentService {
         String phoneNumber = updateStudentDTO.phoneNumber();
         AccountStatus status = updateStudentDTO.status();
         UUID classId = updateStudentDTO.classId();
-        if (studentEmail != null) {
+        if (studentEmail != null && studentEmail != "" && !student.getEmail().equals(studentEmail)) {
+            if (userRepository.existsByEmail(studentEmail)) {
+                throw new SchoolResourceExistsExceptionHandler("student with that email already exists");
+            }
             studentEmail = studentEmail.trim().toLowerCase();
             student.setEmail(studentEmail);
         }
@@ -51,7 +59,10 @@ public class UpdateStudentService {
             fullName = fullName.trim().toLowerCase();
             studentProfile.setStudentFullName(fullName);
         }
-        if (studentAdm != null && studentProfile != null) {
+        if (studentAdm != null && studentProfile != null && !studentProfile.getStudentAdm().equals(studentAdm)) {
+            if (studentRepository.existsByStudentAdm(studentAdm)) {
+                throw new SchoolResourceExistsExceptionHandler("student with that email already exists");
+            }
             studentAdm = studentAdm.trim();
             studentProfile.setStudentAdm(studentAdm);
         }
@@ -66,10 +77,6 @@ public class UpdateStudentService {
             SchoolClass studentClass = schoolClassRepository.findById(classId)
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
             studentProfile.setSchoolClass(studentClass);
-        }
-        userRepository.save(student);
-        if (studentProfile != null) {
-            studentRepository.save(studentProfile);
         }
 
     }

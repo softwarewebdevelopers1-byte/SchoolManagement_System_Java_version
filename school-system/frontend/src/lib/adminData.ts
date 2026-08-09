@@ -43,23 +43,23 @@ export const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
   }));
 
 export const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
-  students.map((student) => ({
-    id: student.id,
-    admissionNo: student.admissionNo,
-    adm: student.admissionNo || (student as any).adm,
-    name: student.name,
-    gender: student.gender,
-    guardianName: student.guardianName,
-    guardianPhone: student.guardianPhone,
-    classId: buildClassId(student.classGrade, student.classStream),
-    classGrade: student.classGrade,
-    classStream: student.classStream || "",
-    enrolledSubjects: student.enrolledSubjects || [],
-    status: normalizeStatus(student.status),
-    term: student.term,
-    year: student.year,
-    examType: student.examType,
-  }));
+  students.map((student) => {
+    console.log(`each student ${student.studentFullName}`);
+
+    return {
+      id: student.id,
+      studentFullName: student.studentFullName,
+      studentAdm: student.studentAdm,
+      email: student.email,
+      phoneNumber: student.phoneNumber,
+      classId: student.classId,
+      schoolId: student.schoolId,
+      gender: student.gender,
+      classGrade: student.classGrade,
+      classStream: student.classStream,
+      status: student.status,
+    };
+  });
 
 export const deriveClasses = (
   students: Student[],
@@ -161,9 +161,9 @@ export const deriveClasses = (
         droppedSubjectIds,
         compulsorySubjectIds,
         electiveSubjectIds,
-        term: classTeacher?.term || student.term || 1,
-        year: classTeacher?.year || student.year || 2024,
-        examType: classTeacher?.examType || student.examType || "opener",
+        term: classTeacher?.term || 1,
+        year: classTeacher?.year || 2024,
+        examType: classTeacher?.examType || "opener",
       });
     });
 
@@ -297,6 +297,8 @@ export const fetchStudents = async (): Promise<Student[]> => {
   const response = await api.get<ApiStudent[]>(
     `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}`,
   );
+  console.log("response ", response);
+
   return mapStudentsFromApi(response || []).filter(
     (student) => student.status !== "Completed",
   );
@@ -437,10 +439,9 @@ export const fetchCurrentPeriod = async (): Promise<{
 }> => {
   const students = await fetchStudents();
   const teachers = await fetchTeachers();
-  const term = teachers[0]?.term || students[0]?.term || 1;
-  const year =
-    teachers[0]?.year || students[0]?.year || new Date().getFullYear();
-  const examType = teachers[0]?.examType || students[0]?.examType || "opener";
+  const term = teachers[0]?.term || 1;
+  const year = teachers[0]?.year || new Date().getFullYear();
+  const examType = teachers[0]?.examType || "opener";
   return { term, year, examType };
 };
 

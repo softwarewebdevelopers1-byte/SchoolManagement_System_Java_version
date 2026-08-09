@@ -19,6 +19,7 @@ import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.AccountStatus;
+import com.example.school.system.types.Gender;
 import com.example.school.system.types.UserRoles;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +82,7 @@ public class StudentRegistrationService {
 
         // Create student profile
         StudentProfile studentProfile = new StudentProfile();
+        studentProfile.setGender(registerStudentDTO.gender() != null ? registerStudentDTO.gender() : Gender.NOT_SET);
         studentProfile.setStudentFullName(registerStudentDTO.studentFullName());
         studentProfile.setStudentAdm(studentAdm);
         studentProfile.setPhoneNumber(registerStudentDTO.phoneNumber());
@@ -112,5 +114,3 @@ public class StudentRegistrationService {
         return admNumber;
     }
 }
-
-
