@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { api } from "./api";
+import { api, getSchoolId, request } from "./api";
 
 export interface CbcGradingBand {
-  id?: string;
-  minMarks: number;
-  maxMarks: number;
-  cbcBand: string;
+  bandId?: string;
+  minScore: number;
+  maxScore: number;
+  grade: string;
   points: number;
   sortOrder?: number;
 }
@@ -13,7 +13,7 @@ export interface CbcGradingBand {
 export const normalizeCbcBands = (bands: CbcGradingBand[]) =>
   [...bands].sort((left, right) => {
     const order = (left.sortOrder ?? 0) - (right.sortOrder ?? 0);
-    return order || right.minMarks - left.minMarks;
+    return order || right.minScore - left.minScore;
   });
 
 export const resolveCbcBand = (
@@ -27,11 +27,11 @@ export const resolveCbcBand = (
   const roundedMarks = Math.max(0, Math.min(100, Math.round(marks)));
   const band = normalizeCbcBands(bands).find(
     (candidate) =>
-      roundedMarks >= candidate.minMarks && roundedMarks <= candidate.maxMarks,
+      roundedMarks >= candidate.minScore && roundedMarks <= candidate.maxScore,
   );
 
   return band
-    ? { cbcBand: band.cbcBand, points: Number(band.points) || 0 }
+    ? { cbcBand: band.grade, points: Number(band.points) || 0 }
     : { cbcBand: "Unconfigured", points: 0 };
 };
 
@@ -49,12 +49,14 @@ export const resolveCbcBandByPoints = (
   );
 
   return band
-    ? { cbcBand: band.cbcBand, points: Number(band.points) || 0 }
+    ? { cbcBand: band.grade, points: Number(band.points) || 0 }
     : { cbcBand: "Unconfigured", points: roundedPoints };
 };
 
 export const cbcBandColor = (band: string) => {
-  const prefix = String(band || "").slice(0, 2).toUpperCase();
+  const prefix = String(band || "")
+    .slice(0, 2)
+    .toUpperCase();
   if (prefix === "EE") return "#1D9E75";
   if (prefix === "ME") return "#185FA5";
   if (prefix === "AE") return "#BA7517";
@@ -63,7 +65,9 @@ export const cbcBandColor = (band: string) => {
 };
 
 export const cbcBandBg = (band: string) => {
-  const prefix = String(band || "").slice(0, 2).toUpperCase();
+  const prefix = String(band || "")
+    .slice(0, 2)
+    .toUpperCase();
   if (prefix === "EE") return "#eaf7f1";
   if (prefix === "ME") return "#edf5fc";
   if (prefix === "AE") return "#fff7e7";
@@ -80,10 +84,18 @@ export const useCbcGradingBands = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await api.get<CbcGradingBand[]>("/grading/cbc");
-      setBands(normalizeCbcBands(response || []));
+      const response: any = await request(
+        `/create/grading-scale/${encodeURIComponent(getSchoolId()!)}`,
+      );
+      console.log("response ", response?.gradeBandDTOs);
+
+      setBands(normalizeCbcBands(response?.gradeBandDTOs || []));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load CBC grading configuration.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load CBC grading configuration.",
+      );
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { api } from "../../lib/api";
+import React, { useEffect, useMemo, useState } from "react";
+import { api, getSchoolId, request } from "../../lib/api";
 import {
   type CbcGradingBand,
   normalizeCbcBands,
@@ -52,17 +52,25 @@ const buttonStyle: React.CSSProperties = {
 
 const validateLocally = (bands: CbcGradingBand[]) => {
   const names = new Set<string>();
-  const sorted = [...bands].sort((left, right) => left.minMarks - right.minMarks);
+  const sorted = [...bands].sort(
+    (left, right) => left.minScore - right.minScore,
+  );
   if (sorted.length === 0) return "Add at least one grading band.";
-  if (sorted[0].minMarks !== 0) return "Ranges must start at 0 marks.";
-  if (sorted[sorted.length - 1].maxMarks !== 100) return "Ranges must end at 100 marks.";
+  if (sorted[0].minScore !== 0) return "Ranges must start at 0 marks.";
+  if (sorted[sorted.length - 1].maxScore !== 100)
+    return "Ranges must end at 100 marks.";
 
   for (const band of sorted) {
-    if (!String(band.cbcBand || "").trim()) return "Every row needs a CBC band name.";
-    const key = band.cbcBand.trim().toUpperCase();
+    if (!String(band.grade || "").trim())
+      return "Every row needs a CBC band name.";
+    const key = band.grade.trim().toUpperCase();
     if (names.has(key)) return `Duplicate CBC band "${key}" is not allowed.`;
     names.add(key);
-    if (band.minMarks < 0 || band.maxMarks > 100 || band.minMarks > band.maxMarks) {
+    if (
+      band.minScore < 0 ||
+      band.maxScore > 100 ||
+      band.minScore > band.maxScore
+    ) {
       return `${key} has an invalid range.`;
     }
   }
@@ -71,8 +79,10 @@ const validateLocally = (bands: CbcGradingBand[]) => {
     const previous = sorted[index - 1];
     const current = sorted[index];
     if (!previous || !current) continue;
-    if (current.minMarks <= previous.maxMarks) return `${current.cbcBand} overlaps with ${previous.cbcBand}.`;
-    if (current.minMarks > previous.maxMarks + 1) return `There is a gap between ${previous.maxMarks} and ${current.minMarks}.`;
+    if (current.minScore <= previous.maxScore)
+      return `${current.grade} overlaps with ${previous.grade}.`;
+    if (current.minScore > previous.maxScore + 1)
+      return `There is a gap between ${previous.maxScore} and ${current.minScore}.`;
   }
 
   return "";
@@ -81,16 +91,24 @@ const validateLocally = (bands: CbcGradingBand[]) => {
 export const CbcGradingConfigTab: React.FC = () => {
   const { bands, setBands, loading, error, reload } = useCbcGradingBands();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const validationMessage = useMemo(() => validateLocally(bands), [bands]);
+  console.log(bands);
 
-  const updateBand = (index: number, key: keyof CbcGradingBand, value: string) => {
+  const updateBand = (
+    index: number,
+    key: keyof CbcGradingBand,
+    value: string,
+  ) => {
     setBands((current) =>
       current.map((band, bandIndex) => {
         if (bandIndex !== index) return band;
         const nextValue =
-          key === "cbcBand"
+          key === "grade"
             ? value.toUpperCase()
             : Math.max(0, Number(value || 0));
         return { ...band, [key]: nextValue };
@@ -112,9 +130,9 @@ export const CbcGradingConfigTab: React.FC = () => {
     setBands((current) => [
       ...current,
       {
-        minMarks: 0,
-        maxMarks: 0,
-        cbcBand: "",
+        minScore: 0,
+        maxScore: 0,
+        grade: "",
         points: 0,
         sortOrder: current.length,
       },
@@ -123,7 +141,9 @@ export const CbcGradingConfigTab: React.FC = () => {
 
   const deleteBand = (index: number) => {
     setBands((current) =>
-      current.filter((_, bandIndex) => bandIndex !== index).map((band, sortOrder) => ({ ...band, sortOrder })),
+      current
+        .filter((_, bandIndex) => bandIndex !== index)
+        .map((band, sortOrder) => ({ ...band, sortOrder })),
     );
   };
 
@@ -136,13 +156,28 @@ export const CbcGradingConfigTab: React.FC = () => {
 
     try {
       setSaving(true);
-      const response = await api.put<{ message: string; bands: CbcGradingBand[] }>("/grading/cbc", {
-        bands: normalizeCbcBands(bands).map((band, sortOrder) => ({ ...band, sortOrder })),
+      const response = await api.put<{
+        message: string;
+        bands: CbcGradingBand[];
+      }>("/grading/cbc", {
+        bands: normalizeCbcBands(bands).map((band, sortOrder) => ({
+          ...band,
+          sortOrder,
+        })),
       });
       setBands(normalizeCbcBands(response.bands || []));
-      setMessage({ text: response.message || "CBC grading configuration saved.", type: "success" });
+      setMessage({
+        text: response.message || "CBC grading configuration saved.",
+        type: "success",
+      });
     } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : "Failed to save CBC grading configuration.", type: "error" });
+      setMessage({
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to save CBC grading configuration.",
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -151,14 +186,31 @@ export const CbcGradingConfigTab: React.FC = () => {
   return (
     <div className="anim" style={{ display: "grid", gap: 16 }}>
       <div>
-        <p style={{ fontSize: 10, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: ".09em", margin: 0 }}>
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "var(--gold)",
+            textTransform: "uppercase",
+            letterSpacing: ".09em",
+            margin: 0,
+          }}
+        >
           Settings
         </p>
-        <h2 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: "1.8rem", color: "var(--text)" }}>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: "var(--serif)",
+            fontSize: "1.8rem",
+            color: "var(--text)",
+          }}
+        >
           CBC Grading Configuration
         </h2>
         <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--textMut)" }}>
-          Configure the mark ranges, CBC bands, and points used by marksheets, rankings, reports, exports, and analytics.
+          Configure the mark ranges, CBC bands, and points used by marksheets,
+          rankings, reports, exports, and analytics.
         </p>
       </div>
 
@@ -167,8 +219,14 @@ export const CbcGradingConfigTab: React.FC = () => {
           style={{
             padding: "10px 14px",
             borderRadius: 10,
-            background: (message?.type === "error" || error || validationMessage) ? "#fdeaea" : "#eaf3de",
-            color: (message?.type === "error" || error || validationMessage) ? "#a32d2d" : "#3b6d11",
+            background:
+              message?.type === "error" || error || validationMessage
+                ? "#fdeaea"
+                : "#eaf3de",
+            color:
+              message?.type === "error" || error || validationMessage
+                ? "#a32d2d"
+                : "#3b6d11",
             fontSize: 13,
             fontWeight: 600,
           }}
@@ -178,15 +236,36 @@ export const CbcGradingConfigTab: React.FC = () => {
       )}
 
       <div style={panelStyle}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-          <button type="button" onClick={addBand} style={buttonStyle}>Add band</button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <button type="button" onClick={addBand} style={buttonStyle}>
+            Add band
+          </button>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={() => void reload()} style={buttonStyle}>Reload</button>
+            <button
+              type="button"
+              onClick={() => void reload()}
+              style={buttonStyle}
+            >
+              Reload
+            </button>
             <button
               type="button"
               onClick={saveBands}
               disabled={saving || Boolean(validationMessage)}
-              style={{ ...buttonStyle, background: "var(--gold)", color: "#fff", opacity: saving || validationMessage ? 0.6 : 1 }}
+              style={{
+                ...buttonStyle,
+                background: "var(--gold)",
+                color: "#fff",
+                opacity: saving || validationMessage ? 0.6 : 1,
+              }}
             >
               {saving ? "Saving..." : "Save configuration"}
             </button>
@@ -194,7 +273,9 @@ export const CbcGradingConfigTab: React.FC = () => {
         </div>
 
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}>
+          <table
+            style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}
+          >
             <thead>
               <tr>
                 <th style={thStyle}>Order</th>
@@ -207,22 +288,93 @@ export const CbcGradingConfigTab: React.FC = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} style={{ ...tdStyle, textAlign: "center", padding: 30 }}>Loading CBC grading configuration...</td></tr>
-              ) : bands.map((band, index) => (
-                <tr key={`${band.id || "new"}-${index}`}>
-                  <td style={tdStyle}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button type="button" onClick={() => moveBand(index, -1)} disabled={index === 0} style={buttonStyle}>Up</button>
-                      <button type="button" onClick={() => moveBand(index, 1)} disabled={index === bands.length - 1} style={buttonStyle}>Down</button>
-                    </div>
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{ ...tdStyle, textAlign: "center", padding: 30 }}
+                  >
+                    Loading CBC grading configuration...
                   </td>
-                  <td style={tdStyle}><input type="number" min={0} max={100} value={band.minMarks} onChange={(event) => updateBand(index, "minMarks", event.target.value)} style={inputStyle} /></td>
-                  <td style={tdStyle}><input type="number" min={0} max={100} value={band.maxMarks} onChange={(event) => updateBand(index, "maxMarks", event.target.value)} style={inputStyle} /></td>
-                  <td style={tdStyle}><input value={band.cbcBand} onChange={(event) => updateBand(index, "cbcBand", event.target.value)} style={inputStyle} /></td>
-                  <td style={tdStyle}><input type="number" min={0} value={band.points} onChange={(event) => updateBand(index, "points", event.target.value)} style={inputStyle} /></td>
-                  <td style={tdStyle}><button type="button" onClick={() => deleteBand(index)} style={{ ...buttonStyle, color: "#a32d2d" }}>Delete</button></td>
                 </tr>
-              ))}
+              ) : (
+                bands.map((band, index) => (
+                  <tr key={`${band?.bandId || "new"}-${index}`}>
+                    <td style={tdStyle}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => moveBand(index, -1)}
+                          disabled={index === 0}
+                          style={buttonStyle}
+                        >
+                          Up
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveBand(index, 1)}
+                          disabled={index === bands.length - 1}
+                          style={buttonStyle}
+                        >
+                          Down
+                        </button>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.minScore}
+                        onChange={(event) =>
+                          updateBand(index, "minScore", event.target.value)
+                        }
+                        style={inputStyle}
+                      />
+                    </td>
+                    <td style={tdStyle}>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.maxScore}
+                        onChange={(event) =>
+                          updateBand(index, "maxScore", event.target.value)
+                        }
+                        style={inputStyle}
+                      />
+                    </td>
+                    <td style={tdStyle}>
+                      <input
+                        value={band.grade}
+                        onChange={(event) =>
+                          updateBand(index, "grade", event.target.value)
+                        }
+                        style={inputStyle}
+                      />
+                    </td>
+                    <td style={tdStyle}>
+                      <input
+                        type="number"
+                        min={0}
+                        value={band.points}
+                        onChange={(event) =>
+                          updateBand(index, "points", event.target.value)
+                        }
+                        style={inputStyle}
+                      />
+                    </td>
+                    <td style={tdStyle}>
+                      <button
+                        type="button"
+                        onClick={() => deleteBand(index)}
+                        style={{ ...buttonStyle, color: "#a32d2d" }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
