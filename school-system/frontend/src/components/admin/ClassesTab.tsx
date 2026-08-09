@@ -288,21 +288,19 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const { teachers, classesFound } = useClassesData();
-  console.log(teachers[1], "<--teachers found");
+  console.log(classesFound, "<--teachers found");
 
-  const openAssignModal = (currentClass: Class) => {
+  const openAssignModal = (currentClass: any) => {
     showModal(
       <ClassTeacherModal
         currentClass={currentClass}
         teachers={teachers}
         onClose={closeModal}
         onSave={async (teacherId) => {
-          console.log("assigned class teacher id ", teacherId);
-
           await request("/update/class", {
             method: "PATCH",
             body: JSON.stringify({
-              classId: getClassId(),
+              classId: currentClass?.classId,
               schoolId: getSchoolId(),
               classTeacherId: teacherId,
             }),
