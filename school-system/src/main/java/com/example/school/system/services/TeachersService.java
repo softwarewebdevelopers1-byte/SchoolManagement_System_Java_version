@@ -112,7 +112,7 @@ public class TeachersService {
             throw new SchoolResourceExistsExceptionHandler("user already exists");
         }
 
-        if (editTeacher.password() != null) {
+        if (editTeacher.password() != null && editTeacher.password() != "") {
             user.setPassword(passwordHashing.PasswordEncoder().encode(editTeacher.password()));
         }
 
