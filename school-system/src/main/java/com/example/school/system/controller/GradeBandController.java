@@ -34,8 +34,6 @@ public class GradeBandController {
         GradingScale gradingScale = gradingService.getOrCreateDefaultScale(schoolId);
         List<GradeBandDTO> gradeBandDTOs = gradingScale.getBands().stream()
                 .map(b -> {
-                    log.info(b.getGrade().toString());
-                    ;
                     GradeBandDTO gradeBandDTO = GradeBandDTO.builder().bandId(b.getId()).grade(b.getGrade())
                             .minScore(b.getMinScore())
                             .maxScore(b.getMaxScore()).points(b.getPoints()).build();

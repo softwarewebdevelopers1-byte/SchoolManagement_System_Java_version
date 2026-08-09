@@ -78,6 +78,7 @@ export const cbcBandBg = (band: string) => {
 export const useCbcGradingBands = () => {
   const [bands, setBands] = useState<CbcGradingBand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [gradeScalerId, setGradeScalerId] = useState();
   const [error, setError] = useState("");
 
   const reload = async () => {
@@ -88,6 +89,7 @@ export const useCbcGradingBands = () => {
         `/create/grading-scale/${encodeURIComponent(getSchoolId()!)}`,
       );
       console.log("response ", response?.gradeBandDTOs);
+      setGradeScalerId(response?.gradeScaleId);
 
       setBands(normalizeCbcBands(response?.gradeBandDTOs || []));
     } catch (err) {
@@ -105,7 +107,7 @@ export const useCbcGradingBands = () => {
     void reload();
   }, []);
 
-  return { bands, setBands, loading, error, reload };
+  return { bands, setBands, loading, error, reload, gradeScalerId };
 };
 
 export const totalPointsForMarks = (

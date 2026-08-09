@@ -89,7 +89,8 @@ const validateLocally = (bands: CbcGradingBand[]) => {
 };
 
 export const CbcGradingConfigTab: React.FC = () => {
-  const { bands, setBands, loading, error, reload } = useCbcGradingBands();
+  const { bands, setBands, loading, error, reload, gradeScalerId } =
+    useCbcGradingBands();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -156,18 +157,16 @@ export const CbcGradingConfigTab: React.FC = () => {
 
     try {
       setSaving(true);
-      const response = await api.put<{
-        message: string;
-        bands: CbcGradingBand[];
-      }>("/grading/cbc", {
-        bands: normalizeCbcBands(bands).map((band, sortOrder) => ({
-          ...band,
-          sortOrder,
-        })),
+      await request("/update/scale", {
+        method: "PATCH",
+        body: JSON.stringify({
+         gradeBandDTOs: bands,
+          schoolId: getSchoolId(),
+          gradeScaleId: gradeScalerId,
+        }),
       });
-      setBands(normalizeCbcBands(response.bands || []));
       setMessage({
-        text: response.message || "CBC grading configuration saved.",
+        text: "CBC grading configuration saved.",
         type: "success",
       });
     } catch (err) {
@@ -281,7 +280,7 @@ export const CbcGradingConfigTab: React.FC = () => {
                 <th style={thStyle}>Order</th>
                 <th style={thStyle}>Min Marks</th>
                 <th style={thStyle}>Max Marks</th>
-                <th style={thStyle}>CBC Band</th>
+                <th style={thStyle}>Band</th>
                 <th style={thStyle}>Points</th>
                 <th style={thStyle}>Actions</th>
               </tr>
