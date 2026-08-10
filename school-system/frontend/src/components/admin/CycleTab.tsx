@@ -26,28 +26,12 @@ export const CycleTab: React.FC<CycleTabProps> = ({
   gradeOptions = [],
 }) => {
   const [initialData, setSchoolSettings] = useState<req>() || {};
-  const [term, setTerm] = useState<number>(initialData?.term || 1);
-  const [year, setYear] = useState<number>(
-    initialData?.year || new Date().getFullYear(),
-  );
-  const [examType, setExamType] = useState<string>(initialData?.examType||"not set");
-  const [selectedFinalGrade, setSelectedFinalGrade] = useState(
-    initialData?.finalGrade,
-  );
+  const [term, setTerm] = useState<number>();
+  const [year, setYear] = useState<number>();
+  const [examType, setExamType] = useState<string>();
+  const [selectedFinalGrade, setSelectedFinalGrade] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [savingFinalGrade, setSavingFinalGrade] = useState(false);
-
-  React.useEffect(() => {
-    if (initialData) {
-      setTerm(initialData.term);
-      setYear(initialData.year);
-      setExamType(initialData.examType);
-    }
-  }, [initialData]);
-
-  React.useEffect(() => {
-    setSelectedFinalGrade(initialData?.finalGrade);
-  }, [initialData?.finalGrade]);
 
   useEffect(() => {
     async function getTermYearAndExamType(): Promise<req> {
@@ -59,11 +43,23 @@ export const CycleTab: React.FC<CycleTabProps> = ({
       setSchoolSettings(await getTermYearAndExamType());
     })();
   }, []);
+
+  useEffect(() => {
+    setTerm(initialData?.term || 1);
+    setYear(initialData?.year);
+    setExamType(initialData?.examType);
+    setSelectedFinalGrade(initialData?.finalGrade);
+  }, [initialData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onBulkTermUpdate(term, year, examType);
+      await onBulkTermUpdate(
+        term || 1,
+        year || new Date().getFullYear(),
+        examType || "OPENER",
+      );
     } finally {
       setLoading(false);
     }
