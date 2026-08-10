@@ -1034,7 +1034,6 @@ const AdminDashboard: React.FC = () => {
         <AssignmentsTab
           classes={classesFound}
           teachers={teachers}
-          subjects={subjects}
           students={students}
           onSaveAssignment={saveAssignment}
           onUnassignTeacher={unassignSubjectTeacher}

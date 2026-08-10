@@ -122,13 +122,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           <p style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 1.2rem" }}>Subject band distribution</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
             {cbcBands.map((band) => {
-              const count = subjectAvgs.filter((subject) => resolveCbcBand(subject.avg, cbcBands).cbcBand === band.cbcBand).length;
-              const color = gradeColor(band.cbcBand);
+              const count = subjectAvgs.filter((subject) => resolveCbcBand(subject.avg, cbcBands).cbcBand === band.grade).length;
+              const color = gradeColor(band.grade);
               return (
-                <div key={band.cbcBand} style={{ background: `${color}18`, borderRadius: 11, padding: "1rem", textAlign: "center" }}>
-                  <p style={{ fontFamily: FONT.serif, fontSize: "2rem", fontWeight: 600, color, margin: "0 0 2px" }}>{band.cbcBand}</p>
+                <div key={band.grade} style={{ background: `${color}18`, borderRadius: 11, padding: "1rem", textAlign: "center" }}>
+                  <p style={{ fontFamily: FONT.serif, fontSize: "2rem", fontWeight: 600, color, margin: "0 0 2px" }}>{band.grade}</p>
                   <p style={{ fontFamily: FONT.serif, fontSize: "1.6rem", fontWeight: 600, color, margin: "0 0 4px" }}>{count}</p>
-                  <p style={{ fontFamily: FONT.sans, fontSize: 11, color, margin: 0, opacity: 0.8 }}>{band.minMarks}-{band.maxMarks} marks</p>
+                  <p style={{ fontFamily: FONT.sans, fontSize: 11, color, margin: 0, opacity: 0.8 }}>{band.minScore}-{band.maxScore} marks</p>
                 </div>
               );
             })}

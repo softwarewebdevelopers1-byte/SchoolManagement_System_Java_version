@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class GetAllSubjectJointsDTO {
+    private UUID classId;
     private String subjectName;
     private UUID subjectJointId;
     private StringBuilder className;

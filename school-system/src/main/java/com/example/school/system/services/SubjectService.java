@@ -226,7 +226,8 @@ public class SubjectService {
             className.append(schoolClass.getClassGrade());
             className.append(" ");
             className.append(schoolClass.getClassStream());
-            return GetAllSubjectJointsDTO.builder().subjectName(sj.getSubject().getSubjectName()).className(className)
+            return GetAllSubjectJointsDTO.builder().classId(schoolClass.getClassId())
+                    .subjectName(sj.getSubject().getSubjectName()).className(className)
                     .subjectJointId(sj.getId()).subjectTeacherId(teacherId == null ? null : teacherId)
                     .subjectTeacherName(subjectTeacher.toString()).subjectType(sj.getSubjectType())
                     .electiveCode(sj.getElectiveCode()).build();

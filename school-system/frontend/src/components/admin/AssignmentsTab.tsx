@@ -1,6 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { Class, Student, Subject, Teacher } from "./types";
-import { formatSubjectOfferingTag, type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
+import React, { useEffect, useMemo, useState } from "react";
+import { Class, Student, Subject, subjectJoints, Teacher } from "./types";
+import {
+  formatSubjectOfferingTag,
+  type SubjectEnrollmentMode,
+} from "../../lib/subjectEnrollment";
+import { getSchoolId, request } from "../../lib/api";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -132,8 +136,7 @@ const smallLabelStyle: React.CSSProperties = {
   margin: "0 0 5px",
 };
 
-const generateElectivePairId = () =>
-  `EL-${crypto.randomUUID()}`;
+const generateElectivePairId = () => `EL-${crypto.randomUUID()}`;
 
 const metricValueStyle: React.CSSProperties = {
   fontFamily: "var(--serif)",
@@ -175,18 +178,19 @@ const StatCard: React.FC<{ label: string; value: number; accent?: string }> = ({
 
 const AssignmentFormModal: React.FC<{
   currentClass: Class;
-  subject: Subject;
+  subject: subjectJoints;
   teachers: Teacher[];
   onClose: () => void;
   onSave: (teacherId: string) => Promise<void>;
-}> = ({ currentClass, subject, teachers, onClose, onSave }) => {
+}> = ({ currentClass, subject, teachers, onClose }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [saving, setSaving] = useState(false);
+  console.log("Teachers ", teachers);
 
   return (
     <div>
       <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>Assign {subject.name} Teacher</h3>
+        <h3 style={modalTitleStyle}>Assign {subject.subjectName} Teacher</h3>
         <button onClick={onClose} style={closeButtonStyle}>
           x
         </button>
@@ -194,7 +198,8 @@ const AssignmentFormModal: React.FC<{
 
       <div style={{ padding: "18px 22px 22px" }}>
         <p style={{ fontSize: 13, color: "var(--textM)", marginBottom: 15 }}>
-          Assigning a teacher for <strong>{subject.name}</strong> in <strong>{currentClass.name}</strong>.
+          Assigning a teacher for <strong>{subject.subjectName}</strong> in{" "}
+          <strong>{currentClass.name}</strong>.
         </p>
 
         <div style={{ marginBottom: "1.2rem" }}>
@@ -213,7 +218,14 @@ const AssignmentFormModal: React.FC<{
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: "1.5rem",
+          }}
+        >
           <button onClick={onClose} style={secondaryButtonStyle}>
             Cancel
           </button>
@@ -222,7 +234,15 @@ const AssignmentFormModal: React.FC<{
               if (!selectedTeacherId) return;
               setSaving(true);
               try {
-                await onSave(selectedTeacherId);
+                // await onSave(selectedTeacherId);
+                await request(`/assign/subject/teacher`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    classId: currentClass.classId,
+                    subjectJointId: subject.subjectJointId,
+                    teacherId: selectedTeacherId,
+                  }),
+                });
               } finally {
                 setSaving(false);
               }
@@ -240,7 +260,7 @@ const AssignmentFormModal: React.FC<{
 
 const SubjectConfigurationModal: React.FC<{
   currentClass: Class;
-  subject: Subject;
+  subject: subjectJoints;
   onClose: () => void;
   onSave: (
     isOffered: boolean,
@@ -248,20 +268,20 @@ const SubjectConfigurationModal: React.FC<{
     sharedSlotId: string | null,
   ) => Promise<void>;
 }> = ({ currentClass, subject, onClose, onSave }) => {
-  const currentSetting = currentClass.subjectSettings[subject.id];
+  const currentSetting = currentClass.subjectSettings[subject.subjectJointId];
   const [enrollmentMode, setEnrollmentMode] = useState<SubjectEnrollmentMode>(
     currentSetting?.enrollmentMode || "compulsory",
   );
-  const [sharedSlotId, setSharedSlotId] = useState(currentSetting?.sharedSlotId || "");
+  const [sharedSlotId, setSharedSlotId] = useState(
+    currentSetting?.sharedSlotId || "",
+  );
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-
-
 
   return (
     <div>
       <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>Configure {subject.name}</h3>
+        <h3 style={modalTitleStyle}>Configure {subject.subjectName}</h3>
         <button onClick={onClose} style={closeButtonStyle}>
           x
         </button>
@@ -269,14 +289,17 @@ const SubjectConfigurationModal: React.FC<{
 
       <div style={{ padding: "18px 22px 22px", display: "grid", gap: 14 }}>
         <p style={{ margin: 0, fontSize: 13, color: "var(--textM)" }}>
-          Set how <strong>{subject.name}</strong> behaves for <strong>{currentClass.name}</strong>.
+          Set how <strong>{subject.subjectName}</strong> behaves for{" "}
+          <strong>{currentClass.name}</strong>.
         </p>
 
         <div>
           <label style={labelStyle}>Enrollment mode</label>
           <select
             value={enrollmentMode}
-            onChange={(event) => setEnrollmentMode(event.target.value as SubjectEnrollmentMode)}
+            onChange={(event) =>
+              setEnrollmentMode(event.target.value as SubjectEnrollmentMode)
+            }
             style={inputStyle}
           >
             <option value="compulsory">Compulsory</option>
@@ -286,7 +309,13 @@ const SubjectConfigurationModal: React.FC<{
 
         <div>
           <label style={labelStyle}>Elective pair ID</label>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", gap: 8 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) auto auto",
+              gap: 8,
+            }}
+          >
             <input
               value={sharedSlotId}
               onChange={(event) => {
@@ -294,7 +323,11 @@ const SubjectConfigurationModal: React.FC<{
                 setCopied(false);
               }}
               style={inputStyle}
-              placeholder={enrollmentMode === "elective" ? "Generated automatically for linked electives" : "Only used for electives"}
+              placeholder={
+                enrollmentMode === "elective"
+                  ? "Generated automatically for linked electives"
+                  : "Only used for electives"
+              }
               disabled={enrollmentMode !== "elective"}
             />
             <button
@@ -325,8 +358,16 @@ const SubjectConfigurationModal: React.FC<{
               {copied ? "Copied" : "Copy ID"}
             </button>
           </div>
-          <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--textMut)", lineHeight: 1.5 }}>
-            Use the same pair ID on the other elective subject so learners choose one subject from the pair.
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontSize: 11.5,
+              color: "var(--textMut)",
+              lineHeight: 1.5,
+            }}
+          >
+            Use the same pair ID on the other elective subject so learners
+            choose one subject from the pair.
           </p>
         </div>
 
@@ -341,7 +382,9 @@ const SubjectConfigurationModal: React.FC<{
                 await onSave(
                   true,
                   enrollmentMode,
-                  enrollmentMode === "elective" ? (sharedSlotId.trim() || null) : null,
+                  enrollmentMode === "elective"
+                    ? sharedSlotId.trim() || null
+                    : null,
                 );
               } finally {
                 setSaving(false);
@@ -361,10 +404,13 @@ const SubjectConfigurationModal: React.FC<{
 interface AssignmentsTabProps {
   classes: Class[];
   teachers: Teacher[];
-  subjects: Subject[];
   students: Student[];
   onSaveAssignment: (payload: any) => Promise<void>;
-  onUnassignTeacher: (classGrade: string, classStream: string, subjectId: string) => Promise<void>;
+  onUnassignTeacher: (
+    classGrade: string,
+    classStream: string,
+    subjectId: string,
+  ) => Promise<void>;
   onToggleSubjectOffering: (
     subjectId: string,
     classGrade: string,
@@ -383,8 +429,6 @@ interface AssignmentsTabProps {
 export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   classes,
   teachers,
-  subjects,
-  students,
   onSaveAssignment,
   onUnassignTeacher,
   onToggleSubjectOffering,
@@ -395,8 +439,18 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   showConfirm,
 }) => {
   const [search, setSearch] = useState("");
+  const [subjects, setSubjects] = useState<subjectJoints[]>([]);
+  useEffect(() => {
+    (async () => {
+      const subjectsFound: any = await request(
+        `/get/all/subject-joints/${encodeURIComponent(getSchoolId()!)}`,
+      );
+      setSubjects(subjectsFound);
+    })();
+  }, []);
+  console.log("subject joints loaded ", subjects);
 
-  const openAssignmentModal = (currentClass: Class, subject: Subject) => {
+  const openAssignmentModal = (currentClass: Class, subject: subjectJoints) => {
     showModal(
       <AssignmentFormModal
         currentClass={currentClass}
@@ -405,17 +459,19 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         onClose={closeModal}
         onSave={async (teacherId) => {
           await onSaveAssignment({
-            subjectId: subject.id,
+            subjectId: subject.subjectJointId,
             teacherId,
-            classGrade: currentClass.grade,
-            classStream: currentClass.stream,
+            classId: currentClass.classId,
           });
         }}
       />,
     );
   };
 
-  const openConfigurationModal = (currentClass: Class, subject: Subject) => {
+  const openConfigurationModal = (
+    currentClass: Class,
+    subject: subjectJoints,
+  ) => {
     showModal(
       <SubjectConfigurationModal
         currentClass={currentClass}
@@ -423,7 +479,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         onClose={closeModal}
         onSave={async (isOffered, enrollmentMode, sharedSlotId) => {
           await onToggleSubjectOffering(
-            subject.id,
+            subject.subjectJointId,
             currentClass.grade,
             currentClass.stream || "",
             isOffered,
@@ -436,13 +492,17 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
     );
   };
 
-  const handleUnassign = (currentClass: Class, subject: Subject, teacher: Teacher) => {
+  const handleUnassign = (currentClass: Class, subject: subjectJoints) => {
     showConfirm(
-      `Unassign <strong>${teacher.name}</strong> from teaching <strong>${subject.name}</strong> in <strong>${currentClass.name}</strong>?`,
+      `Unassign <strong>${subject.subjectTeacherName}</strong> from teaching <strong>${subject.subjectName}</strong> in <strong>${currentClass.grade} ${currentClass.stream}</strong>?`,
       async () => {
-        await onUnassignTeacher(currentClass.grade, currentClass.stream || "", subject.id);
+        await onUnassignTeacher(
+          currentClass.grade,
+          currentClass.stream || "",
+          subject.subjectJointId,
+        );
       },
-      true
+      true,
     );
   };
 
@@ -457,10 +517,13 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 
   const subjectLookup = useMemo(
     () =>
-      subjects.reduce<Record<string, Subject>>((acc, subject) => {
-        acc[subject.id] = subject;
-        return acc;
-      }, {}),
+      subjects.reduce<Record<string, subjectJoints>>(
+        (acc: any, subject: subjectJoints) => {
+          acc[subject.subjectJointId] = subject;
+          return acc;
+        },
+        {},
+      ),
     [subjects],
   );
 
@@ -470,23 +533,29 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       return true;
     }
 
-    const availableSubjects = subjects.filter((subject) =>
-      currentClass.offeredSubjectIds.includes(subject.id),
+    const availableSubjects = subjects.filter(
+      (subject: subjectJoints) => subject.classId == currentClass.classId,
     );
-    const droppedSubjects = subjects.filter((subject) =>
-      currentClass.droppedSubjectIds.includes(subject.id),
+    const droppedSubjects = subjects.filter(
+      (subject: subjectJoints) =>
+        subject.classId == currentClass.classId &&
+        subject.subjectType == "DROPPED",
     );
+
+    console.log("dropped subjects ", droppedSubjects);
+    console.log("available subjects ", availableSubjects);
+    console.log("subjects ", currentClass);
 
     const assignmentText = Object.entries(currentClass.subjectAssignments || {})
       .map(([subjectId, teacherId]) => {
         const subject = subjectLookup[subjectId];
         const teacher = teacherLookup[teacherId];
-        return `${subject?.name || ""} ${teacher?.name || ""} ${teacher?.department || ""}`;
+        return `${subject?.subjectName || ""} ${teacher?.name || ""} ${teacher?.department || ""}`;
       })
       .join(" ")
       .toLowerCase();
     const subjectText = [...availableSubjects, ...droppedSubjects]
-      .map((subject) => `${subject.name} ${subject.department}`)
+      .map((subject) => `${subject.subjectName}`)
       .join(" ")
       .toLowerCase();
 
@@ -538,7 +607,8 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       </div>
 
       <div style={noticeStyle}>
-        These assignments are read from the live subject-owner data on staff records.
+        These assignments are read from the live subject-owner data on staff
+        records.
       </div>
 
       <div
@@ -551,20 +621,42 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       >
         <StatCard label="Classes" value={classes.length} />
         <StatCard label="Subjects" value={subjects.length} accent="#1a4a99" />
-        <StatCard label="Live assignments" value={totalAssignments} accent="var(--sText)" />
-        <StatCard label="Elective setups" value={totalElectiveSubjects} accent="#7b5cff" />
-        <StatCard label="Dropped subjects" value={totalDroppedSubjects} accent="var(--dText)" />
+        <StatCard
+          label="Live assignments"
+          value={totalAssignments}
+          accent="var(--sText)"
+        />
+        <StatCard
+          label="Elective setups"
+          value={totalElectiveSubjects}
+          accent="#7b5cff"
+        />
+        <StatCard
+          label="Dropped subjects"
+          value={totalDroppedSubjects}
+          accent="var(--dText)"
+        />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: 14,
+        }}
+      >
         {filteredClasses.map((currentClass) => {
-          const availableSubjects = subjects?.filter((subject) =>
-            currentClass.offeredSubjectIds?.includes(subject.id),
+          const availableSubjects = subjects.filter(
+            (subject: subjectJoints) => subject.classId == currentClass.classId,
           );
-          const droppedSubjects = subjects?.filter((subject) =>
-            currentClass?.droppedSubjectIds?.includes(subject.id),
+          const droppedSubjects = subjects.filter(
+            (subject: subjectJoints) =>
+              currentClass.classId == subject.classId &&
+              subject.subjectType == "DROPPED",
           );
-          const assignedCount = Object.keys(currentClass?.subjectAssignments || {})?.length;
+          const assignedCount = Object.keys(
+            currentClass?.subjectAssignments || {},
+          )?.length;
           const statusText =
             availableSubjects?.length === 0
               ? "No active subjects"
@@ -580,7 +672,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 
           return (
             <div
-              key={currentClass?.id}
+              key={currentClass?.classId}
               style={{
                 background: "var(--white)",
                 border: "1px solid var(--border)",
@@ -614,150 +706,241 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
               </div>
 
               <div style={{ padding: "14px 16px" }}>
-                {availableSubjects?.map((subject) => {
-                const assignedTeacherId = currentClass?.subjectAssignments?.[subject.id] || "";
-                const assignedTeacher = assignedTeacherId
-                  ? teacherLookup[assignedTeacherId]
-                  : undefined;
-                const subjectSetting = currentClass?.subjectSettings[subject.id];
-                const eligibleStudentCount =
-                  (subjectSetting?.enrollmentMode || "compulsory") === "elective"
-                    ? students.filter(
-                        (student) =>
-                          student?.classId === currentClass.id &&
-                          student?.status === "Active" ,
-                      ).length
-                    : currentClass?.students;
+                {availableSubjects?.map((subject: subjectJoints) => {
+                  console.log("active subject ", subject);
 
-                return (
-                  <div
-                    key={`${currentClass?.id}-${subject?.id}`}
-                    style={{
-                      padding: "10px 0",
-                      borderTop: availableSubjects[0]?.id === subject.id ? "none" : "1px solid var(--borderL)",
-                    }}
-                  >
+                  // const assignedTeacherId =
+                  //   currentClass?.subjectAssignments?.[
+                  //     subject.subjectJointId
+                  //   ] || "";
+                  const assignedTeacher = subject.subjectTeacherName;
+                  // const subjectSetting =
+                  //   currentClass?.subjectSettings[subject.id];
+                  // const eligibleStudentCount =
+                  //   (subjectSetting?.enrollmentMode || "compulsory") ===
+                  //   "elective"
+                  //     ? students.filter(
+                  //         (student) =>
+                  //           student?.classId === currentClass.id &&
+                  //           student?.status === "Active",
+                  //       ).length
+                  //     : currentClass?.students;
+
+                  return (
                     <div
+                      key={`${currentClass?.id}-${subject?.subjectJointId}`}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: 10,
-                        flexWrap: "wrap",
+                        padding: "10px 0",
+                        borderTop:
+                          availableSubjects[0]?.subjectJointId ===
+                          subject.subjectJointId
+                            ? "none"
+                            : "1px solid var(--borderL)",
                       }}
                     >
-                      <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-                        <p style={rowPrimaryTextStyle}>{subject.name}</p>
-                        <p style={rowMetaTextStyle}>
-                          {subject?.department} | {formatSubjectOfferingTag(subjectSetting?.enrollmentMode, subjectSetting?.sharedSlotId)} | {eligibleStudentCount} learner{eligibleStudentCount === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      {assignedTeacher ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 12,
-                            minWidth: 0,
-                            flex: "1 1 280px",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 180px" }}>
-                            <div dangerouslySetInnerHTML={{ __html: avatar(assignedTeacher?.name, 26) }} />
-                            <div style={{ minWidth: 0 }}>
-                              <p style={rowPrimaryTextStyle}>{assignedTeacher.name}</p>
-                              <p style={rowMetaTextStyle}>{assignedTeacher?.department}</p>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {
+                          <div style={{ minWidth: 0, flex: "1 1 180px" }}>
+                            <p style={rowPrimaryTextStyle}>
+                              {subject.subjectName}
+                            </p>
+                            {/* <p style={rowMetaTextStyle}>
+                            {subject?.department} |{" "}
+                            {formatSubjectOfferingTag(
+                              subjectSetting?.enrollmentMode,
+                              subjectSetting?.sharedSlotId,
+                            )}{" "}
+                            | {eligibleStudentCount} learner
+                            {eligibleStudentCount === 1 ? "" : "s"}
+                          </p> */}
+                          </div>
+                        }
+                        {assignedTeacher ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 12,
+                              minWidth: 0,
+                              flex: "1 1 280px",
+                              justifyContent: "space-between",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                minWidth: 0,
+                                flex: "1 1 180px",
+                              }}
+                            >
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: avatar(assignedTeacher, 26),
+                                }}
+                              />
+                              <div style={{ minWidth: 0 }}>
+                                <p style={rowPrimaryTextStyle}>
+                                  {assignedTeacher}
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                                justifyContent: "flex-end",
+                                flex: "0 0 auto",
+                              }}
+                            >
+                              <button
+                                onClick={() =>
+                                  openAssignmentModal(currentClass, subject)
+                                }
+                                style={{
+                                  ...miniButtonStyle,
+                                  background: "var(--cream)",
+                                  color: "var(--textM)",
+                                  border: "1px solid var(--border)",
+                                }}
+                              >
+                                Change
+                              </button>
+                              {/* <button
+                                onClick={() =>
+                                  openConfigurationModal(currentClass, subject)
+                                }
+                                style={{
+                                  ...miniButtonStyle,
+                                  background: "#f4f0ff",
+                                  color: "#5a35b4",
+                                  border: "1px solid #c9b9ff",
+                                }}
+                              >
+                                Configure
+                              </button> */}
+                              <button
+                                onClick={() =>
+                                  handleUnassign(currentClass, subject)
+                                }
+                                style={{
+                                  ...miniButtonStyle,
+                                  background: "var(--dBg)",
+                                  color: "var(--dText)",
+                                  border: "1px solid var(--dText)",
+                                }}
+                              >
+                                Unassign
+                              </button>
+                              {/* <button
+                                onClick={() =>
+                                  showConfirm(
+                                    `Drop <strong>${subject.subjectName}</strong> for <strong>${currentClass.name}</strong>? Teacher assignment for this class subject will be removed until the subject is added back.`,
+                                    async () => {
+                                      await onToggleSubjectOffering(
+                                        subject.subjectJointId,
+                                        currentClass.grade,
+                                        currentClass.stream || "",
+                                        false,
+                                        // subjectSetting?.enrollmentMode ||
+                                        //   "compulsory",
+                                        // subjectSetting?.sharedSlotId || null,
+                                      );
+                                    },
+                                    true,
+                                  )
+                                }
+                                style={{
+                                  ...miniButtonStyle,
+                                  background: "#fff8ef",
+                                  color: "var(--gold)",
+                                  border: "1px solid var(--gold)",
+                                }}
+                              >
+                                Drop subject
+                              </button> */}
                             </div>
                           </div>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", flex: "0 0 auto" }}>
-                            <button 
-                              onClick={() => openAssignmentModal(currentClass, subject)}
-                              style={{ ...miniButtonStyle, background: "var(--cream)", color: "var(--textM)", border: "1px solid var(--border)" }}
-                            >
-                              Change
-                            </button>
-                            <button
-                              onClick={() => openConfigurationModal(currentClass, subject)}
-                              style={{ ...miniButtonStyle, background: "#f4f0ff", color: "#5a35b4", border: "1px solid #c9b9ff" }}
-                            >
-                              Configure
-                            </button>
-                            <button 
-                              onClick={() => handleUnassign(currentClass, subject, assignedTeacher)}
-                              style={{ ...miniButtonStyle, background: "var(--dBg)", color: "var(--dText)", border: "1px solid var(--dText)" }}
-                            >
-                              Unassign
-                            </button>
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                              justifyContent: "flex-end",
+                              flex: "0 0 auto",
+                            }}
+                          >
                             <button
                               onClick={() =>
+                                openAssignmentModal(currentClass, subject)
+                              }
+                              style={miniButtonStyle}
+                            >
+                              Assign teacher
+                            </button>
+                            {/* <button
+                              onClick={() =>
+                                openConfigurationModal(currentClass, subject)
+                              }
+                              style={{
+                                ...miniButtonStyle,
+                                background: "#f4f0ff",
+                                color: "#5a35b4",
+                                border: "1px solid #c9b9ff",
+                              }}
+                            >
+                              Configure
+                            </button> */}
+                            {/* <button
+                              onClick={() =>
                                 showConfirm(
-                                  `Drop <strong>${subject.name}</strong> for <strong>${currentClass.name}</strong>? Teacher assignment for this class subject will be removed until the subject is added back.`,
+                                  `Drop <strong>${subject.subjectName}</strong> for <strong>${currentClass.name}</strong>?`,
                                   async () => {
                                     await onToggleSubjectOffering(
-                                      subject.id,
+                                      subject.subjectJointId,
                                       currentClass.grade,
                                       currentClass.stream || "",
                                       false,
-                                      subjectSetting?.enrollmentMode || "compulsory",
-                                      subjectSetting?.sharedSlotId || null,
+                                      // subjectSetting?.enrollmentMode ||
+                                      //   "compulsory",
+                                      // subjectSetting?.sharedSlotId || null,
                                     );
                                   },
                                   true,
                                 )
                               }
-                              style={{ ...miniButtonStyle, background: "#fff8ef", color: "var(--gold)", border: "1px solid var(--gold)" }}
+                              style={{
+                                ...miniButtonStyle,
+                                background: "#fff8ef",
+                                color: "var(--gold)",
+                                border: "1px solid var(--gold)",
+                              }}
                             >
                               Drop subject
-                            </button>
+                            </button> */}
                           </div>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", flex: "0 0 auto" }}>
-                          <button 
-                            onClick={() => openAssignmentModal(currentClass, subject)}
-                            style={miniButtonStyle}
-                          >
-                            Assign teacher
-                          </button>
-                          <button
-                            onClick={() => openConfigurationModal(currentClass, subject)}
-                            style={{ ...miniButtonStyle, background: "#f4f0ff", color: "#5a35b4", border: "1px solid #c9b9ff" }}
-                          >
-                            Configure
-                          </button>
-                          <button
-                            onClick={() =>
-                              showConfirm(
-                                `Drop <strong>${subject.name}</strong> for <strong>${currentClass.name}</strong>?`,
-                                async () => {
-                                  await onToggleSubjectOffering(
-                                    subject.id,
-                                    currentClass.grade,
-                                    currentClass.stream || "",
-                                    false,
-                                    subjectSetting?.enrollmentMode || "compulsory",
-                                    subjectSetting?.sharedSlotId || null,
-                                  );
-                                },
-                                true,
-                              )
-                            }
-                            style={{ ...miniButtonStyle, background: "#fff8ef", color: "var(--gold)", border: "1px solid var(--gold)" }}
-                          >
-                            Drop subject
-                          </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
                 {availableSubjects.length === 0 && (
                   <div style={{ ...noticeStyle, marginTop: 0 }}>
-                    No subjects are currently active for this class. Add one back below to resume assignments and marks entry.
+                    No subjects are currently active for this class. Add one
+                    back below to resume assignments and marks entry.
                   </div>
                 )}
 
@@ -774,13 +957,14 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                     <div>
                       <p style={smallLabelStyle}>Dropped for this class</p>
                       <p style={rowMetaTextStyle}>
-                        These subjects stay hidden from assignments and marks entry until they are added back.
+                        These subjects stay hidden from assignments and marks
+                        entry until they are added back.
                       </p>
                     </div>
                     <div style={{ display: "grid", gap: 8 }}>
-                      {droppedSubjects.map((subject) => (
+                      {droppedSubjects.map((subject: subjectJoints) => (
                         <div
-                          key={`${currentClass.id}-${subject.id}-dropped`}
+                          key={`${currentClass.id}-${subject.subjectJointId}-dropped`}
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
@@ -792,40 +976,67 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                             padding: "10px 12px",
                           }}
                         >
-                            <div>
-                              <p style={rowPrimaryTextStyle}>{subject.name}</p>
-                              <p style={rowMetaTextStyle}>
-                                {subject.department} | {formatSubjectOfferingTag(
-                                  currentClass.subjectSettings[subject.id]?.enrollmentMode,
-                                  currentClass.subjectSettings[subject.id]?.sharedSlotId,
-                                )}
-                              </p>
-                            </div>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <div>
+                            <p style={rowPrimaryTextStyle}>
+                              {subject.subjectName}
+                            </p>
+                            {/* <p style={rowMetaTextStyle}>
+                              {subject.department} |{" "}
+                              {formatSubjectOfferingTag(
+                                currentClass.subjectSettings[subject.id]
+                                  ?.enrollmentMode,
+                                currentClass.subjectSettings[subject.id]
+                                  ?.sharedSlotId,
+                              )}
+                            </p> */}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                            }}
+                          >
                             <button
-                              onClick={() => openConfigurationModal(currentClass, subject)}
-                              style={{ ...miniButtonStyle, background: "#f4f0ff", color: "#5a35b4", border: "1px solid #c9b9ff" }}
+                              onClick={() =>
+                                openConfigurationModal(currentClass, subject)
+                              }
+                              style={{
+                                ...miniButtonStyle,
+                                background: "#f4f0ff",
+                                color: "#5a35b4",
+                                border: "1px solid #c9b9ff",
+                              }}
                             >
                               Configure
                             </button>
                             <button
                               onClick={() =>
                                 showConfirm(
-                                  `Add <strong>${subject.name}</strong> back to <strong>${currentClass.name}</strong>?`,
+                                  `Add <strong>${subject.subjectName}</strong> back to <strong>${currentClass.name}</strong>?`,
                                   async () => {
-                                    const subjectSetting = currentClass.subjectSettings[subject.id];
+                                    const subjectSetting =
+                                      currentClass.subjectSettings[
+                                        subject.subjectJointId
+                                      ];
                                     await onToggleSubjectOffering(
-                                      subject.id,
+                                      subject.subjectJointId,
                                       currentClass.grade,
                                       currentClass.stream || "",
                                       true,
-                                      subjectSetting?.enrollmentMode || "compulsory",
+                                      subjectSetting?.enrollmentMode ||
+                                        "compulsory",
                                       subjectSetting?.sharedSlotId || null,
                                     );
                                   },
                                 )
                               }
-                              style={{ ...miniButtonStyle, background: "var(--sBg)", color: "var(--sText)", border: "1px solid var(--sText)" }}
+                              style={{
+                                ...miniButtonStyle,
+                                background: "var(--sBg)",
+                                color: "var(--sText)",
+                                border: "1px solid var(--sText)",
+                              }}
                             >
                               Add back
                             </button>
@@ -842,7 +1053,9 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       </div>
 
       {filteredClasses.length === 0 && (
-        <div style={emptyCardStyle}>No classes match this assignment search.</div>
+        <div style={emptyCardStyle}>
+          No classes match this assignment search.
+        </div>
       )}
     </div>
   );

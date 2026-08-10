@@ -35,6 +35,7 @@ export interface Subject {
 
 export interface Class {
   id: string;
+  classId?: string;
   name: string;
   grade: string;
   stream?: string;
@@ -105,7 +106,16 @@ export interface ApiStudent {
   classStream: string;
   status: string;
 }
-
+export interface subjectJoints {
+  classId: string;
+  className: string;
+  electiveCode: string | null;
+  subjectJointId: string;
+  subjectName: string;
+  subjectTeacherId: string | null;
+  subjectTeacherName: "";
+  subjectType: string;
+}
 export interface ApiAssignment {
   id: string;
   subjectId: string;
