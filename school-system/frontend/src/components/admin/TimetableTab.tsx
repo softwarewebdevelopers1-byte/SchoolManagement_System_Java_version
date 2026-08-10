@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { api } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Class } from "./types";
 
@@ -46,7 +46,9 @@ const validateBreakConfiguration = (
 
   sortedBreaks.forEach((currentBreak) => {
     if (currentBreak.endMinutes <= currentBreak.startMinutes) {
-      throw new Error(`Break "${currentBreak.label}" must end after it starts.`);
+      throw new Error(
+        `Break "${currentBreak.label}" must end after it starts.`,
+      );
     }
 
     if (currentBreak.startMinutes < previousBreakEnd) {
@@ -71,31 +73,55 @@ const validateBreakConfiguration = (
   });
 };
 
-const preventNumberWheelChange = (event: React.WheelEvent<HTMLInputElement>) => {
+const preventNumberWheelChange = (
+  event: React.WheelEvent<HTMLInputElement>,
+) => {
   event.currentTarget.blur();
 };
 
-const clampNumberInput = (value: string, min: number, max: number, fallback: number) => {
+const clampNumberInput = (
+  value: string,
+  min: number,
+  max: number,
+  fallback: number,
+) => {
   if (value === "") return fallback;
   const nextValue = Number(value);
   if (!Number.isFinite(nextValue)) return fallback;
   return Math.min(max, Math.max(min, Math.round(nextValue)));
 };
 
-export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeriod }) => {
+export const TimetableTab: React.FC<TimetableTabProps> = ({
+  classes,
+  currentPeriod,
+}) => {
   const [schoolStartTime, setSchoolStartTime] = useState("08:00");
   const [subjectsPerDay, setSubjectsPerDay] = useState(7);
   const [subjectDurationMinutes, setSubjectDurationMinutes] = useState(40);
   const [breaks, setBreaks] = useState<TimetableBreakForm[]>([
-    { id: "break-1", label: "Morning Break", startTime: "10:00", endTime: "10:20" },
-    { id: "break-2", label: "Lunch Break", startTime: "13:00", endTime: "13:40" },
+    {
+      id: "break-1",
+      label: "Morning Break",
+      startTime: "10:00",
+      endTime: "10:20",
+    },
+    {
+      id: "break-2",
+      label: "Lunch Break",
+      startTime: "13:00",
+      endTime: "13:40",
+    },
   ]);
-  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const assignedClassCount = classes.filter(
-    (currentClass) => Object.keys(currentClass.subjectAssignments || {}).length > 0,
+    (currentClass) =>
+      Object.keys(currentClass.subjectAssignments || {}).length > 0,
   ).length;
 
   const generatedDescription = useMemo(
@@ -104,9 +130,15 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
     [currentPeriod.term, currentPeriod.year],
   );
 
-  const updateBreak = (id: string, key: keyof TimetableBreakForm, value: string) => {
+  const updateBreak = (
+    id: string,
+    key: keyof TimetableBreakForm,
+    value: string,
+  ) => {
     setBreaks((current) =>
-      current.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
+      current.map((item) =>
+        item.id === id ? { ...item, [key]: value } : item,
+      ),
     );
   };
 
@@ -133,17 +165,25 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
     setStatus(null);
 
     try {
-      validateBreakConfiguration(schoolStartTime, subjectDurationMinutes, breaks);
-
-      const response = await api.post<{ message: string }>("/school/timetables/generate", {
+      validateBreakConfiguration(
         schoolStartTime,
-        subjectsPerDay,
         subjectDurationMinutes,
-        breaks: breaks.map((item) => ({
-          label: item.label,
-          startTime: item.startTime,
-          endTime: item.endTime,
-        })),
+        breaks,
+      );
+
+      const response: any = await request("/timetables/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          schoolId: getSchoolId(),
+          schoolStartTime,
+          subjectsPerDay,
+          subjectDurationMinutes,
+          breaks: breaks.map((item) => ({
+            label: item.label,
+            startTime: item.startTime,
+            endTime: item.endTime,
+          })),
+        }),
       });
 
       setStatus({
@@ -154,7 +194,10 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
     } catch (err) {
       setStatus({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to generate school timetables.",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to generate school timetables.",
       });
     } finally {
       setSubmitting(false);
@@ -171,13 +214,37 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
           padding: "18px 20px",
         }}
       >
-        <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: ".08em" }}>
+        <p
+          style={{
+            margin: "0 0 6px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--gold)",
+            textTransform: "uppercase",
+            letterSpacing: ".08em",
+          }}
+        >
           Timetable Generator
         </p>
-        <h2 style={{ margin: "0 0 8px", fontFamily: "var(--serif)", fontSize: "1.8rem", color: "var(--text)" }}>
+        <h2
+          style={{
+            margin: "0 0 8px",
+            fontFamily: "var(--serif)",
+            fontSize: "1.8rem",
+            color: "var(--text)",
+          }}
+        >
           AI-Assisted School Timetable Creation
         </h2>
-        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--textMut)", maxWidth: 860 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "var(--textMut)",
+            maxWidth: 860,
+          }}
+        >
           {generatedDescription}
         </p>
       </div>
@@ -199,11 +266,26 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
           }}
         >
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: "1.15rem", fontFamily: "var(--serif)", color: "var(--text)" }}>
+            <h3
+              style={{
+                margin: "0 0 6px",
+                fontSize: "1.15rem",
+                fontFamily: "var(--serif)",
+                color: "var(--text)",
+              }}
+            >
               Planner Inputs
             </h3>
-            <p style={{ margin: 0, fontSize: 12.5, color: "var(--textMut)", lineHeight: 1.5 }}>
-              Configure the learning day and let Groq AI distribute lessons across all classes while respecting teacher assignments.
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12.5,
+                color: "var(--textMut)",
+                lineHeight: 1.5,
+              }}
+            >
+              Configure the learning day and let Groq AI distribute lessons
+              across all classes while respecting teacher assignments.
             </p>
           </div>
 
@@ -213,9 +295,14 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                 marginBottom: 14,
                 padding: "11px 13px",
                 borderRadius: 12,
-                border: status.type === "success" ? "1px solid var(--sBg)" : "1px solid var(--dBg)",
-                background: status.type === "success" ? "var(--sBg)" : "var(--dBg)",
-                color: status.type === "success" ? "var(--sText)" : "var(--dText)",
+                border:
+                  status.type === "success"
+                    ? "1px solid var(--sBg)"
+                    : "1px solid var(--dBg)",
+                background:
+                  status.type === "success" ? "var(--sBg)" : "var(--dBg)",
+                color:
+                  status.type === "success" ? "var(--sText)" : "var(--dText)",
                 fontSize: 12.5,
                 fontWeight: 700,
                 lineHeight: 1.5,
@@ -237,7 +324,13 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                 />
               </Field>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 12,
+                }}
+              >
                 <Field label="Subjects Per Day">
                   <input
                     type="number"
@@ -248,7 +341,14 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                     value={subjectsPerDay}
                     onWheel={preventNumberWheelChange}
                     onChange={(event) =>
-                      setSubjectsPerDay(clampNumberInput(event.target.value, 1, 12, subjectsPerDay))
+                      setSubjectsPerDay(
+                        clampNumberInput(
+                          event.target.value,
+                          1,
+                          12,
+                          subjectsPerDay,
+                        ),
+                      )
                     }
                     style={inputStyle}
                     required
@@ -266,7 +366,12 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                     onWheel={preventNumberWheelChange}
                     onChange={(event) =>
                       setSubjectDurationMinutes(
-                        clampNumberInput(event.target.value, 20, 180, subjectDurationMinutes),
+                        clampNumberInput(
+                          event.target.value,
+                          20,
+                          180,
+                          subjectDurationMinutes,
+                        ),
                       )
                     }
                     style={inputStyle}
@@ -284,16 +389,44 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                 background: "var(--cream)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
                 <div>
-                  <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "var(--textMut)", textTransform: "uppercase", letterSpacing: ".06em" }}>
+                  <p
+                    style={{
+                      margin: "0 0 4px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "var(--textMut)",
+                      textTransform: "uppercase",
+                      letterSpacing: ".06em",
+                    }}
+                  >
                     Break Settings
                   </p>
-                  <p style={{ margin: 0, fontSize: 12.5, color: "var(--textMut)" }}>
-                    {breaks.length} configured break{breaks.length === 1 ? "" : "s"}
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12.5,
+                      color: "var(--textMut)",
+                    }}
+                  >
+                    {breaks.length} configured break
+                    {breaks.length === 1 ? "" : "s"}
                   </p>
                 </div>
-                <button type="button" onClick={addBreak} style={secondaryButtonStyle}>
+                <button
+                  type="button"
+                  onClick={addBreak}
+                  style={secondaryButtonStyle}
+                >
                   Add Break
                 </button>
               </div>
@@ -311,10 +444,23 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                       gap: 10,
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                      <strong style={{ fontSize: 12.5, color: "var(--text)" }}>Break {index + 1}</strong>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        alignItems: "center",
+                      }}
+                    >
+                      <strong style={{ fontSize: 12.5, color: "var(--text)" }}>
+                        Break {index + 1}
+                      </strong>
                       {breaks.length > 0 && (
-                        <button type="button" onClick={() => removeBreak(item.id)} style={dangerGhostButtonStyle}>
+                        <button
+                          type="button"
+                          onClick={() => removeBreak(item.id)}
+                          style={dangerGhostButtonStyle}
+                        >
                           Remove
                         </button>
                       )}
@@ -324,18 +470,33 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                       <input
                         type="text"
                         value={item.label}
-                        onChange={(event) => updateBreak(item.id, "label", event.target.value)}
+                        onChange={(event) =>
+                          updateBreak(item.id, "label", event.target.value)
+                        }
                         style={inputStyle}
                         required
                       />
                     </Field>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(160px, 1fr))",
+                        gap: 10,
+                      }}
+                    >
                       <Field label="Start Time">
                         <input
                           type="time"
                           value={item.startTime}
-                          onChange={(event) => updateBreak(item.id, "startTime", event.target.value)}
+                          onChange={(event) =>
+                            updateBreak(
+                              item.id,
+                              "startTime",
+                              event.target.value,
+                            )
+                          }
                           style={inputStyle}
                           required
                         />
@@ -344,7 +505,9 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                         <input
                           type="time"
                           value={item.endTime}
-                          onChange={(event) => updateBreak(item.id, "endTime", event.target.value)}
+                          onChange={(event) =>
+                            updateBreak(item.id, "endTime", event.target.value)
+                          }
                           style={inputStyle}
                           required
                         />
@@ -362,8 +525,16 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                 gap: 12,
               }}
             >
-              <StatCard label="Assigned Classes" value={assignedClassCount} note="Classes with subjects assigned on the admin assignments page" />
-              <StatCard label="Current Cycle" value={`T${currentPeriod.term}`} note={String(currentPeriod.year)} />
+              <StatCard
+                label="Assigned Classes"
+                value={assignedClassCount}
+                note="Classes with subjects assigned on the admin assignments page"
+              />
+              <StatCard
+                label="Current Cycle"
+                value={`T${currentPeriod.term}`}
+                note={String(currentPeriod.year)}
+              />
             </div>
 
             <button
@@ -375,7 +546,9 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
                 cursor: submitting ? "not-allowed" : "pointer",
               }}
             >
-              {submitting ? "Generating & Uploading Timetables..." : "Generate Whole-School Timetable"}
+              {submitting
+                ? "Generating & Uploading Timetables..."
+                : "Generate Whole-School Timetable"}
             </button>
           </form>
         </div>
@@ -383,7 +556,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
 
       <div style={{ marginTop: 20 }}>
         <TimetableLibrary
-          fetchPath="/school/timetables"
+          fetchPath="/timetables"
           fetchParams={{
             latestOnly: true,
             term: currentPeriod.term,
@@ -403,16 +576,31 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({ classes, currentPeri
   );
 };
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
   <label style={{ display: "grid", gap: 7 }}>
-    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--textMut)", textTransform: "uppercase", letterSpacing: ".06em" }}>
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: "var(--textMut)",
+        textTransform: "uppercase",
+        letterSpacing: ".06em",
+      }}
+    >
       {label}
     </span>
     {children}
   </label>
 );
 
-const StatCard: React.FC<{ label: string; value: React.ReactNode; note: string }> = ({ label, value, note }) => (
+const StatCard: React.FC<{
+  label: string;
+  value: React.ReactNode;
+  note: string;
+}> = ({ label, value, note }) => (
   <div
     style={{
       borderRadius: 14,
@@ -421,10 +609,27 @@ const StatCard: React.FC<{ label: string; value: React.ReactNode; note: string }
       padding: "12px 14px",
     }}
   >
-    <p style={{ margin: "0 0 5px", fontSize: 10.5, fontWeight: 700, color: "var(--textMut)", textTransform: "uppercase", letterSpacing: ".06em" }}>
+    <p
+      style={{
+        margin: "0 0 5px",
+        fontSize: 10.5,
+        fontWeight: 700,
+        color: "var(--textMut)",
+        textTransform: "uppercase",
+        letterSpacing: ".06em",
+      }}
+    >
       {label}
     </p>
-    <p style={{ margin: "0 0 3px", fontSize: "1.35rem", fontWeight: 700, fontFamily: "var(--serif)", color: "var(--text)" }}>
+    <p
+      style={{
+        margin: "0 0 3px",
+        fontSize: "1.35rem",
+        fontWeight: 700,
+        fontFamily: "var(--serif)",
+        color: "var(--text)",
+      }}
+    >
       {value}
     </p>
     <p style={{ margin: 0, fontSize: 11.5, color: "var(--textMut)" }}>{note}</p>

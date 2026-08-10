@@ -195,13 +195,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
           }}
         >
           <p style={sectionLabelStyle}>Class teacher roster</p>
-          {classesFound.map((currentClass) => {
+          {classesFound.map((currentClass,i) => {
             const classTeacher = teachers.find(
               (teacher) => teacher.id === currentClass.classTeacherId,
             );
             return (
               <div
-                key={currentClass.id}
+                key={i}
                 style={{
                   display: "flex",
                   alignItems: "center",
