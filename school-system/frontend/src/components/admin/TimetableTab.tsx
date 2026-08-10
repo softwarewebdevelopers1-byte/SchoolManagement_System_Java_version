@@ -556,7 +556,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
 
       <div style={{ marginTop: 20 }}>
         <TimetableLibrary
-          fetchPath="/timetables"
+          fetchPath={`/timetables/${encodeURIComponent(getSchoolId()!)}`}
           fetchParams={{
             latestOnly: true,
             term: currentPeriod.term,

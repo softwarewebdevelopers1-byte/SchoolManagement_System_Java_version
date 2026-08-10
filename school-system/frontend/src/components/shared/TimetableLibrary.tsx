@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api } from "../../lib/api";
+import { api, request } from "../../lib/api";
 import {
   TimetableDay,
   TimetableEntry,
   TimetableRecord,
 } from "../../lib/timetableTypes";
-
 
 interface TimetableLibraryProps {
   fetchPath: string;
@@ -29,7 +28,9 @@ const DISPLAY_DAY_ORDER = [
 
 const orderDays = (days: TimetableDay[]) => {
   const dayMap = new Map(days.map((day) => [day.day, day]));
-  return DISPLAY_DAY_ORDER.map((day) => dayMap.get(day)).filter(Boolean) as TimetableDay[];
+  return DISPLAY_DAY_ORDER.map((day) => dayMap.get(day)).filter(
+    Boolean,
+  ) as TimetableDay[];
 };
 
 const buildLessonMeta = (entry: TimetableEntry | null) => {
@@ -37,7 +38,10 @@ const buildLessonMeta = (entry: TimetableEntry | null) => {
     return "No lesson scheduled";
   }
 
-  if (Array.isArray(entry.parallelLessons) && entry.parallelLessons.length > 0) {
+  if (
+    Array.isArray(entry.parallelLessons) &&
+    entry.parallelLessons.length > 0
+  ) {
     return entry.parallelLessons
       .map((lesson) => lesson.teacherName || "Dept. Supervision")
       .join(" / ");
@@ -48,7 +52,10 @@ const buildLessonMeta = (entry: TimetableEntry | null) => {
   }`;
 };
 
-const isHighlightedTeacherLesson = (entry: TimetableEntry | null, teacherId?: string) => {
+const isHighlightedTeacherLesson = (
+  entry: TimetableEntry | null,
+  teacherId?: string,
+) => {
   if (!teacherId || !entry || entry.type !== "lesson") {
     return false;
   }
@@ -89,10 +96,12 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
         setLoading(true);
         setError("");
         setActionMessage(null);
-        const data = await api.get<TimetableRecord[]>((fetchPath as string), fetchParams);
+        const data: any = await request(fetchPath);
         setTimetables(data || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load timetables.");
+        setError(
+          err instanceof Error ? err.message : "Unable to load timetables.",
+        );
       } finally {
         setLoading(false);
       }
@@ -115,7 +124,10 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
   }, [timetables]);
 
   const selected = useMemo(
-    () => timetables.find((item) => item.id === selectedId) || timetables[0] || null,
+    () =>
+      timetables.find((item) => item.id === selectedId) ||
+      timetables[0] ||
+      null,
     [selectedId, timetables],
   );
 
@@ -126,10 +138,10 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
 
   const timeLabels = useMemo(() => {
     if (orderedDays.length === 0) return [];
-    return orderedDays[0].entries.map((entry) => 
-      entry.type === "break" 
-        ? (entry.label || "Break").toUpperCase() 
-        : `${entry.startTime} - ${entry.endTime}`
+    return orderedDays[0].entries.map((entry) =>
+      entry.type === "break"
+        ? (entry.label || "Break").toUpperCase()
+        : `${entry.startTime} - ${entry.endTime}`,
     );
   }, [orderedDays]);
 
@@ -161,7 +173,8 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
     } catch (err) {
       setActionMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to delete timetable.",
+        text:
+          err instanceof Error ? err.message : "Failed to delete timetable.",
       });
     } finally {
       setDeleting(false);
@@ -250,7 +263,9 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
                 {highlightTeacherId ? "My Lessons This Week" : "Breaks Per Day"}
               </p>
               <p style={metricValueStyle}>
-                {highlightTeacherId ? teacherLessonCount : selected.breaks.length}
+                {highlightTeacherId
+                  ? teacherLessonCount
+                  : selected.breaks.length}
               </p>
             </div>
           </div>
@@ -310,8 +325,8 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
                   Class teacher: {selected.classTeacherName || "Not assigned"}
                 </p>
                 <p style={metaTextStyle}>
-                  Lessons start at {selected.schoolStartTime} and each subject runs
-                  for {` ${selected.subjectDurationMinutes} `}minutes.
+                  Lessons start at {selected.schoolStartTime} and each subject
+                  runs for {` ${selected.subjectDurationMinutes} `}minutes.
                 </p>
               </div>
 
@@ -448,9 +463,10 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
               </div>
             </div>
 
-
             {highlightTeacherId && selected.myLessons.length > 0 && (
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+              <div
+                style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}
+              >
                 <h4
                   style={{
                     margin: "0 0 10px",
