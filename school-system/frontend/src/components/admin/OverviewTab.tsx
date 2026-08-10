@@ -35,12 +35,12 @@ const MetricCard: React.FC<{
 );
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
-  const { classes, students, teachers, subjects, assignments, loading, error, refresh } =
+  const { classesFound, students, teachers, subjects, assignments, loading, error, refresh } =
     useClassesData();
 
   const unassignedCT = useMemo(
-    () => classes.filter((currentClass) => !currentClass.classTeacherId).length,
-    [classes],
+    () => classesFound.filter((currentClass) => !currentClass.classTeacherId).length,
+    [classesFound],
   );
   const activeTeachers = useMemo(
     () => teachers.filter((teacher) => teacher.status === "Active").length,
@@ -51,8 +51,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
     [assignments],
   );
   const classesWithStudents = useMemo(
-    () => classes.filter((currentClass) => currentClass.students > 0).length,
-    [classes],
+    () => classesFound.filter((currentClass) => currentClass.students > 0).length,
+    [classesFound],
   );
 
   const quickActions = [
@@ -109,7 +109,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
       >
         <MetricCard
           label="Total classes"
-          value={classes.length}
+          value={classesFound.length}
           note={`${classesWithStudents} with enrolled learners`}
           accent="#1a4a99"
         />
@@ -195,7 +195,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
           }}
         >
           <p style={sectionLabelStyle}>Class teacher roster</p>
-          {classes.map((currentClass) => {
+          {classesFound.map((currentClass) => {
             const classTeacher = teachers.find(
               (teacher) => teacher.id === currentClass.classTeacherId,
             );
