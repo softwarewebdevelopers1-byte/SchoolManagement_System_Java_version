@@ -728,7 +728,7 @@ export const api = {
       return request<T>("/school/archives");
     }
     if (path === "/school/timetables/my") {
-      return request<T>("/school/timetables/my");
+      return request<T>("/timetables/my");
     }
     let url = path;
     if (params) {
