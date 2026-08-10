@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.school.system.DTO.RegisterTeacherDTO;
 import com.example.school.system.DTO.TeacherAddProfile;
 import com.example.school.system.DTO.TeacherCreateDTO;
 import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
@@ -14,6 +15,7 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.School;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.repository.TeacherProfileRepository;
@@ -195,5 +197,38 @@ public class TeachersService {
             return teacherInvite;
         }).toList();
         return SchoolApiResponse.success(inviteList, "Invites loaded");
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> regNewTeacher(RegisterTeacherDTO registerTeacherDTO) {
+        if (userRepository.existsByEmail(registerTeacherDTO.getEmail())) {
+            throw new SchoolResourceExistsExceptionHandler("email already exists");
+        }
+        School schoolFound = schoolRepository.findById(registerTeacherDTO.getSchoolId())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        Users user = new Users();
+        TeacherProfile teacherProfile = new TeacherProfile();
+        if (registerTeacherDTO.getPassword() != "" && registerTeacherDTO.getPassword() != null) {
+            String hashedPass = passwordHashing.PasswordEncoder().encode(registerTeacherDTO.getPassword());
+            user.setPassword(hashedPass);
+        }
+        if (registerTeacherDTO.getStatus() != null) {
+            user.setStatus(registerTeacherDTO.getStatus());
+        }
+
+        if (registerTeacherDTO.getPassword() == "" && registerTeacherDTO.getPassword() == null) {
+            String hashedPass = passwordHashing.PasswordEncoder().encode("staff123");
+            user.setPassword(hashedPass);
+        }
+        if (registerTeacherDTO.getStatus() == null) {
+            user.setStatus(AccountStatus.ACTIVE);
+        }
+        user.setSchool(schoolFound);
+        user.setRoles(registerTeacherDTO.getRoles());
+        user.setEmail(registerTeacherDTO.getEmail());
+        teacherProfile.setPhoneNumber(registerTeacherDTO.getPhoneNumber());
+        teacherProfile.setFirstName(registerTeacherDTO.getFirstName());
+        teacherProfile.setLastName(registerTeacherDTO.getLastName());
+        return SchoolApiResponse.success();
     }
 };

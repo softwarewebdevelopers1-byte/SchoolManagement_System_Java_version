@@ -160,7 +160,7 @@ const StaffFormModal: React.FC<{
   const [email, setEmail] = useState(teacher?.email || "");
   const [phone, setPhone] = useState(teacher?.phone || "");
   const [password, setPassword] = useState(teacher?.password || "");
-  const [status, setStatus] = useState(teacher?.status || "Active");
+  const [status, setStatus] = useState(teacher?.status || "");
   const [classGrade, setClassGrade] = useState(teacher?.classGrade || "");
   const [classStream, setClassStream] = useState(teacher?.classStream || "");
   const [saving, setSaving] = useState(false);
@@ -291,6 +291,7 @@ const StaffFormModal: React.FC<{
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+              <option value="Deleted">Delete</option>
             </select>
           </div>
           <div style={{ marginBottom: "1rem" }}>
@@ -398,7 +399,7 @@ const StaffFormModal: React.FC<{
 
             setSaving(true);
             try {
-              let splitNames = name.split(" ");
+              let splitNames = name?.split(" ");
               await onSave({
                 roles: role,
                 firstName: splitNames[0]?.trim(),
@@ -459,9 +460,10 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
+  console.log("all teachers ", teachers);
 
   const filteredTeachers = teachers.filter(
-    (teacher:any) =>
+    (teacher: any) =>
       teacher.name.toLowerCase().includes(search.toLowerCase()) ||
       teacher.department.toLowerCase().includes(search.toLowerCase()) ||
       teacher.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -480,7 +482,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
 
   const openAddTeacher = (editId?: string) => {
     const teacher = editId
-      ? teachers.find((current:any) => current.id === editId) || null
+      ? teachers.find((current: any) => current.id === editId) || null
       : null;
     console.log("editable teacher ", editId, "<---> teacher ", teacher);
 
@@ -496,11 +498,13 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
     );
   };
 
-  const confirmDeleteStaff = (teacher: Teacher) => {
+  const confirmDeleteStaff = (teacher: any) => {
+    console.log("teacherId", teacher.id, "teacher detailed ", teacher);
+
     showConfirm(
       `Remove <strong>${teacher.name}</strong> from the staff directory?`,
       async () => {
-        await onDeleteTeacher(teacher.id);
+        await onDeleteTeacher(teacher.userId);
       },
       true,
     );
@@ -579,7 +583,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
             </tr>
           </thead>
           <tbody>
-            {pagedTeachers.map((teacher:any) => (
+            {pagedTeachers.map((teacher: any) => (
               <tr
                 key={teacher.id}
                 style={{ borderTop: "1px solid var(--borderL)" }}

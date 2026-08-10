@@ -43,8 +43,10 @@ import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.UserRoles;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserUpdate {
     private final UserRepository userRepository;
@@ -87,6 +89,8 @@ public class UserUpdate {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
         userFound.setStatus(AccountStatus.DELETED);
         userFound.setDeletedAt(Instant.now());
+        userRepository.save(userFound);
+        log.info("user id {} deleted on {}", id, Instant.now());
     }
 
     @Transactional
@@ -250,48 +254,51 @@ public class UserUpdate {
     }
 
     // @Transactional(readOnly = true)
-    // public List<?> getStudentsByClass(Integer grade, String stream, String term, Integer year, String examType) {
-    //     SchoolClass classes = schoolClassRepository.findByClassGradeAndClassStream(grade, stream).orElseThrow();
-    //     return classes.getStudent().stream().maq(schoolClass -> {
-    //             return StudentDashboardDTO.StudentInfo.builder()
-    //                     .id(student.getId())
-    //                     .name(student.getStudentFullName())
-    //                     .admissionNumber(student.getStudentAdm())
-    //                     .classGrade(schoolClass.getClassGrade())
-    //                     .classStream(schoolClass.getClassStream())
-    //                     .guardianName(student.getGuardianName())
-    //                     .guardianPhone(student.getGuardianPhone())
-    //                     .status(student.getStudent().getStatus().toString())
-    //                     .performance(marksRows.stream().map(m -> {
-    //                         SubjectJoint sj = m.getMarksSheet().getSubjectJoint();
-    //                         Subject subj = sj.getSubject();
-    //                         SchoolClass sc = sj.getSchoolClass();
-    //                         return StudentDashboardDTO.PerformanceInfo.builder()
-    //                                 .id(m.getId())
-    //                                 .subjectId(subj.getId())
-    //                                 .subjectName(subj.getSubjectName())
-    //                                 .classGrade(sc != null ? sc.getClassGrade() : null)
-    //                                 .classStream(sc != null ? sc.getClassStream() : null)
-    //                                 .term(m.getMarksSheet().getCurrentSchoolTerm())
-    //                                 .year(Integer.parseInt(m.getMarksSheet().getAcademicYear()))
-    //                                 .examType(m.getMarksSheet().getExamType() != null
-    //                                         ? m.getMarksSheet().getExamType().toString()
-    //                                         : null)
-    //                                 .cat1(m.getCat1())
-    //                                 .cat2(m.getCat2())
-    //                                 .cat3(m.getCat3())
-    //                                 .exam(m.getExam())
-    //                                 .finalScore(m.getTotalMarks())
-    //                                 .percentage(m.getAverageMarksPercentage() != null
-    //                                         ? m.getAverageMarksPercentage().doubleValue()
-    //                                         : null)
-    //                                 .cbcBand(m.getGrade())
-    //                                 .points(m.getPoints())
-    //                                 .build();
-    //                     }).toList())
-    //                     .build();
-    //         });
-    //     }).toList();
+    // public List<?> getStudentsByClass(Integer grade, String stream, String term,
+    // Integer year, String examType) {
+    // SchoolClass classes =
+    // schoolClassRepository.findByClassGradeAndClassStream(grade,
+    // stream).orElseThrow();
+    // return classes.getStudent().stream().maq(schoolClass -> {
+    // return StudentDashboardDTO.StudentInfo.builder()
+    // .id(student.getId())
+    // .name(student.getStudentFullName())
+    // .admissionNumber(student.getStudentAdm())
+    // .classGrade(schoolClass.getClassGrade())
+    // .classStream(schoolClass.getClassStream())
+    // .guardianName(student.getGuardianName())
+    // .guardianPhone(student.getGuardianPhone())
+    // .status(student.getStudent().getStatus().toString())
+    // .performance(marksRows.stream().map(m -> {
+    // SubjectJoint sj = m.getMarksSheet().getSubjectJoint();
+    // Subject subj = sj.getSubject();
+    // SchoolClass sc = sj.getSchoolClass();
+    // return StudentDashboardDTO.PerformanceInfo.builder()
+    // .id(m.getId())
+    // .subjectId(subj.getId())
+    // .subjectName(subj.getSubjectName())
+    // .classGrade(sc != null ? sc.getClassGrade() : null)
+    // .classStream(sc != null ? sc.getClassStream() : null)
+    // .term(m.getMarksSheet().getCurrentSchoolTerm())
+    // .year(Integer.parseInt(m.getMarksSheet().getAcademicYear()))
+    // .examType(m.getMarksSheet().getExamType() != null
+    // ? m.getMarksSheet().getExamType().toString()
+    // : null)
+    // .cat1(m.getCat1())
+    // .cat2(m.getCat2())
+    // .cat3(m.getCat3())
+    // .exam(m.getExam())
+    // .finalScore(m.getTotalMarks())
+    // .percentage(m.getAverageMarksPercentage() != null
+    // ? m.getAverageMarksPercentage().doubleValue()
+    // : null)
+    // .cbcBand(m.getGrade())
+    // .points(m.getPoints())
+    // .build();
+    // }).toList())
+    // .build();
+    // });
+    // }).toList();
     // }
 
     @Transactional(readOnly = true)
@@ -332,6 +339,7 @@ public class UserUpdate {
             }
         }
     }
+
     @Transactional
     public SchoolApiResponse<?> createParentConcern(ParentConcernDTO dto) {
         StudentProfile student = studentRepository.findById(dto.getStudentId())

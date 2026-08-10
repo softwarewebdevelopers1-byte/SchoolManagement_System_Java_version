@@ -37,6 +37,8 @@ public class TeacherProfile {
     @NotBlank(message = "Last name is missing")
     private String lastName;
 
+    private String phoneNumber;
+
     // @Column(name = "available_connections")
     // private Integer connections = 6;
 

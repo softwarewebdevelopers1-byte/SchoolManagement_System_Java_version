@@ -117,8 +117,10 @@ const teacherAvatarColor = "#c9963d";
 const normalizeStatus = (value?: string) => {
   const normalized = value?.toLowerCase();
   if (normalized === "inactive") return "Inactive";
+  if (normalized === "active") return "Active";
+  if (normalized === "deleted") return "Deleted";
   if (normalized === "completed") return "Completed";
-  return "Active";
+  return "";
 };
 
 const isActiveStudent = (student: Student) => student.status === "Active";
@@ -542,7 +544,19 @@ const AdminDashboard: React.FC = () => {
       if (teacherId) {
         await api.put(`/users/${teacherId}`, body);
       } else {
-        await api.post("/users", body);
+        await request(`/auth/register/teacher`, {
+          method: "POST",
+          body: JSON.stringify({
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            email: payload.status,
+            password: payload.password,
+            roles: payload.roles,
+            status: payload.status,
+            phoneNumber: payload.phone,
+            schoolId: getSchoolId(),
+          }),
+        });
       }
 
       await loadDashboardUsers();
@@ -558,7 +572,9 @@ const AdminDashboard: React.FC = () => {
 
   const deleteTeacher = async (teacherId: string) => {
     try {
-      await api.delete(`/users/${teacherId}`);
+      await request(`/delete/user?id=${teacherId}`, {
+        method: "PATCH",
+      });
       await loadDashboardUsers();
       await refreshUser();
       showSuccess("Staff record deleted.");
