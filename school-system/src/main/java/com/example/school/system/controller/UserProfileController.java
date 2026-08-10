@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.example.school.system.DTO.BulkEnrollElectiveDTO;
-import com.example.school.system.DTO.BulkUpdateTermDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.AuthenticatedUserService;
 import com.example.school.system.services.GetStudentsService;
@@ -116,30 +114,6 @@ public class UserProfileController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     SchoolApiResponse.error("Failed to update elective enrollments: " + e.getMessage()));
-        }
-    }
-
-    @PutMapping("/users/bulk-update-term")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> bulkUpdateTerm(@RequestBody Map<String, Object> payload) {
-        try {
-            Integer term = payload.get("term") != null ? Integer.valueOf(String.valueOf(payload.get("term"))) : 1;
-            Integer year = payload.get("year") != null ? Integer.valueOf(String.valueOf(payload.get("year"))) : null;
-            String examType = payload.get("examType") != null ? String.valueOf(payload.get("examType")) : "opener";
-
-            BulkUpdateTermDTO dto = BulkUpdateTermDTO.builder()
-                    .term(term)
-                    .year(year)
-                    .examType(examType)
-                    .build();
-
-            userUpdate.bulkUpdateTerm(dto);
-            return ResponseEntity.ok(SchoolApiResponse.success(
-                    Map.of("updated", 1),
-                    "Term updated for all classes"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    SchoolApiResponse.error("Failed to update academic cycle: " + e.getMessage()));
         }
     }
 

@@ -6,6 +6,8 @@ import com.example.school.system.types.ExamType;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
@@ -25,6 +27,7 @@ public class ExamSettings {
     private UUID id;
 
     @Column(name = "exam_type")
+    @Enumerated(EnumType.STRING)
     private ExamType examType = ExamType.OPENER;
 
     @OneToOne

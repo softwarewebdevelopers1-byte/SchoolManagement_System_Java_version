@@ -1,10 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
+import { getSchoolId, request } from "../../lib/api";
+import { req } from "./types";
 
 interface CycleTabProps {
-  onBulkTermUpdate: (term: number, year: number, examType: string) => Promise<void>;
+  onBulkTermUpdate: (
+    term: number,
+    year: number,
+    examType: string,
+  ) => Promise<void>;
   onFinalGradeUpdate: (finalGrade: string) => Promise<void>;
-  initialData?: { term: number; year: number; examType: string };
+  initialData?: {
+    term: number;
+    year: number;
+    examType: string;
+    finalGrade: string;
+  };
   finalGrade?: string;
   gradeOptions?: string[];
 }
@@ -12,14 +23,17 @@ interface CycleTabProps {
 export const CycleTab: React.FC<CycleTabProps> = ({
   onBulkTermUpdate,
   onFinalGradeUpdate,
-  initialData,
-  finalGrade = "",
   gradeOptions = [],
 }) => {
+  const [initialData, setSchoolSettings] = useState<req>() || {};
   const [term, setTerm] = useState<number>(initialData?.term || 1);
-  const [year, setYear] = useState<number>(initialData?.year || new Date().getFullYear());
-  const [examType, setExamType] = useState<string>(initialData?.examType || "opener");
-  const [selectedFinalGrade, setSelectedFinalGrade] = useState(finalGrade);
+  const [year, setYear] = useState<number>(
+    initialData?.year || new Date().getFullYear(),
+  );
+  const [examType, setExamType] = useState<string>(initialData?.examType||"not set");
+  const [selectedFinalGrade, setSelectedFinalGrade] = useState(
+    initialData?.finalGrade,
+  );
   const [loading, setLoading] = useState(false);
   const [savingFinalGrade, setSavingFinalGrade] = useState(false);
 
@@ -32,9 +46,19 @@ export const CycleTab: React.FC<CycleTabProps> = ({
   }, [initialData]);
 
   React.useEffect(() => {
-    setSelectedFinalGrade(finalGrade);
-  }, [finalGrade]);
+    setSelectedFinalGrade(initialData?.finalGrade);
+  }, [initialData?.finalGrade]);
 
+  useEffect(() => {
+    async function getTermYearAndExamType(): Promise<req> {
+      return await request(
+        `/schools/update/term/exam/${encodeURIComponent(getSchoolId()!)}`,
+      );
+    }
+    (async () => {
+      setSchoolSettings(await getTermYearAndExamType());
+    })();
+  }, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -49,7 +73,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
     e.preventDefault();
     setSavingFinalGrade(true);
     try {
-      await onFinalGradeUpdate(selectedFinalGrade);
+      await onFinalGradeUpdate(selectedFinalGrade || "");
     } finally {
       setSavingFinalGrade(false);
     }
@@ -63,15 +87,34 @@ export const CycleTab: React.FC<CycleTabProps> = ({
       </div>
 
       <div style={noticeStyle}>
-        <h4 style={{ margin: "0 0 8px", color: "var(--gold)", fontSize: 14 }}>Critical Action</h4>
+        <h4 style={{ margin: "0 0 8px", color: "var(--gold)", fontSize: 14 }}>
+          Critical Action
+        </h4>
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-          Updating the academic cycle is a global action. <strong>If the Year is advanced, learners below the final grade are promoted.</strong> Learners in the configured final grade are marked completed, removed from class membership, and copied into the exited learners archive with their education-health history.
+          Updating the academic cycle is a global action.{" "}
+          <strong>
+            If the Year is advanced, learners below the final grade are
+            promoted.
+          </strong>{" "}
+          Learners in the configured final grade are marked completed, removed
+          from class membership, and copied into the exited learners archive
+          with their education-health history.
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18, alignItems: "start" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 18,
+          alignItems: "start",
+        }}
+      >
         <div style={cardStyle}>
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 20 }}
+          >
             <div>
               <label style={labelStyle}>Target Academic Year</label>
               <input
@@ -91,6 +134,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
                 style={inputStyle}
                 required
               >
+                <option value={0}>--select--</option>
                 <option value={1}>Term 1</option>
                 <option value={2}>Term 2</option>
                 <option value={3}>Term 3</option>
@@ -105,9 +149,10 @@ export const CycleTab: React.FC<CycleTabProps> = ({
                 style={inputStyle}
                 required
               >
-                <option value="opener">Opener Exam</option>
-                <option value="midterm">Mid Term</option>
-                <option value="closing">Closing Exam</option>
+                <option value="">--select--</option>
+                <option value="OPENER">Opener Exam</option>
+                <option value="MIDTERM">Mid Term</option>
+                <option value="CLOSING">Closing Exam</option>
               </select>
             </div>
 
@@ -126,7 +171,10 @@ export const CycleTab: React.FC<CycleTabProps> = ({
         </div>
 
         <div style={cardStyle}>
-          <form onSubmit={handleSaveFinalGrade} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <form
+            onSubmit={handleSaveFinalGrade}
+            style={{ display: "flex", flexDirection: "column", gap: 14 }}
+          >
             <div>
               <label style={labelStyle}>Final school grade</label>
               <input
@@ -143,8 +191,16 @@ export const CycleTab: React.FC<CycleTabProps> = ({
                 ))}
               </datalist>
             </div>
-            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.45, color: "var(--textMut)" }}>
-              When the cycle changes, active learners currently in this grade are isolated from current classes and stored as exited learners.
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+                color: "var(--textMut)",
+              }}
+            >
+              When the cycle changes, active learners currently in this grade
+              are isolated from current classes and stored as exited learners.
             </p>
             <button
               type="submit"
@@ -162,15 +218,54 @@ export const CycleTab: React.FC<CycleTabProps> = ({
       </div>
 
       <div style={{ marginTop: 40 }}>
-        <h4 style={{ fontFamily: "var(--serif)", color: "var(--text)", fontSize: 18, marginBottom: 15 }}>Frequently Asked Questions</h4>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+        <h4
+          style={{
+            fontFamily: "var(--serif)",
+            color: "var(--text)",
+            fontSize: 18,
+            marginBottom: 15,
+          }}
+        >
+          Frequently Asked Questions
+        </h4>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 16,
+          }}
+        >
           {[
-            { q: "What happens to old marks?", a: "Old marks remain in the database and can be reviewed by cycle and stream from Admin Marks Entry." },
-            { q: "What happens to final-grade learners?", a: "They become completed, lose class membership and elective enrollment, and appear under Exited Learners for leadership review." },
+            {
+              q: "What happens to old marks?",
+              a: "Old marks remain in the database and can be reviewed by cycle and stream from Admin Marks Entry.",
+            },
+            {
+              q: "What happens to final-grade learners?",
+              a: "They become completed, lose class membership and elective enrollment, and appear under Exited Learners for leadership review.",
+            },
           ].map((faq, i) => (
             <div key={i} style={faqCardStyle}>
-              <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 5px", color: "var(--text)" }}>{faq.q}</p>
-              <p style={{ fontSize: 12, color: "var(--textMut)", margin: 0, lineHeight: 1.4 }}>{faq.a}</p>
+              <p
+                style={{
+                  fontWeight: 700,
+                  fontSize: 13,
+                  margin: "0 0 5px",
+                  color: "var(--text)",
+                }}
+              >
+                {faq.q}
+              </p>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--textMut)",
+                  margin: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                {faq.a}
+              </p>
             </div>
           ))}
         </div>

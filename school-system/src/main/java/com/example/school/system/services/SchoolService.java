@@ -1,12 +1,15 @@
 package com.example.school.system.services;
 
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.CreateSchoolDTO;
+import com.example.school.system.DTO.GetExamTypeYearAndTerm;
 import com.example.school.system.DTO.OtpCreationDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.UpdateSchoolDTO;
+import com.example.school.system.DTO.UpdateTermAndExam;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -14,6 +17,7 @@ import com.example.school.system.error.SchoolResourceRestrictedException;
 import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
+import com.example.school.system.repository.ExamSettingsRepo;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.security.jwt.JwtValidator;
@@ -22,8 +26,10 @@ import com.example.school.system.types.OtpPurpose;
 import com.example.school.system.types.SchoolStatus;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class SchoolService {
     private final SchoolSettingsRepository schoolSettingsRepository;
@@ -31,6 +37,7 @@ public class SchoolService {
     private final OtpService otpService;
     private final RandomValuesService randomValues;
     private final JwtValidator jwtValidator;
+    private final ExamSettingsRepo examSettingsRepo;
 
     public SchoolApiResponse<?> getSchool(String code) {
         School schoolName = schoolRepository.findBySchoolCode(code)
@@ -159,6 +166,60 @@ public class SchoolService {
         schoolRepository.delete(schoolFound);
         return SchoolApiResponse.success(otpValidationMessage + " " + "and school deleted successfully");
     }
+
+    @Transactional
+    public ResponseEntity<?> bulkUpdateTerm(UpdateTermAndExam updateTermAndExam) {
+        try {
+            ExamType examType = updateTermAndExam.examType();
+            Integer term = updateTermAndExam.term();
+            School schoolFound = schoolRepository.findById(updateTermAndExam.schoolId())
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+            SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
+            ;
+            boolean changed = false;
+            if (term != null) {
+                changed = true;
+                log.info("school term for school {} changed term to {}", updateTermAndExam.schoolId(),
+                        term);
+                schoolSettings.setCurrentSchoolTerm(term);
+            }
+            if (examType != null) {
+                changed = true;
+                log.info("Exam type for school {} changed term to term {}", updateTermAndExam.schoolId(),
+                        examType);
+                ExamSettings examSettings = schoolSettings.getExamSettings();
+                if (examSettings == null) {
+                    examSettings = new ExamSettings();
+                    examSettings.setExamType(examType);
+                    examSettings.setSchoolSettings(schoolSettings);
+                }
+                examSettings.setExamType(examType);
+                examSettingsRepo.save(examSettings);
+            }
+            if (changed) {
+                schoolSettingsRepository.save(schoolSettings);
+            }
+            return ResponseEntity.ok(SchoolApiResponse.success(
+                    "Term updated for all classes"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    SchoolApiResponse.error("Failed to update academic cycle: " + e.getMessage()));
+        }
+    }
+
+    public GetExamTypeYearAndTerm getTermYearAndExamType(UUID id) {
+        School schoolFound = schoolRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
+        ExamSettings examSettings = schoolSettings.getExamSettings();
+        if (examSettings == null) {
+            examSettings = new ExamSettings();
+            examSettings.setExamType(ExamType.OPENER);
+            examSettings.setSchoolSettings(schoolSettings);
+        }
+        return GetExamTypeYearAndTerm.builder().examType(examSettings.getExamType())
+                .term(schoolSettings.getCurrentSchoolTerm()).year(schoolSettings.getAcademicYear())
+                .finalGrade(schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade() : "not set")
+                .build();
+    }
 }
-
-

@@ -30,7 +30,7 @@ import {
   ExitedStudent,
 } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api, request } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -38,7 +38,6 @@ import {
   type SubjectEnrollmentMode,
 } from "../../lib/subjectEnrollment";
 import { useClassesData } from "../../lib/adminData";
-
 const navItems: NavItem[] = [
   {
     id: "overview",
@@ -354,7 +353,6 @@ const AdminDashboard: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<ApiAssignment[]>([]);
   const [exitedStudents, setExitedStudents] = useState<ExitedStudent[]>([]);
-  const [finalGrade, setFinalGrade] = useState("");
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
@@ -405,7 +403,6 @@ const AdminDashboard: React.FC = () => {
       setSubjects(response.subjects || []);
       setAssignments(response.assignments || []);
       setExitedStudents(response.exitedStudents || []);
-      setFinalGrade(graduationSettings.finalGrade || "");
       setClassSubjectSettings(subjectSettings || []);
     } catch (err) {
       setError(
@@ -792,13 +789,17 @@ const AdminDashboard: React.FC = () => {
     examType: string,
   ) => {
     try {
-      const res = await api.put<{ message?: string }>(
-        "/users/bulk-update-term",
-        { term, year, examType },
-      );
+      const res: any = await request("/schools/update/term/exam", {
+        method: "PUT",
+        body: JSON.stringify({
+          term,
+          examType: examType.toUpperCase(),
+          schoolId: getSchoolId(),
+        }),
+      });
       await loadDashboardUsers();
       showSuccess(
-        res.message ||
+        res?.message ||
           `All classes have been updated to Term ${term}, ${year} (${examType}).`,
       );
     } catch (err: unknown) {
@@ -817,7 +818,6 @@ const AdminDashboard: React.FC = () => {
         "/users/graduation-settings",
         { finalGrade: nextFinalGrade },
       );
-      setFinalGrade(response.finalGrade);
       showSuccess(response.message || "Final grade setting updated.");
     } catch (err) {
       showError(
@@ -1031,19 +1031,11 @@ const AdminDashboard: React.FC = () => {
         />
       );
     }
-
     if (activeTab === "cycle") {
-      const currentPeriod = {
-        term: teachers[0]?.term || 1,
-        year: teachers[0]?.year || new Date().getFullYear(),
-        examType: teachers[0]?.examType || "opener",
-      };
       return (
         <CycleTab
           onBulkTermUpdate={handleBulkTermUpdate}
           onFinalGradeUpdate={handleFinalGradeUpdate}
-          initialData={currentPeriod}
-          finalGrade={finalGrade}
           gradeOptions={Array.from(
             new Set(classesFound.map((current) => current.grade)),
           )}

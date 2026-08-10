@@ -5,20 +5,25 @@ import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.GetSchoolDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.UpdateSchoolDTO;
+import com.example.school.system.DTO.UpdateTermAndExam;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SchoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.UUID;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,5 +60,18 @@ public class SchoolController {
     public ResponseEntity<?> getSchool(@RequestBody GetSchoolDTO getSchoolDTO) {
         SchoolApiResponse<?> getSchoolResponse = schoolService.getSchool(getSchoolDTO.schoolCode());
         return ResponseEntity.status(200).body(getSchoolResponse);
+    }
+
+    @PutMapping("/update/term/exam")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> termExamUpdate(@Valid @RequestBody UpdateTermAndExam updateTermAndExam) {
+        return schoolService.bulkUpdateTerm(updateTermAndExam);
+    }
+
+    @GetMapping("/update/term/exam/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','HEADTEACHER','DEPUTYTEACHER','SUBJECTTEACHER','STUDENT')")
+    public ResponseEntity<?> getTermYearAndExamType(@PathVariable UUID id) {
+        var res = schoolService.getTermYearAndExamType(id);
+        return ResponseEntity.status(200).body(res);
     }
 }

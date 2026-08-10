@@ -266,9 +266,6 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   let sheet: any;
 
   sheet = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}`);
-
-  console.log("marks sheet", await sheet);
-
   const cat1Enabled = sheet?.cat1Entry === true;
   const cat2Enabled = sheet?.cat2Entry === true;
   const cat3Enabled = sheet?.cat3Entry === true;
@@ -811,10 +808,10 @@ export const api = {
         body: JSON.stringify(body),
       });
     }
-    if (path === "/users/bulk-update-term") {
-      return request<T>("/users/bulk-update-term", {
+    if (path === "/bulk-update-term") {
+      return request<T>("/schools/update/term/exam", {
         method: "PUT",
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, schoolId: getSchoolId() }),
       });
     }
     if (

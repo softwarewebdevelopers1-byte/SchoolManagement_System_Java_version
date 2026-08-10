@@ -4,12 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.BulkEnrollElectiveDTO;
-import com.example.school.system.DTO.BulkUpdateTermDTO;
 import com.example.school.system.DTO.ChangePasswordDTO;
 import com.example.school.system.DTO.GraduationSettingsDTO;
 import com.example.school.system.DTO.ParentConcernDTO;
@@ -43,9 +40,7 @@ import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.AccountStatus;
-import com.example.school.system.types.ExamType;
 import com.example.school.system.types.UserRoles;
-
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
@@ -337,22 +332,6 @@ public class UserUpdate {
             }
         }
     }
-
-    @Transactional
-    public void bulkUpdateTerm(BulkUpdateTermDTO dto) {
-        List<SchoolSettings> allSettings = schoolSettingsRepository.findAll();
-        for (SchoolSettings settings : allSettings) {
-            settings.setCurrentSchoolTerm(dto.getTerm());
-            if (dto.getYear() != null) {
-                settings.setAcademicYear(String.valueOf(dto.getYear()));
-            }
-            if (dto.getExamType() != null) {
-                settings.getExamSettings().setExamType(ExamType.valueOf(dto.getExamType()));
-            }
-            schoolSettingsRepository.save(settings);
-        }
-    }
-
     @Transactional
     public SchoolApiResponse<?> createParentConcern(ParentConcernDTO dto) {
         StudentProfile student = studentRepository.findById(dto.getStudentId())

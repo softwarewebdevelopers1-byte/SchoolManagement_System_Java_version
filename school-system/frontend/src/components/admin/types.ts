@@ -180,3 +180,9 @@ export interface NavItem {
   label: string;
   svg: string;
 }
+export interface req {
+  year: number;
+  term: number;
+  examType: string;
+  finalGrade: string;
+}
