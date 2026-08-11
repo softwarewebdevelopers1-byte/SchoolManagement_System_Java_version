@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Class, Teacher } from "./types";
+import { Class } from "./types";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -156,7 +156,8 @@ const StaffFormModal: React.FC<{
   }) => Promise<void>;
 }> = ({ teacher, classes, onClose, onSave }) => {
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
-  const [name, setName] = useState(teacher?.name || "");
+  const [firstName, setFirstName] = useState(teacher?.firstName || "");
+  const [lastName, setLastName] = useState(teacher?.lastName);
   const [email, setEmail] = useState(teacher?.email || "");
   const [phone, setPhone] = useState(teacher?.phoneNumber || "");
   const [password, setPassword] = useState(teacher?.password || "");
@@ -254,10 +255,16 @@ const StaffFormModal: React.FC<{
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label style={labelStyle}>Name</label>
+          <label style={labelStyle}>First Name</label>
           <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            style={inputStyle}
+          />
+          <label style={labelStyle}>Last Name</label>
+          <input
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
             style={inputStyle}
           />
         </div>
@@ -395,8 +402,20 @@ const StaffFormModal: React.FC<{
         </button>
         <button
           onClick={async () => {
-            if (!name.trim() || !email.trim() || !phone.trim()) {
-              setErrorMsg("Name, email and phone number are required.");
+            if (!firstName.trim()) {
+              setErrorMsg("First name is required.");
+              return;
+            }
+            if (!lastName.trim()) {
+              setErrorMsg("Last name is required");
+              return;
+            }
+            if (!email.trim()) {
+              setErrorMsg("Email is required");
+              return;
+            }
+            if (!phone.trim()) {
+              setErrorMsg("Phone number is required");
               return;
             }
             if (role.length == 0) {
@@ -407,11 +426,10 @@ const StaffFormModal: React.FC<{
 
             setSaving(true);
             try {
-              let splitNames = name?.split(" ");
               await onSave({
                 roles: role,
-                firstName: splitNames[0]?.trim(),
-                lastName: splitNames[1]?.trim(),
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
                 password: password?.trim(),
                 email: email.trim(),
                 phone: phone.trim(),
@@ -475,8 +493,9 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
 
   const filteredTeachers = teachers.filter(
     (teacher: any) =>
-      teacher.name.toLowerCase().includes(search.toLowerCase()) ||
-      teacher.department.toLowerCase().includes(search.toLowerCase()) ||
+      teacher.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+      teacher.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+      teacher.department?.toLowerCase().includes(search.toLowerCase()) ||
       teacher.email.toLowerCase().includes(search.toLowerCase()) ||
       teacher.roleLabel.toLowerCase().includes(search.toLowerCase()),
   );
@@ -495,8 +514,6 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
     const teacher = editId
       ? teachers.find((current: any) => current.id === editId) || null
       : null;
-    console.log("editable teacher ", editId, "<---> teacher ", teacher);
-
     showModal(
       <StaffFormModal
         teacher={teacher}
@@ -510,8 +527,6 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   };
 
   const confirmDeleteStaff = (teacher: any) => {
-    console.log("teacherId", teacher.id, "teacher detailed ", teacher);
-
     showConfirm(
       `Remove <strong>${teacher.name}</strong> from the staff directory?`,
       async () => {
@@ -615,11 +630,16 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                   >
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: avatar(teacher.name, 30),
+                        __html: avatar(
+                          `${teacher?.firstName || ""} ${teacher?.lastName || ""}`,
+                          30,
+                        ),
                       }}
                     />
                     <div>
-                      <p style={rowPrimaryTextStyle}>{teacher.name}</p>
+                      <p
+                        style={rowPrimaryTextStyle}
+                      >{`${teacher?.firstName || "_ _ "} ${teacher?.lastName || "_ _"}`}</p>
                       <p style={rowMetaTextStyle}>{teacher.email}</p>
                     </div>
                   </div>

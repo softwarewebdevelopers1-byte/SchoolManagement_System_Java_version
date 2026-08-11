@@ -496,7 +496,9 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       studentAdm: student.adm || student.admissionNo,
       email: student.email,
       phoneNumber: student.phoneNumber || "",
-      classId: student.classId || buildClassId(student.classGrade, student.classStream),
+      classId:
+        student.classId ||
+        buildClassId(student.classGrade, student.classStream),
       schoolId: schoolId,
       gender: student.gender || "",
       classGrade: student.classGrade || "",
@@ -509,14 +511,13 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         id: teacher.teacherProfileId || teacher.usersId || teacher.id,
         userId: teacher.usersId,
         email: teacher.email,
-        name:
-          [teacher.firstName, teacher.lastName].filter(Boolean).join(" ") ||
-          teacher.email,
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
         roles,
         roleLabel: roles.join(", "),
         status: teacher.status || "Active",
-        classGrade: teacher.schoolClass || "",
-        classStream: teacher.classStream || "",
+        classGrade: teacher.schoolClass,
+        classStream: teacher.classStream ,
         department: teacher.department || "General",
         phoneNumber: teacher.phoneNumber || "",
         subjects: teacher.subjects || [],
