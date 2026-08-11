@@ -488,7 +488,6 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   }, [search, classFilter]);
 
   const openStudentModal = (studentId?: string) => {
-    console.log("id--->");
     const student = studentId
       ? students.find((current) => current?.userId === studentId) || null
       : null;

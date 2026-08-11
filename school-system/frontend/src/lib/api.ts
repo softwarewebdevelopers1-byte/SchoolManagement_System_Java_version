@@ -361,8 +361,8 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
       body: JSON.stringify({
         email: body.email,
         studentFullName: body.studentFullName,
-        studentAdm: body.admissionNo || body.adm,
-        phoneNumber: body.guardianPhone,
+        studentAdm: body.studentAdm,
+        phoneNumber: body.phoneNumber,
         classId,
         schoolId,
       }),

@@ -36,6 +36,7 @@ public class StudentRegistrationService {
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
+        log.info("student registered {} ", registerStudentDTO.toString());
         School schoolFound = schoolRepository.findById(registerStudentDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         // Validate and fetch class if provided

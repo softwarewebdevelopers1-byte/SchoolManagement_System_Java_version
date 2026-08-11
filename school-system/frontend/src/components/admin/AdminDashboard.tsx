@@ -559,7 +559,9 @@ const AdminDashboard: React.FC = () => {
 
     await loadDashboardUsers();
     await refreshUser();
-    showSuccess(`Staff member ${teacherId ? "updated" : "added"} successfully.`);
+    showSuccess(
+      `Staff member ${teacherId ? "updated" : "added"} successfully.`,
+    );
   };
 
   const deleteTeacher = async (teacherId: string) => {
