@@ -183,10 +183,10 @@ const AssignmentFormModal: React.FC<{
   onClose: () => void;
   onSave: (
     teacherId: string,
-    classId: string|undefined,
+    classId: string | undefined,
     subjectJointId: string,
   ) => Promise<void>;
-}> = ({ currentClass, subject, teachers,onSave, onClose }) => {
+}> = ({ currentClass, subject, teachers, onSave, onClose }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -237,7 +237,11 @@ const AssignmentFormModal: React.FC<{
               if (!selectedTeacherId) return;
               setSaving(true);
               try {
-                await onSave(selectedTeacherId,currentClass.classId,subject.subjectJointId);
+                await onSave(
+                  selectedTeacherId,
+                  currentClass.classId,
+                  subject.subjectJointId,
+                );
                 // await request(`/assign/subject/teacher`, {
                 //   method: "POST",
                 //   body: JSON.stringify({
@@ -419,7 +423,7 @@ interface AssignmentsTabProps {
     classGrade: string,
     classStream: string,
     isOffered: boolean,
-    enrollmentMode?: SubjectEnrollmentMode,
+    enrollmentMode?: string,
     sharedSlotId?: string | null,
   ) => Promise<void>;
   avatar: (name: string, size: number) => string;
@@ -964,7 +968,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                     <div style={{ display: "grid", gap: 8 }}>
                       {droppedSubjects.map((subject: subjectJoints) => (
                         <div
-                          key={`${currentClass.id}-${subject.subjectJointId}-dropped`}
+                          key={`${currentClass.classId}-${subject.subjectJointId}-dropped`}
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
@@ -1013,20 +1017,15 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                             <button
                               onClick={() =>
                                 showConfirm(
-                                  `Add <strong>${subject.subjectName}</strong> back to <strong>${currentClass.name}</strong>?`,
+                                  `Add <strong>${subject.subjectName}</strong> back to <strong>${currentClass.grade} ${currentClass.stream}</strong>?`,
                                   async () => {
-                                    const subjectSetting =
-                                      currentClass.subjectSettings[
-                                        subject.subjectJointId
-                                      ];
                                     await onToggleSubjectOffering(
                                       subject.subjectJointId,
                                       currentClass.grade,
                                       currentClass.stream || "",
                                       true,
-                                      subjectSetting?.enrollmentMode ||
-                                        "compulsory",
-                                      subjectSetting?.sharedSlotId || null,
+                                      subject?.subjectType || "compulsory",
+                                      subject?.electiveCode || null,
                                     );
                                   },
                                 )

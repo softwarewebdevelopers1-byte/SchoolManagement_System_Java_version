@@ -680,7 +680,7 @@ const AdminDashboard: React.FC = () => {
     classGrade: string,
     classStream: string,
     isOffered: boolean,
-    enrollmentMode: SubjectEnrollmentMode = "compulsory",
+    enrollmentMode: string | undefined,
     sharedSlotId: string | null = null,
   ) => {
     try {
@@ -697,12 +697,14 @@ const AdminDashboard: React.FC = () => {
       );
       await loadDashboardUsers();
       showSuccess(
-        response.message ||
+        response?.message ||
           (isOffered
             ? "Subject restored for the selected class."
             : "Subject dropped for the selected class."),
       );
     } catch (err) {
+      console.log("error ", err);
+
       showError(
         isOffered
           ? "Failed to add the subject back to this class."
