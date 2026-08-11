@@ -3,6 +3,8 @@ export interface LoginResponse {
   user: any;
 }
 
+import { buildClassId } from "./subjectEnrollment";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
@@ -223,11 +225,7 @@ const loadSubjectJoints = async () => {
     return {
       ...joint,
       id: joint.subjectJointId,
-      subjectId: {
-        _id: joint.subjectJointId,
-        id: joint.subjectJointId,
-        name: joint.subjectName,
-      },
+      subjectId: joint.subjectJointId,
       name: joint.subjectName,
       classGrade: parsed.classGrade,
       classStream: parsed.classStream,
@@ -287,6 +285,7 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
       exam: row.exam,
       examMax: sheet.maxExam || 100,
       finalScore: row.totalMarks,
+      avgPercentage: row.avgPercentage,
       points: row.points,
       cbcBand: row.marksGrade,
     },
@@ -493,11 +492,16 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
   return {
     students: (students || []).map((student: any) => ({
       id: student.userId || student.id,
-      admissionNo: student.adm || student.admissionNo,
-      adm: student.adm || student.admissionNo,
-      name: student.fullName || student.name,
+      studentFullName: student.fullName || student.name,
+      studentAdm: student.adm || student.admissionNo,
       email: student.email,
-      status: student.status,
+      phoneNumber: student.phoneNumber || "",
+      classId: student.classId || buildClassId(student.classGrade, student.classStream),
+      schoolId: schoolId,
+      gender: student.gender || "",
+      classGrade: student.classGrade || "",
+      classStream: student.classStream || "",
+      status: student.status || "Active",
     })),
     staff: (teachers || []).map((teacher: any) => {
       const roles = normalizeRoles(teacher.roles);
@@ -510,16 +514,37 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
           teacher.email,
         roles,
         roleLabel: roles.join(", "),
-        status: teacher.status,
-        classGrade: teacher.schoolClass,
-        phoneNumber: teacher?.phoneNumber,
+        status: teacher.status || "Active",
+        classGrade: teacher.schoolClass || "",
+        classStream: teacher.classStream || "",
+        department: teacher.department || "General",
+        phoneNumber: teacher.phoneNumber || "",
+        subjects: teacher.subjects || [],
+        teacherNumber: teacher.teacherNumber || "",
+        joinDate: teacher.joinDate || "",
+        term: teacher.term,
+        year: teacher.year,
+        examType: teacher.examType,
       };
     }),
     subjects: (subjects || []).map((subject: any) => ({
       id: subject.subjectId || subject.id,
       name: subject.subjectName || subject.name,
+      department: subject.department || "General",
     })),
-    assignments: subjectJoints || [],
+    assignments: (subjectJoints || []).map((joint: any) => {
+      const parsed = splitClassName(joint.className);
+      return {
+        id: joint.subjectJointId,
+        subjectId: joint.subjectJointId,
+        teacherId: joint.subjectTeacherId,
+        classGrade: parsed.classGrade,
+        classStream: parsed.classStream,
+        enrollmentMode:
+          joint.subjectType === "ELECTIVE" ? "elective" : "compulsory",
+        sharedSlotId: joint.electiveCode || null,
+      };
+    }),
     exitedStudents: [],
   } as T;
 };

@@ -43,6 +43,18 @@ const collectStudentsWithStoredMarks = (subjectMarks?: SubjectMarksMap) =>
       .map(([studentId]) => studentId),
   );
 
+const SUBJECT_TEACHER_TAB_KEY = "edunex.subjectTeacher.activeTab";
+const getSubjectTeacherSubjectStorageKey = (user: any) =>
+  ["edunex.subjectTeacher.activeSubject", user?.id || "unknown"].join(":");
+const subjectTeacherTabs = new Set([
+  "subjects",
+  "marks",
+  "timetable",
+  "assessments",
+  "progress",
+  "resources",
+]);
+
 const SubjectTeacherDashboard: React.FC = () => {
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("user");
@@ -58,8 +70,14 @@ const SubjectTeacherDashboard: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
-  const [activeTab, setActiveTab] = useState("subjects");
-  const [activeSubjectId, setActiveSubjectId] = useState("");
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem(SUBJECT_TEACHER_TAB_KEY);
+    return saved && subjectTeacherTabs.has(saved) ? saved : "subjects";
+  });
+  const subjectStorageKey = getSubjectTeacherSubjectStorageKey(currentUser);
+  const [activeSubjectId, setActiveSubjectId] = useState(() => {
+    return localStorage.getItem(getSubjectTeacherSubjectStorageKey(currentUser)) || "";
+  });
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [marksData, setMarksData] = useState<MarksData>({});
@@ -112,10 +130,11 @@ const SubjectTeacherDashboard: React.FC = () => {
       ]);
       const mapped = (data || []).map((a: any) => {
         const assignmentId = a._id || a.id;
+        const assignedSubject = a.subjectId || {};
         return {
           id: assignmentId,
-          subjectId: a.subjectId._id,
-          name: a.subjectId.name,
+          subjectId: assignedSubject._id || assignedSubject.id || a.subjectId,
+          name: assignedSubject.name || assignedSubject.subjectName || "Subject",
           grade: `Grade ${a.classGrade} ${a.classStream}`.trim(),
           classGrade: a.classGrade,
           classStream: a.classStream,
@@ -130,14 +149,22 @@ const SubjectTeacherDashboard: React.FC = () => {
         };
       });
       setSubjects(mapped);
-      if (mapped.length > 0) setActiveSubjectId(mapped[0].id);
+      if (mapped.length > 0) {
+        const savedSubjectId = localStorage.getItem(subjectStorageKey);
+        const nextSubject =
+          mapped.find((subject) => subject.id === savedSubjectId) || mapped[0];
+        setActiveSubjectId(nextSubject.id);
+      }
 
-    } catch (err) {
-      // ignore
+    } catch (err: any) {
+      setMsg({
+        text: err?.message || "Unable to load your assigned subjects.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id, currentUser?.term, currentUser?.year, currentUser?.examType]);
+  }, [currentUser?.id, currentUser?.term, currentUser?.year, currentUser?.examType, subjectStorageKey]);
 
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
@@ -165,7 +192,12 @@ const SubjectTeacherDashboard: React.FC = () => {
         setYear(freshUser.year || 2024);
         setExamType(freshUser.examType || "opener");
       }
-    } catch (e) {}
+    } catch (e: any) {
+      setMsg({
+        text: e?.message || "Unable to refresh your profile.",
+        type: "error",
+      });
+    }
   }, [currentUser?.id]);
 
   const handleManualRefresh = async () => {
@@ -230,9 +262,13 @@ const SubjectTeacherDashboard: React.FC = () => {
         ...prev,
         [activeSubjectId]: subjectMarks
       }));
-    } catch (err) {
+    } catch (err: any) {
       setStudents([]);
       setPushedStudents(new Set());
+      setMsg({
+        text: err?.message || "Unable to load students and marks for this subject.",
+        type: "error",
+      });
     }
   }, [activeSubjectId, subjects, term, year, examType, syncPushState]);
 
@@ -372,8 +408,8 @@ const SubjectTeacherDashboard: React.FC = () => {
       setMsg({ text: "Marks saved successfully!", type: "success" });
       setTimeout(() => setMsg(null), 3000);
       loadStudentsAndMarks();
-    } catch (err) {
-      setMsg({ text: "Failed to save marks.", type: "error" });
+    } catch (err: any) {
+      setMsg({ text: err?.message || "Failed to save marks.", type: "error" });
       setTimeout(() => setMsg(null), 3000);
     }
   }, [examType, loadStudentsAndMarks, marksData, subjects, syncPushState, term, year]);
@@ -405,8 +441,8 @@ const SubjectTeacherDashboard: React.FC = () => {
       setMsg({ text: `Marks saved and pushed for ${currentSubject.grade}`, type: "success" });
       setTimeout(() => setMsg(null), 3000);
       loadStudentsAndMarks();
-    } catch (err) {
-      setMsg({ text: "Failed to push marks.", type: "error" });
+    } catch (err: any) {
+      setMsg({ text: err?.message || "Failed to push marks.", type: "error" });
       setTimeout(() => setMsg(null), 3000);
     }
   }, [examType, loadStudentsAndMarks, marksData, subjects, syncPushState, term, year]);
@@ -418,8 +454,17 @@ const SubjectTeacherDashboard: React.FC = () => {
 
   const handleSelectTab = (tabId: string) => {
     setActiveTab(tabId);
+    localStorage.setItem(SUBJECT_TEACHER_TAB_KEY, tabId);
     setMobileMenuOpen(false);
   };
+
+  const handleSubjectChange = useCallback(
+    (subjectId: string) => {
+      setActiveSubjectId(subjectId);
+      localStorage.setItem(subjectStorageKey, subjectId);
+    },
+    [subjectStorageKey],
+  );
 
   const renderContent = () => {
     if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading dashboard...</div>;
@@ -427,9 +472,9 @@ const SubjectTeacherDashboard: React.FC = () => {
 
     switch (activeTab) {
       case "subjects":
-        return <SubjectsTab subjects={subjects} onSelectSubject={setActiveSubjectId} onEnterMarks={(id) => { setActiveSubjectId(id); setActiveTab("marks"); }} pushedSubjects={pushedSubjects} gc={gc} term={term} year={year} />;
+        return <SubjectsTab subjects={subjects} onSelectSubject={handleSubjectChange} onEnterMarks={(id) => { handleSubjectChange(id); handleSelectTab("marks"); }} pushedSubjects={pushedSubjects} gc={gc} term={term} year={year} />;
       case "marks":
-        return <MarksTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} pushedSubjects={pushedSubjects} pushedStudents={pushedStudents} onSubjectChange={setActiveSubjectId} onMarkUpdate={handleMarkUpdate} onSaveMarks={handleSaveMarks} onConfigUpdate={handleConfigUpdate} onRemoveCat={handleRemoveCat} onPushMarks={handlePushMarks} avatar={avatar} term={term} year={year} examType={examType} onTermChange={setTerm} onExamTypeChange={setExamType} />;
+        return <MarksTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} pushedSubjects={pushedSubjects} pushedStudents={pushedStudents} onSubjectChange={handleSubjectChange} onMarkUpdate={handleMarkUpdate} onSaveMarks={handleSaveMarks} onConfigUpdate={handleConfigUpdate} onRemoveCat={handleRemoveCat} onPushMarks={handlePushMarks} avatar={avatar} term={term} year={year} examType={examType} onTermChange={setTerm} onExamTypeChange={setExamType} />;
       case "timetable":
         return (
           <TimetableLibrary
@@ -444,7 +489,7 @@ const SubjectTeacherDashboard: React.FC = () => {
       case "assessments":
         return <AssessmentsTab assessments={[]} term={term} year={year} />;
       case "progress":
-        return <ProgressTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} onSubjectChange={setActiveSubjectId} avatar={avatar} gc={gc} />;
+        return <ProgressTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} onSubjectChange={handleSubjectChange} avatar={avatar} gc={gc} />;
       case "resources":
         return <ResourcesTab resources={[]} />;
       default:

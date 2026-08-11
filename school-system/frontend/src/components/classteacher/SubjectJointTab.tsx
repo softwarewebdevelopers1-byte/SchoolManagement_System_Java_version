@@ -59,8 +59,6 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   const [electiveCode, setElectiveCode] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [configSharedSlot, setConfigSharedSlot] = useState("");
-  const [configSharedSlotCopied, setConfigSharedSlotCopied] = useState(false);
   const generateElectivePairId = () => `EL-${crypto.randomUUID()}`;
 
   // Load all available subjects (global school subjects)
@@ -159,6 +157,31 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
     }
   };
 
+  const [changeTypeModalOpen, setChangeTypeModalOpen] = useState(false);
+  const [changeTypeSubjectId, setChangeTypeSubjectId] = useState("");
+  const [changeTypeSharedSlot, setChangeTypeSharedSlot] = useState("");
+  const [changeTypeCopied, setChangeTypeCopied] = useState(false);
+
+  const handleOpenChangeType = (subjectId: string, newMode: "compulsory" | "elective") => {
+    if (newMode === "compulsory") {
+      handleChangeType(subjectId, "compulsory", null);
+      return;
+    }
+    setChangeTypeSubjectId(subjectId);
+    setChangeTypeSharedSlot(generateElectivePairId());
+    setChangeTypeCopied(false);
+    setChangeTypeModalOpen(true);
+  };
+
+  const handleSaveChangeType = async () => {
+    await handleChangeType(
+      changeTypeSubjectId,
+      "elective",
+      changeTypeSharedSlot.trim() || null,
+    );
+    setChangeTypeModalOpen(false);
+  };
+
   const handleAddSubjectJoint = async () => {
     if (!selectedSubjectId) {
       showMsg("Please select a subject.", "error");
@@ -205,107 +228,6 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         position: "relative",
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          position: "absolute",
-          zIndex: 1000,
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-        }}
-      >
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-            borderRadius: 16,
-            width: 400,
-            height: 400,
-          }}
-        >
-          <label
-            style={{
-              marginBottom: 8,
-              fontFamily: FONT.sans,
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            Shared Slot ID (for paired subjects)
-          </label>
-          <input
-            type="text"
-            value={configSharedSlot}
-            onChange={(e) => {
-              setConfigSharedSlot(e.target.value);
-              setConfigSharedSlotCopied(false);
-            }}
-            placeholder="Generated automatically for linked electives"
-            style={{
-              width: "50%",
-              padding: "8px 12px",
-              borderRadius: 8,
-              border: `1px solid ${C.border}`,
-              boxSizing: "border-box",
-              marginBottom: 8,
-            }}
-          />
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => {
-                setConfigSharedSlot(generateElectivePairId());
-                setConfigSharedSlotCopied(false);
-              }}
-              style={{
-                padding: "7px 12px",
-                borderRadius: 8,
-                border: `1px solid ${C.border}`,
-                background: C.cream,
-                cursor: "pointer",
-              }}
-            >
-              Generate
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!configSharedSlot.trim()) return;
-                try {
-                  await navigator.clipboard.writeText(configSharedSlot.trim());
-                  setConfigSharedSlotCopied(true);
-                } catch (error) {
-                  setConfigSharedSlotCopied(false);
-                }
-              }}
-              disabled={!configSharedSlot.trim()}
-              style={{
-                padding: "7px 12px",
-                borderRadius: 8,
-                border: `1px solid ${C.border}`,
-                background: C.cream,
-                cursor: configSharedSlot.trim() ? "pointer" : "default",
-                opacity: configSharedSlot.trim() ? 1 : 0.55,
-              }}
-            >
-              {configSharedSlotCopied ? "Copied" : "Copy ID"}
-            </button>
-          </div>
-        </div>
-      </div>
       {/* Header */}
       <div>
         <p
@@ -451,7 +373,13 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
               <select
                 value={subjectType}
                 onChange={(e) =>
-                  setSubjectType(e.target.value as "COMPULSORY" | "ELECTIVE")
+                  {
+                    const nextType = e.target.value as "COMPULSORY" | "ELECTIVE";
+                    setSubjectType(nextType);
+                    if (nextType === "ELECTIVE" && !electiveCode.trim()) {
+                      setElectiveCode(generateElectivePairId());
+                    }
+                  }
                 }
                 style={{
                   width: "100%",
@@ -488,7 +416,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                   type="text"
                   value={electiveCode}
                   onChange={(e) => setElectiveCode(e.target.value)}
-                  placeholder="e.g. SLOT-A or leave blank"
+                  placeholder="Generated automatically for linked electives"
                   style={{
                     width: "100%",
                     padding: "9px 12px",
@@ -501,6 +429,44 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                     boxSizing: "border-box",
                   }}
                 />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setElectiveCode(generateElectivePairId())}
+                    style={{
+                      padding: "7px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      background: C.cream,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Generate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!electiveCode.trim()) return;
+                      try {
+                        await navigator.clipboard.writeText(electiveCode.trim());
+                        showMsg("Elective slot code copied.", "success");
+                      } catch (_) {
+                        showMsg("Unable to copy elective slot code.", "error");
+                      }
+                    }}
+                    disabled={!electiveCode.trim()}
+                    style={{
+                      padding: "7px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${C.border}`,
+                      background: C.cream,
+                      cursor: electiveCode.trim() ? "pointer" : "default",
+                      opacity: electiveCode.trim() ? 1 : 0.55,
+                    }}
+                  >
+                    Copy ID
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -655,7 +621,9 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
             </thead>
             <tbody>
               {offeredSubjects.map((sub) => {
-                const isElective = sub.enrollmentMode === "ELECTIVE";
+                const isElective =
+                  String(sub.enrollmentMode || "").toLowerCase() ===
+                  "elective";
                 return (
                   <tr
                     key={sub.id}
@@ -695,10 +663,9 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
                         {/* Toggle type */}
                         <button
                           onClick={() =>
-                            handleChangeType(
+                            handleOpenChangeType(
                               sub.id || sub._id,
                               isElective ? "compulsory" : "elective",
-                              isElective ? null : sub.sharedSlotId || null,
                             )
                           }
                           style={{
@@ -862,8 +829,74 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-    </div>
-  );
+         </div>
+       )}
+       
+       {changeTypeModalOpen && (
+         <div style={{
+           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+           background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+         }}>
+           <div style={{
+             background: C.white, padding: 24, borderRadius: 16, width: 420, maxWidth: "90%"
+           }}>
+             <h3 style={{ fontFamily: FONT.serif, fontSize: 20, margin: "0 0 16px" }}>Make Elective</h3>
+             
+             <div style={{ marginBottom: 24 }}>
+               <label style={{ display: "block", marginBottom: 8, fontFamily: FONT.sans, fontSize: 13, fontWeight: 600 }}>Shared Slot ID (for paired subjects)</label>
+               <input 
+                 type="text" 
+                 value={changeTypeSharedSlot} 
+                 onChange={e => {
+                   setChangeTypeSharedSlot(e.target.value);
+                   setChangeTypeCopied(false);
+                 }}
+                 placeholder="Generated automatically for linked electives"
+                 style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: `1px solid ${C.border}`, boxSizing: "border-box", marginBottom: 8 }}
+               />
+               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                 <button
+                   type="button"
+                   onClick={() => {
+                     setChangeTypeSharedSlot(generateElectivePairId());
+                     setChangeTypeCopied(false);
+                   }}
+                   style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.cream, cursor: "pointer" }}
+                 >
+                   Generate
+                 </button>
+                 <button
+                   type="button"
+                   onClick={async () => {
+                     if (!changeTypeSharedSlot.trim()) return;
+                     try {
+                       await navigator.clipboard.writeText(changeTypeSharedSlot.trim());
+                       setChangeTypeCopied(true);
+                     } catch (error) {
+                       setChangeTypeCopied(false);
+                     }
+                   }}
+                   disabled={!changeTypeSharedSlot.trim()}
+                   style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.cream, cursor: changeTypeSharedSlot.trim() ? "pointer" : "default", opacity: changeTypeSharedSlot.trim() ? 1 : 0.55 }}
+                 >
+                   {changeTypeCopied ? "Copied" : "Copy ID"}
+                 </button>
+               </div>
+             </div>
+
+             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+               <button 
+                 onClick={() => setChangeTypeModalOpen(false)}
+                 style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: "pointer" }}
+               >Cancel</button>
+               <button 
+                 onClick={handleSaveChangeType}
+                 style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.gold, color: "#fff", fontWeight: 600, cursor: "pointer" }}
+               >Save</button>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
 };

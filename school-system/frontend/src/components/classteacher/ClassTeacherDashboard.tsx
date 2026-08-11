@@ -119,6 +119,9 @@ const NAV = [
   },
 ];
 
+const CLASS_TEACHER_TAB_KEY = "edunex.classTeacher.activeTab";
+const validClassTeacherTabs = new Set(NAV.map((item) => item.id));
+
 export default function ClassTeacherDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(() => {
@@ -132,7 +135,10 @@ export default function ClassTeacherDashboard() {
     return null;
   });
 
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(() => {
+    const saved = localStorage.getItem(CLASS_TEACHER_TAB_KEY);
+    return saved && validClassTeacherTabs.has(saved) ? saved : "overview";
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
@@ -295,6 +301,7 @@ export default function ClassTeacherDashboard() {
 
   const handleSelectTab = (t: string) => {
     setTab(t);
+    localStorage.setItem(CLASS_TEACHER_TAB_KEY, t);
     setSelectedStudent(null);
     setMobileMenuOpen(false);
   };
@@ -364,6 +371,7 @@ export default function ClassTeacherDashboard() {
             canSwitchToSubjectDashboard={canSwitchToSubjectDashboard}
             onSwitchToSubjectDashboard={() => navigate("/subjectTeacher")}
             onToggleSubjectOffering={toggleSubjectOffering}
+            onRefresh={loadData}
           />
         );
       case "subject-joint":

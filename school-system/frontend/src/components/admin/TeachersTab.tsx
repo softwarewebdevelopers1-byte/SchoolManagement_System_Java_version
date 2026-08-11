@@ -403,14 +403,6 @@ const StaffFormModal: React.FC<{
               setErrorMsg("atleast one role is required");
               return;
             }
-            // if (name?.split(" ")[0] !== "") {
-            //   setErrorMsg("first name is required");
-            //   return;
-            // }
-            // if (name?.split(" ")[1] !== "") {
-            //   setErrorMsg("last name is required");
-            //   return;
-            // }
             setErrorMsg("");
 
             setSaving(true);
@@ -425,6 +417,9 @@ const StaffFormModal: React.FC<{
                 phone: phone.trim(),
                 status,
               });
+              onClose();
+            } catch (err: any) {
+              setErrorMsg(err?.message || "Failed to save staff member.");
             } finally {
               setSaving(false);
             }

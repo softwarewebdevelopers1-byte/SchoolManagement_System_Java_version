@@ -24,10 +24,17 @@ interface DeputyHeadDashboardProps {
   userRole?: UserRoleType;
 }
 
+const getDeputyHeadTabStorageKey = (role: UserRoleType) =>
+  `edunex.${role}.activeTab`;
+
 export default function DeputyHeadDashboard({
   userRole = "deputy",
 }: DeputyHeadDashboardProps) {
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(() => {
+    const nav = NAV_ALL.filter((item) => item.roles.includes(userRole));
+    const saved = localStorage.getItem(getDeputyHeadTabStorageKey(userRole));
+    return saved && nav.some((item) => item.id === saved) ? saved : "overview";
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
@@ -226,12 +233,15 @@ export default function DeputyHeadDashboard({
 
   const handleRoleToggle = (role: UserRoleType) => {
     setRoleToggle(role);
-    setTab("overview");
+    const navForRole = NAV_ALL.filter((item) => item.roles.includes(role));
+    const saved = localStorage.getItem(getDeputyHeadTabStorageKey(role));
+    setTab(saved && navForRole.some((item) => item.id === saved) ? saved : "overview");
     setMobileMenuOpen(false);
   };
 
   const handleSelectTab = (nextTab: string) => {
     setTab(nextTab);
+    localStorage.setItem(getDeputyHeadTabStorageKey(roleToggle), nextTab);
     setMobileMenuOpen(false);
   };
 

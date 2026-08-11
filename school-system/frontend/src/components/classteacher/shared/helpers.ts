@@ -25,6 +25,10 @@ export const isStudentSubject = (student: any, subject: any) => {
 
   const enrollments = Array.isArray(student?.enrolledSubjects) ? student.enrolledSubjects : [];
 
+  if (enrollments.length === 0) {
+    return true;
+  }
+
   const exactEnrollment = enrollments.some((entry: any) => {
     const entrySubId = getSubId(entry?.subjectId);
     return entrySubId === subjectId && entry?.isActive !== false;

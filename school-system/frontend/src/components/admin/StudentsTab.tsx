@@ -390,6 +390,9 @@ const StudentFormModal: React.FC<{
                   email: "",
                   status: status,
                 });
+                onClose();
+              } catch (err: any) {
+                setErrorMsg(err?.message || "Failed to save student.");
               } finally {
                 setSaving(false);
               }

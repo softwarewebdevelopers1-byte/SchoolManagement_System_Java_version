@@ -58,6 +58,14 @@ const getStudentAdmissionNumber = (student: any) =>
 const isActiveStudent = (student: any) =>
   String(student?.status || "Active").toLowerCase() === "active";
 
+const getMarksSubjectStorageKey = (user: any) =>
+  [
+    "edunex.classTeacher.marksSubject",
+    user?.id || "unknown",
+    user?.classGrade || "",
+    user?.classStream || "",
+  ].join(":");
+
 interface DisplaySubjectOption extends Subject {
   actualSubjects: Array<{ id: string; name: string }>;
 }
@@ -121,7 +129,13 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   onRefresh,
   user,
 }) => {
-  const [activeSubjectId, setActiveSubjectId] = useState("");
+  const marksSubjectStorageKey = useMemo(
+    () => getMarksSubjectStorageKey(user),
+    [user?.id, user?.classGrade, user?.classStream],
+  );
+  const [activeSubjectId, setActiveSubjectId] = useState(() => {
+    return localStorage.getItem(getMarksSubjectStorageKey(user)) || "";
+  });
   const [marksData, setMarksData] = useState<MarksData>({});
   const [subjectStudents, setSubjectStudents] = useState<
     Record<string, Student[]>
@@ -240,9 +254,21 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       displaySubjects.length > 0 &&
       !displaySubjects.some((subject) => subject.id === activeSubjectId)
     ) {
-      setActiveSubjectId(displaySubjects[0].id);
+      const savedSubjectId = localStorage.getItem(marksSubjectStorageKey);
+      const restoredSubject = displaySubjects.find(
+        (subject) => subject.id === savedSubjectId,
+      );
+      setActiveSubjectId(restoredSubject?.id || displaySubjects[0].id);
     }
-  }, [displaySubjects, activeSubjectId]);
+  }, [displaySubjects, activeSubjectId, marksSubjectStorageKey]);
+
+  const handleSubjectChange = useCallback(
+    (subjectId: string) => {
+      setActiveSubjectId(subjectId);
+      localStorage.setItem(marksSubjectStorageKey, subjectId);
+    },
+    [marksSubjectStorageKey],
+  );
 
   const loadDetailedMarks = useCallback(async () => {
     const currentSubject = displaySubjects.find(
@@ -593,7 +619,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         activeSubjectId={activeSubjectId}
         students={mappedStudents}
         marksData={marksData}
-        onSubjectChange={setActiveSubjectId}
+        onSubjectChange={handleSubjectChange}
         onMarkUpdate={handleMarkUpdate}
         onSaveMarks={handleSaveMarks}
         onConfigUpdate={handleConfigUpdate}

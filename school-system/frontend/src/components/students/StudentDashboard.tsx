@@ -86,11 +86,18 @@ const getSubjectRemark = (band: string | null) => {
   return "Configured CBC band";
 };
 
+const STUDENT_DASHBOARD_SECTION_KEY = "edunex.student.activeSection";
+const STUDENT_DASHBOARD_SELECTED_STUDENT_KEY = "edunex.student.selectedStudent";
+const validStudentSections = new Set(["performance", "concerns"]);
+
 function StudentDashboard() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<StudentDashboardResponse | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [activeSection, setActiveSection] = useState<"performance" | "concerns">("performance");
+  const [activeSection, setActiveSection] = useState<"performance" | "concerns">(() => {
+    const saved = localStorage.getItem(STUDENT_DASHBOARD_SECTION_KEY);
+    return validStudentSections.has(saved || "") ? (saved as "performance" | "concerns") : "performance";
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -121,7 +128,11 @@ function StudentDashboard() {
         if (!mounted) return;
 
         setDashboard(response);
-        setSelectedStudentId(response.students[0]?.id || "");
+        const savedStudentId = localStorage.getItem(STUDENT_DASHBOARD_SELECTED_STUDENT_KEY);
+        const nextStudent =
+          response.students.find((student) => student.id === savedStudentId) ||
+          response.students[0];
+        setSelectedStudentId(nextStudent?.id || "");
       } catch (err: any) {
         if (!mounted) return;
         setError(err.message || "Could not load student performance.");
@@ -284,7 +295,13 @@ function StudentDashboard() {
 
   const handleSectionChange = (section: "performance" | "concerns") => {
     setActiveSection(section);
+    localStorage.setItem(STUDENT_DASHBOARD_SECTION_KEY, section);
     setMobileSidebarOpen(false);
+  };
+
+  const handleStudentChange = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    localStorage.setItem(STUDENT_DASHBOARD_SELECTED_STUDENT_KEY, studentId);
   };
 
   if (loading) {
@@ -411,7 +428,7 @@ function StudentDashboard() {
               className={`${styles.studentSelectButton} ${
                 selectedStudent?.id === student.id ? styles.studentSelectButtonActive : ""
               }`}
-              onClick={() => setSelectedStudentId(student.id)}
+              onClick={() => handleStudentChange(student.id)}
               type="button"
             >
               <strong>{student.name}</strong>

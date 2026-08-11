@@ -105,15 +105,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           const finalScore = row.marks?.finalScore;
           const totalMarks = row.marks?.totalMarks;
           const avgPercentage = row.marks?.avgPercentage;
-          // Use finalScore if available, otherwise totalMarks, otherwise avgPercentage
           let mark: number | null = null;
-          if (finalScore !== null && finalScore !== undefined && finalScore !== "") {
+          if (avgPercentage !== null && avgPercentage !== undefined) {
+            const parsed = parseFloat(String(avgPercentage).replace("%", ""));
+            if (!Number.isNaN(parsed)) mark = parsed;
+          } else if (finalScore !== null && finalScore !== undefined && finalScore !== "") {
             mark = Number(finalScore);
           } else if (totalMarks !== null && totalMarks !== undefined && totalMarks !== "") {
             mark = Number(totalMarks);
-          } else if (avgPercentage !== null && avgPercentage !== undefined) {
-            const parsed = parseFloat(String(avgPercentage).replace("%", ""));
-            if (!Number.isNaN(parsed)) mark = parsed;
           }
           if (mark !== null && !Number.isNaN(mark)) {
             marksByStudent[studentId] = marksByStudent[studentId] || {};

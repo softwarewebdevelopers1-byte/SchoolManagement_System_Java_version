@@ -491,26 +491,17 @@ const AdminDashboard: React.FC = () => {
       ...payload,
     };
 
-    try {
-      if (studentId) {
-        console.log("payload :", payload.status);
-
-        await request(`/update/student`, {
-          method: "PATCH",
-          body: JSON.stringify({ ...payload, studentId }),
-        });
-      } else {
-        await api.post("/users", body);
-      }
-
-      await loadDashboardUsers();
-      showSuccess(
-        `Student ${studentId ? "updated" : "enrolled"} successfully.`,
-      );
-      closeModal();
-    } catch (err) {
-      showError(`${err}`);
+    if (studentId) {
+      await request(`/update/student`, {
+        method: "PATCH",
+        body: JSON.stringify({ ...payload, studentId }),
+      });
+    } else {
+      await api.post("/users", body);
     }
+
+    await loadDashboardUsers();
+    showSuccess(`Student ${studentId ? "updated" : "enrolled"} successfully.`);
   };
 
   const deleteStudent = async (studentId: string) => {
@@ -537,49 +528,38 @@ const AdminDashboard: React.FC = () => {
     },
     teacherId?: string,
   ) => {
-    try {
-      if (teacherId) {
-        console.log("payload to update ", payload);
-
-        await request(`/users/update`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            email: payload.email,
-            status: payload?.status.toUpperCase(),
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            phoneNumber: payload.phone,
-            roles: payload.roles,
-            teacherId: teacherId,
-          }),
-        });
-      } else {
-        console.log(payload);
-
-        await request(`/auth/register/teacher`, {
-          method: "POST",
-          body: JSON.stringify({
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            email: payload.email,
-            password: payload.password,
-            roles: payload.roles,
-            status: payload.status?.toUpperCase() || "ACTIVE",
-            phoneNumber: payload.phone,
-            schoolId: getSchoolId(),
-          }),
-        });
-      }
-
-      await loadDashboardUsers();
-      await refreshUser();
-      showSuccess(
-        `Staff member ${teacherId ? "updated" : "added"} successfully.`,
-      );
-      closeModal();
-    } catch (err) {
-      showError("Failed to save staff member.");
+    if (teacherId) {
+      await request(`/users/update`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: payload.email,
+          status: payload?.status.toUpperCase(),
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          phoneNumber: payload.phone,
+          roles: payload.roles,
+          teacherId: teacherId,
+        }),
+      });
+    } else {
+      await request(`/auth/register/teacher`, {
+        method: "POST",
+        body: JSON.stringify({
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          password: payload.password,
+          roles: payload.roles,
+          status: payload.status?.toUpperCase() || "ACTIVE",
+          phoneNumber: payload.phone,
+          schoolId: getSchoolId(),
+        }),
+      });
     }
+
+    await loadDashboardUsers();
+    await refreshUser();
+    showSuccess(`Staff member ${teacherId ? "updated" : "added"} successfully.`);
   };
 
   const deleteTeacher = async (teacherId: string) => {
