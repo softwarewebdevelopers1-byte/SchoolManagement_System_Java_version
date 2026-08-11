@@ -271,19 +271,17 @@ const SubjectConfigurationModal: React.FC<{
   onClose: () => void;
   onSave: (
     isOffered: boolean,
-    enrollmentMode: SubjectEnrollmentMode,
+    enrollmentMode: string,
     sharedSlotId: string | null,
   ) => Promise<void>;
 }> = ({ currentClass, subject, onClose, onSave }) => {
-  const currentSetting = currentClass.subjectSettings[subject.subjectJointId];
-  const [enrollmentMode, setEnrollmentMode] = useState<SubjectEnrollmentMode>(
-    currentSetting?.enrollmentMode || "compulsory",
+  const [enrollmentMode, setEnrollmentMode] = useState<string | undefined>(
+    subject?.subjectType?.toLocaleLowerCase() || "compulsory",
   );
-  const [sharedSlotId, setSharedSlotId] = useState(
-    currentSetting?.sharedSlotId || "",
-  );
+  const [sharedSlotId, setSharedSlotId] = useState(subject.electiveCode || "");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  console.log("subject ", subject);
 
   return (
     <div>
@@ -314,69 +312,71 @@ const SubjectConfigurationModal: React.FC<{
           </select>
         </div>
 
-        <div>
-          <label style={labelStyle}>Elective pair ID</label>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) auto auto",
-              gap: 8,
-            }}
-          >
-            <input
-              value={sharedSlotId}
-              onChange={(event) => {
-                setSharedSlotId(event.target.value);
-                setCopied(false);
+        {enrollmentMode === "elective" && (
+          <div>
+            <label style={labelStyle}>Elective pair ID</label>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto auto",
+                gap: 8,
               }}
-              style={inputStyle}
-              placeholder={
-                enrollmentMode === "elective"
-                  ? "Generated automatically for linked electives"
-                  : "Only used for electives"
-              }
-              disabled={enrollmentMode !== "elective"}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setSharedSlotId(generateElectivePairId());
-                setCopied(false);
-              }}
-              style={{ ...secondaryButtonStyle, whiteSpace: "nowrap" }}
-              disabled={enrollmentMode !== "elective"}
             >
-              Generate
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!sharedSlotId.trim()) return;
-                try {
-                  await navigator.clipboard.writeText(sharedSlotId.trim());
-                  setCopied(true);
-                } catch (error) {
+              <input
+                value={sharedSlotId}
+                onChange={(event) => {
+                  setSharedSlotId(event.target.value);
                   setCopied(false);
+                }}
+                style={inputStyle}
+                placeholder={
+                  enrollmentMode === "elective"
+                    ? "Generated automatically for linked electives"
+                    : "Only used for electives"
                 }
+                disabled={enrollmentMode !== "elective"}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSharedSlotId(generateElectivePairId());
+                  setCopied(false);
+                }}
+                style={{ ...secondaryButtonStyle, whiteSpace: "nowrap" }}
+                disabled={enrollmentMode !== "elective"}
+              >
+                Generate
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!sharedSlotId.trim()) return;
+                  try {
+                    await navigator.clipboard.writeText(sharedSlotId.trim());
+                    setCopied(true);
+                  } catch (error) {
+                    setCopied(false);
+                  }
+                }}
+                style={{ ...secondaryButtonStyle, whiteSpace: "nowrap" }}
+                disabled={enrollmentMode !== "elective" || !sharedSlotId.trim()}
+              >
+                {copied ? "Copied" : "Copy ID"}
+              </button>
+            </div>
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontSize: 11.5,
+                color: "var(--textMut)",
+                lineHeight: 1.5,
               }}
-              style={{ ...secondaryButtonStyle, whiteSpace: "nowrap" }}
-              disabled={enrollmentMode !== "elective" || !sharedSlotId.trim()}
             >
-              {copied ? "Copied" : "Copy ID"}
-            </button>
+              Use the same pair ID on the other elective subject so learners
+              choose one subject from the pair.
+            </p>
           </div>
-          <p
-            style={{
-              margin: "6px 0 0",
-              fontSize: 11.5,
-              color: "var(--textMut)",
-              lineHeight: 1.5,
-            }}
-          >
-            Use the same pair ID on the other elective subject so learners
-            choose one subject from the pair.
-          </p>
-        </div>
+        )}
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={secondaryButtonStyle}>
@@ -388,7 +388,7 @@ const SubjectConfigurationModal: React.FC<{
               try {
                 await onSave(
                   true,
-                  enrollmentMode,
+                  enrollmentMode || "",
                   enrollmentMode === "elective"
                     ? sharedSlotId.trim() || null
                     : null,
@@ -821,7 +821,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                               >
                                 Change
                               </button>
-                              {/* <button
+                              <button
                                 onClick={() =>
                                   openConfigurationModal(currentClass, subject)
                                 }
@@ -833,7 +833,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                                 }}
                               >
                                 Configure
-                              </button> */}
+                              </button>
                               <button
                                 onClick={() =>
                                   handleUnassign(currentClass, subject)
@@ -886,6 +886,19 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                               flex: "0 0 auto",
                             }}
                           >
+                            <button
+                              onClick={() =>
+                                openConfigurationModal(currentClass, subject)
+                              }
+                              style={{
+                                ...miniButtonStyle,
+                                background: "#f4f0ff",
+                                color: "#5a35b4",
+                                border: "1px solid #c9b9ff",
+                              }}
+                            >
+                              Configure
+                            </button>
                             <button
                               onClick={() =>
                                 openAssignmentModal(currentClass, subject)
@@ -1001,7 +1014,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                               flexWrap: "wrap",
                             }}
                           >
-                            <button
+                            {/* <button
                               onClick={() =>
                                 openConfigurationModal(currentClass, subject)
                               }
@@ -1013,7 +1026,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                               }}
                             >
                               Configure
-                            </button>
+                            </button> */}
                             <button
                               onClick={() =>
                                 showConfirm(
