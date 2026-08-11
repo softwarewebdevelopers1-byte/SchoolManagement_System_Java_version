@@ -730,19 +730,20 @@ const AdminDashboard: React.FC = () => {
   };
 
   const unassignSubjectTeacher = async (
-    classGrade: string,
-    classStream: string,
+    subjectTeacherId: string | null,
+    classId: string,
     subjectId: string,
   ) => {
-    const assignment = assignments.find(
-      (a) =>
-        a.classGrade === classGrade &&
-        a.classStream === classStream &&
-        a.subjectId === subjectId,
-    );
-    if (assignment) {
+    if (subjectTeacherId && classId && subjectId) {
       try {
-        await api.delete(`/school/assignments/${assignment.id}`);
+        await request(`/unassign/subject/teacher`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            subjectJointId: subjectId,
+            teacherId: subjectTeacherId,
+            classId: classId,
+          }),
+        });
         await loadDashboardUsers();
         await refreshUser();
         showSuccess("Teacher unassigned successfully.");

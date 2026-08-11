@@ -497,8 +497,8 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       `Unassign <strong>${subject.subjectTeacherName}</strong> from teaching <strong>${subject.subjectName}</strong> in <strong>${currentClass.grade} ${currentClass.stream}</strong>?`,
       async () => {
         await onUnassignTeacher(
-          currentClass.grade,
-          currentClass.stream || "",
+          subject?.subjectTeacherId || "",
+          currentClass.classId || "",
           subject.subjectJointId,
         );
       },
