@@ -705,8 +705,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                     <span
                       dangerouslySetInnerHTML={{
                         __html: pill(
-                          student.status || "Active",
-                          student.status === "Active"
+                          student.status || "ACTIVE",
+                          student.status === "ACTIVE"
                             ? "green"
                             : student.status === "Completed"
                               ? "gold"
