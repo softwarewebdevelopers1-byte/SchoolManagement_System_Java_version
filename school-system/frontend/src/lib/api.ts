@@ -455,20 +455,11 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
     });
   }
 
-  let subjectJointId = body.subjectJointId;
-  if (!subjectJointId) {
-    const joints = await loadSubjectJoints();
-    subjectJointId =
-      joints.find(
-        (joint) =>
-          String(joint.classGrade) === String(body.classGrade) &&
-          String(joint.classStream || "") === String(body.classStream || "") &&
-          String(joint.subjectId?.id || joint.id) === String(body.subjectId),
-      )?.id || body.subjectId;
-  }
+  let subjectJointId = body.subjectId;
   return request<T>("/assign/subject/teacher", {
     method: "POST",
     body: JSON.stringify({
+      classId,
       subjectJointId,
       teacherId: body.teacherId,
     }),
@@ -511,13 +502,14 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         id: teacher.teacherProfileId || teacher.usersId || teacher.id,
         userId: teacher.usersId,
         email: teacher.email,
+        name: `${teacher?.firstName} ${teacher?.lastName}`,
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         roles,
         roleLabel: roles.join(", "),
         status: teacher.status || "Active",
         classGrade: teacher.schoolClass,
-        classStream: teacher.classStream ,
+        classStream: teacher.classStream,
         department: teacher.department || "General",
         phoneNumber: teacher.phoneNumber || "",
         subjects: teacher.subjects || [],

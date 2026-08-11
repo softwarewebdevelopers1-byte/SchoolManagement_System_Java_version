@@ -716,8 +716,10 @@ const AdminDashboard: React.FC = () => {
     classId: string,
     subjectId: string,
   ) => {
-    if (subjectTeacherId && classId && subjectId) {
+    if (subjectTeacherId) {
       try {
+        console.log("unassign details \n", subjectId, classId, subjectId);
+
         await request(`/unassign/subject/teacher`, {
           method: "PATCH",
           body: JSON.stringify({

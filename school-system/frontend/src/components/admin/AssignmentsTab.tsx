@@ -181,11 +181,14 @@ const AssignmentFormModal: React.FC<{
   subject: subjectJoints;
   teachers: Teacher[];
   onClose: () => void;
-  onSave: (teacherId: string) => Promise<void>;
-}> = ({ currentClass, subject, teachers, onClose }) => {
+  onSave: (
+    teacherId: string,
+    classId: string|undefined,
+    subjectJointId: string,
+  ) => Promise<void>;
+}> = ({ currentClass, subject, teachers,onSave, onClose }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [saving, setSaving] = useState(false);
-  console.log("Teachers ", teachers);
 
   return (
     <div>
@@ -234,15 +237,15 @@ const AssignmentFormModal: React.FC<{
               if (!selectedTeacherId) return;
               setSaving(true);
               try {
-                // await onSave(selectedTeacherId);
-                await request(`/assign/subject/teacher`, {
-                  method: "POST",
-                  body: JSON.stringify({
-                    classId: currentClass.classId,
-                    subjectJointId: subject.subjectJointId,
-                    teacherId: selectedTeacherId,
-                  }),
-                });
+                await onSave(selectedTeacherId,currentClass.classId,subject.subjectJointId);
+                // await request(`/assign/subject/teacher`, {
+                //   method: "POST",
+                //   body: JSON.stringify({
+                //     classId: currentClass.classId,
+                //     subjectJointId: subject.subjectJointId,
+                //     teacherId: selectedTeacherId,
+                //   }),
+                // });
               } finally {
                 setSaving(false);
               }
@@ -448,7 +451,6 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       setSubjects(subjectsFound);
     })();
   }, []);
-  console.log("subject joints loaded ", subjects);
 
   const openAssignmentModal = (currentClass: Class, subject: subjectJoints) => {
     showModal(
@@ -541,10 +543,6 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         subject.classId == currentClass.classId &&
         subject.subjectType == "DROPPED",
     );
-
-    console.log("dropped subjects ", droppedSubjects);
-    console.log("available subjects ", availableSubjects);
-    console.log("subjects ", currentClass);
 
     const assignmentText = Object.entries(currentClass.subjectAssignments || {})
       .map(([subjectId, teacherId]) => {
@@ -707,14 +705,12 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 
               <div style={{ padding: "14px 16px" }}>
                 {availableSubjects?.map((subject: subjectJoints) => {
-                  console.log("active subject ", subject);
-
                   // const assignedTeacherId =
                   //   currentClass?.subjectAssignments?.[
                   //     subject.subjectJointId
                   //   ] || "";
-                  const assignedTeacher =
-                    subject.subjectTeacherName || "Edunex User";
+                  const assignedTeacher: string | undefined =
+                    subject.subjectTeacherName || "";
                   // const subjectSetting =
                   //   currentClass?.subjectSettings[subject.id];
                   // const eligibleStudentCount =

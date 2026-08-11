@@ -100,9 +100,9 @@ public class SubjectService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("teacher not found"));
         SubjectJoint subjectJoint = subjectJointRepo.findById(subjectJointId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
-        if (subjectJoint.getTeacherProfile() != null) {
-            throw new SchoolResourceExistsExceptionHandler("subject already assigned");
-        }
+        // if (subjectJoint.getTeacherProfile() != null) {
+        //     throw new SchoolResourceExistsExceptionHandler("subject already assigned");
+        // }
         boolean teacherFirstAssignment = false;
 
         Users userProfile = teacherProfile.getTeacher();
