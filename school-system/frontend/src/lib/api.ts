@@ -512,6 +512,7 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         roleLabel: roles.join(", "),
         status: teacher.status,
         classGrade: teacher.schoolClass,
+        phoneNumber: teacher?.phoneNumber,
       };
     }),
     subjects: (subjects || []).map((subject: any) => ({

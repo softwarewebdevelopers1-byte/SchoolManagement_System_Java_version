@@ -18,7 +18,6 @@ public class RegisterTeacherDTO {
     UUID schoolId;
     @NotBlank
     private String firstName;
-    @NotBlank
     private String lastName;
     @NotBlank
     @Email

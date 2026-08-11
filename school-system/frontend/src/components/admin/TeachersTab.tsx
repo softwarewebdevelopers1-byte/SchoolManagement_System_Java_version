@@ -158,7 +158,7 @@ const StaffFormModal: React.FC<{
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
   const [name, setName] = useState(teacher?.name || "");
   const [email, setEmail] = useState(teacher?.email || "");
-  const [phone, setPhone] = useState(teacher?.phone || "");
+  const [phone, setPhone] = useState(teacher?.phoneNumber || "");
   const [password, setPassword] = useState(teacher?.password || "");
   const [status, setStatus] = useState(teacher?.status || "");
   const [classGrade, setClassGrade] = useState(teacher?.classGrade || "");
@@ -254,7 +254,7 @@ const StaffFormModal: React.FC<{
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label style={labelStyle}>First name</label>
+          <label style={labelStyle}>Name</label>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -265,6 +265,7 @@ const StaffFormModal: React.FC<{
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Email address</label>
           <input
+            type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             style={inputStyle}
@@ -289,6 +290,9 @@ const StaffFormModal: React.FC<{
               onChange={(event) => setStatus(event.target.value)}
               style={inputStyle}
             >
+              <option value="" disabled>
+                --select--
+              </option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
               <option value="Deleted">Delete</option>
@@ -391,10 +395,22 @@ const StaffFormModal: React.FC<{
         </button>
         <button
           onClick={async () => {
-            if (!name.trim() || !email.trim()) {
-              setErrorMsg("Name and email are required.");
+            if (!name.trim() || !email.trim() || !phone.trim()) {
+              setErrorMsg("Name, email and phone number are required.");
               return;
             }
+            if (role.length == 0) {
+              setErrorMsg("atleast one role is required");
+              return;
+            }
+            // if (name?.split(" ")[0] !== "") {
+            //   setErrorMsg("first name is required");
+            //   return;
+            // }
+            // if (name?.split(" ")[1] !== "") {
+            //   setErrorMsg("last name is required");
+            //   return;
+            // }
             setErrorMsg("");
 
             setSaving(true);

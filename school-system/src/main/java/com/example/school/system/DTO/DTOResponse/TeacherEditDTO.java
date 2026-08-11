@@ -10,9 +10,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
 public record TeacherEditDTO(@Email String email,
-        String password, AccountStatus status,
-        String firstName,
-        String lastName,
-        Set<UserRoles> roles,
-        @NotNull(message = "teacher id is required") UUID teacherId) {
+                String password, AccountStatus status,
+                String firstName,
+                String lastName,
+                String phoneNumber,
+                Set<UserRoles> roles,
+                @NotNull(message = "teacher id is required") UUID teacherId) {
 }

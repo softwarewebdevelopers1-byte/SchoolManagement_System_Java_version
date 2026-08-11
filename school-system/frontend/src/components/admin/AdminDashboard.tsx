@@ -399,6 +399,8 @@ const AdminDashboard: React.FC = () => {
       );
       const mappedStudents = mapStudentsFromApi(response.students);
       setTeachers(mapStaffToTeachers(response.staff));
+      console.log("response staff ", response.staff);
+
       setStudents(
         mappedStudents.filter((student) => student.status !== "Completed"),
       );
@@ -535,24 +537,34 @@ const AdminDashboard: React.FC = () => {
     },
     teacherId?: string,
   ) => {
-    const body = {
-      ...payload,
-      status: payload.status.toLowerCase(),
-    };
-
     try {
       if (teacherId) {
-        await api.put(`/users/${teacherId}`, body);
+        console.log("payload to update ", payload);
+
+        await request(`/users/update`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            email: payload.email,
+            status: payload?.status.toUpperCase(),
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            phoneNumber: payload.phone,
+            roles: payload.roles,
+            teacherId: teacherId,
+          }),
+        });
       } else {
+        console.log(payload);
+
         await request(`/auth/register/teacher`, {
           method: "POST",
           body: JSON.stringify({
             firstName: payload.firstName,
             lastName: payload.lastName,
-            email: payload.status,
+            email: payload.email,
             password: payload.password,
             roles: payload.roles,
-            status: payload.status,
+            status: payload.status?.toUpperCase() || "ACTIVE",
             phoneNumber: payload.phone,
             schoolId: getSchoolId(),
           }),

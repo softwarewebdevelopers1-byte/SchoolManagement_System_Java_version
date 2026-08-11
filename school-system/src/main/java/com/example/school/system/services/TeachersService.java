@@ -64,6 +64,7 @@ public class TeachersService {
                 teachersDTO.setTeacherProfileId(profile.getId());
                 teachersDTO.setFirstName(profile.getFirstName());
                 teachersDTO.setLastName(profile.getLastName());
+                teachersDTO.setPhoneNumber(profile.getPhoneNumber());
             }
             return teachersDTO;
 
@@ -105,13 +106,16 @@ public class TeachersService {
         // 4. Update user fields
 
         String newEmail = editTeacher.email();
+        if (!user.getEmail().equals(newEmail)
+                && userRepository.existsByEmail(newEmail)) {
+            throw new SchoolResourceExistsExceptionHandler("user already exists");
+        }
         if (newEmail != null) {
             newEmail = newEmail.trim().toLowerCase();
             user.setEmail(newEmail);
         }
-        if (!user.getEmail().equals(newEmail)
-                && userRepository.existsByEmail(newEmail)) {
-            throw new SchoolResourceExistsExceptionHandler("user already exists");
+        if (teacher != null && editTeacher.phoneNumber() != null) {
+            teacher.setPhoneNumber(editTeacher.phoneNumber());
         }
 
         if (editTeacher.password() != null && editTeacher.password() != "") {
@@ -143,10 +147,10 @@ public class TeachersService {
             teacher.setLastName(editTeacher.lastName().trim().toLowerCase());
         }
 
-        // 6. Save both entities
-        userRepository.save(user);
-        if (teacher != null)
-            teacherProfileRepository.save(teacher);
+        // // 6. Save both entities
+        // userRepository.save(user);
+        // if (teacher != null)
+        // teacherProfileRepository.save(teacher);
     }
 
     public SchoolApiResponse<?> addProfile(TeacherAddProfile teacherAddProfile) {
@@ -201,6 +205,7 @@ public class TeachersService {
 
     @Transactional
     public SchoolApiResponse<?> regNewTeacher(RegisterTeacherDTO registerTeacherDTO) {
+        log.info("New details to be saved ", registerTeacherDTO.toString());
         if (userRepository.existsByEmail(registerTeacherDTO.getEmail())) {
             throw new SchoolResourceExistsExceptionHandler("email already exists");
         }
@@ -208,7 +213,7 @@ public class TeachersService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         Users user = new Users();
         TeacherProfile teacherProfile = new TeacherProfile();
-        if (registerTeacherDTO.getPassword() != "" && registerTeacherDTO.getPassword() != null) {
+        if (registerTeacherDTO.getPassword() != "" || registerTeacherDTO.getPassword() != null) {
             String hashedPass = passwordHashing.PasswordEncoder().encode(registerTeacherDTO.getPassword());
             user.setPassword(hashedPass);
         }
@@ -216,7 +221,7 @@ public class TeachersService {
             user.setStatus(registerTeacherDTO.getStatus());
         }
 
-        if (registerTeacherDTO.getPassword() == "" && registerTeacherDTO.getPassword() == null) {
+        if (registerTeacherDTO.getPassword() == "" || registerTeacherDTO.getPassword() == null) {
             String hashedPass = passwordHashing.PasswordEncoder().encode("staff123");
             user.setPassword(hashedPass);
         }
@@ -224,11 +229,20 @@ public class TeachersService {
             user.setStatus(AccountStatus.ACTIVE);
         }
         user.setSchool(schoolFound);
-        user.setRoles(registerTeacherDTO.getRoles());
+        if (registerTeacherDTO.getRoles() != null) {
+            user.setRoles(registerTeacherDTO.getRoles());
+        }
         user.setEmail(registerTeacherDTO.getEmail());
         teacherProfile.setPhoneNumber(registerTeacherDTO.getPhoneNumber());
         teacherProfile.setFirstName(registerTeacherDTO.getFirstName());
-        teacherProfile.setLastName(registerTeacherDTO.getLastName());
+        if (registerTeacherDTO.getLastName() != null || registerTeacherDTO.getLastName() != "") {
+            teacherProfile.setLastName(registerTeacherDTO.getLastName());
+        }
+        teacherProfile.setTeacher(user);
+        userRepository.save(user);
+        teacherProfileRepository.save(teacherProfile);
+        log.info("new user {} registered in school {}", registerTeacherDTO.getEmail(),
+                registerTeacherDTO.getSchoolId());
         return SchoolApiResponse.success();
     }
 };

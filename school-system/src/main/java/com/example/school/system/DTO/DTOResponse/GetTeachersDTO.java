@@ -26,4 +26,5 @@ public class GetTeachersDTO {
         private String schoolClass;
         private UUID usersId;
         private UUID teacherProfileId;
+        private String phoneNumber;
 }
