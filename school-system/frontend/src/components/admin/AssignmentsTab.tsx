@@ -713,7 +713,8 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                   //   currentClass?.subjectAssignments?.[
                   //     subject.subjectJointId
                   //   ] || "";
-                  const assignedTeacher = subject.subjectTeacherName;
+                  const assignedTeacher =
+                    subject.subjectTeacherName || "Edunex User";
                   // const subjectSetting =
                   //   currentClass?.subjectSettings[subject.id];
                   // const eligibleStudentCount =
@@ -786,7 +787,10 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                             >
                               <div
                                 dangerouslySetInnerHTML={{
-                                  __html: avatar(assignedTeacher, 26),
+                                  __html: avatar(
+                                    `${assignedTeacher.split(" ")[0]?.charAt(0)} ${assignedTeacher.split(" ")[1]?.charAt(0)}`,
+                                    26,
+                                  ),
                                 }}
                               />
                               <div style={{ minWidth: 0 }}>

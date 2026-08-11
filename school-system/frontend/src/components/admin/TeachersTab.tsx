@@ -631,7 +631,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                     <div
                       dangerouslySetInnerHTML={{
                         __html: avatar(
-                          `${teacher?.firstName || ""} ${teacher?.lastName || ""}`,
+                          `${teacher?.firstName?.charAt(0) || ""} ${teacher?.lastName?.charAt(0) || ""}`,
                           30,
                         ),
                       }}

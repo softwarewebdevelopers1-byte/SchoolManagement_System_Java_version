@@ -460,7 +460,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                         >
                           <div
                             dangerouslySetInnerHTML={{
-                              __html: avatar(currentClass.classTeacher, 26),
+                              __html: avatar(
+                                `${currentClass.classTeacher?.split(" ")[0]?.charAt(0)} ${currentClass.classTeacher?.split(" ")[1]?.charAt(0)}`,
+                                26,
+                              ),
                             }}
                           />
                           <div>
