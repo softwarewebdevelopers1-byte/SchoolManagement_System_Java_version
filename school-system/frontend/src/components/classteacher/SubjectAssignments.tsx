@@ -219,13 +219,15 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
     setAddSaving(true);
     setFeedback(null);
     try {
+      console.log(addElectiveCode.toUpperCase());
+
       await api.post("/register/subject-joint", {
         subjectId: addSubjectId,
         classId: getClassId(),
         enrollmentMode: addSubjectType,
         electiveCode:
           addSubjectType === "elective" && addElectiveCode.trim()
-            ? addElectiveCode.trim()
+            ? addElectiveCode.trim().toUpperCase()
             : null,
       });
       setFeedback({ text: "Subject added to this class.", type: "success" });
@@ -307,16 +309,22 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
       <section style={panelStyle}>
         <PanelHeader title="Active subjects and assigned teachers" />
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}>
+          <table
+            style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}
+          >
             <thead>
               <tr style={{ background: C.cream }}>
-                {["Subject", "Department", "Assigned teacher", "Type", "Actions"].map(
-                  (heading) => (
-                    <th key={heading} style={headingStyle}>
-                      {heading}
-                    </th>
-                  ),
-                )}
+                {[
+                  "Subject",
+                  "Department",
+                  "Assigned teacher",
+                  "Type",
+                  "Actions",
+                ].map((heading) => (
+                  <th key={heading} style={headingStyle}>
+                    {heading}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -383,7 +391,9 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
       </section>
 
       {droppedSubjects.length > 0 && (
-        <section style={{ ...panelStyle, padding: 16, display: "grid", gap: 10 }}>
+        <section
+          style={{ ...panelStyle, padding: 16, display: "grid", gap: 10 }}
+        >
           <PanelTitle title="Dropped subjects" />
           {droppedSubjects.map((subject) => (
             <div key={getSubjectId(subject)} style={droppedRowStyle}>
@@ -454,7 +464,9 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
             setAddElectiveCodeCopied(false);
           }}
           copied={addElectiveCodeCopied}
-          onCopy={() => void copyText(addElectiveCode, setAddElectiveCodeCopied)}
+          onCopy={() =>
+            void copyText(addElectiveCode, setAddElectiveCodeCopied)
+          }
           onGenerate={() => {
             setAddElectiveCode(generateElectivePairId());
             setAddElectiveCodeCopied(false);
@@ -649,7 +661,14 @@ const ModalActions: React.FC<{
   saveLabel: string;
   saveDisabled?: boolean;
 }> = ({ onCancel, onSave, saveLabel, saveDisabled = false }) => (
-  <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: 12,
+      marginTop: 20,
+    }}
+  >
     <button type="button" onClick={onCancel} style={modalCancelButtonStyle}>
       Cancel
     </button>
@@ -688,7 +707,13 @@ const FeedbackMessage: React.FC<{
 );
 
 const PanelHeader: React.FC<{ title: string }> = ({ title }) => (
-  <div style={{ padding: "14px 18px", borderBottom: `1px solid ${C.border}`, background: C.goldPale }}>
+  <div
+    style={{
+      padding: "14px 18px",
+      borderBottom: `1px solid ${C.border}`,
+      background: C.goldPale,
+    }}
+  >
     <p style={eyebrowMutedStyle}>Assignment dashboard</p>
     <h3 style={panelTitleStyle}>{title}</h3>
   </div>

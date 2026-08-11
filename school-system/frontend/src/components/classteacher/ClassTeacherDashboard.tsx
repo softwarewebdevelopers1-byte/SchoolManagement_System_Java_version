@@ -63,12 +63,12 @@ const NAV = [
     desc: "Capture marks and review class performance.",
     Icon: MarkIcon,
   },
-  {
-    id: "assignments",
-    label: "Subject Assignments",
-    desc: "See subjects and the assigned teachers.",
-    Icon: HomeIcon,
-  },
+  // {
+  //   id: "assignments",
+  //   label: "Subject Assignments",
+  //   desc: "See subjects and the assigned teachers.",
+  //   Icon: HomeIcon,
+  // },
   {
     id: "subject-joint",
     label: "Subject Registration",
@@ -360,20 +360,20 @@ export default function ClassTeacherDashboard() {
             user={currentUser}
           />
         );
-      case "assignments":
-        return (
-          <SubjectAssignments
-            subjects={classSubjectCatalog}
-            assignments={assignments}
-            classGrade={currentUser.classGrade}
-            classStream={currentUser.classStream}
-            classTeacherName={currentUser.name}
-            canSwitchToSubjectDashboard={canSwitchToSubjectDashboard}
-            onSwitchToSubjectDashboard={() => navigate("/subjectTeacher")}
-            onToggleSubjectOffering={toggleSubjectOffering}
-            onRefresh={loadData}
-          />
-        );
+      // case "assignments":
+      //   return (
+      //     <SubjectAssignments
+      //       subjects={classSubjectCatalog}
+      //       assignments={assignments}
+      //       classGrade={currentUser.classGrade}
+      //       classStream={currentUser.classStream}
+      //       classTeacherName={currentUser.name}
+      //       canSwitchToSubjectDashboard={canSwitchToSubjectDashboard}
+      //       onSwitchToSubjectDashboard={() => navigate("/subjectTeacher")}
+      //       onToggleSubjectOffering={toggleSubjectOffering}
+      //       onRefresh={loadData}
+      //     />
+      //   );
       case "subject-joint":
         return (
           <SubjectJointTab
