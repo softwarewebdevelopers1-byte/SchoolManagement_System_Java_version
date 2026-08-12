@@ -53,7 +53,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         padding: isMobile ? "14px 16px" : "0 20px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}
+      >
         {isMobile && (
           <button
             type="button"
@@ -101,7 +103,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           </h2>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          flexWrap: "wrap",
+          width: isMobile ? "100%" : "auto",
+        }}
+      >
         {unassignedCount > 0 && (
           <button
             onClick={() => onSwitchTab("classes")}
@@ -159,7 +169,14 @@ export const TopBar: React.FC<TopBarProps> = ({
         >
           {theme === "dark" ? "Light" : "Dark"}
         </button>
-        <p style={{ fontSize: 11.5, color: "var(--textF)", margin: 0, whiteSpace: "nowrap" }}>
+        <p
+          style={{
+            fontSize: 11.5,
+            color: "var(--textF)",
+            margin: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
           {date}
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -188,7 +205,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                 margin: 0,
               }}
             >
-              {user?.name || user?.email || "Admin User"}
+              {(user?.firstName && `${user?.firstName} ${user?.lastName}`) ||
+                "Admin User"}
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -201,7 +219,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   color: "var(--ct-danger-text)",
                   fontWeight: 700,
                   cursor: "pointer",
-                  textDecoration: "underline"
+                  textDecoration: "underline",
                 }}
               >
                 Log out
