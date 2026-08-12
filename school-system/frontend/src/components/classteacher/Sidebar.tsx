@@ -140,7 +140,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           borderBottom: `1px solid ${C.sidebarBorder}`,
         }}
       >
-        <Avatar name={user?.name || "User"} size={36} />
+        <Avatar
+          name={
+            (user?.firstName && `${user?.firstName} ${user?.lastName}`) ||
+            "User"
+          }
+          size={36}
+        />
         {!collapsed && (
           <div style={{ overflow: "hidden" }}>
             <p
@@ -155,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 textOverflow: "ellipsis",
               }}
             >
-              {user?.name}
+              {user?.firstName && `${user?.firstName} ${user?.lastName}`}
             </p>
             <p
               style={{
@@ -165,7 +171,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 margin: 0,
               }}
             >
-              Class Teacher · Grade {user?.classGrade}{user?.classStream}
+              Class Teacher · Grade {user?.classGrade}
+              {user?.classStream}
             </p>
           </div>
         )}
@@ -272,7 +279,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontFamily: FONT.sans,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: activeTab === item.id ? C.sidebarText : C.sidebarMuted,
+                    color:
+                      activeTab === item.id ? C.sidebarText : C.sidebarMuted,
                     margin: 0,
                   }}
                 >
@@ -312,7 +320,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <BellIcon />
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
+              style={{
+                fontFamily: FONT.sans,
+                fontSize: 12,
+                color: C.sidebarMuted,
+              }}
             >
               Alerts
             </span>
@@ -368,7 +380,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </svg>
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
+              style={{
+                fontFamily: FONT.sans,
+                fontSize: 12,
+                color: C.sidebarMuted,
+              }}
             >
               Password
             </span>
@@ -392,7 +408,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <LogoutIcon />
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
+              style={{
+                fontFamily: FONT.sans,
+                fontSize: 12,
+                color: C.sidebarMuted,
+              }}
             >
               Log out
             </span>
