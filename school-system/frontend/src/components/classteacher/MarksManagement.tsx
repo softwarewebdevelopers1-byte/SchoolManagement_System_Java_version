@@ -278,79 +278,20 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     if (!currentSubject) return;
 
     try {
-      let subjectPayloads = await Promise.all(
-        currentSubject.actualSubjects.map(async (actualSubject) => ({
-          subjectId: actualSubject.id,
-          data: await api.get("/marks", {
-            subjectId: actualSubject.id,
-            classGrade: user.classGrade,
-            classStream: user.classStream,
-            term,
-            year,
-            examType,
-            isLinkedElectiveGroup: currentSubject.isLinkedElectiveGroup,
-          }),
-        })),
-      );
-
-      const marksByActualSubject = new Map<string, Map<string, any>>();
-      subjectPayloads.forEach(({ subjectId, data }) => {
-        marksByActualSubject.set(
-          subjectId,
-          new Map(
-            (data as any[]).map((item) => {
-              return [item.studentId.toString(), item];
-            }),
-          ),
-        );
+      const data = await api.get<any[]>("/marks", {
+        subjectJointId: activeSubjectId,
       });
-      console.log(
-        "subject payloads for now ",
-        subjectPayloads,
-        "students involved",
-        subjectStudents,
-        "marks by actual subject",
-        marksByActualSubject,
-      );
-      const relevantStudents: Student[] = [];
-
-      rosterStudents.filter(isActiveStudent).forEach((student) => {
-        const actualSubjectId = resolveStudentSubjectSelection(
-          student,
-          currentSubject,
-          user.classGrade,
-          user.classStream,
-        );
-        console.log("actual subject id ", actualSubjectId);
-
-        if (!actualSubjectId) {
-          return;
-        }
-
-        const subjectRecord = currentSubject.actualSubjects.find(
-          (actualSubject) => actualSubject.id === actualSubjectId,
-        );
-        const markRecord = marksByActualSubject
-          .get(actualSubjectId)
-          ?.get(String(student.id));
-
-        if (markRecord) {
-          relevantStudents.push({
-            id: String(student.id),
-            name: student.name,
-            adm: getStudentAdmissionNumber(student),
-            gender: student.gender || "N/A",
-            enrolledSubjects: student.enrolledSubjects || [],
-            enrollmentSubjectId: actualSubjectId,
-            enrollmentSubjectName:
-              currentSubject.actualSubjects.length > 1
-                ? subjectRecord?.name || null
-                : null,
-            marks: markRecord?.marks || createEmptyMarks(),
-            pushed: false,
-          });
-        }
-      });
+      const relevantStudents: Student[] = data.map((item) => ({
+        id: String(item.studentId),
+        name: item.name,
+        adm: item.admissionNo || "",
+        gender: "N/A",
+        enrolledSubjects: [],
+        enrollmentSubjectId: activeSubjectId,
+        enrollmentSubjectName: currentSubject.displayName || currentSubject.name,
+        marks: item.marks || createEmptyMarks(),
+        pushed: false,
+      }));
 
       setMarksData((prev) => ({
         ...prev,
@@ -376,12 +317,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   }, [
     activeSubjectId,
     displaySubjects,
-    examType,
-    rosterStudents,
-    term,
-    user.classGrade,
-    user.classStream,
-    year,
   ]);
 
   useEffect(() => {
@@ -545,7 +480,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         Array.from(marksByActualSubject.entries()).map(
           ([actualSubjectId, actualSubjectMarks]) =>
             api.post("/marks/save", {
-              subjectJointId: actualSubjectId,
+              subjectJointId: currentSubject.id || actualSubjectId,
               classGrade: user.classGrade,
               classStream: user.classStream,
               term,
@@ -553,6 +488,10 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
               examType,
               marksData: actualSubjectMarks,
               catConfigs,
+              isElective:
+                String(currentSubject.enrollmentMode || "").toLowerCase() ===
+                "elective",
+              enrollmentCode: currentSubject.sharedSlotId,
             }),
         ),
       );

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
@@ -57,8 +58,10 @@ public class SchoolController {
     }
 
     @GetMapping("/get/school/for/user")
-    public ResponseEntity<?> getSchool(@RequestBody GetSchoolDTO getSchoolDTO) {
-        SchoolApiResponse<?> getSchoolResponse = schoolService.getSchool(getSchoolDTO.schoolCode());
+    public ResponseEntity<?> getSchool(@RequestParam(required = false) String schoolCode,
+            @RequestBody(required = false) GetSchoolDTO getSchoolDTO) {
+        String code = schoolCode != null ? schoolCode : getSchoolDTO != null ? getSchoolDTO.schoolCode() : null;
+        SchoolApiResponse<?> getSchoolResponse = schoolService.getSchool(code);
         return ResponseEntity.status(200).body(getSchoolResponse);
     }
 

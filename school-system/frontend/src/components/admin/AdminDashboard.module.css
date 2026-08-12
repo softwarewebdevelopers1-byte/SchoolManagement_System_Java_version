@@ -53,6 +53,13 @@
   --ct-warn-text: var(--wText);
   --ct-danger-bg: var(--dBg);
   --ct-danger-text: var(--dText);
+  --ct-sidebar-text: #f4eadb;
+  --ct-sidebar-muted: #b9d2c3;
+  --ct-sidebar-faint: #7fa18e;
+  --ct-sidebar-stat: #d8f0e4;
+  --ct-sidebar-hover: rgba(201, 150, 61, 0.12);
+  --ct-sidebar-active: rgba(201, 150, 61, 0.24);
+  --ct-sidebar-border: rgba(255, 255, 255, 0.08);
 }
 
 .dashboard[data-theme="dark"] {
@@ -80,6 +87,13 @@
   --iBg: #142030;
   --iText: #8ab5ff;
   --panelBg: linear-gradient(180deg, #101612 0%, #0b100d 100%);
+  --ct-sidebar-text: #f3eadb;
+  --ct-sidebar-muted: #8aaa96;
+  --ct-sidebar-faint: #5c7a6a;
+  --ct-sidebar-stat: #c8e6d4;
+  --ct-sidebar-hover: rgba(215, 171, 89, 0.14);
+  --ct-sidebar-active: rgba(215, 171, 89, 0.22);
+  --ct-sidebar-border: rgba(255, 255, 255, 0.05);
   color-scheme: dark;
 }
 

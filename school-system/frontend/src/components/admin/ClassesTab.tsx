@@ -264,6 +264,81 @@ const ClassTeacherModal: React.FC<{
   );
 };
 
+const splitClassName = (className: string) => {
+  const [grade = "", ...streamParts] = String(className || "").trim().split(/\s+/);
+  return {
+    grade,
+    classStream: streamParts.join(" "),
+  };
+};
+
+const RenameClassModal: React.FC<{
+  currentClass: any;
+  onClose: () => void;
+  onSaved: () => void;
+}> = ({ currentClass, onClose, onSaved }) => {
+  const parsed = splitClassName(currentClass.className);
+  const [grade, setGrade] = useState(currentClass.grade || parsed.grade);
+  const [stream, setStream] = useState(currentClass.stream || parsed.classStream);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  return (
+    <div>
+      <div style={modalHeaderStyle}>
+        <h3 style={modalTitleStyle}>Rename Class</h3>
+        <button onClick={onClose} style={closeButtonStyle}>x</button>
+      </div>
+      <div style={{ padding: "18px 22px 22px", display: "grid", gap: 14 }}>
+        {error && <div style={{ ...noticeStyle, background: "var(--dBg)", color: "var(--dText)" }}>{error}</div>}
+        <label>
+          <span style={labelStyle}>Grade</span>
+          <input value={grade} onChange={(event) => setGrade(event.target.value)} style={inputStyle} />
+        </label>
+        <label>
+          <span style={labelStyle}>Stream</span>
+          <input value={stream} onChange={(event) => setStream(event.target.value)} style={inputStyle} />
+        </label>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={secondaryButtonStyle}>Cancel</button>
+          <button
+            onClick={async () => {
+              if (!grade.trim()) {
+                setError("Grade is required.");
+                return;
+              }
+              setSaving(true);
+              setError("");
+              try {
+                await request("/update/class", {
+                  method: "PATCH",
+                  body: JSON.stringify({
+                    classId: currentClass.classId,
+                    schoolId: getSchoolId(),
+                    grade: Number.isNaN(Number(grade)) ? grade : Number(grade),
+                    classStream: stream.trim(),
+                    classTeacherId: currentClass.classTeacherId || null,
+                  }),
+                });
+                onSaved();
+                onClose();
+              } catch (error) {
+                setError(error instanceof Error ? error.message : "Unable to rename class.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+            disabled={saving}
+            style={{ ...primaryButtonStyle, opacity: saving ? 0.65 : 1 }}
+          >
+            {saving ? "Saving..." : "Save class name"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface ClassesTabProps {
   teachers: any;
   onUnassignClassTeacher: (teacherId: string) => Promise<void>;
@@ -287,7 +362,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   onSwitchTab,
 }) => {
   const [search, setSearch] = useState("");
-  const { teachers, classesFound } = useClassesData();
+  const { teachers, classesFound, refresh } = useClassesData();
   console.log(classesFound, "<--teachers found");
 
   const openAssignModal = (currentClass: any) => {
@@ -310,6 +385,16 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
     );
   };
 
+  const openRenameModal = (currentClass: any) => {
+    showModal(
+      <RenameClassModal
+        currentClass={currentClass}
+        onClose={closeModal}
+        onSaved={refresh}
+      />,
+    );
+  };
+
   const handleUnassign = (classId: any, currentClass: any) => {
     showConfirm(
       `Unassign <strong>${currentClass.classTeacher}</strong> from this class?`,
@@ -328,9 +413,13 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
 
   const filteredClasses = classesFound?.filter((currentClass: any) => {
     const query = search.toLowerCase();
+    const parsed = splitClassName(currentClass.className);
+    const grade = String(currentClass.grade || parsed.grade || "").toLowerCase();
+    const stream = String(currentClass.stream || parsed.classStream || "").toLowerCase();
     return (
-      currentClass.grade.toLowerCase().includes(query) ||
-      (currentClass.stream || "").toLowerCase().includes(query)
+      grade.includes(query) ||
+      stream.includes(query) ||
+      String(currentClass.className || "").toLowerCase().includes(query)
     );
   });
 
@@ -390,6 +479,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                 "Students",
                 "Class Teacher",
                 "Subjects",
+                "Actions",
               ].map((heading) => (
                 <th key={heading} style={tableHeadingStyle}>
                   {heading}
@@ -399,6 +489,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
           </thead>
           <tbody>
             {filteredClasses?.map((currentClass: any) => {
+              const classMeta = splitClassName(currentClass.className);
               return (
                 <tr
                   key={currentClass.classId}
@@ -417,7 +508,12 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   <td style={{ padding: "10px 13px" }}>
                     <p style={rowPrimaryTextStyle}>{currentClass.className}</p>
                   </td>
-                  <td style={bodyTextStyle}>{currentClass.grade}</td>
+                  <td style={bodyTextStyle}>
+                    {currentClass.grade || classMeta.grade}
+                    {(currentClass.stream || classMeta.classStream)
+                      ? ` ${currentClass.stream || classMeta.classStream}`
+                      : ""}
+                  </td>
                   <td style={bodyTextStyle}>
                     <span style={{ fontWeight: 600, color: "var(--gold)" }}>
                       T{currentClass.term || 1}
@@ -501,6 +597,14 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                     {currentClass.offeredSubjectIds
                       ? currentClass.offeredSubjectIds.length
                       : 0}
+                  </td>
+                  <td style={bodyTextStyle}>
+                    <button
+                      onClick={() => openRenameModal(currentClass)}
+                      style={miniButtonStyle}
+                    >
+                      Rename
+                    </button>
                   </td>
                 </tr>
               );

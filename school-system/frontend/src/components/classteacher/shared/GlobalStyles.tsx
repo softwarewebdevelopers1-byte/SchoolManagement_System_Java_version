@@ -28,6 +28,15 @@ export const GlobalStyles: React.FC = () => (
       --ct-warn-text: #854f0b;
       --ct-danger-bg: #fcebeb;
       --ct-danger-text: #a32d2d;
+      --ct-sidebar-text: #e8dcc8;
+      --ct-sidebar-muted: #6b9a82;
+      --ct-sidebar-faint: #4a6b5a;
+      --ct-sidebar-stat: #d8f0e4;
+      --ct-sidebar-hover: rgba(201,150,61,0.09);
+      --ct-sidebar-active: rgba(201,150,61,0.18);
+      --ct-sidebar-border: rgba(255,255,255,0.07);
+      --ct-topbar-bg: #ffffff;
+      --ct-topbar-border: #e8dcc8;
       color-scheme: light;
     }
     .ct-dashboardShell[data-theme="dark"] {
@@ -52,6 +61,15 @@ export const GlobalStyles: React.FC = () => (
         --ct-warn-text: #e7bc71;
         --ct-danger-bg: #261515;
         --ct-danger-text: #f09b9b;
+        --ct-sidebar-text: #f3eadb;
+        --ct-sidebar-muted: #8aaa96;
+        --ct-sidebar-faint: #5c7a6a;
+        --ct-sidebar-stat: #c8e6d4;
+        --ct-sidebar-hover: rgba(215,171,89,0.14);
+        --ct-sidebar-active: rgba(215,171,89,0.22);
+        --ct-sidebar-border: rgba(255,255,255,0.05);
+        --ct-topbar-bg: #121714;
+        --ct-topbar-border: #283329;
         color-scheme: dark;
     }
     .ct-dashboardShell input,

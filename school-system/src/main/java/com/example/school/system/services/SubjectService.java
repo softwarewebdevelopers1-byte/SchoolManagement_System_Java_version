@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.school.system.DTO.GetSubjectJointsForSubjectTeacher;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
 import com.example.school.system.DTO.SubjectJointRes;
@@ -101,7 +103,7 @@ public class SubjectService {
         SubjectJoint subjectJoint = subjectJointRepo.findById(subjectJointId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
         // if (subjectJoint.getTeacherProfile() != null) {
-        //     throw new SchoolResourceExistsExceptionHandler("subject already assigned");
+        // throw new SchoolResourceExistsExceptionHandler("subject already assigned");
         // }
         boolean teacherFirstAssignment = false;
 
@@ -320,6 +322,21 @@ public class SubjectService {
             return SubjectJointRes.builder().id(s.getId()).name(s.getSubject().getSubjectName())
                     .enrollmentMode(s.getSubjectType()).sharedSlotId(s.getElectiveCode())
                     .build();
+        }).toList();
+    }
+
+    public List<GetSubjectJointsForSubjectTeacher> getSubjectJointForSubjectJointTeacher(UUID teacherProfileId,
+            UUID schoolId) {
+        if (!schoolRepository.existsById(schoolId)) {
+            throw new SchoolResourceNotFoundExceptionHandler("school not found");
+        }
+        List<SubjectJoint> getAllSubjectJoints = subjectJointRepo.findAllByTeacherProfileId(teacherProfileId);
+        return getAllSubjectJoints.stream().map(sj -> {
+            return GetSubjectJointsForSubjectTeacher.builder().subjectId(sj.getId())
+                    .classGrade(sj.getSchoolClass() != null ? sj.getSchoolClass().getClassGrade() : null)
+                    .classStream(sj.getSchoolClass() != null ? sj.getSchoolClass().getClassStream() : null)
+                    .subjectName(sj.getSubject().getSubjectName())
+                    .enrollmentMode(sj.getSubjectType()).sharedSlotId(sj.getElectiveCode()).build();
         }).toList();
     }
 }

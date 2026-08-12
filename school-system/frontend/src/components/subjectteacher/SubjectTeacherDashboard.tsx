@@ -12,7 +12,7 @@ import { ResourcesTab } from "./ResourcesTab";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Subject, Student, MarksData } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api } from "../../lib/api";
+import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 
 import { initials, avatarColor, avatar, gc } from "../../lib/dashboardHelpers";
 
@@ -25,15 +25,15 @@ const hasRecordedMarkValue = (value: unknown) =>
 const hasStoredMarks = (marks?: StudentMarksRow) =>
   Boolean(
     marks &&
-      [
-        marks.cat1,
-        marks.cat2,
-        marks.cat3,
-        marks.cat4,
-        marks.cat5,
-        marks.exam,
-        marks.finalScore,
-      ].some(hasRecordedMarkValue),
+    [
+      marks.cat1,
+      marks.cat2,
+      marks.cat3,
+      marks.cat4,
+      marks.cat5,
+      marks.exam,
+      marks.finalScore,
+    ].some(hasRecordedMarkValue),
   );
 
 const collectStudentsWithStoredMarks = (subjectMarks?: SubjectMarksMap) =>
@@ -61,7 +61,7 @@ const SubjectTeacherDashboard: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
+        return normalizeUser(parsed.user || parsed);
       } catch (e) {}
     }
     return null;
@@ -76,7 +76,10 @@ const SubjectTeacherDashboard: React.FC = () => {
   });
   const subjectStorageKey = getSubjectTeacherSubjectStorageKey(currentUser);
   const [activeSubjectId, setActiveSubjectId] = useState(() => {
-    return localStorage.getItem(getSubjectTeacherSubjectStorageKey(currentUser)) || "";
+    return (
+      localStorage.getItem(getSubjectTeacherSubjectStorageKey(currentUser)) ||
+      ""
+    );
   });
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -84,10 +87,15 @@ const SubjectTeacherDashboard: React.FC = () => {
   const [pushedSubjects, setPushedSubjects] = useState<Set<string>>(new Set());
   const [pushedStudents, setPushedStudents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState<{ text: string, type: "success" | "error" } | null>(null);
+  const [msg, setMsg] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const [term, setTerm] = useState<number>(currentUser?.term || 1);
   const [year, setYear] = useState<number>(currentUser?.year || 2024);
-  const [examType, setExamType] = useState<string>(currentUser?.examType || "opener");
+  const [examType, setExamType] = useState<string>(
+    currentUser?.examType || "opener",
+  );
   const { theme, toggleTheme } = useDashboardTheme();
 
   const handleLogout = () => {
@@ -99,55 +107,76 @@ const SubjectTeacherDashboard: React.FC = () => {
     window.location.href = "/change-password";
   };
 
-  const syncPushState = useCallback((subjectId: string, subjectMarks?: SubjectMarksMap) => {
-    const recordedStudents = collectStudentsWithStoredMarks(subjectMarks);
+  const syncPushState = useCallback(
+    (subjectId: string, subjectMarks?: SubjectMarksMap) => {
+      const recordedStudents = collectStudentsWithStoredMarks(subjectMarks);
 
-    setPushedStudents(recordedStudents);
-    setPushedSubjects((current) => {
-      const next = new Set(current);
-      if (recordedStudents.size > 0) {
-        next.add(subjectId);
-      } else {
-        next.delete(subjectId);
-      }
-      return next;
-    });
-  }, []);
+      setPushedStudents(recordedStudents);
+      setPushedSubjects((current) => {
+        const next = new Set(current);
+        if (recordedStudents.size > 0) {
+          next.add(subjectId);
+        } else {
+          next.delete(subjectId);
+        }
+        return next;
+      });
+    },
+    [],
+  );
   const loadAssignments = useCallback(async () => {
-    if (!currentUser?.id) {
+    const teacherProfileId =
+      currentUser?.teacherProfileId || currentUser?.teacherId;
+    if (!currentUser?.id || !teacherProfileId) {
       setLoading(false);
       return;
     }
     try {
       setLoading(true);
       const [data, averages] = await Promise.all([
-        api.get(`/school/assignments/teacher/${currentUser.id}`) as Promise<any[]>,
+        request(
+          `/subjectJoint?profileId=${encodeURIComponent(teacherProfileId)}&id=${encodeURIComponent(getSchoolId() || "")}`,
+        ) as Promise<any[]>,
         api.get(`/marks/averages/teacher/${currentUser.id}`, {
           term: currentUser.term || 1,
           year: currentUser.year || 2024,
           examType: currentUser.examType || "opener",
         }) as Promise<Record<string, number>>,
       ]);
-      const mapped = (data || []).map((a: any) => {
-        const assignmentId = a._id || a.id;
-        const assignedSubject = a.subjectId || {};
+      console.log("new data ", data, "Current user ", currentUser);
+
+      const mapped: Subject[] = (data || []).map((a: any) => {
+        const subjectJointId =
+          a.subjectJointId || a._id || a.id || a.subjectId;
+        const assignedSubject =
+          a.subject && typeof a.subject === "object" ? a.subject : {};
+        const enrollmentMode = String(
+          a.enrollmentMode || a.subjectType || "compulsory",
+        ).toUpperCase();
+        const subjectEnrollmentMode: Subject["enrollmentMode"] =
+          enrollmentMode === "ELECTIVE" ? "elective" : "compulsory";
         return {
-          id: assignmentId,
-          subjectId: assignedSubject._id || assignedSubject.id || a.subjectId,
-          name: assignedSubject.name || assignedSubject.subjectName || "Subject",
+          id: String(subjectJointId || ""),
+          subjectId:
+            assignedSubject._id ||
+            assignedSubject.id ||
+            a.rawSubjectId ||
+            a.subjectId ||
+            subjectJointId,
+          name: a.subjectName || "Subject",
           grade: `Grade ${a.classGrade} ${a.classStream}`.trim(),
           classGrade: a.classGrade,
           classStream: a.classStream,
           students: a.studentCount || 0,
-          avg: averages[assignmentId] ?? 0,
+          avg: averages[subjectJointId] ?? 0,
           pushed: false,
           term: currentUser.term || 1,
           year: currentUser.year || 2024,
           lastAssess: "N/A",
-          enrollmentMode: a.enrollmentMode || "compulsory",
-          sharedSlotId: a.sharedSlotId || null,
+          enrollmentMode: subjectEnrollmentMode,
+          sharedSlotId: a.sharedSlotId || a.electiveCode || null,
         };
-      });
+      }).filter((subject) => subject.id);
       setSubjects(mapped);
       if (mapped.length > 0) {
         const savedSubjectId = localStorage.getItem(subjectStorageKey);
@@ -155,7 +184,6 @@ const SubjectTeacherDashboard: React.FC = () => {
           mapped.find((subject) => subject.id === savedSubjectId) || mapped[0];
         setActiveSubjectId(nextSubject.id);
       }
-
     } catch (err: any) {
       setMsg({
         text: err?.message || "Unable to load your assigned subjects.",
@@ -164,16 +192,27 @@ const SubjectTeacherDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id, currentUser?.term, currentUser?.year, currentUser?.examType, subjectStorageKey]);
+  }, [
+    currentUser?.id,
+    currentUser?.term,
+    currentUser?.year,
+    currentUser?.examType,
+    currentUser?.teacherProfileId,
+    currentUser?.teacherId,
+    subjectStorageKey,
+  ]);
 
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
     try {
+      return;
       const freshUser: any = await api.get(`/users/${currentUser.id}`);
       if (freshUser) {
         let rolesArr = freshUser.roles;
         if (rolesArr && !Array.isArray(rolesArr)) {
-          rolesArr = [rolesArr.role1, rolesArr.role2, rolesArr.role3].filter(Boolean);
+          rolesArr = [rolesArr.role1, rolesArr.role2, rolesArr.role3].filter(
+            Boolean,
+          );
         }
         const updated = {
           ...currentUser,
@@ -183,7 +222,7 @@ const SubjectTeacherDashboard: React.FC = () => {
         };
         const savedItem = localStorage.getItem("user");
         if (savedItem) {
-          const parsed = JSON.parse(savedItem);
+          const parsed = JSON.parse(savedItem || "");
           parsed.user = updated;
           localStorage.setItem("user", JSON.stringify(parsed));
         }
@@ -219,33 +258,24 @@ const SubjectTeacherDashboard: React.FC = () => {
   }, [loadAssignments]);
 
   const loadStudentsAndMarks = useCallback(async () => {
-    const currentSubject = subjects.find(s => s.id === activeSubjectId);
-    if (!currentSubject) return;
+    const currentSubject = subjects.find((s) => s.id === activeSubjectId);
+    if (!currentSubject) {
+      setStudents([]);
+      return;
+    }
 
     try {
-      // Ensure we send params in a way that matches what the backend expects
-      const data: any[] = await api.get("/marks", {
-        subjectId: currentSubject.subjectId, // Use the actual subject ID
-        classGrade: currentSubject.classGrade,
-        classStream: currentSubject.classStream,
-        term: term,
-        year: year,
-        examType: examType
+      const data = await api.get<any[]>("/marks", {
+        subjectJointId: currentSubject.id,
       });
 
-      if (!Array.isArray(data)) {
-        
-        setStudents([]);
-        return;
-      }
-
-      const mappedStudents: Student[] = data.map(item => ({
+      const mappedStudents = data.map((item) => ({
         id: item.studentId.toString(),
         adm: item.admissionNo,
         name: item.name,
         gender: "N/A",
         marks: item.marks,
-        pushed: false
+        pushed: false,
       }));
 
       const subjectMarks = data.reduce((acc, item) => {
@@ -258,15 +288,16 @@ const SubjectTeacherDashboard: React.FC = () => {
       syncPushState(activeSubjectId, subjectMarks);
 
       // Update marksData
-      setMarksData(prev => ({
+      setMarksData((prev) => ({
         ...prev,
-        [activeSubjectId]: subjectMarks
+        [activeSubjectId]: subjectMarks,
       }));
     } catch (err: any) {
       setStudents([]);
       setPushedStudents(new Set());
       setMsg({
-        text: err?.message || "Unable to load students and marks for this subject.",
+        text:
+          err?.message || "Unable to load students and marks for this subject.",
         type: "error",
       });
     }
@@ -307,16 +338,31 @@ const SubjectTeacherDashboard: React.FC = () => {
   const teacherName = currentUser?.name || "Teacher";
   const teacherInitials = initials(teacherName);
   const teacherAvatarColor = avatarColor(teacherName);
-  
-  const handleMarkUpdate = (subjectId: string, studentId: string, key: string, value: string) => {
+
+  const handleMarkUpdate = (
+    subjectId: string,
+    studentId: string,
+    key: string,
+    value: string,
+  ) => {
     setMarksData((prev) => {
       const updatedSubjectMarks = { ...(prev[subjectId] || {}) };
-      const updatedStudentMarks = { 
+      const updatedStudentMarks = {
         ...(updatedSubjectMarks[studentId] || {
-          cat1: null, cat2: null, cat3: null, cat4: null, cat5: null, 
-          cat1Max: 40, cat2Max: 40, cat3Max: 40, cat4Max: 40, cat5Max: 40,
-          exam: null, examMax: 100, finalScore: null 
-        })
+          cat1: null,
+          cat2: null,
+          cat3: null,
+          cat4: null,
+          cat5: null,
+          cat1Max: 40,
+          cat2Max: 40,
+          cat3Max: 40,
+          cat4Max: 40,
+          cat5Max: 40,
+          exam: null,
+          examMax: 100,
+          finalScore: null,
+        }),
       };
 
       let n: string | number | null = value;
@@ -326,7 +372,11 @@ const SubjectTeacherDashboard: React.FC = () => {
         const num = Number(n);
         if (!isNaN(num)) {
           const maxKey = `${key}Max`;
-          const max = key === "finalScore" ? 100 : (updatedStudentMarks as any)[maxKey] || (key === "exam" ? 100 : 40);
+          const max =
+            key === "finalScore"
+              ? 100
+              : (updatedStudentMarks as any)[maxKey] ||
+                (key === "exam" ? 100 : 40);
           if (num > max) {
             n = max;
           } else if (num < 0) {
@@ -342,21 +392,25 @@ const SubjectTeacherDashboard: React.FC = () => {
 
       return {
         ...prev,
-        [subjectId]: updatedSubjectMarks
+        [subjectId]: updatedSubjectMarks,
       };
     });
   };
 
-  const handleConfigUpdate = (subjectId: string, key: string, value: number | string | null) => {
+  const handleConfigUpdate = (
+    subjectId: string,
+    key: string,
+    value: number | string | null,
+  ) => {
     setMarksData((prev) => {
       const newData = { ...prev };
       if (!newData[subjectId]) return prev;
-      
+
       const updatedSubjectMarks = { ...newData[subjectId] };
-      Object.keys(updatedSubjectMarks).forEach(studentId => {
+      Object.keys(updatedSubjectMarks).forEach((studentId) => {
         updatedSubjectMarks[studentId] = {
           ...updatedSubjectMarks[studentId],
-          [key]: value
+          [key]: value,
         };
       });
       newData[subjectId] = updatedSubjectMarks;
@@ -365,90 +419,135 @@ const SubjectTeacherDashboard: React.FC = () => {
   };
 
   const handleRemoveCat = (subjectId: string, catIndex: number) => {
-    setMarksData(prev => {
+    setMarksData((prev) => {
       const updatedSubjectMarks = { ...(prev[subjectId] || {}) };
-      Object.keys(updatedSubjectMarks).forEach(studentId => {
+      Object.keys(updatedSubjectMarks).forEach((studentId) => {
         updatedSubjectMarks[studentId] = {
           ...updatedSubjectMarks[studentId],
           [`cat${catIndex}`]: null,
-          [`cat${catIndex}Max`]: 40
+          [`cat${catIndex}Max`]: 40,
         };
       });
       return {
         ...prev,
-        [subjectId]: updatedSubjectMarks
+        [subjectId]: updatedSubjectMarks,
       };
     });
   };
 
-  const handleSaveMarks = useCallback(async (assignmentId: string, catConfigs?: any) => {
-    const currentSubject = subjects.find(s => s.id === assignmentId);
-    if (!currentSubject) return;
+  const handleSaveMarks = useCallback(
+    async (assignmentId: string, catConfigs?: any) => {
+      const currentSubject = subjects.find((s) => s.id === assignmentId);
+      if (!currentSubject) return;
 
-    const subjectMarks = marksData[assignmentId];
-    if (!subjectMarks) return;
+      const subjectMarks = marksData[assignmentId];
+      if (!subjectMarks) return;
 
-    const data = Object.entries(subjectMarks).map(([studentId, marks]) => ({
-      studentId,
-      ...marks
-    }));
+      const data = Object.entries(subjectMarks).map(([studentId, marks]) => ({
+        studentId,
+        ...marks,
+      }));
 
-    try {
-      await api.post("/marks/save", {
-        subjectId: currentSubject.subjectId,
-        classGrade: currentSubject.classGrade,
-        classStream: currentSubject.classStream,
-        term: term,
-        year: year,
-        examType: examType,
-        marksData: data,
-        catConfigs
-      });
-      syncPushState(assignmentId, subjectMarks);
-      setMsg({ text: "Marks saved successfully!", type: "success" });
-      setTimeout(() => setMsg(null), 3000);
-      loadStudentsAndMarks();
-    } catch (err: any) {
-      setMsg({ text: err?.message || "Failed to save marks.", type: "error" });
-      setTimeout(() => setMsg(null), 3000);
-    }
-  }, [examType, loadStudentsAndMarks, marksData, subjects, syncPushState, term, year]);
+      try {
+        await api.post("/marks/save", {
+          subjectJointId: currentSubject.id,
+          classGrade: currentSubject.classGrade,
+          classStream: currentSubject.classStream,
+          term: term,
+          year: year,
+          examType: examType,
+          marksData: data,
+          catConfigs,
+          isElective:
+            String(currentSubject.enrollmentMode || "").toLowerCase() ===
+            "elective",
+          enrollmentCode: currentSubject.sharedSlotId,
+        });
+        syncPushState(assignmentId, subjectMarks);
+        setMsg({ text: "Marks saved successfully!", type: "success" });
+        setTimeout(() => setMsg(null), 3000);
+        loadStudentsAndMarks();
+      } catch (err: any) {
+        setMsg({
+          text: err?.message || "Failed to save marks.",
+          type: "error",
+        });
+        setTimeout(() => setMsg(null), 3000);
+      }
+    },
+    [
+      examType,
+      loadStudentsAndMarks,
+      marksData,
+      subjects,
+      syncPushState,
+      term,
+      year,
+    ],
+  );
 
+  const handlePushMarks = useCallback(
+    async (subjectId: string) => {
+      const currentSubject = subjects.find((s) => s.id === subjectId);
+      if (!currentSubject) return;
 
-  const handlePushMarks = useCallback(async (subjectId: string) => {
-    const currentSubject = subjects.find(s => s.id === subjectId);
-    if (!currentSubject) return;
+      const subjectMarks = marksData[subjectId];
+      if (!subjectMarks) return;
 
-    const subjectMarks = marksData[subjectId];
-    if (!subjectMarks) return;
+      const data = Object.entries(subjectMarks).map(([studentId, marks]) => ({
+        studentId,
+        ...marks,
+      }));
 
-    const data = Object.entries(subjectMarks).map(([studentId, marks]) => ({
-      studentId,
-      ...marks
-    }));
-
-    try {
-      await api.post("/marks/save", {
-        subjectId: currentSubject.subjectId,
-        classGrade: currentSubject.classGrade,
-        classStream: currentSubject.classStream,
-        term: term,
-        year: year,
-        examType: examType,
-        marksData: data
-      });
-      syncPushState(subjectId, subjectMarks);
-      setMsg({ text: `Marks saved and pushed for ${currentSubject.grade}`, type: "success" });
-      setTimeout(() => setMsg(null), 3000);
-      loadStudentsAndMarks();
-    } catch (err: any) {
-      setMsg({ text: err?.message || "Failed to push marks.", type: "error" });
-      setTimeout(() => setMsg(null), 3000);
-    }
-  }, [examType, loadStudentsAndMarks, marksData, subjects, syncPushState, term, year]);
+      try {
+        await api.post("/marks/save", {
+          subjectJointId: currentSubject.id,
+          classGrade: currentSubject.classGrade,
+          classStream: currentSubject.classStream,
+          term: term,
+          year: year,
+          examType: examType,
+          marksData: data,
+          isElective:
+            String(currentSubject.enrollmentMode || "").toLowerCase() ===
+            "elective",
+          enrollmentCode: currentSubject.sharedSlotId,
+        });
+        syncPushState(subjectId, subjectMarks);
+        setMsg({
+          text: `Marks saved and pushed for ${currentSubject.grade}`,
+          type: "success",
+        });
+        setTimeout(() => setMsg(null), 3000);
+        loadStudentsAndMarks();
+      } catch (err: any) {
+        setMsg({
+          text: err?.message || "Failed to push marks.",
+          type: "error",
+        });
+        setTimeout(() => setMsg(null), 3000);
+      }
+    },
+    [
+      examType,
+      loadStudentsAndMarks,
+      marksData,
+      subjects,
+      syncPushState,
+      term,
+      year,
+    ],
+  );
 
   const getTabTitle = () => {
-    const titles: Record<string, string> = { subjects: "My Subjects", marks: "Mark Entry", timetable: "My Timetable", assessments: "Assessments", progress: "Student Progress", resources: "Resources" };
+    const titles: Record<string, string> = {
+      subjects: "My Subjects",
+      marks: "Mark Entry",
+      timetable: "My Timetable",
+      assessments: "Assessments",
+      progress: "Student Progress",
+      resources: "Resources",
+    };
     return titles[activeTab] || "My Subjects";
   };
 
@@ -467,14 +566,58 @@ const SubjectTeacherDashboard: React.FC = () => {
   );
 
   const renderContent = () => {
-    if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading dashboard...</div>;
-    if (subjects.length === 0) return <div style={{ padding: 40, textAlign: "center" }}>No subjects assigned yet.</div>;
+    if (loading)
+      return (
+        <div style={{ padding: 40, textAlign: "center" }}>
+          Loading dashboard...
+        </div>
+      );
+    if (subjects.length === 0)
+      return (
+        <div style={{ padding: 40, textAlign: "center" }}>
+          No subjects assigned yet.
+        </div>
+      );
 
     switch (activeTab) {
       case "subjects":
-        return <SubjectsTab subjects={subjects} onSelectSubject={handleSubjectChange} onEnterMarks={(id) => { handleSubjectChange(id); handleSelectTab("marks"); }} pushedSubjects={pushedSubjects} gc={gc} term={term} year={year} />;
+        return (
+          <SubjectsTab
+            subjects={subjects}
+            onSelectSubject={handleSubjectChange}
+            onEnterMarks={(id) => {
+              handleSubjectChange(id);
+              handleSelectTab("marks");
+            }}
+            pushedSubjects={pushedSubjects}
+            gc={gc}
+            term={term}
+            year={year}
+          />
+        );
       case "marks":
-        return <MarksTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} pushedSubjects={pushedSubjects} pushedStudents={pushedStudents} onSubjectChange={handleSubjectChange} onMarkUpdate={handleMarkUpdate} onSaveMarks={handleSaveMarks} onConfigUpdate={handleConfigUpdate} onRemoveCat={handleRemoveCat} onPushMarks={handlePushMarks} avatar={avatar} term={term} year={year} examType={examType} onTermChange={setTerm} onExamTypeChange={setExamType} />;
+        return (
+          <MarksTab
+            subjects={subjects}
+            activeSubjectId={activeSubjectId}
+            students={students}
+            marksData={marksData}
+            pushedSubjects={pushedSubjects}
+            pushedStudents={pushedStudents}
+            onSubjectChange={handleSubjectChange}
+            onMarkUpdate={handleMarkUpdate}
+            onSaveMarks={handleSaveMarks}
+            onConfigUpdate={handleConfigUpdate}
+            onRemoveCat={handleRemoveCat}
+            onPushMarks={handlePushMarks}
+            avatar={avatar}
+            term={term}
+            year={year}
+            examType={examType}
+            onTermChange={setTerm}
+            onExamTypeChange={setExamType}
+          />
+        );
       case "timetable":
         return (
           <TimetableLibrary
@@ -489,7 +632,17 @@ const SubjectTeacherDashboard: React.FC = () => {
       case "assessments":
         return <AssessmentsTab assessments={[]} term={term} year={year} />;
       case "progress":
-        return <ProgressTab subjects={subjects} activeSubjectId={activeSubjectId} students={students} marksData={marksData} onSubjectChange={handleSubjectChange} avatar={avatar} gc={gc} />;
+        return (
+          <ProgressTab
+            subjects={subjects}
+            activeSubjectId={activeSubjectId}
+            students={students}
+            marksData={marksData}
+            onSubjectChange={handleSubjectChange}
+            avatar={avatar}
+            gc={gc}
+          />
+        );
       case "resources":
         return <ResourcesTab resources={[]} />;
       default:
@@ -538,22 +691,23 @@ const SubjectTeacherDashboard: React.FC = () => {
         />
         <div className={styles.contentArea}>
           {msg && (
-            <div style={{ 
-              padding: "10px 20px", 
-              marginBottom: 15, 
-              borderRadius: 8, 
-              background: msg.type === "success" ? "#eaf3de" : "#fdeaea",
-              color: msg.type === "success" ? "#3b6d11" : "#a32d2d",
-              fontSize: 13,
-              fontWeight: 600
-            }}>
+            <div
+              style={{
+                padding: "10px 20px",
+                marginBottom: 15,
+                borderRadius: 8,
+                background: msg.type === "success" ? "var(--sBg)" : "var(--dBg)",
+                color: msg.type === "success" ? "var(--sText)" : "var(--dText)",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
               {msg.text}
             </div>
           )}
           {renderContent()}
         </div>
       </div>
-
     </div>
   );
 };

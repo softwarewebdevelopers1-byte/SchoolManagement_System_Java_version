@@ -73,6 +73,55 @@
   gap: 12px;
 }
 
+.activeSubjectBanner {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--gold) 42%, var(--border));
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--gold) 10%, var(--white));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.activeSubjectBanner h3 {
+  margin: 0 0 2px;
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.activeSubjectBanner span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--textM);
+}
+
+.activeSubjectBanner code {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--textMut);
+  font-size: 11px;
+}
+
+.activeSubjectLabel {
+  margin: 0 0 3px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
 .card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -128,7 +177,7 @@
   position: sticky;
   left: 0;
   z-index: 5; /* Higher than normal cells */
-  background-color: #fff !important;
+  background-color: var(--white) !important;
   box-shadow: 2px 0 5px rgba(0,0,0,0.05), 1px 0 0 var(--borderL);
   min-width: 220px;
   max-width: 260px;
@@ -262,6 +311,15 @@
   .pushBanner {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .activeSubjectBanner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .activeSubjectBanner code {
+    max-width: 100%;
   }
 
   .pushBanner h3 {

@@ -117,6 +117,8 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
   const subjectMarks = marksData[activeSubjectId] || {};
   const currentSubjectLabel =
     currentSubject?.displayName || currentSubject?.name || "";
+  const currentSubjectJointId =
+    currentSubject?.id || currentSubject?.subjectId || activeSubjectId;
   const showEnrollmentSubjectColumn = students.some((student) =>
     Boolean(student.enrollmentSubjectName),
   );
@@ -311,10 +313,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
           <select
             className={styles.dhInput}
             value={activeSubjectId}
-            onChange={(event) => {
-              console.log("targeted subject", event.target.value);
-              onSubjectChange(event.target.value);
-            }}
+            onChange={(event) => onSubjectChange(event.target.value)}
           >
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
@@ -324,6 +323,23 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
           </select>
         </div>
       </div>
+
+      {currentSubject && (
+        <div className={styles.activeSubjectBanner}>
+          <div>
+            <p className={styles.activeSubjectLabel}>Current subject joint</p>
+            <h3>{currentSubjectLabel}</h3>
+            <span>
+              {currentSubject.grade} |{" "}
+              {formatSubjectOfferingTag(
+                currentSubject.enrollmentMode,
+                currentSubject.sharedSlotId,
+              )}
+            </span>
+          </div>
+          <code>{currentSubjectJointId}</code>
+        </div>
+      )}
 
       {mode === "subject" && onPushMarks && (
         <div className={styles.pushBanner}>
@@ -547,10 +563,14 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                   total !== null && maxTotal > 0
                     ? Math.round((total / maxTotal) * 100)
                     : null;
-                const resolvedScore =
+                const savedFinalScore =
                   marks.finalScore !== null && marks.finalScore !== ""
                     ? Number(marks.finalScore)
-                    : calculatedPercentage;
+                    : null;
+                const resolvedScore =
+                  calculatedPercentage !== null
+                    ? calculatedPercentage
+                    : savedFinalScore;
                 const resolvedCbc =
                   marks.cbcBand &&
                   marks.points !== null &&

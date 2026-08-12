@@ -32,4 +32,6 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
                         @Param("subjectType") SubjectType subjectType);
 
         List<SubjectJoint> findBySubjectTypeAndElectiveCode(SubjectType subjectType, String electiveCode);
+
+        List<SubjectJoint> findAllByTeacherProfileId(UUID teacherProfileId);
 }

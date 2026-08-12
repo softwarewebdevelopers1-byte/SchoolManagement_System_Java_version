@@ -19,6 +19,7 @@ interface SidebarProps {
   onLogout: () => void;
   teacherInitials: string;
   teacherAvatarColor: string;
+  teacherName: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
   teacherInitials,
   teacherAvatarColor,
+  teacherName,
 }) => {
   return (
     <aside
@@ -65,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid rgba(255,255,255,.07)",
+          borderBottom: "1px solid var(--ct-sidebar-border)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -74,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               width: 28,
               height: 28,
               borderRadius: 7,
-              background: "var(--gold)",
+              background: "var(--ct-gold)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -100,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: "#e8dcc8",
+                  color: "var(--ct-sidebar-text)",
                   letterSpacing: ".07em",
                   textTransform: "uppercase",
                   margin: 0,
@@ -109,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 Admin Portal
               </p>
-              <p style={{ fontSize: 9, color: "#4a6b5a", margin: 0 }}>
+              <p style={{ fontSize: 9, color: "var(--ct-sidebar-faint)", margin: 0 }}>
                 School Administration
               </p>
             </div>
@@ -122,13 +124,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               width: 25,
               height: 25,
               borderRadius: 6,
-              background: "rgba(255,255,255,.06)",
+              background: "var(--ct-sidebar-border)",
               border: "none",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#9eb8aa",
+              color: "var(--ct-sidebar-muted)",
               flexShrink: 0,
               transition: "background .15s",
             }}
@@ -156,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           alignItems: "center",
           gap: 9,
           justifyContent: collapsed ? "center" : "flex-start",
-          borderBottom: "1px solid rgba(255,255,255,.07)",
+          borderBottom: "1px solid var(--ct-sidebar-border)",
         }}
       >
         <div
@@ -182,13 +184,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                color: "#e8dcc8",
+                color: "var(--ct-sidebar-text)",
                 margin: 0,
               }}
             >
-              Admin User
+              {teacherName || "Admin User"}
             </p>
-            <p style={{ fontSize: 10, color: "#6b9a82", margin: 0 }}>
+            <p style={{ fontSize: 10, color: "var(--ct-sidebar-muted)", margin: 0 }}>
               School Administrator
             </p>
           </div>
@@ -199,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div
         style={{
           padding: "10px 12px",
-          borderBottom: "1px solid rgba(255,255,255,.07)",
+          borderBottom: "1px solid var(--ct-sidebar-border)",
         }}
       >
         <div
@@ -209,96 +211,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
             gap: 5,
           }}
         >
-          <div
-            style={{
-              background: "rgba(255,255,255,.06)",
-              borderRadius: 7,
-              padding: "5px 3px",
-              textAlign: "center",
-            }}
-          >
-            <p
+          {[
+            { label: "Classes", value: classesCount },
+            { label: "Subjects", value: subjectsCount },
+            { label: "Staff", value: teachersCount },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
               style={{
-                fontSize: 9,
-                color: "#4a6b5a",
-                margin: "0 0 1px",
-                textTransform: "uppercase",
-                letterSpacing: ".04em",
+                background: "var(--ct-sidebar-border)",
+                borderRadius: 7,
+                padding: "5px 3px",
+                textAlign: "center",
               }}
             >
-              Classes
-            </p>
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#d8f0e4",
-                margin: 0,
-              }}
-            >
-              {classesCount}
-            </p>
-          </div>
-          <div
-            style={{
-              background: "rgba(255,255,255,.06)",
-              borderRadius: 7,
-              padding: "5px 3px",
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 9,
-                color: "#4a6b5a",
-                margin: "0 0 1px",
-                textTransform: "uppercase",
-                letterSpacing: ".04em",
-              }}
-            >
-              Subjects
-            </p>
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#d8f0e4",
-                margin: 0,
-              }}
-            >
-              {subjectsCount}
-            </p>
-          </div>
-          <div
-            style={{
-              background: "rgba(255,255,255,.06)",
-              borderRadius: 7,
-              padding: "5px 3px",
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 9,
-                color: "#4a6b5a",
-                margin: "0 0 1px",
-                textTransform: "uppercase",
-                letterSpacing: ".04em",
-              }}
-            >
-              Staff
-            </p>
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#d8f0e4",
-                margin: 0,
-              }}
-            >
-              {teachersCount}
-            </p>
-          </div>
+              <p
+                style={{
+                  fontSize: 9,
+                  color: "var(--ct-sidebar-faint)",
+                  margin: "0 0 1px",
+                  textTransform: "uppercase",
+                  letterSpacing: ".04em",
+                }}
+              >
+                {label}
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "var(--ct-sidebar-stat)",
+                  margin: 0,
+                }}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -319,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               border: "none",
               borderLeft:
                 activeTab === item.id
-                  ? "3px solid var(--gold)"
+                  ? "3px solid var(--ct-gold)"
                   : "3px solid transparent",
               borderRadius: "0 8px 8px 0",
               cursor: "pointer",
@@ -327,22 +276,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               transition: "all .15s",
               position: "relative",
               backgroundColor:
-                activeTab === item.id ? "rgba(201,150,61,.18)" : "transparent",
+                activeTab === item.id ? "var(--ct-sidebar-active)" : "transparent",
             }}
             onMouseEnter={(e) => {
               if (activeTab !== item.id)
                 (e.currentTarget as HTMLElement).style.background =
-                  "rgba(201,150,61,.09)";
+                  "var(--ct-sidebar-hover)";
             }}
             onMouseLeave={(e) => {
               if (activeTab !== item.id)
-                (e.currentTarget as HTMLElement).style.background =
-                  "transparent";
+                (e.currentTarget as HTMLElement).style.background = "transparent";
             }}
           >
             <span
               style={{
-                color: activeTab === item.id ? "var(--gold)" : "#6b9a82",
+                color: activeTab === item.id ? "var(--ct-gold)" : "var(--ct-sidebar-muted)",
                 display: "flex",
                 flexShrink: 0,
               }}
@@ -364,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: activeTab === item.id ? "#e8dcc8" : "#9eb8aa",
+                  color: activeTab === item.id ? "var(--ct-sidebar-text)" : "var(--ct-sidebar-muted)",
                 }}
               >
                 {item.label}
@@ -379,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   width: 15,
                   height: 15,
                   borderRadius: 8,
-                  background: "var(--dText)",
+                  background: "var(--ct-danger-text)",
                   fontSize: 8.5,
                   fontWeight: 700,
                   color: "#fff",
@@ -399,15 +347,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div
         style={{
           padding: "10px 12px",
-          borderTop: "1px solid rgba(255,255,255,.07)",
-          borderBottom: "1px solid rgba(255,255,255,.07)",
+          borderTop: "1px solid var(--ct-sidebar-border)",
+          borderBottom: "1px solid var(--ct-sidebar-border)",
         }}
       >
         <p
           style={{
             fontSize: 9,
             fontWeight: 700,
-            color: "#4a6b5a",
+            color: "var(--ct-sidebar-faint)",
             textTransform: "uppercase",
             letterSpacing: ".07em",
             margin: "0 0 7px",
@@ -422,13 +370,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             marginBottom: 4,
           }}
         >
-          <span style={{ fontSize: 11, color: "#6b9a82" }}>CT assigned</span>
+          <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>CT assigned</span>
           <span
             style={{
               fontFamily: "var(--serif)",
               fontSize: 13,
               fontWeight: 600,
-              color: "var(--gold)",
+              color: "var(--ct-gold)",
             }}
           >
             {assignedCT}/{totalClasses}
@@ -441,26 +389,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             marginBottom: 4,
           }}
         >
-          <span style={{ fontSize: 11, color: "#6b9a82" }}>Open alerts</span>
+          <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>Open alerts</span>
           <span
             style={{
               fontFamily: "var(--serif)",
               fontSize: 13,
               fontWeight: 600,
-              color: "var(--wText)",
+              color: "var(--ct-warn-text)",
             }}
           >
             3
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, color: "#6b9a82" }}>Unassigned</span>
+          <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>Unassigned</span>
           <span
             style={{
               fontFamily: "var(--serif)",
               fontSize: 13,
               fontWeight: 600,
-              color: unassignedCount > 0 ? "var(--dText)" : "var(--sText)",
+              color: unassignedCount > 0 ? "var(--ct-danger-text)" : "var(--ct-success-text)",
             }}
           >
             {unassignedCount}
@@ -485,11 +433,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 5,
             padding: 7,
-            background: "rgba(255,255,255,.05)",
+            background: "var(--ct-sidebar-border)",
             border: "none",
             borderRadius: 7,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: "var(--ct-sidebar-muted)",
             position: "relative",
             transition: "background .15s",
           }}
@@ -508,7 +456,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <path d="M13.73 21a2 2 0 01-3.46 0" />
           </svg>
           {!collapsed && (
-            <span style={{ fontSize: 11, color: "#6b9a82" }}>Alerts</span>
+            <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>Alerts</span>
           )}
           <span
             style={{
@@ -518,7 +466,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               width: 14,
               height: 14,
               borderRadius: 7,
-              background: "var(--gold)",
+              background: "var(--ct-gold)",
               fontSize: 8,
               fontWeight: 700,
               color: "#fff",
@@ -539,11 +487,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 5,
             padding: 7,
-            background: "rgba(255,255,255,.05)",
+            background: "var(--ct-sidebar-border)",
             border: "none",
             borderRadius: 7,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: "var(--ct-sidebar-muted)",
             transition: "background .15s",
           }}
         >
@@ -561,7 +509,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <path d="M7 11V8a5 5 0 0 1 10 0v3" />
           </svg>
           {!collapsed && (
-            <span style={{ fontSize: 11, color: "#6b9a82" }}>Password</span>
+            <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>Password</span>
           )}
         </button>
         <button
@@ -573,11 +521,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 5,
             padding: 7,
-            background: "rgba(255,255,255,.05)",
+            background: "var(--ct-sidebar-border)",
             border: "none",
             borderRadius: 7,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: "var(--ct-sidebar-muted)",
             transition: "background .15s",
           }}
         >
@@ -596,7 +544,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           {!collapsed && (
-            <span style={{ fontSize: 11, color: "#6b9a82" }}>Log out</span>
+            <span style={{ fontSize: 11, color: "var(--ct-sidebar-muted)" }}>Log out</span>
           )}
         </button>
       </div>

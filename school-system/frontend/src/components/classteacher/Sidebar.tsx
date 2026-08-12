@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
-          borderBottom: `1px solid rgba(255,255,255,0.07)`,
+          borderBottom: `1px solid ${C.sidebarBorder}`,
         }}
       >
         {!collapsed && (
@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 fontFamily: FONT.sans,
                 fontSize: 12,
                 fontWeight: 700,
-                color: "#e8dcc8",
+                color: C.sidebarText,
                 letterSpacing: "0.07em",
                 textTransform: "uppercase",
                 whiteSpace: "nowrap",
@@ -108,13 +108,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: 28,
             height: 28,
             borderRadius: 7,
-            background: "rgba(255,255,255,0.07)",
+            background: C.sidebarBorder,
             border: "none",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#9eb8aa",
+            color: C.sidebarMuted,
             flexShrink: 0,
             transition: "background 0.15s",
           }}
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           alignItems: "center",
           gap: collapsed ? 0 : 10,
           justifyContent: collapsed ? "center" : "flex-start",
-          borderBottom: `1px solid rgba(255,255,255,0.07)`,
+          borderBottom: `1px solid ${C.sidebarBorder}`,
         }}
       >
         <Avatar name={user?.name || "User"} size={36} />
@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 fontFamily: FONT.sans,
                 fontSize: 12.5,
                 fontWeight: 700,
-                color: "#e8dcc8",
+                color: C.sidebarText,
                 margin: 0,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -161,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 fontFamily: FONT.sans,
                 fontSize: 11,
-                color: "#6b9a82",
+                color: C.sidebarMuted,
                 margin: 0,
               }}
             >
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           style={{
             padding: "12px 14px",
-            borderBottom: `1px solid rgba(255,255,255,0.07)`,
+            borderBottom: `1px solid ${C.sidebarBorder}`,
           }}
         >
           <div
@@ -194,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 key={k}
                 style={{
-                  background: "rgba(255,255,255,0.06)",
+                  background: C.sidebarBorder,
                   borderRadius: 8,
                   padding: "7px 8px",
                   textAlign: "center",
@@ -204,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{
                     fontFamily: FONT.sans,
                     fontSize: 10,
-                    color: "#6b9a82",
+                    color: C.sidebarFaint,
                     margin: "0 0 2px",
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
@@ -217,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontFamily: FONT.sans,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: "#d8f0e4",
+                    color: C.sidebarStat,
                     margin: 0,
                   }}
                 >
@@ -258,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <span
               style={{
-                color: activeTab === item.id ? C.gold : "#6b9a82",
+                color: activeTab === item.id ? C.gold : C.sidebarMuted,
                 flexShrink: 0,
                 display: "flex",
               }}
@@ -272,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontFamily: FONT.sans,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: activeTab === item.id ? "#e8dcc8" : "#9eb8aa",
+                    color: activeTab === item.id ? C.sidebarText : C.sidebarMuted,
                     margin: 0,
                   }}
                 >
@@ -301,18 +301,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 6,
             padding: collapsed ? "8px" : "8px 10px",
-            background: "rgba(255,255,255,0.05)",
+            background: C.sidebarBorder,
             border: "none",
             borderRadius: 8,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: C.sidebarMuted,
             position: "relative",
           }}
         >
           <BellIcon />
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: "#6b9a82" }}
+              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
             >
               Alerts
             </span>
@@ -346,11 +346,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 6,
             padding: collapsed ? "8px" : "8px 10px",
-            background: "rgba(255,255,255,0.05)",
+            background: C.sidebarBorder,
             border: "none",
             borderRadius: 8,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: C.sidebarMuted,
           }}
         >
           <svg
@@ -368,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </svg>
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: "#6b9a82" }}
+              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
             >
               Password
             </span>
@@ -382,17 +382,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: "center",
             gap: 6,
             padding: collapsed ? "8px" : "8px 10px",
-            background: "rgba(255,255,255,0.05)",
+            background: C.sidebarBorder,
             border: "none",
             borderRadius: 8,
             cursor: "pointer",
-            color: "#6b9a82",
+            color: C.sidebarMuted,
           }}
         >
           <LogoutIcon />
           {!collapsed && (
             <span
-              style={{ fontFamily: FONT.sans, fontSize: 12, color: "#6b9a82" }}
+              style={{ fontFamily: FONT.sans, fontSize: 12, color: C.sidebarMuted }}
             >
               Log out
             </span>

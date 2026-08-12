@@ -21,6 +21,15 @@ export const C = {
   warnText: "var(--ct-warn-text)",
   dangerBg: "var(--ct-danger-bg)",
   dangerText: "var(--ct-danger-text)",
+  sidebarText: "var(--ct-sidebar-text)",
+  sidebarMuted: "var(--ct-sidebar-muted)",
+  sidebarFaint: "var(--ct-sidebar-faint)",
+  sidebarStat: "var(--ct-sidebar-stat)",
+  sidebarHover: "var(--ct-sidebar-hover)",
+  sidebarActive: "var(--ct-sidebar-active)",
+  sidebarBorder: "var(--ct-sidebar-border)",
+  topBarBg: "var(--ct-topbar-bg)",
+  topBarBorder: "var(--ct-topbar-border)",
 };
 
 export const FONT = {

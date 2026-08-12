@@ -28,7 +28,7 @@ import {
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api, getClassId, normalizeRoles } from "../../lib/api";
+import { api, getClassId, normalizeRoles, normalizeUser } from "../../lib/api";
 import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 import { AttendanceTab } from "./AttendanceTab";
 import {
@@ -129,7 +129,7 @@ export default function ClassTeacherDashboard() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
+        return normalizeUser(parsed.user || parsed);
       } catch (e) {}
     }
     return null;

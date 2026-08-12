@@ -415,6 +415,22 @@
   margin-bottom: 1.2rem;
 }
 
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eaf3de;
+  border: 1px solid #b9d99a;
+  border-radius: 9px;
+  padding: 11px 14px;
+  margin-bottom: 1.2rem;
+}
+
+.successMessage .errorText {
+  color: #3b6d11;
+  font-weight: 600;
+}
+
 .errorIcon {
   color: #dc2626;
   flex-shrink: 0;
@@ -461,6 +477,51 @@
 .submitButton:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.authModeButton {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--gold-primary);
+  border: 1.5px solid var(--gold-primary);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.codeRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.codeButton {
+  border: none;
+  border-radius: 10px;
+  background: var(--green-primary);
+  color: #fff;
+  padding: 0 12px;
+  font-size: 12px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.codeButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.schoolFound {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b6d11;
 }
 
 .loader {
@@ -600,5 +661,47 @@
     padding: 4px 10px;
     font-size: 10px;
   }
+
+  .codeRow {
+    grid-template-columns: 1fr;
+  }
+
+  .codeButton {
+    min-height: 42px;
+  }
+}
+
+.profileModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(11, 32, 24, 0.58);
+}
+
+.profileModal {
+  width: min(420px, 100%);
+  background: var(--cream-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 70px rgba(11, 32, 24, 0.34);
+  animation: fadeSlideUp 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modalTitle {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.7rem;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+}
+
+.modalCopy {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-light);
 }
 

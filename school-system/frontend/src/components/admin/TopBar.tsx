@@ -184,11 +184,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                color: "var(--text)",
+                color: "var(--ct-text)",
                 margin: 0,
               }}
             >
-              Admin User
+              {user?.name || user?.email || "Admin User"}
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -198,7 +198,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   border: "none",
                   padding: 0,
                   fontSize: 10,
-                  color: "var(--dText)",
+                  color: "var(--ct-danger-text)",
                   fontWeight: 700,
                   cursor: "pointer",
                   textDecoration: "underline"

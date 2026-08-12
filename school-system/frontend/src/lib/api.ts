@@ -44,13 +44,13 @@ export const getCurrentTeacherProfileId = (): string | null => {
   const session = getStoredSession();
   if (!session) return null;
   const user = normalizeUser(session.user || session);
-  return user?.teacherProfileDto.teacherProfileId || null;
+  return user?.teacherProfileDto?.teacherProfileId || user?.teacherProfileId || null;
 };
 export const getClassId = (): string | null => {
   const session = getStoredSession();
   if (!session) return null;
   const user = normalizeUser(session.user || session);
-  return user?.classDto.id || null;
+  return user?.classDto?.id || user?.classId || null;
 };
 
 export const getStoredSession = () => {
@@ -109,7 +109,7 @@ export const normalizeUser = (user: any) => {
 
 export const getDefaultDashboardPath = (user: any) => {
   const roles = normalizeRoles(user?.roles || user?.role);
-  return `edunex-org${ROLE_PATHS[roles[0]]}` || "/";
+  return roles[0] ? `/edunex-org${ROLE_PATHS[roles[0]]}` : "/";
 };
 
 export const getRoleFromPath = (path: string): string => {
@@ -292,9 +292,9 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   })) as T;
 };
 
-const saveLegacyMarks = async <T>(body: any): Promise<T> => {
+const buildMarksEntryBody = (body: any) => {
   const schoolId = getSchoolId();
-  const subjectJointId = body?.subjectJointId;
+  const subjectJointId = body?.subjectJointId || body?.subjectId;
 
   if (!schoolId || !subjectJointId) {
     throw new ApiError(
@@ -308,7 +308,6 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
   const catConfigs = body?.catConfigs || {};
   const firstRow = rows[0] || {};
 
-  // Determine which cats are enabled based on catConfigs or row max values
   const cat1Enabled =
     catConfigs.cat1Max !== null &&
     catConfigs.cat1Max !== undefined &&
@@ -322,32 +321,38 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
     catConfigs.cat3Max !== undefined &&
     Number(catConfigs.cat3Max) > 0;
 
+  return {
+    schoolId,
+    subjectJointId,
+    maxCat1: cat1Enabled ? catConfigs.cat1Max || firstRow.cat1Max || 40 : null,
+    maxCat2: cat2Enabled ? catConfigs.cat2Max || firstRow.cat2Max || 40 : null,
+    maxCat3: cat3Enabled ? catConfigs.cat3Max || firstRow.cat3Max || 40 : null,
+    maxExam: catConfigs.examMax || firstRow.examMax || 100,
+    cat1Entry: cat1Enabled,
+    cat2Entry: cat2Enabled,
+    cat3Entry: cat3Enabled,
+    markInputDTOs: rows.map((row: any) => ({
+      studentId: row.studentId,
+      cat1: row.cat1 ?? null,
+      cat2: row.cat2 ?? null,
+      cat3: row.cat3 ?? null,
+      exam: row.exam ?? null,
+    })),
+    enrollmentCode: body?.enrollmentCode || body?.sharedSlotId || null,
+  };
+};
+
+const saveLegacyMarks = async <T>(body: any): Promise<T> => {
   return request<T>("/marks/entry", {
     method: "POST",
-    body: JSON.stringify({
-      schoolId,
-      subjectJointId,
-      maxCat1: cat1Enabled
-        ? catConfigs.cat1Max || firstRow.cat1Max || 40
-        : null,
-      maxCat2: cat2Enabled
-        ? catConfigs.cat2Max || firstRow.cat2Max || 40
-        : null,
-      maxCat3: cat3Enabled
-        ? catConfigs.cat3Max || firstRow.cat3Max || 40
-        : null,
-      maxExam: catConfigs.examMax || firstRow.examMax || 100,
-      cat1Entry: cat1Enabled,
-      cat2Entry: cat2Enabled,
-      cat3Entry: cat3Enabled,
-      markInputDTOs: rows.map((row: any) => ({
-        studentId: row.studentId,
-        cat1: row.cat1 ?? null,
-        cat2: row.cat2 ?? null,
-        cat3: row.cat3 ?? null,
-        exam: row.exam ?? null,
-      })),
-    }),
+    body: JSON.stringify(buildMarksEntryBody(body)),
+  });
+};
+
+const saveElectiveMarks = async <T>(body: any): Promise<T> => {
+  return request<T>("/marks/elective", {
+    method: "POST",
+    body: JSON.stringify(buildMarksEntryBody(body)),
   });
 };
 
@@ -769,7 +774,11 @@ export const api = {
     if (path === "/school/assignments") {
       return createLegacyAssignment<T>(body);
     }
+    if (path === "/marks/elective") {
+      return saveElectiveMarks<T>(body);
+    }
     if (path === "/marks/save" || path === "/marks/summary-save") {
+      if (body?.isElective) return saveElectiveMarks<T>(body);
       return saveLegacyMarks<T>(body);
     }
     if (path === "/users/parent-concerns") {

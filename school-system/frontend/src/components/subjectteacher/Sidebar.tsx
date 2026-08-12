@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <div>
             <p className={styles.sbPname}>{teacherName}</p>
-            <p className={styles.sbProle}>Mathematics Teacher</p>
+            <p className={styles.sbProle}>{department || "Subject Teacher"}</p>
           </div>
         )}
       </div>

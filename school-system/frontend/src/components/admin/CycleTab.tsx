@@ -9,6 +9,7 @@ interface CycleTabProps {
     year: number,
     examType: string,
   ) => Promise<void>;
+  onSchoolCycleUpdate: () => Promise<void>;
   onFinalGradeUpdate: (finalGrade: string) => Promise<void>;
   initialData?: {
     term: number;
@@ -22,6 +23,7 @@ interface CycleTabProps {
 
 export const CycleTab: React.FC<CycleTabProps> = ({
   onBulkTermUpdate,
+  onSchoolCycleUpdate,
   onFinalGradeUpdate,
   gradeOptions = [],
 }) => {
@@ -31,6 +33,8 @@ export const CycleTab: React.FC<CycleTabProps> = ({
   const [examType, setExamType] = useState<string>();
   const [selectedFinalGrade, setSelectedFinalGrade] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [promoting, setPromoting] = useState(false);
+  const [savingExamType, setSavingExamType] = useState(false);
   const [savingFinalGrade, setSavingFinalGrade] = useState(false);
 
   useEffect(() => {
@@ -51,7 +55,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
     setSelectedFinalGrade(initialData?.finalGrade);
   }, [initialData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveTerm = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -62,6 +66,29 @@ export const CycleTab: React.FC<CycleTabProps> = ({
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveExamType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingExamType(true);
+    try {
+      await onBulkTermUpdate(
+        term || 1,
+        year || new Date().getFullYear(),
+        examType || "OPENER",
+      );
+    } finally {
+      setSavingExamType(false);
+    }
+  };
+
+  const handlePromoteSchoolCycle = async () => {
+    setPromoting(true);
+    try {
+      await onSchoolCycleUpdate();
+    } finally {
+      setPromoting(false);
     }
   };
 
@@ -79,7 +106,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
     <div className={styles.anim} style={{ padding: "0 4px" }}>
       <div style={{ marginBottom: 24 }}>
         <p style={eyebrowStyle}>Academic Cycle</p>
-        <h2 style={titleStyle}>Term & Year Management</h2>
+        <h2 style={titleStyle}>Academic Cycle Management</h2>
       </div>
 
       <div style={noticeStyle}>
@@ -87,14 +114,8 @@ export const CycleTab: React.FC<CycleTabProps> = ({
           Critical Action
         </h4>
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-          Updating the academic cycle is a global action.{" "}
-          <strong>
-            If the Year is advanced, learners below the final grade are
-            promoted.
-          </strong>{" "}
-          Learners in the configured final grade are marked completed, removed
-          from class membership, and copied into the exited learners archive
-          with their education-health history.
+          Promotion is now a separate global action. Term and exam phase can be
+          changed independently without promoting learners.
         </p>
       </div>
 
@@ -107,23 +128,32 @@ export const CycleTab: React.FC<CycleTabProps> = ({
         }}
       >
         <div style={cardStyle}>
+          <h3 style={cardTitleStyle}>Promote school cycle</h3>
+          <p style={helperTextStyle}>
+            Move every active learner to the next class using the backend cycle
+            rules. No extra input is required.
+          </p>
+          <button
+            type="button"
+            onClick={handlePromoteSchoolCycle}
+            disabled={promoting}
+            style={{
+              ...buttonStyle,
+              opacity: promoting ? 0.7 : 1,
+              cursor: promoting ? "not-allowed" : "pointer",
+            }}
+          >
+            {promoting ? "Updating school cycle..." : "Update all students to next class"}
+          </button>
+        </div>
+
+        <div style={cardStyle}>
           <form
-            onSubmit={handleSubmit}
+            onSubmit={handleSaveTerm}
             style={{ display: "flex", flexDirection: "column", gap: 20 }}
           >
             <div>
-              <label style={labelStyle}>Target Academic Year</label>
-              <input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                style={inputStyle}
-                required
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Target Term</label>
+              <label style={labelStyle}>Current Term</label>
               <select
                 value={term}
                 onChange={(e) => setTerm(Number(e.target.value))}
@@ -137,6 +167,25 @@ export const CycleTab: React.FC<CycleTabProps> = ({
               </select>
             </div>
 
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...buttonStyle,
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? "Saving term..." : "Update Term"}
+            </button>
+          </form>
+        </div>
+
+        <div style={cardStyle}>
+          <form
+            onSubmit={handleSaveExamType}
+            style={{ display: "flex", flexDirection: "column", gap: 20 }}
+          >
             <div>
               <label style={labelStyle}>Exam / CAT Phase</label>
               <select
@@ -154,14 +203,14 @@ export const CycleTab: React.FC<CycleTabProps> = ({
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={savingExamType}
               style={{
                 ...buttonStyle,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? "not-allowed" : "pointer",
+                opacity: savingExamType ? 0.7 : 1,
+                cursor: savingExamType ? "not-allowed" : "pointer",
               }}
             >
-              {loading ? "Updating Classes..." : "Update Classes"}
+              {savingExamType ? "Saving exam type..." : "Update Exam Type"}
             </button>
           </form>
         </div>
@@ -285,6 +334,20 @@ const titleStyle: React.CSSProperties = {
   fontWeight: 600,
   color: "var(--text)",
   margin: 0,
+};
+
+const cardTitleStyle: React.CSSProperties = {
+  margin: "0 0 8px",
+  fontFamily: "var(--serif)",
+  fontSize: "1.2rem",
+  color: "var(--text)",
+};
+
+const helperTextStyle: React.CSSProperties = {
+  margin: "0 0 14px",
+  fontSize: 13,
+  lineHeight: 1.5,
+  color: "var(--textMut)",
 };
 
 const noticeStyle: React.CSSProperties = {

@@ -7,6 +7,7 @@ import {
   getDefaultDashboardPath,
   normalizeRoles,
   normalizeUser,
+  request,
 } from "../../lib/api";
 
 // Role labels removed
@@ -118,6 +119,15 @@ const FeatureIcon: React.FC<{ d: string }> = ({ d }) => (
   </svg>
 );
 
+const hasTeacherProfile = (user: any) =>
+  Boolean(
+    user?.teacherProfileId ||
+      user?.teacherId ||
+      user?.teacherProfileDto?.teacherProfileId ||
+      user?.teacherProfile?.teacherProfileId ||
+      user?.teacherProfile?.id,
+  );
+
 interface LoginPageProps {
   onLogin?: (user: any) => void;
 }
@@ -126,10 +136,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [schoolCode, setSchoolCode] = useState("");
+  const [verifiedSchool, setVerifiedSchool] = useState("");
+  const [codeChecking, setCodeChecking] = useState(false);
+  const [profileSession, setProfileSession] = useState<any | null>(null);
+  const [profileFirstName, setProfileFirstName] = useState("");
+  const [profileLastName, setProfileLastName] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50);
@@ -139,6 +162,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNotice(null);
     setLoading(true);
 
     try {
@@ -151,10 +175,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const session = { ...response, user };
       localStorage.setItem("user", JSON.stringify(session));
 
+      const roles = normalizeRoles(user.roles);
+      const isTeacher =
+        roles.includes("SUBJECTTEACHER") ||
+        roles.includes("CLASSTEACHER") ||
+        roles.includes("HEADTEACHER") ||
+        roles.includes("DEPUTYTEACHER") ||
+        roles.includes("ADMIN");
+      if (isTeacher && !hasTeacherProfile(user)) {
+        setProfileSession(session);
+        setProfileFirstName(user.firstName || "");
+        setProfileLastName(user.lastName || "");
+        return;
+      }
+
       if (onLogin) {
         onLogin(user);
       } else {
-        const roles = normalizeRoles(user.roles);
         if (roles.length > 1) {
           window.location.href = "/edunex-org/dashboard";
         } else {
@@ -163,6 +200,104 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       }
     } catch (err: any) {
       setError(err.message || "Invalid login details. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySchoolCode = async () => {
+    if (!schoolCode.trim()) {
+      setError("Enter a school code first.");
+      return;
+    }
+    setCodeChecking(true);
+    setError("");
+    setNotice(null);
+    setVerifiedSchool("");
+    try {
+      const response: any = await request(
+        `/schools/get/school/for/user?schoolCode=${encodeURIComponent(schoolCode.trim())}`,
+      );
+      const schoolName =
+        typeof response === "string"
+          ? response
+          : response?.schoolName || response?.name || response?.data || "";
+      setVerifiedSchool(String(schoolName || "School found"));
+      setNotice({ text: "School code verified.", type: "success" });
+    } catch (err: any) {
+      setError(err.message || "School code was not found.");
+    } finally {
+      setCodeChecking(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verifiedSchool) {
+      setError("Verify the school code before creating the account.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setNotice(null);
+    try {
+      await request("/auth/teacher/create-account", {
+        method: "POST",
+        body: JSON.stringify({
+          email: signupEmail.trim(),
+          password: signupPassword,
+          schoolCode: schoolCode.trim(),
+        }),
+      });
+      setAuthMode("login");
+      setLoginIdentifier(signupEmail.trim());
+      setPassword("");
+      setVerifiedSchool("");
+      setSignupEmail("");
+      setSignupPassword("");
+      setSchoolCode("");
+      setNotice({
+        text: "Account created. Wait for the admin to accept your request, then sign in.",
+        type: "success",
+      });
+    } catch (err: any) {
+      setError(err.message || "Unable to create account.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!profileSession?.token || !profileSession?.user?.userId) return;
+    setLoading(true);
+    setError("");
+    setNotice(null);
+    try {
+      await request("/users/teacher/add-profile", {
+        method: "POST",
+        body: JSON.stringify({
+          firstName: profileFirstName.trim(),
+          lastName: profileLastName.trim(),
+          userId: profileSession.user.userId,
+        }),
+      });
+      let user = {
+        ...profileSession.user,
+        firstName: profileFirstName.trim(),
+        lastName: profileLastName.trim(),
+        name: [profileFirstName, profileLastName].filter(Boolean).join(" "),
+      };
+      try {
+        user = normalizeUser(await api.get("/auth/me"));
+      } catch {}
+      const session = { ...profileSession, user };
+      localStorage.setItem("user", JSON.stringify(session));
+      const roles = normalizeRoles(user.roles);
+      window.location.href =
+        roles.length > 1 ? "/edunex-org/dashboard" : getDefaultDashboardPath(user);
+    } catch (err: any) {
+      setError(err.message || "Unable to save teacher profile.");
     } finally {
       setLoading(false);
     }
@@ -248,10 +383,55 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {/* Header */}
             <div className={styles.formHeader}>
               <p className={styles.formSubtitle}>Portal Access</p>
-              <h2 className={styles.formTitle}>Sign in to your account</h2>
+              <h2 className={styles.formTitle}>
+                {profileSession
+                  ? "Complete teacher profile"
+                  : authMode === "login"
+                    ? "Sign in to your account"
+                    : "Create teacher account"}
+              </h2>
             </div>
 
             {/* Form */}
+            {profileSession && (
+              <div className={styles.profileModalBackdrop}>
+                <form onSubmit={completeProfile} className={styles.profileModal}>
+                  <p className={styles.formSubtitle}>Teacher Profile</p>
+                  <h3 className={styles.modalTitle}>Complete your profile</h3>
+                  <p className={styles.modalCopy}>
+                    Your account is accepted, but no teacher profile exists yet.
+                  </p>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>First name</label>
+                  <input
+                    value={profileFirstName}
+                    onChange={(event) => setProfileFirstName(event.target.value)}
+                    className={styles.input}
+                    required
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>Last name</label>
+                  <input
+                    value={profileLastName}
+                    onChange={(event) => setProfileLastName(event.target.value)}
+                    className={styles.input}
+                    required
+                  />
+                </div>
+                {error && (
+                  <div className={styles.errorMessage}>
+                    <span className={styles.errorIcon}><WarnIcon /></span>
+                    <span className={styles.errorText}>{error}</span>
+                  </div>
+                )}
+                <button type="submit" className={styles.submitButton} disabled={loading}>
+                  {loading ? <span className={styles.loader} /> : "Save Profile"}
+                </button>
+              </form>
+              </div>
+            )}
+            {authMode === "login" ? (
             <form onSubmit={handleSubmit} className={styles.form}>
               {/* Login Identifier Field */}
               <div className={styles.inputGroup}>
@@ -333,6 +513,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <span className={styles.errorText}>{error}</span>
                 </div>
               )}
+              {notice && (
+                <div className={notice.type === "success" ? styles.successMessage : styles.errorMessage}>
+                  <span className={styles.errorText}>{notice.text}</span>
+                </div>
+              )}
 
               {/* Submit Button */}
               <button
@@ -342,7 +527,65 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               >
                 {loading ? <span className={styles.loader} /> : "Sign In"}
               </button>
+              <button
+                type="button"
+                className={styles.authModeButton}
+                onClick={() => {
+                  setAuthMode("signup");
+                  setError("");
+                  setNotice(null);
+                }}
+              >
+                Create teacher account
+              </button>
             </form>
+            ) : (
+              <form onSubmit={handleSignup} className={styles.form}>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>School code</label>
+                  <div className={styles.codeRow}>
+                    <input
+                      value={schoolCode}
+                      onChange={(event) => {
+                        setSchoolCode(event.target.value);
+                        setVerifiedSchool("");
+                      }}
+                      className={styles.input}
+                      required
+                    />
+                    <button type="button" className={styles.codeButton} onClick={handleVerifySchoolCode} disabled={codeChecking}>
+                      {codeChecking ? "Checking..." : "Submit Code"}
+                    </button>
+                  </div>
+                  {verifiedSchool && <p className={styles.schoolFound}>{verifiedSchool}</p>}
+                </div>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>Email</label>
+                  <input type="email" value={signupEmail} onChange={(event) => setSignupEmail(event.target.value)} className={styles.input} required />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>Password</label>
+                  <input type="password" value={signupPassword} onChange={(event) => setSignupPassword(event.target.value)} className={styles.input} required />
+                </div>
+                {error && (
+                  <div className={styles.errorMessage}>
+                    <span className={styles.errorIcon}><WarnIcon /></span>
+                    <span className={styles.errorText}>{error}</span>
+                  </div>
+                )}
+                {notice && (
+                  <div className={notice.type === "success" ? styles.successMessage : styles.errorMessage}>
+                    <span className={styles.errorText}>{notice.text}</span>
+                  </div>
+                )}
+                <button type="submit" className={styles.submitButton} disabled={loading || !verifiedSchool}>
+                  {loading ? <span className={styles.loader} /> : "Create Account"}
+                </button>
+                <button type="button" className={styles.authModeButton} onClick={() => { setAuthMode("login"); setError(""); setNotice(null); }}>
+                  Back to sign in
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

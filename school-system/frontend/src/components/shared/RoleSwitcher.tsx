@@ -66,11 +66,11 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
 
   if (roles.length <= 1) return null;
 
-  const currentPath = location.pathname;
+  const currentPath = location.pathname.toLowerCase();
+  const rolePath = (role: string) =>
+    `/edunex-org${ROLE_PATHS[role] || ""}`.toLowerCase();
   const currentRole =
-    roles.find(
-      (r) => ROLE_PATHS[r]?.toLowerCase() === currentPath.toLowerCase(),
-    ) || roles[0];
+    roles.find((r) => rolePath(r) === currentPath) || roles[0];
 
   return (
     <div ref={dropdownRef} style={{ position: "relative", zIndex: 100 }}>
@@ -179,7 +179,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
             {roles.map((r: string) => {
               const path = ROLE_PATHS[r];
               if (!path) return null;
-              const isActive = currentPath.toLowerCase() === path.toLowerCase();
+              const isActive = currentPath === rolePath(r);
 
               return (
                 <button

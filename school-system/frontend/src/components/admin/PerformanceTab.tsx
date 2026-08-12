@@ -26,6 +26,11 @@ interface ClassPerformanceRow {
   rank: number;
 }
 
+interface PerformanceSubject {
+  id: string;
+  name: string;
+}
+
 const panelStyle: React.CSSProperties = {
   background: "var(--white)",
   border: "1px solid var(--border)",
@@ -111,13 +116,19 @@ const computeMarkPercentage = (marks: any): number | null => {
 
 const markToPoints = (v: number, bands: CbcGradingBand[]): number => resolveCbcBand(v, bands).points;
 
-export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, students, subjects }) => {
+export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, students }) => {
   const { bands: cbcBands } = useCbcGradingBands();
   const [selectedId, setSelectedId] = useState(() => {
-    const saved = sessionStorage.getItem("selectedPerformanceTarget");
-    return saved ? JSON.parse(saved) : "";
+    const saved = localStorage.getItem("edunex.admin.performanceScope");
+    if (!saved) return "";
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return "";
+    }
   });
   const [performanceRows, setPerformanceRows] = useState<ClassPerformanceRow[]>([]);
+  const [performanceSubjects, setPerformanceSubjects] = useState<PerformanceSubject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [rankingMode, setRankingMode] = useState<"total_points" | "total_marks">("total_points");
@@ -130,7 +141,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
 
   useEffect(() => {
     if (!selectedId && classes.length > 0) {
-      setSelectedId(classes[0].id);
+      const nextId = classes[0].id;
+      setSelectedId(nextId);
+      localStorage.setItem("edunex.admin.performanceScope", JSON.stringify(nextId));
     }
   }, [classes, selectedId]);
 
@@ -138,12 +151,8 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
   const currentGrade = isGradeSelected ? selectedId?.replace("grade:", "") : "";
   const currentClass = !isGradeSelected ? classes?.find(c => c.id === selectedId) : null;
 
-  // For grade-wide, we combine all subjects offered in any stream of that grade
   const targetClasses = isGradeSelected ? classes.filter(c => c.grade === currentGrade) : (currentClass ? [currentClass] : []);
-  const availableSubjects = useMemo(() => {
-    const ids = Array.from(new Set(targetClasses.flatMap(c => c.offeredSubjectIds)));
-    return subjects.filter(s => ids.includes(s.id));
-  }, [targetClasses, subjects]);
+  const availableSubjects = performanceSubjects;
 
   const targetStudents = useMemo(() => {
     if (isGradeSelected) return students.filter(s => s.classGrade === currentGrade && s.status === "Active");
@@ -173,22 +182,36 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
         });
       });
 
-      // To speed up, we fetch marks for each class-subject combo
+      const joints = await api.get<any[]>("/school/class-subjects");
+      const classKeys = new Set(
+        targetClasses.map(
+          (cls) => `${String(cls.grade || "").trim()}::${String(cls.stream || "").trim()}`,
+        ),
+      );
+      const targetJoints = (joints || []).filter((joint) => {
+        const grade = String(joint.classGrade || "").trim();
+        const stream = String(joint.classStream || "").trim();
+        return classKeys.has(`${grade}::${stream}`) && joint.isOffered !== false;
+      });
+      const nextSubjects = targetJoints.map((joint) => ({
+        id: joint.id || joint.subjectJointId || joint.subjectId,
+        name: joint.name || joint.subjectName || "Subject",
+      }));
+      setPerformanceSubjects(nextSubjects);
+
       for (const cls of targetClasses) {
-        const clsSubjects = subjects.filter(s => cls.offeredSubjectIds.includes(s.id));
+        const clsSubjects = targetJoints.filter(
+          (joint) =>
+            String(joint.classGrade || "").trim() === String(cls.grade || "").trim() &&
+            String(joint.classStream || "").trim() === String(cls.stream || "").trim(),
+        );
         for (const sub of clsSubjects) {
-          const data: any[] = await api.get("/marks", {
-            subjectId: sub.id,
-            classGrade: cls.grade,
-            classStream: cls.stream || "",
-            term: cls.term,
-            year: cls.year,
-            examType: cls.examType
-          });
+          const subjectJointId = sub.id || sub.subjectJointId || sub.subjectId;
+          const data: any[] = await api.get("/marks", { subjectJointId });
           data.forEach(item => {
             const sid = item.studentId?.toString();
             const row = rowsByStudent.get(sid);
-            if (row) row.marks[sub.id] = computeMarkPercentage(item.marks);
+            if (row) row.marks[subjectJointId] = computeMarkPercentage(item.marks);
           });
         }
       }
@@ -225,6 +248,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       });
       setPerformanceRows(ranked);
     } catch (err: any) {
+      setPerformanceSubjects([]);
       setMsg({ text: err.message || "Failed to load performance.", type: "error" });
     } finally {
       setIsLoading(false);
@@ -351,7 +375,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       >
         <label style={{ display: "grid", gap: 6 }}>
           <span style={labelStyle}>Select Scope</span>
-          <select value={selectedId} onChange={e => { setSelectedId(e.target.value); sessionStorage.setItem("selectedPerformanceTarget", JSON.stringify(e.target.value)); }} style={inputStyle}>
+          <select value={selectedId} onChange={e => { setSelectedId(e.target.value); localStorage.setItem("edunex.admin.performanceScope", JSON.stringify(e.target.value)); }} style={inputStyle}>
             <optgroup label="Grade-wide (All Streams)">
               {uniqueGrades.map(g => (
                 <option key={`grade:${g}`} value={`grade:${g}`}>Grade {g} - Combined</option>
@@ -398,7 +422,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       </div>
 
       {msg && (
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: msg.type === "success" ? "#eaf3de" : "#fdeaea", color: msg.type === "success" ? "#3b6d11" : "#a32d2d", fontSize: 13, fontWeight: 600 }}>
+        <div style={{ padding: "10px 14px", borderRadius: 10, background: msg.type === "success" ? "var(--sBg)" : "var(--dBg)", color: msg.type === "success" ? "var(--sText)" : "var(--dText)", fontSize: 13, fontWeight: 600 }}>
           {msg.text}
         </div>
       )}
@@ -426,8 +450,8 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
                 <td style={{ ...tableCellStyle, position: "sticky", left: 60, zIndex: 5, background: "var(--white)", boxShadow: "2px 0 5px rgba(0,0,0,0.05)", fontWeight: 600 }}>{row.name}</td>
                 <td style={{ ...tableCellStyle, color: "var(--textMut)" }}>{row.admissionNo}</td>
                 <td style={{ ...tableCellStyle, fontSize: 12 }}>{row.stream}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 700, color: "var(--gold)", background: rankingMode === "total_points" ? "#fff9eb" : undefined }}>{row.points}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 700, background: rankingMode === "total_marks" ? "#fff9eb" : undefined }}>{row.total}</td>
+                <td style={{ ...tableCellStyle, fontWeight: 700, color: "var(--gold)", background: rankingMode === "total_points" ? "var(--goldP)" : undefined }}>{row.points}</td>
+                <td style={{ ...tableCellStyle, fontWeight: 700, background: rankingMode === "total_marks" ? "var(--goldP)" : undefined }}>{row.total}</td>
               </tr>
             ))}
           </tbody>

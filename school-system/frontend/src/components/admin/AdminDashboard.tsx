@@ -14,6 +14,8 @@ import { TimetableTab } from "./TimetableTab";
 // import { BulkElectiveEnrollmentTab } from "./BulkElectiveEnrollmentTab";
 import { PerformanceTab } from "./PerformanceTab";
 import { CbcGradingConfigTab } from "./CbcGradingConfigTab";
+import { SchoolSettingsTab } from "./SchoolSettingsTab";
+import { UserApprovalsTab } from "./UserApprovalsTab";
 import { ArchivesView } from "../shared/ArchivesView";
 import { ExitedStudentsView } from "../shared/ExitedStudentsView";
 import {
@@ -30,7 +32,7 @@ import {
   ExitedStudent,
 } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api, getSchoolId, request } from "../../lib/api";
+import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -80,6 +82,11 @@ const navItems: NavItem[] = [
     svg: "<path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/>",
   },
   {
+    id: "approvals",
+    label: "User Approvals",
+    svg: "<path d='M9 12l2 2 4-4'/><path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M19 8v6'/><path d='M22 11h-6'/>",
+  },
+  {
     id: "assignments",
     label: "Teachers Assignments",
     svg: "<path d='M9 11l3 3L22 4'/><path d='M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'/>",
@@ -93,6 +100,11 @@ const navItems: NavItem[] = [
     id: "cycle",
     label: "Academic Cycle",
     svg: "<circle cx='12' cy='12' r='10'/><path d='M12 6v6l4 2'/>",
+  },
+  {
+    id: "school-settings",
+    label: "School Settings",
+    svg: "<path d='M4 21V8l8-5 8 5v13'/><path d='M9 21v-6h6v6'/><path d='M9 10h.01'/><path d='M15 10h.01'/>",
   },
   {
     id: "cbc-grading",
@@ -111,8 +123,9 @@ const navItems: NavItem[] = [
   },
 ];
 
-const teacherInitials = "AU";
 const teacherAvatarColor = "#c9963d";
+const ADMIN_TAB_KEY = "edunex.admin.activeTab";
+const validAdminTabs = new Set(navItems.map((item) => item.id));
 
 const normalizeStatus = (value?: string) => {
   const normalized = value?.toLowerCase();
@@ -346,7 +359,10 @@ const primaryButtonStyle: React.CSSProperties = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem(ADMIN_TAB_KEY);
+    return saved && validAdminTabs.has(saved) ? saved : "overview";
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
@@ -369,7 +385,7 @@ const AdminDashboard: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.user || parsed;
+        return normalizeUser(parsed.user || parsed);
       } catch (e) {}
     }
     return null;
@@ -384,7 +400,7 @@ const AdminDashboard: React.FC = () => {
     window.location.href = "/change-password";
   };
 
-  const { classesFound } = useClassesData();
+  const { classesFound, classes: derivedClasses } = useClassesData();
 
   const loadDashboardUsers = async () => {
     try {
@@ -467,6 +483,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleSelectTab = (tabId: string) => {
     setActiveTab(tabId);
+    localStorage.setItem(ADMIN_TAB_KEY, tabId);
     setMobileMenuOpen(false);
   };
 
@@ -827,6 +844,28 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleSchoolCycleUpdate = async () => {
+    const schoolId = getSchoolId();
+    if (!schoolId) {
+      showError("No school is linked to this account.");
+      return;
+    }
+    try {
+      const response: any = await request(
+        `/update/${encodeURIComponent(schoolId)}/school-cycle`,
+        { method: "PATCH" },
+      );
+      await loadDashboardUsers();
+      showSuccess(response?.message || "All students have been moved to the next class.");
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update the school cycle.",
+      );
+    }
+  };
+
   const handleFinalGradeUpdate = async (nextFinalGrade: string) => {
     try {
       const response = await api.put<{ message?: string; finalGrade: string }>(
@@ -901,15 +940,26 @@ const AdminDashboard: React.FC = () => {
       subjects: "Subject management",
       "elective-enrollment": "Elective enrollment",
       teachers: "Staff directory",
+      approvals: "User approvals",
       assignments: "Subject assignments",
       timetables: "Timetable generator",
       cycle: "Academic cycle",
+      "school-settings": "School settings",
       "cbc-grading": "CBC grading configuration",
       archives: "Archives",
       exited: "Exited learners",
     };
     return titles[activeTab] || "Admin dashboard";
   }, [activeTab]);
+  const adminDisplayName = user?.name || user?.email || "Admin User";
+  const adminInitials =
+    adminDisplayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part: string) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AU";
 
   const pill = (text: string, color: string) => {
     const palette: Record<string, { bg: string; text: string }> = {
@@ -938,7 +988,7 @@ const AdminDashboard: React.FC = () => {
           teachers={teachers}
           onUnassignClassTeacher={unassignClassTeacher}
           onBulkTermUpdate={handleBulkTermUpdate}
-          onSwitchTab={setActiveTab}
+          onSwitchTab={handleSelectTab}
           avatar={avatar}
           showModal={showModal}
           closeModal={closeModal}
@@ -1004,7 +1054,7 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "performance") {
       return (
         <PerformanceTab
-          classes={classesFound}
+          classes={derivedClasses}
           students={students}
           subjects={subjects}
           avatar={avatar}
@@ -1028,6 +1078,10 @@ const AdminDashboard: React.FC = () => {
       );
     }
 
+    if (activeTab === "approvals") {
+      return <UserApprovalsTab onUpdated={loadDashboardUsers} />;
+    }
+
     if (activeTab === "assignments") {
       return (
         <AssignmentsTab
@@ -1049,12 +1103,17 @@ const AdminDashboard: React.FC = () => {
       return (
         <CycleTab
           onBulkTermUpdate={handleBulkTermUpdate}
+          onSchoolCycleUpdate={handleSchoolCycleUpdate}
           onFinalGradeUpdate={handleFinalGradeUpdate}
           gradeOptions={Array.from(
             new Set(classesFound.map((current) => current.grade)),
           )}
         />
       );
+    }
+
+    if (activeTab === "school-settings") {
+      return <SchoolSettingsTab onSaved={loadDashboardUsers} />;
     }
 
     if (activeTab === "timetables") {
@@ -1087,7 +1146,7 @@ const AdminDashboard: React.FC = () => {
       );
     }
 
-    return <OverviewTab onSwitchTab={setActiveTab} />;
+    return <OverviewTab onSwitchTab={handleSelectTab} />;
   };
 
   return (
@@ -1119,8 +1178,9 @@ const AdminDashboard: React.FC = () => {
         onSelectTab={handleSelectTab}
         onChangePassword={handleChangePassword}
         onLogout={handleLogout}
-        teacherInitials={teacherInitials}
+        teacherInitials={adminInitials}
         teacherAvatarColor={teacherAvatarColor}
+        teacherName={adminDisplayName}
       />
 
       <main
@@ -1135,7 +1195,7 @@ const AdminDashboard: React.FC = () => {
           title={tabTitle}
           unassignedCount={unassignedCount}
           onSwitchTab={handleSelectTab}
-          teacherInitials={teacherInitials}
+          teacherInitials={adminInitials}
           teacherAvatarColor={teacherAvatarColor}
           theme={theme}
           onToggleTheme={toggleTheme}

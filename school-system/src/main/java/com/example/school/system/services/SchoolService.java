@@ -40,6 +40,9 @@ public class SchoolService {
     private final ExamSettingsRepo examSettingsRepo;
 
     public SchoolApiResponse<?> getSchool(String code) {
+        if (code == null || code.isBlank()) {
+            throw new SchoolResourceNotFoundExceptionHandler("School code is required");
+        }
         School schoolName = schoolRepository.findBySchoolCode(code)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School not found"));
         StringBuilder schoolFoundName = new StringBuilder();

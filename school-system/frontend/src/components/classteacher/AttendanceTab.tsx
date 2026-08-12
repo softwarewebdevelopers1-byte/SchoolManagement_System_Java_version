@@ -17,6 +17,7 @@ interface AttendanceSheet {
   sheetId: string;
   className: string;
   date: string;
+  status?: "SUBMITTED" | "DRAFT" | "LOCKED" | string;
   records: AttendanceRecord[];
 }
 
@@ -28,7 +29,6 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<AttendanceSheet | null>(null);
-  const [classId, setClassId] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -40,9 +40,18 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
   const fetchClassId = getClassId();
 
   const teacherId = getCurrentTeacherProfileId();
-  useEffect(() => {
-    fetchClassId;
-  }, [fetchClassId]);
+  const today = new Date().toISOString().split("T")[0];
+  const selectedDate = new Date(`${dateFilter}T00:00:00`);
+  const selectedDay = selectedDate.toLocaleDateString(undefined, {
+    weekday: "long",
+  });
+  const sheetStatus = String(sheet?.status || "DRAFT").toUpperCase();
+  const statusMeta =
+    sheetStatus === "LOCKED"
+      ? { label: "Locked", bg: "var(--dBg)", color: "var(--dText)" }
+      : sheetStatus === "SUBMITTED"
+        ? { label: "Saved", bg: "var(--sBg)", color: "var(--sText)" }
+        : { label: "Not saved", bg: "var(--wBg)", color: "var(--wText)" };
 
   const loadSheet = useCallback(async () => {
     if (!fetchClassId || !teacherId) return;
@@ -50,12 +59,17 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
     setError(null);
     try {
       let data: any;
-      data = await request(
-        `/attendance/sheet?classId=${encodeURIComponent(fetchClassId!)}&&teacherId=${encodeURIComponent(teacherId!)}`,
-        {
-          method: "GET",
-        },
-      );
+      if (dateFilter === today) {
+        data = await request(
+          `/attendance/sheet?classId=${encodeURIComponent(fetchClassId!)}&teacherId=${encodeURIComponent(teacherId!)}`,
+          { method: "GET" },
+        );
+      } else {
+        data = await request(
+          `/attendance/get/attendance-sheet?classId=${encodeURIComponent(fetchClassId!)}&teacherId=${encodeURIComponent(teacherId!)}&date=${encodeURIComponent(dateFilter)}`,
+          { method: "GET" },
+        );
+      }
       // Ensure we extract the nested payload correctly since backend returns SchoolApiResponse
       const unwrappedData = data?.status === "Success" ? data.data : data;
       setSheet(unwrappedData || null);
@@ -65,7 +79,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, [classId, user.id, dateFilter]);
+  }, [dateFilter, fetchClassId, teacherId, today]);
 
   useEffect(() => {
     loadSheet();
@@ -93,6 +107,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
         attendanceSheetId: sheet.sheetId,
         attendanceRecordDTOs: sheet.records,
       });
+      setSheet({ ...sheet, status: "SUBMITTED" });
 
       setMessage({
         text: "Attendance sheet updated successfully.",
@@ -127,9 +142,9 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
     <div
       style={{
         padding: "clamp(16px, 3vw, 40px)",
-        background: "#ffffff",
-        borderRadius: 16,
-        border: `1px solid ${C.border}`,
+        background: "var(--white)",
+        borderRadius: 14,
+        border: "1px solid var(--border)",
         boxShadow: "0 12px 36px rgba(0,0,0,0.03)",
         width: "100%",
         boxSizing: "border-box",
@@ -152,7 +167,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
               margin: "0 0 8px",
               fontFamily: FONT.serif,
               fontSize: "clamp(1.4rem, 3vw, 2rem)",
-              color: C.text,
+              color: "var(--text)",
               letterSpacing: "-0.02em",
               overflowWrap: "anywhere",
             }}
@@ -164,13 +179,16 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
               margin: 0,
               fontFamily: FONT.sans,
               fontSize: 14,
-              color: C.textMuted,
+              color: "var(--textMut)",
             }}
           >
             Mark student attendance for{" "}
-            <strong style={{ color: C.text }}>
+            <strong style={{ color: "var(--text)" }}>
               {user.classGrade} {user.classStream}
             </strong>
+            <span style={{ display: "block", marginTop: 4 }}>
+              {selectedDay}, {dateFilter}
+            </span>
           </p>
         </div>
         <div
@@ -184,29 +202,42 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           <div style={{ position: "relative" }}>
             <input
               type="date"
-              disabled
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
               style={{
                 padding: "10px 16px",
-                border: `1px solid ${C.border}`,
+                border: "1px solid var(--border)",
                 borderRadius: 10,
                 fontFamily: FONT.sans,
                 fontSize: 14,
-                color: C.text,
-                background: "#fdfdfd",
+                color: "var(--text)",
+                background: "var(--cream)",
                 outline: "none",
                 transition: "all 0.2s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
                 width: "100%",
                 boxSizing: "border-box",
               }}
-              onFocus={(e) => (e.target.style.borderColor = C.gold)}
-              onBlur={(e) => (e.target.style.borderColor = C.border)}
+              onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
             />
           </div>
+          <span
+            style={{
+              padding: "9px 12px",
+              borderRadius: 999,
+              background: statusMeta.bg,
+              color: statusMeta.color,
+              fontSize: 12,
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {statusMeta.label}
+          </span>
           <button
             onClick={handleSave}
+            disabled={sheetStatus === "LOCKED"}
             style={{
               background: `linear-gradient(135deg, ${C.gold} 0%, #b38536 100%)`,
               color: "#fff",
@@ -215,7 +246,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
               borderRadius: 10,
               fontWeight: 700,
               fontSize: 14,
-              cursor: "pointer",
+              cursor: sheetStatus === "LOCKED" ? "not-allowed" : "pointer",
+              opacity: sheetStatus === "LOCKED" ? 0.6 : 1,
               boxShadow: "0 4px 12px rgba(201, 150, 61, 0.25)",
               transition: "transform 0.2s, box-shadow 0.2s",
               whiteSpace: "nowrap",
@@ -240,8 +272,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
         <div
           style={{
             padding: "12px 18px",
-            background: message.type === "success" ? C.greenLight : "#fdeaea",
-            color: message.type === "success" ? C.successText : C.dangerText,
+            background: message.type === "success" ? "var(--sBg)" : "var(--dBg)",
+            color: message.type === "success" ? "var(--sText)" : "var(--dText)",
             borderRadius: 8,
             marginBottom: 20,
             fontSize: 14,
@@ -261,7 +293,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           style={{
             borderRadius: 12,
             overflow: "hidden",
-            border: `1px solid ${C.border}`,
+            border: "1px solid var(--border)",
             width: "100%",
           }}
         >
@@ -273,21 +305,21 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                 minWidth: 420,
               }}
             >
-              <thead style={{ background: "#f8f9fa" }}>
+              <thead style={{ background: "var(--sand)" }}>
                 <tr>
                   <th
                     style={{
                       textAlign: "left",
                       padding: "14px 16px",
-                      borderBottom: `1px solid ${C.border}`,
-                      color: C.textMuted,
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--textMut)",
                       fontSize: 12,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.05em",
                       position: "sticky",
                       left: 0,
-                      background: "#f8f9fa",
+                      background: "var(--sand)",
                       zIndex: 5,
                       minWidth: 160,
                     }}
@@ -298,8 +330,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                     style={{
                       textAlign: "center",
                       padding: "14px 16px",
-                      borderBottom: `1px solid ${C.border}`,
-                      color: C.textMuted,
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--textMut)",
                       fontSize: 12,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -313,8 +345,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                     style={{
                       textAlign: "center",
                       padding: "14px 16px",
-                      borderBottom: `1px solid ${C.border}`,
-                      color: C.textMuted,
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--textMut)",
                       fontSize: 12,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -331,15 +363,15 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                   <tr
                     key={record.recordId}
                     style={{
-                      borderBottom: `1px solid ${C.border}`,
-                      background: "#fff",
+                      borderBottom: "1px solid var(--border)",
+                      background: "var(--white)",
                       transition: "background 0.2s",
                     }}
                     onMouseOver={(e) =>
-                      (e.currentTarget.style.background = "#fcfcfc")
+                      (e.currentTarget.style.background = "var(--sand)")
                     }
                     onMouseOut={(e) =>
-                      (e.currentTarget.style.background = "#fff")
+                      (e.currentTarget.style.background = "var(--white)")
                     }
                   >
                     <td
@@ -347,10 +379,10 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                         padding: "14px 16px",
                         fontSize: 14,
                         fontWeight: 600,
-                        color: C.text,
+                        color: "var(--text)",
                         position: "sticky",
                         left: 0,
-                        background: "#fff",
+                        background: "var(--white)",
                         zIndex: 2,
                         boxShadow: "2px 0 5px rgba(0,0,0,0.03)",
                         minWidth: 160,
@@ -433,12 +465,12 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           style={{
             padding: 60,
             textAlign: "center",
-            background: "#fafafa",
+            background: "var(--sand)",
             borderRadius: 12,
-            border: `1px dashed ${C.border}`,
+            border: "1px dashed var(--border)",
           }}
         >
-          <p style={{ color: C.textMuted, margin: 0, fontSize: 15 }}>
+          <p style={{ color: "var(--textMut)", margin: 0, fontSize: 15 }}>
             No attendance records found for this date.
           </p>
         </div>
