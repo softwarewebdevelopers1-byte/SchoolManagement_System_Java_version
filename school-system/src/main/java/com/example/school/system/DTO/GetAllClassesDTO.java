@@ -15,6 +15,6 @@ public class GetAllClassesDTO {
     private String grade;
     private String stream;
     private String classTeacher;
+    private UUID classTeacherId;
     private long totalStudents;
 }
-
