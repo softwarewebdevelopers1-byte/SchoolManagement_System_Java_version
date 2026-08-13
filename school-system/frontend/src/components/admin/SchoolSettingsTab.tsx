@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { getSchoolId, request } from "../../lib/api";
 
@@ -37,31 +37,51 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     phoneNumber: "",
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
-
+  useEffect(() => {
+    (async () => {
+      const data: any = await request(
+        `/schools/settings?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
+      );
+      update("schoolName", data?.schoolName);
+      update("schoolEmail", data?.schoolEmail);
+      update("motto", data?.motto);
+      update("schoolAddress", data?.schoolAddress);
+      update("phoneNumber", data?.phoneNumber);
+    })();
+  }, []);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const schoolId = getSchoolId();
     if (!schoolId) {
-      setMessage({ text: "No school is linked to this account.", type: "error" });
+      setMessage({
+        text: "No school is linked to this account.",
+        type: "error",
+      });
       return;
     }
 
     setSaving(true);
     setMessage(null);
     try {
-      await request(`/schools/update/school/${encodeURIComponent(schoolId)}`, {
-        method: "PUT",
+      await request(`/schools/update/school`, {
+        method: "PATCH",
         body: JSON.stringify({ ...form, schoolId }),
       });
       setMessage({ text: "School settings updated.", type: "success" });
       onSaved?.();
     } catch (error) {
       setMessage({
-        text: error instanceof Error ? error.message : "Failed to update school settings.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to update school settings.",
         type: "error",
       });
     } finally {
@@ -72,10 +92,26 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
   return (
     <div className={styles.anim} style={{ display: "grid", gap: 16 }}>
       <div>
-        <p style={{ fontSize: 10, fontWeight: 800, color: "var(--gold)", textTransform: "uppercase", letterSpacing: ".09em", margin: "0 0 3px" }}>
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            color: "var(--gold)",
+            textTransform: "uppercase",
+            letterSpacing: ".09em",
+            margin: "0 0 3px",
+          }}
+        >
           School Settings
         </p>
-        <h2 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: "1.8rem", color: "var(--text)" }}>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: "var(--serif)",
+            fontSize: "1.8rem",
+            color: "var(--text)",
+          }}
+        >
           School profile
         </h2>
       </div>
@@ -85,7 +121,8 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
           style={{
             padding: "10px 14px",
             borderRadius: 10,
-            background: message.type === "success" ? "var(--sBg)" : "var(--dBg)",
+            background:
+              message.type === "success" ? "var(--sBg)" : "var(--dBg)",
             color: message.type === "success" ? "var(--sText)" : "var(--dText)",
             fontSize: 13,
             fontWeight: 700,
@@ -110,23 +147,44 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
       >
         <label>
           <span style={labelStyle}>School Name</span>
-          <input value={form.schoolName} onChange={(event) => update("schoolName", event.target.value)} style={inputStyle} />
+          <input
+            value={form.schoolName}
+            onChange={(event) => update("schoolName", event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <label>
           <span style={labelStyle}>Email</span>
-          <input type="email" value={form.schoolEmail} onChange={(event) => update("schoolEmail", event.target.value)} style={inputStyle} />
+          <input
+            type="email"
+            value={form.schoolEmail}
+            onChange={(event) => update("schoolEmail", event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <label>
           <span style={labelStyle}>Phone Number</span>
-          <input value={form.phoneNumber} onChange={(event) => update("phoneNumber", event.target.value)} style={inputStyle} />
+          <input
+            value={form.phoneNumber}
+            onChange={(event) => update("phoneNumber", event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <label>
           <span style={labelStyle}>Motto</span>
-          <input value={form.motto} onChange={(event) => update("motto", event.target.value)} style={inputStyle} />
+          <input
+            value={form.motto}
+            onChange={(event) => update("motto", event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <label style={{ gridColumn: "1 / -1" }}>
           <span style={labelStyle}>Address</span>
-          <textarea value={form.schoolAddress} onChange={(event) => update("schoolAddress", event.target.value)} style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} />
+          <textarea
+            value={form.schoolAddress}
+            onChange={(event) => update("schoolAddress", event.target.value)}
+            style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
+          />
         </label>
         <button
           type="submit"

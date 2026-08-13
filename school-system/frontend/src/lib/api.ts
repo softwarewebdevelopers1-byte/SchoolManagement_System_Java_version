@@ -350,7 +350,7 @@ const saveLegacyMarks = async <T>(body: any): Promise<T> => {
 };
 
 const saveElectiveMarks = async <T>(body: any): Promise<T> => {
-  return request<T>("/marks/elective", {
+  return request<T>("/marks/entry", {
     method: "POST",
     body: JSON.stringify(buildMarksEntryBody(body)),
   });

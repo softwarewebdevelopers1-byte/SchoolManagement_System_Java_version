@@ -77,4 +77,11 @@ public class SchoolController {
         var res = schoolService.getTermYearAndExamType(id);
         return ResponseEntity.status(200).body(res);
     }
+
+    @GetMapping("/settings")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> schoolSettings(@RequestParam UUID schoolId) {
+        var res = schoolService.schoolSettings(schoolId);
+        return ResponseEntity.status(200).body(res);
+    }
 }

@@ -225,4 +225,16 @@ public class SchoolService {
                 .finalGrade(schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade() : "not set")
                 .build();
     }
+
+    public com.example.school.system.DTO.SchoolSettings schoolSettings(UUID schoolId) {
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+
+        return com.example.school.system.DTO.SchoolSettings.builder().schoolName(school.getSchoolName())
+                .schoolEmail(school.getEmail() != null ? school.getEmail() : null)
+                .motto(school.getSchoolMotto() != null ? school.getSchoolMotto() : null)
+                .schoolAddress(school.getAddress() != null ? school.getAddress() : null)
+                .phoneNumber(school.getPhoneNumber() != null ? school.getPhoneNumber() : null).build();
+
+    }
 }

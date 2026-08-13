@@ -34,18 +34,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class SubjectController {
     private final SubjectService subjectService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/school/subjects")
     public ResponseEntity<?> createSubject(@Valid @RequestBody SubjectDTO subjectCreationDTO) {
         var singleSubjectRes = subjectService.createSingleSubject(subjectCreationDTO);
         return ResponseEntity.status(201).body(singleSubjectRes);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/school/subjects/{id}")
     public ResponseEntity<?> updateSubject(@PathVariable UUID id, @Valid @RequestBody SubjectDTO subjectDTO) {
         SubjectUpdateDTO updateDTO = new SubjectUpdateDTO(subjectDTO.subjectName(), subjectDTO.schoolId(), id);
@@ -53,12 +54,14 @@ public class SubjectController {
         return ResponseEntity.ok(updateSubjectRes);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/school/subjects/{id}")
     public ResponseEntity<?> deleteSubject(@PathVariable UUID id) {
         subjectService.deleteSubject(id);
         return ResponseEntity.ok(SchoolApiResponse.success("subject deleted"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/assign/subject/teacher")
     public ResponseEntity<?> assignTeacher(@Valid @RequestBody AssignSubjectTeacherDTO assignSubjectTeacherDTO) {
         subjectService.subjectAssignment(assignSubjectTeacherDTO.subjectJointId(),
@@ -66,12 +69,14 @@ public class SubjectController {
         return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher assigned"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/unassign/subject/teacher")
     public ResponseEntity<?> UnAssignTeacher(@Valid @RequestBody SubjectUnassignment subjectUnassignment) {
         subjectService.subjectUnassignment(subjectUnassignment.subjectJointId(), subjectUnassignment.teacherId());
         return ResponseEntity.status(201).body(SchoolApiResponse.success("teacher unassigned"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create/subject")
     public ResponseEntity<?> CreateSingleSubject(
             @Valid @RequestBody SubjectDTO subjectCreationDTO) {
@@ -79,6 +84,7 @@ public class SubjectController {
         return ResponseEntity.status(201).body(singleSubjectRes);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create/multiple/subjects")
     public ResponseEntity<?> createMultipleSubjects(
             @Valid @RequestBody List<SubjectDTO> subjects) {
@@ -86,12 +92,14 @@ public class SubjectController {
         return ResponseEntity.status(201).body(multiSchoolResponse);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/update/subject")
     public ResponseEntity<?> updateSubject(@Valid @RequestBody SubjectUpdateDTO subjectDTO) {
         var updateSubjectRes = subjectService.updateSubject(subjectDTO);
         return ResponseEntity.ok(updateSubjectRes);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PatchMapping("/update/subject-joint")
     public ResponseEntity<?> updateSubjectJoint(@RequestBody UpdateSubjectJoint updateSubjectJoint) {
         subjectService.updateSubjectJointStatus(updateSubjectJoint.subjectJointId(),
@@ -100,12 +108,14 @@ public class SubjectController {
         return ResponseEntity.ok(SchoolApiResponse.success("subject updated"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/getAll/subjects/{id}")
     public ResponseEntity<?> getSubjects(@PathVariable UUID id) {
         var response = subjectService.getSubjects(id);
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PostMapping("/register/subject-joint")
     public ResponseEntity<?> createSubjectJoint(@Valid @RequestBody RegisterSubjectJoint registerSubjectJoint) {
         subjectService.RegisterSubjectJoint(registerSubjectJoint);
@@ -113,6 +123,7 @@ public class SubjectController {
         return ResponseEntity.ok(SchoolApiResponse.success("subject registered"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PostMapping("/register/singlestudent/subject-joint")
     public ResponseEntity<?> studentSubjectJointReg(
             @Valid @RequestBody RegisterStudentsToSubjectDTO registerStudentsToSubjectDTO) {
@@ -123,6 +134,7 @@ public class SubjectController {
         return ResponseEntity.ok(SchoolApiResponse.success("student registered successfully"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PostMapping("/register/multpile/students/subject-joint")
     public ResponseEntity<?> multipleStudentsSubjectJointReg(
             @Valid @RequestBody RegMultipleStudentsToSubjectJoint registerStudentsToSubjectDTO) {
@@ -133,19 +145,21 @@ public class SubjectController {
         return ResponseEntity.ok(SchoolApiResponse.success("students registered successfully"));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/get/all/subject-joints/{schoolId}")
     public ResponseEntity<?> getAllSubjectJoints(@PathVariable(required = true) UUID schoolId) {
         var res = subjectService.getAllSubjectJoints(schoolId);
         return ResponseEntity.ok(res);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @GetMapping("/class/subject/{id}")
     public ResponseEntity<?> getSubjectsJointForClass(@PathVariable(required = true) UUID id) {
         var res = subjectService.getSubjectJointForClass(id);
-        System.out.println();
         return ResponseEntity.status(200).body(res);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @DeleteMapping("/delete/single/enrollment")
     public ResponseEntity<?> deleteSingleSubjectSelection(@Valid @RequestBody UnenrollStudent unenrollStudent) {
         subjectService.deleteSingleSubjectSelection(unenrollStudent.enrollmentCode(),
@@ -153,6 +167,7 @@ public class SubjectController {
         return ResponseEntity.status(204).body(SchoolApiResponse.success("student unenrolled"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @DeleteMapping("/delete/multiple/enrollment")
     public ResponseEntity<?> deleteMultipleSubjectSelection(
             @Valid @RequestBody UnenrollMultipleStudents unenrollStudents) {
@@ -160,10 +175,10 @@ public class SubjectController {
         return ResponseEntity.status(204).body(SchoolApiResponse.success(deleteCount, "student unenrolled"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','SUBJECTTEACHER')")
     @GetMapping("/subjectJoint")
     public ResponseEntity<?> getSubjectJointsForSubjectJoint(@RequestParam UUID id, @RequestParam UUID profileId) {
         var res = subjectService.getSubjectJointForSubjectJointTeacher(profileId, id);
         return ResponseEntity.status(200).body(res);
     }
 }
-

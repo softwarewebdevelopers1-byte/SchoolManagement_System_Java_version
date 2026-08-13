@@ -58,6 +58,11 @@ public class SchoolClassService {
             return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
                     .stream(c.getClassStream())
                     .className(c.getClassGrade().toString() + " " + c.getClassStream())
+                    // teacher user id is the one passed not teacherProfileId
+                    .classTeacherId(
+                            c.getTeacher() != null && c.getTeacher().getTeacher() != null
+                                    ? c.getTeacher().getTeacher().getId()
+                                    : null)
                     .classTeacher(
                             c.getTeacher() != null ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
                                     : null)
@@ -203,29 +208,35 @@ public class SchoolClassService {
                 .findByClassIdAndSchoolId(schoolClassDTO.classId(), schoolClassDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
         if (!schoolClass.getClassGrade().equals(grade)
-                && !schoolClass.getClassStream().equals(stream)
-                && schoolClassRepository.existsByClassGradeAndClassStreamAndSchoolId(grade,
-                        stream, schoolClassDTO.schoolId())) {
+                || !schoolClass.getClassStream().equals(stream)
+                        && schoolClassRepository.existsByClassGradeAndClassStreamAndSchoolId(grade,
+                                stream, schoolClassDTO.schoolId())) {
             throw new SchoolResourceExistsExceptionHandler("class already exists");
         }
+        if (teacherId != null) {
+            Users user = userRepository.findById(teacherId)
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("teacher not found"));
+            boolean teacherRoleAdded = false;
+            if (!user.getRoles().contains(UserRoles.CLASSTEACHER)) {
+                teacherRoleAdded = true;
+                user.getRoles().add(UserRoles.CLASSTEACHER);
+            }
+            TeacherProfile teacherProfile = user.getTeacherProfile();
+            if (teacherProfile == null) {
+                throw new SchoolResourceNotFoundExceptionHandler("teacher profile not found");
+            }
+            if (teacherProfile.getSchoolClass() != null
+                    && !Objects.equals(schoolClass.getClassId(), teacherProfile.getSchoolClass().getClassId())) {
+                throw new SchoolResourceExistsExceptionHandler("Teacher already assigned to another class");
+            }
+            schoolClass.setTeacher(teacherProfile);
+            teacherProfile.setSchoolClass(schoolClass);
+            if (teacherRoleAdded) {
+                userRepository.save(user);
+            }
+            teacherProfileRepository.save(teacherProfile);
+        }
 
-        Users user = userRepository.findById(teacherId)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("teacher not found"));
-        boolean teacherRoleAdded = false;
-        if (!user.getRoles().contains(UserRoles.CLASSTEACHER)) {
-            teacherRoleAdded = true;
-            user.getRoles().add(UserRoles.CLASSTEACHER);
-        }
-        TeacherProfile teacherProfile = user.getTeacherProfile();
-        if (teacherProfile == null) {
-            throw new SchoolResourceNotFoundExceptionHandler("teacher profile not found");
-        }
-        if (teacherProfile.getSchoolClass() != null
-                && !Objects.equals(schoolClass.getClassId(), teacherProfile.getSchoolClass().getClassId())) {
-            throw new SchoolResourceExistsExceptionHandler("Teacher already assigned to another class");
-        }
-        schoolClass.setTeacher(teacherProfile);
-        teacherProfile.setSchoolClass(schoolClass);
         if (grade != null) {
             schoolClass.setClassGrade(schoolClassDTO.grade());
         }
@@ -234,10 +245,7 @@ public class SchoolClassService {
         }
 
         schoolClassRepository.save(schoolClass);
-        if (teacherRoleAdded) {
-            userRepository.save(user);
-        }
-        teacherProfileRepository.save(teacherProfile);
+
         return SchoolApiResponse.success("class updated");
     }
 

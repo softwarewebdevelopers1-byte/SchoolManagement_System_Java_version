@@ -856,7 +856,9 @@ const AdminDashboard: React.FC = () => {
         { method: "PATCH" },
       );
       await loadDashboardUsers();
-      showSuccess(response?.message || "All students have been moved to the next class.");
+      showSuccess(
+        response?.message || "All students have been moved to the next class.",
+      );
     } catch (err) {
       showError(
         err instanceof Error
@@ -951,7 +953,11 @@ const AdminDashboard: React.FC = () => {
     };
     return titles[activeTab] || "Admin dashboard";
   }, [activeTab]);
-  const adminDisplayName = user?.name || user?.email || "Admin User";
+  const adminDisplayName =
+    (user?.firstName && `${user?.firstName} ${user?.lastName}`) ||
+    user?.email ||
+    "Admin User";
+
   const adminInitials =
     adminDisplayName
       .split(/\s+/)
