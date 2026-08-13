@@ -1,14 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
-import {
-  buildElectiveSubjectGroups,
-  buildEnrolledSubjectsPayload,
-  formatSubjectOfferingTag,
-  getClassSubjectSetting,
-  getElectiveSubjectIdsForClass,
-} from "../../lib/subjectEnrollment";
 import { useClassesData } from "../../lib/adminData";
 import { getSchoolId, request } from "../../lib/api";
+import PhoneInput from "../shared/PhoneInput";
 
 const eyebrowStyle: React.CSSProperties = {
   fontSize: 10,
@@ -207,6 +201,7 @@ const StudentFormModal: React.FC<{
   );
   const [name, setName] = useState(student?.studentFullName || "");
   const [admissionNo, setAdmissionNo] = useState(student?.studentAdm || "");
+  const [guardianName, setGuardianName] = useState(student?.guardianName || "");
   const [grade, setGrade] = useState(
     `${student?.classGrade} ${student?.classStream}`,
   );
@@ -266,11 +261,20 @@ const StudentFormModal: React.FC<{
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Amina Wanjiru"
+            placeholder="e.g. Amina"
+            style={inputStyle}
+          />
+        </div>{" "}
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={labelStyle}>Guardian name</label>
+          <input
+            type="text"
+            value={guardianName}
+            onChange={(event) => setGuardianName(event.target.value)}
+            placeholder="e.g. Alex"
             style={inputStyle}
           />
         </div>
-
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Email {!student && "(optional)"}</label>
           <input
@@ -281,7 +285,6 @@ const StudentFormModal: React.FC<{
             style={inputStyle}
           />
         </div>
-
         <div
           style={{
             display: "grid",
@@ -317,7 +320,6 @@ const StudentFormModal: React.FC<{
             </select>
           </div>
         </div>
-
         <div
           style={{
             display: "grid",
@@ -350,7 +352,6 @@ const StudentFormModal: React.FC<{
             </select>
           </div>
         </div>
-
         {student && (
           <div style={{ marginTop: "1rem" }}>
             <label style={labelStyle}>Status</label>
@@ -369,11 +370,12 @@ const StudentFormModal: React.FC<{
           <label style={labelStyle}>
             Guardian phone {!student && "(optional)"}
           </label>
-          <input
-            type="text"
+          <PhoneInput
             value={guardianPhone}
-            onChange={(event) => setGuardianPhone(event.target.value)}
-            placeholder="+254..."
+            onChange={(e) => {
+              setGuardianPhone(e.target.value);
+            }}
+            name="phone"
             style={inputStyle}
           />
         </div>
@@ -394,6 +396,12 @@ const StudentFormModal: React.FC<{
               if (!name.trim() || !grade.trim()) {
                 setErrorMsg("Fill in the required student details.");
                 return;
+              }
+              if (guardianPhone) {
+                if (guardianPhone.length < 13) {
+                  setErrorMsg("Phone number must have 9 digits after +254");
+                  return;
+                }
               }
               setErrorMsg("");
 

@@ -65,6 +65,7 @@ export interface Student {
   studentAdm: string;
   email: string;
   phoneNumber: string;
+  guardianName: string;
   classId: string;
   schoolId: string;
   gender?: string;
