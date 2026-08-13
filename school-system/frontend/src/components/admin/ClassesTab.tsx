@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
-import { Class, ClassFound, Teacher } from "./types";
+import { Class } from "./types";
 import { useClassesData } from "../../lib/adminData";
-import { getClassId, getSchoolId, request } from "../../lib/api";
+import { getSchoolId, request } from "../../lib/api";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -159,12 +159,13 @@ const ClassTeacherModal: React.FC<{
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const selectedTeacher = teachers.find((t: any) => t.id === selectedTeacherId);
+  const selectedTeacher = teachers.find(
+    (t: any) => t.usersId === selectedTeacherId,
+  );
   const isBusy =
     selectedTeacher &&
-    selectedTeacher.classGrade &&
-    (selectedTeacher.classGrade !== currentClass.grade ||
-      selectedTeacher.classStream !== currentClass.stream);
+    selectedTeacher?.schoolClass != "" &&
+    selectedTeacher?.schoolClass != null;
 
   return (
     <div>
@@ -206,15 +207,12 @@ const ClassTeacherModal: React.FC<{
           >
             <option value="">-- Choose a teacher --</option>
             {teachers.map((teacher: any) => {
-              const alreadyAssigned =
-                teacher.classGrade &&
-                (teacher.classGrade !== currentClass.grade ||
-                  teacher.classStream !== currentClass.stream);
+              const alreadyAssigned = teacher?.schoolClass;
               return (
                 <option key={teacher.usersId} value={teacher.usersId}>
                   {`${teacher?.firstName ? teacher.firstName : teacher?.email} ${teacher?.lastName ? teacher.lastName : " "}`}{" "}
                   {alreadyAssigned
-                    ? `(Already assigned to ${teacher.classGrade}${teacher.classStream})`
+                    ? `(Already assigned to ${teacher.schoolClass})`
                     : ``}
                 </option>
               );
@@ -238,7 +236,7 @@ const ClassTeacherModal: React.FC<{
               if (!selectedTeacherId) return;
               if (isBusy) {
                 setError(
-                  `${selectedTeacher.name} is already assigned to Grade ${selectedTeacher.classGrade}${selectedTeacher.classStream}. Please unassign them first.`,
+                  `${selectedTeacher?.firstName} is already assigned to Grade ${selectedTeacher?.schoolClass}. Please unassign them first.`,
                 );
                 return;
               }
@@ -339,7 +337,7 @@ const RenameClassModal: React.FC<{
               setSaving(true);
               setError("");
               try {
-                if (action==="save") {
+                if (action === "save") {
                   await request("/update/class", {
                     method: "PATCH",
                     body: JSON.stringify({
@@ -426,6 +424,9 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
               schoolId: getSchoolId(),
               classTeacherId: teacherId,
             }),
+          }).then(() => {
+            closeModal();
+            refresh();
           });
         }}
       />,
