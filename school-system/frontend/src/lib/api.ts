@@ -370,7 +370,7 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
         studentFullName: body?.studentFullName,
         studentAdm: body?.studentAdm,
         phoneNumber: body?.phoneNumber,
-        gender: body?.gender,
+        gender: body?.gender || null,
         classId,
         schoolId,
       }),

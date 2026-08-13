@@ -36,7 +36,6 @@ public class StudentRegistrationService {
 
     @Transactional
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
-        log.info("student registered {} ", registerStudentDTO.toString());
         School schoolFound = schoolRepository.findById(registerStudentDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         // Validate and fetch class if provided
@@ -92,6 +91,7 @@ public class StudentRegistrationService {
         // Link to user account
 
         // Save student profile
+        log.info("student registered {} ", studentProfile.getStudentAdm().toString());
         studentProfileRepository.save(studentProfile);
         return SchoolApiResponse.success("student registered successfully");
     }

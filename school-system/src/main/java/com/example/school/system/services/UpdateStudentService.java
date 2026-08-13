@@ -45,7 +45,6 @@ public class UpdateStudentService {
         String studentAdm = updateStudentDTO.studentAdm();
         String phoneNumber = updateStudentDTO.phoneNumber();
         AccountStatus status = updateStudentDTO.status();
-        Gender gender = updateStudentDTO.gender();
         UUID classId = updateStudentDTO.classId();
         if (studentEmail != null && studentEmail != "" && !student.getEmail().equals(studentEmail)) {
             if (userRepository.existsByEmail(studentEmail)) {
@@ -62,9 +61,6 @@ public class UpdateStudentService {
             fullName = fullName.trim().toLowerCase();
             studentProfile.setStudentFullName(fullName);
         }
-        if (gender != null) {
-            studentProfile.setGender(gender);
-        }
         if (studentAdm != null && studentProfile != null && !studentProfile.getStudentAdm().equals(studentAdm)) {
             if (studentRepository.existsByStudentAdm(studentAdm)) {
                 throw new SchoolResourceExistsExceptionHandler("student with that email already exists");
@@ -79,6 +75,7 @@ public class UpdateStudentService {
         if (status != null) {
             student.setStatus(status);
         }
+        studentProfile.setGender(updateStudentDTO.gender() != null ? updateStudentDTO.gender() : Gender.NOT_SET);
         if (classId != null && studentProfile != null) {
             SchoolClass studentClass = schoolClassRepository.findById(classId)
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
