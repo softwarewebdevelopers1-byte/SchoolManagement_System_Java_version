@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Class } from "./types";
+import PhoneInput from "../shared/PhoneInput";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -284,10 +285,12 @@ const StaffFormModal: React.FC<{
         >
           <div>
             <label style={labelStyle}>Phone</label>
-            <input
+            <PhoneInput
               value={phone}
-              onChange={(event) => setPhone(event.target.value)}
               style={inputStyle}
+              onChange={(e) => {
+                setPhone(e.target.value);
+              }}
             />
           </div>
           <div>
@@ -646,7 +649,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                 </td>
                 <td style={bodyTextStyle}>{teacher.roleLabel}</td>
                 <td style={bodyTextStyle}>{teacher.department}</td>
-                <td style={bodyTextStyle}>{teacher.phone || "-"}</td>
+                <td style={bodyTextStyle}>{teacher.phoneNumber || "-"}</td>
                 <td style={{ padding: "10px 13px" }}>
                   <p style={{ ...rowPrimaryTextStyle, fontWeight: 600 }}>
                     {teacher.classGrade
