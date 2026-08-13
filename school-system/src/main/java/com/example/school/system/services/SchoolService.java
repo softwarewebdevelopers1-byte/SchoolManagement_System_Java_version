@@ -43,8 +43,8 @@ public class SchoolService {
         if (code == null || code.isBlank()) {
             throw new SchoolResourceNotFoundExceptionHandler("School code is required");
         }
-        School schoolName = schoolRepository.findBySchoolCode(code)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School not found"));
+        School schoolName = schoolRepository.findBySchoolCodeAndStatus(code, SchoolStatus.ACTIVE)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("School not found or is inactive"));
         StringBuilder schoolFoundName = new StringBuilder();
         schoolFoundName.append(schoolName.getSchoolName());
         return SchoolApiResponse.success(schoolFoundName, "school found");
