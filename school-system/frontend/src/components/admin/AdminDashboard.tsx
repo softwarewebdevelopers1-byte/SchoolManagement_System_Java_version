@@ -494,7 +494,7 @@ const AdminDashboard: React.FC = () => {
     payload: {
       studentFullName: string;
       studentAdm: string;
-      // email: string;
+      email: string;
       phoneNumber: string;
       classId: string;
       schoolId: string;
@@ -507,6 +507,7 @@ const AdminDashboard: React.FC = () => {
       role: "student",
       ...payload,
     };
+    console.log("check payload ", payload);
 
     if (studentId) {
       await request(`/update/student`, {

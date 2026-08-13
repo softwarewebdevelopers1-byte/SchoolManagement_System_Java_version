@@ -16,6 +16,7 @@ import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;
+import com.example.school.system.types.Gender;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class UpdateStudentService {
         String studentAdm = updateStudentDTO.studentAdm();
         String phoneNumber = updateStudentDTO.phoneNumber();
         AccountStatus status = updateStudentDTO.status();
+        Gender gender = updateStudentDTO.gender();
         UUID classId = updateStudentDTO.classId();
         if (studentEmail != null && studentEmail != "" && !student.getEmail().equals(studentEmail)) {
             if (userRepository.existsByEmail(studentEmail)) {
@@ -59,6 +61,9 @@ public class UpdateStudentService {
         if (fullName != null && studentProfile != null) {
             fullName = fullName.trim().toLowerCase();
             studentProfile.setStudentFullName(fullName);
+        }
+        if (gender != null) {
+            studentProfile.setGender(gender);
         }
         if (studentAdm != null && studentProfile != null && !studentProfile.getStudentAdm().equals(studentAdm)) {
             if (studentRepository.existsByStudentAdm(studentAdm)) {

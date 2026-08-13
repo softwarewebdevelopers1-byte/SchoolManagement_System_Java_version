@@ -145,7 +145,7 @@ public class UserUpdate {
             studentProfile.setSchoolClass(schoolClass);
             studentProfile.setStudent(user);
             studentProfile.setGuardianName(dto.getGuardianName());
-            studentProfile.setGuardianPhone(dto.getGuardianPhone());
+            studentProfile.setPhoneNumber(dto.getGuardianPhone());
             studentRepository.save(studentProfile);
         } else if (dto.getRole() == UserRoles.CLASSTEACHER || dto.getRole() == UserRoles.CLASSTEACHER
                 || dto.getRole() == UserRoles.DEPUTYTEACHER || dto.getRole() == UserRoles.SUBJECTTEACHER
@@ -211,14 +211,14 @@ public class UserUpdate {
                 .classGrade(schoolClass != null ? schoolClass.getClassGrade() : null)
                 .classStream(schoolClass != null ? schoolClass.getClassStream() : null)
                 .guardianName(studentProfile.getGuardianName())
-                .guardianPhone(studentProfile.getGuardianPhone())
+                .guardianPhone(studentProfile.getPhoneNumber())
                 .status(user.getStatus().toString())
                 .performance(getStudentPerformance(studentProfile.getId()))
                 .build();
         return StudentDashboardDTO.builder()
                 .parent(StudentDashboardDTO.ParentInfo.builder()
                         .name(studentProfile.getGuardianName())
-                        .phone(studentProfile.getGuardianPhone())
+                        .phone(studentProfile.getPhoneNumber())
                         .build())
                 .students(List.of(studentInfo))
                 .build();

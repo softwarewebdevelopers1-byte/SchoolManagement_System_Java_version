@@ -47,9 +47,6 @@ public class StudentProfile {
     @Column(name = "guardian_name")
     private String guardianName;
 
-    @Column(name = "guardian_phone")
-    private String guardianPhone;
-
     @Column(name = "gender")
     @Enumerated(EnumType.STRING)
     private Gender gender;

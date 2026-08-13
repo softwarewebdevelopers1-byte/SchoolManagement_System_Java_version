@@ -225,6 +225,7 @@ const StudentFormModal: React.FC<{
   );
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  console.log("new check student ", student);
 
   React.useEffect(() => {
     const handleResize = () => setIsCompact(window.innerWidth <= 640);
@@ -270,6 +271,17 @@ const StudentFormModal: React.FC<{
           />
         </div>
 
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={labelStyle}>Email {!student && "(optional)"}</label>
+          <input
+            type="text"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="e.g. example@edunex.com"
+            style={inputStyle}
+          />
+        </div>
+
         <div
           style={{
             display: "grid",
@@ -278,7 +290,9 @@ const StudentFormModal: React.FC<{
           }}
         >
           <div>
-            <label style={labelStyle}>Admission no.</label>
+            <label style={labelStyle}>
+              Admission no. {!student && "(optional)"}
+            </label>
             <input
               type="text"
               value={admissionNo}
@@ -288,15 +302,18 @@ const StudentFormModal: React.FC<{
             />
           </div>
           <div>
-            <label style={labelStyle}>Gender</label>
+            <label style={labelStyle}>Gender {!student && "(optional)"}</label>
             <select
               value={gender}
               onChange={(event) => setGender(event.target.value)}
               style={inputStyle}
             >
+              <option value="" disabled>
+                --select--
+              </option>
               <option value="FEMALE">Female</option>
               <option value="MALE">Male</option>
-              <option value="">Not set</option>
+              <option value="NOT_SET">Not set</option>
             </select>
           </div>
         </div>
@@ -349,7 +366,9 @@ const StudentFormModal: React.FC<{
           </div>
         )}
         <div style={{ marginTop: "1rem" }}>
-          <label style={labelStyle}>Guardian phone</label>
+          <label style={labelStyle}>
+            Guardian phone {!student && "(optional)"}
+          </label>
           <input
             type="text"
             value={guardianPhone}
@@ -387,7 +406,7 @@ const StudentFormModal: React.FC<{
                   phoneNumber: guardianPhone.trim(),
                   classId: classSelectedId || "",
                   schoolId: getSchoolId()!,
-                  email: "",
+                  email: email?.trim() || "",
                   status: status,
                 });
                 onClose();
@@ -456,6 +475,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         return await request(`/get/all/students?schoolId=${getSchoolId()!}`);
       }
       setStudents(await getStudents());
+      console.log("Mic check 1 2 ", await getStudents());
     })();
   }, []);
   const subjectLookup = useMemo(

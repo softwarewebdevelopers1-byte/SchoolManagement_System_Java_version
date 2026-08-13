@@ -22,4 +22,5 @@ public class GetAllStudentsDTORes {
     String classGrade;
     String classId;
     Gender gender;
+    String phoneNumber;
 }

@@ -24,8 +24,10 @@ import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.UserRoles;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class GetStudentsService {
     private final SchoolClassRepository schoolClassRepository;
@@ -69,7 +71,10 @@ public class GetStudentsService {
         return allStudents.stream().map(s -> {
             StudentProfile studentProfile = s.getStudentProfile();
             return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
-                    .studentAdm(studentProfile.getStudentAdm()).status(s.getStatus()).userId(s.getId())
+                    .gender(studentProfile.getGender())
+                    .studentAdm(studentProfile.getStudentAdm())
+                    .phoneNumber(studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : null)
+                    .status(s.getStatus()).userId(s.getId())
                     .email(s.getEmail())
                     .classGrade(s.getStudentProfile().getSchoolClass() != null
                             ? s.getStudentProfile().getSchoolClass().getClassGrade().toString()
@@ -85,3 +90,4 @@ public class GetStudentsService {
     }
 
 }
+
