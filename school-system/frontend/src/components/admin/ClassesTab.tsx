@@ -454,6 +454,9 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
             classId: classId,
             schoolId: getSchoolId(),
           }),
+        }).then(() => {
+          closeModal();
+          refresh();
         });
       },
       true,
