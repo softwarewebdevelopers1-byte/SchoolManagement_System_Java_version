@@ -95,7 +95,8 @@ public class UserUpdate {
 
     @Transactional
     public void suspendAccount(UUID id) {
-        userRepository.findById(id).orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
+        userRepository.findById(id)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
                 .setStatus(AccountStatus.SUSPENDED);
         ;
     }

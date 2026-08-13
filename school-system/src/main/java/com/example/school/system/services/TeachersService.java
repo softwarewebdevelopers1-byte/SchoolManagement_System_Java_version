@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -133,6 +134,9 @@ public class TeachersService {
 
         if (!user.getStatus().equals(editTeacher.status()) && editTeacher.status() != null) {
             user.setStatus(editTeacher.status());
+            if (editTeacher.status() == AccountStatus.REJECTED_INVITE)
+                user.setDeletedAt(Instant.now());
+            ;
         }
 
         // 5. Update teacher profile fields

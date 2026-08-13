@@ -25,6 +25,13 @@ public class ClearUsers {
         int deleteAccounts = userRepository.deleteAllByStatusAndDeletedAtBefore(AccountStatus.DELETED, cutOff);
         log.info("Deleted {} accounts", deleteAccounts);
     }
-}
 
+    @Scheduled(cron = "0 00 08 * * *", zone = "Africa/Nairobi")
+    @Transactional
+    public void deleteAccountsRejected() {
+        Instant cutOff = Instant.now();
+        int deleteAccounts = userRepository.deleteAllByStatusAndDeletedAtBefore(AccountStatus.REJECTED_INVITE, cutOff);
+        log.info("Deleted {} accounts", deleteAccounts);
+    }
+}
 
