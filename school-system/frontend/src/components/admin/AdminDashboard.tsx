@@ -35,9 +35,7 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 import {
   buildClassId,
-  getClassSubjectSetting,
-  type StudentSubjectEnrollment,
-  type SubjectEnrollmentMode,
+  getClassSubjectSetting
 } from "../../lib/subjectEnrollment";
 import { useClassesData } from "../../lib/adminData";
 const navItems: NavItem[] = [
@@ -507,8 +505,6 @@ const AdminDashboard: React.FC = () => {
       role: "student",
       ...payload,
     };
-    console.log("check payload ", payload);
-
     if (studentId) {
       await request(`/update/student`, {
         method: "PATCH",

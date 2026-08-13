@@ -44,7 +44,9 @@ export const getCurrentTeacherProfileId = (): string | null => {
   const session = getStoredSession();
   if (!session) return null;
   const user = normalizeUser(session.user || session);
-  return user?.teacherProfileDto?.teacherProfileId || user?.teacherProfileId || null;
+  return (
+    user?.teacherProfileDto?.teacherProfileId || user?.teacherProfileId || null
+  );
 };
 export const getClassId = (): string | null => {
   const session = getStoredSession();
@@ -364,10 +366,11 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
     return request<T>("/register/students", {
       method: "POST",
       body: JSON.stringify({
-        email: body.email,
-        studentFullName: body.studentFullName,
-        studentAdm: body.studentAdm,
-        phoneNumber: body.phoneNumber,
+        email: body?.email,
+        studentFullName: body?.studentFullName,
+        studentAdm: body?.studentAdm,
+        phoneNumber: body?.phoneNumber,
+        gender: body?.gender,
         classId,
         schoolId,
       }),
