@@ -396,7 +396,7 @@ export default function ClassTeacherDashboard() {
       case "timetable":
         return (
           <TimetableLibrary
-            fetchPath="/school/timetables/my"
+            fetchPath="/timetables/my"
             fetchParams={{ view: "class" }}
             title="Class Timetable"
             description="Review the published timetable for your class and open the uploaded PDF when needed."
