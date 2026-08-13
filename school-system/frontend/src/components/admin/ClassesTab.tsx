@@ -265,7 +265,9 @@ const ClassTeacherModal: React.FC<{
 };
 
 const splitClassName = (className: string) => {
-  const [grade = "", ...streamParts] = String(className || "").trim().split(/\s+/);
+  const [grade = "", ...streamParts] = String(className || "")
+    .trim()
+    .split(/\s+/);
   return {
     grade,
     classStream: streamParts.join(" "),
@@ -274,12 +276,17 @@ const splitClassName = (className: string) => {
 
 const RenameClassModal: React.FC<{
   currentClass: any;
+  action: "save" | "create";
   onClose: () => void;
   onSaved: () => void;
-}> = ({ currentClass, onClose, onSaved }) => {
-  const parsed = splitClassName(currentClass.className);
-  const [grade, setGrade] = useState(currentClass.grade || parsed.grade);
-  const [stream, setStream] = useState(currentClass.stream || parsed.classStream);
+}> = ({ currentClass, action, onClose, onSaved }) => {
+  const parsed = splitClassName(currentClass?.className || "");
+  const [grade, setGrade] = useState(
+    currentClass?.grade || parsed?.grade || "",
+  );
+  const [stream, setStream] = useState(
+    currentClass?.stream || parsed?.classStream || "",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -287,20 +294,42 @@ const RenameClassModal: React.FC<{
     <div>
       <div style={modalHeaderStyle}>
         <h3 style={modalTitleStyle}>Rename Class</h3>
-        <button onClick={onClose} style={closeButtonStyle}>x</button>
+        <button onClick={onClose} style={closeButtonStyle}>
+          x
+        </button>
       </div>
       <div style={{ padding: "18px 22px 22px", display: "grid", gap: 14 }}>
-        {error && <div style={{ ...noticeStyle, background: "var(--dBg)", color: "var(--dText)" }}>{error}</div>}
+        {error && (
+          <div
+            style={{
+              ...noticeStyle,
+              background: "var(--dBg)",
+              color: "var(--dText)",
+            }}
+          >
+            {error}
+          </div>
+        )}
         <label>
           <span style={labelStyle}>Grade</span>
-          <input value={grade} onChange={(event) => setGrade(event.target.value)} style={inputStyle} />
+          <input
+            value={grade}
+            onChange={(event) => setGrade(event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <label>
           <span style={labelStyle}>Stream</span>
-          <input value={stream} onChange={(event) => setStream(event.target.value)} style={inputStyle} />
+          <input
+            value={stream}
+            onChange={(event) => setStream(event.target.value)}
+            style={inputStyle}
+          />
         </label>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={onClose} style={secondaryButtonStyle}>Cancel</button>
+          <button onClick={onClose} style={secondaryButtonStyle}>
+            Cancel
+          </button>
           <button
             onClick={async () => {
               if (!grade.trim()) {
@@ -310,20 +339,39 @@ const RenameClassModal: React.FC<{
               setSaving(true);
               setError("");
               try {
-                await request("/update/class", {
-                  method: "PATCH",
-                  body: JSON.stringify({
-                    classId: currentClass.classId,
-                    schoolId: getSchoolId(),
-                    grade: Number.isNaN(Number(grade)) ? grade : Number(grade),
-                    classStream: stream.trim(),
-                    classTeacherId: currentClass.classTeacherId || null,
-                  }),
-                });
+                if (action==="save") {
+                  await request("/update/class", {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      classId: currentClass.classId,
+                      schoolId: getSchoolId(),
+                      grade: Number.isNaN(Number(grade))
+                        ? grade
+                        : Number(grade),
+                      classStream: stream.trim(),
+                      classTeacherId: currentClass.classTeacherId || null,
+                    }),
+                  });
+                } else {
+                  await request("/create/school/class", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      schoolId: getSchoolId(),
+                      grade: Number.isNaN(Number(grade))
+                        ? grade
+                        : Number(grade),
+                      classStream: stream.trim(),
+                    }),
+                  });
+                }
                 onSaved();
                 onClose();
               } catch (error) {
-                setError(error instanceof Error ? error.message : "Unable to rename class.");
+                setError(
+                  error instanceof Error
+                    ? error.message
+                    : "Unable to rename class.",
+                );
               } finally {
                 setSaving(false);
               }
@@ -331,7 +379,7 @@ const RenameClassModal: React.FC<{
             disabled={saving}
             style={{ ...primaryButtonStyle, opacity: saving ? 0.65 : 1 }}
           >
-            {saving ? "Saving..." : "Save class name"}
+            {saving ? "Saving..." : "Save class"}
           </button>
         </div>
       </div>
@@ -359,7 +407,6 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   showModal,
   closeModal,
   showConfirm,
-  onSwitchTab,
 }) => {
   const [search, setSearch] = useState("");
   const { teachers, classesFound, refresh } = useClassesData();
@@ -385,9 +432,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
     );
   };
 
-  const openRenameModal = (currentClass: any) => {
+  const openRenameModal = (currentClass: any, action: "save" | "create") => {
     showModal(
       <RenameClassModal
+        action={action}
         currentClass={currentClass}
         onClose={closeModal}
         onSaved={refresh}
@@ -414,12 +462,18 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   const filteredClasses = classesFound?.filter((currentClass: any) => {
     const query = search.toLowerCase();
     const parsed = splitClassName(currentClass.className);
-    const grade = String(currentClass.grade || parsed.grade || "").toLowerCase();
-    const stream = String(currentClass.stream || parsed.classStream || "").toLowerCase();
+    const grade = String(
+      currentClass.grade || parsed.grade || "",
+    ).toLowerCase();
+    const stream = String(
+      currentClass.stream || parsed.classStream || "",
+    ).toLowerCase();
     return (
       grade.includes(query) ||
       stream.includes(query) ||
-      String(currentClass.className || "").toLowerCase().includes(query)
+      String(currentClass.className || "")
+        .toLowerCase()
+        .includes(query)
     );
   });
 
@@ -441,10 +495,12 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button
-            onClick={() => onSwitchTab?.("cycle")}
+            onClick={() => {
+              openRenameModal(null, "create");
+            }}
             style={{ ...primaryButtonStyle, background: "var(--gold)" }}
           >
-            Manage Academic Cycle
+            Create Class
           </button>
           <input
             value={search}
@@ -510,7 +566,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   </td>
                   <td style={bodyTextStyle}>
                     {currentClass.grade || classMeta.grade}
-                    {(currentClass.stream || classMeta.classStream)
+                    {currentClass.stream || classMeta.classStream
                       ? ` ${currentClass.stream || classMeta.classStream}`
                       : ""}
                   </td>
@@ -600,7 +656,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   </td>
                   <td style={bodyTextStyle}>
                     <button
-                      onClick={() => openRenameModal(currentClass)}
+                      onClick={() => openRenameModal(currentClass, "save")}
                       style={miniButtonStyle}
                     >
                       Rename

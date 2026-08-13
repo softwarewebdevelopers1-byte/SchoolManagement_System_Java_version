@@ -208,9 +208,9 @@ public class SchoolClassService {
                 .findByClassIdAndSchoolId(schoolClassDTO.classId(), schoolClassDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
         if (!schoolClass.getClassGrade().equals(grade)
-                || !schoolClass.getClassStream().equals(stream)
-                        && schoolClassRepository.existsByClassGradeAndClassStreamAndSchoolId(grade,
-                                stream, schoolClassDTO.schoolId())) {
+                && !schoolClass.getClassStream().equals(stream)
+                && schoolClassRepository.existsByClassGradeAndClassStreamAndSchoolId(grade,
+                        stream, schoolClassDTO.schoolId())) {
             throw new SchoolResourceExistsExceptionHandler("class already exists");
         }
         if (teacherId != null) {
