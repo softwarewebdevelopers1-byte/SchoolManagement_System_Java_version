@@ -1,8 +1,6 @@
 package com.example.school.system.schedulers;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +18,13 @@ public class ClearUsers {
     private final UserRepository userRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 3 * * *", zone = "Africa/Nairobi")
+    // delete accounts after 30 min
+    @Scheduled(cron = "0 */30 * * * *", zone = "Africa/Nairobi")
     public void deleteAccounts() {
-        Instant cutOff = Instant.now().minus(30, ChronoUnit.DAYS);
+        Instant cutOff = Instant.now();
         int deleteAccounts = userRepository.deleteAllByStatusAndDeletedAtBefore(AccountStatus.DELETED, cutOff);
         log.info("Deleted {} accounts", deleteAccounts);
     }
 }
+
 

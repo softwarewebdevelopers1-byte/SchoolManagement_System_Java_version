@@ -8,7 +8,6 @@ type PhoneInputProps = {
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'>
 
 export default function PhoneInput({ value, onChange, name = "phone", ...props }: PhoneInputProps) {
-  const PREFIX = "+254";
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
