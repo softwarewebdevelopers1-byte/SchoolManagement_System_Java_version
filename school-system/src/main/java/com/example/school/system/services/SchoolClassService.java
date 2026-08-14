@@ -92,7 +92,6 @@ public class SchoolClassService {
             classes.stream().forEach(c -> {
                 c.setClassGrade(c.getClassGrade() + 1);
                 c.setUpdatedAt(LocalDate.now());
-
             });
         }
         SchoolSettings settings = schoolFound.getSchoolSettings();

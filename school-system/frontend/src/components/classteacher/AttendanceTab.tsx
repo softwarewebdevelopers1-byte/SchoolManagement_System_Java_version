@@ -52,7 +52,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
       : sheetStatus === "SUBMITTED"
         ? { label: "Saved", bg: "var(--sBg)", color: "var(--sText)" }
         : { label: "Not saved", bg: "var(--wBg)", color: "var(--wText)" };
-
+  
   const loadSheet = useCallback(async () => {
     if (!fetchClassId || !teacherId) return;
     setLoading(true);

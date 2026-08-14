@@ -95,7 +95,8 @@ public class AttendanceService {
                 className.append(sheet.getSchoolClass().getClassGrade());
                 className.append(" ");
                 className.append(sheet.getSchoolClass().getClassStream());
-                AttendanceSheetDTO sheetDTO = AttendanceSheetDTO.builder().sheetId(sheet.getId())
+                AttendanceSheetDTO sheetDTO = AttendanceSheetDTO.builder()
+                                .status(sheet.getStatus() != null ? sheet.getStatus() : null).sheetId(sheet.getId())
                                 .className(className.toString())
                                 .date(sheet.getDate()).records(records).build();
                 return sheetDTO;
