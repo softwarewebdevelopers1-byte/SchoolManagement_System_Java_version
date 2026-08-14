@@ -14,6 +14,7 @@ public record UpdateStudentDTO(@Email(message = "Invalid email format") String e
                 String phoneNumber,
                 UUID classId,
                 Gender gender,
+                String guardianName,
                 AccountStatus status, @NotNull(message = "student id must not be null") UUID studentId) {
 
 }

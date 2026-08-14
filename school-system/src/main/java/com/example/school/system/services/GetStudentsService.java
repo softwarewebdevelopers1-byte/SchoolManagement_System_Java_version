@@ -71,6 +71,7 @@ public class GetStudentsService {
         return allStudents.stream().map(s -> {
             StudentProfile studentProfile = s.getStudentProfile();
             return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
+                    .guardianName(studentProfile.getGuardianName() != null ? studentProfile.getGuardianName() : null)
                     .gender(studentProfile.getGender())
                     .studentAdm(studentProfile.getStudentAdm())
                     .phoneNumber(studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : null)
@@ -90,4 +91,3 @@ public class GetStudentsService {
     }
 
 }
-

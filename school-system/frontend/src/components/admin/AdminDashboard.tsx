@@ -35,7 +35,7 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 import {
   buildClassId,
-  getClassSubjectSetting
+  getClassSubjectSetting,
 } from "../../lib/subjectEnrollment";
 import { useClassesData } from "../../lib/adminData";
 const navItems: NavItem[] = [
@@ -494,6 +494,7 @@ const AdminDashboard: React.FC = () => {
       studentAdm: string;
       email: string;
       phoneNumber: string;
+      guardianName?: string | null;
       classId: string;
       schoolId: string;
       gender?: string;

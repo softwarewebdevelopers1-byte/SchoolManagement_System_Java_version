@@ -82,6 +82,8 @@ public class StudentRegistrationService {
 
         // Create student profile
         StudentProfile studentProfile = new StudentProfile();
+        studentProfile
+                .setGuardianName(registerStudentDTO.guardianName() != null ? registerStudentDTO.guardianName() : null);
         studentProfile.setGender(registerStudentDTO.gender() != null ? registerStudentDTO.gender() : Gender.NOT_SET);
         studentProfile.setStudentFullName(registerStudentDTO.studentFullName());
         studentProfile.setStudentAdm(studentAdm);

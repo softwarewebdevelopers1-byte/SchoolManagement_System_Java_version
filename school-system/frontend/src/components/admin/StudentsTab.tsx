@@ -189,6 +189,7 @@ const StudentFormModal: React.FC<{
     studentFullName: string;
     studentAdm: string;
     email: string;
+    guardianName?: string | null;
     phoneNumber: string;
     classId: string;
     schoolId: string;
@@ -220,7 +221,6 @@ const StudentFormModal: React.FC<{
   );
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  console.log("new check student ", student);
 
   React.useEffect(() => {
     const handleResize = () => setIsCompact(window.innerWidth <= 640);
@@ -393,8 +393,8 @@ const StudentFormModal: React.FC<{
           </button>
           <button
             onClick={async () => {
-              if (!name.trim() || !grade.trim()) {
-                setErrorMsg("Fill in the required student details.");
+              if (!name.trim()) {
+                setErrorMsg("Student name is required.");
                 return;
               }
               if (guardianPhone) {
@@ -412,6 +412,7 @@ const StudentFormModal: React.FC<{
                   studentAdm: admissionNo.trim(),
                   gender: gender,
                   phoneNumber: guardianPhone.trim(),
+                  guardianName: guardianName || null,
                   classId: classSelectedId || "",
                   schoolId: getSchoolId()!,
                   email: email?.trim() || "",
@@ -446,6 +447,7 @@ interface StudentsTabProps {
       studentAdm: string;
       email: string;
       phoneNumber: string;
+      guardianName?: string | null;
       classId: string;
       schoolId: string;
       gender?: string;
@@ -483,7 +485,6 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         return await request(`/get/all/students?schoolId=${getSchoolId()!}`);
       }
       setStudents(await getStudents());
-      console.log("Mic check 1 2 ", await getStudents());
     })();
   }, []);
   const subjectLookup = useMemo(
@@ -748,7 +749,6 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
                       <button
                         onClick={() => {
                           openStudentModal(student.userId);
-                          console.log(student);
                         }}
                         style={iconButtonStyle}
                       >
