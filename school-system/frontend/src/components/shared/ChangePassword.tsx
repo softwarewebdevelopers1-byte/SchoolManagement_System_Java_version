@@ -173,7 +173,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 const errorNoticeStyle: React.CSSProperties = {
   padding: "10px 12px",
   background: "var(--dBg)",
-  color: "var(--dText)",
+  color: "red",
   border: "1px solid var(--dText)",
   borderRadius: 8,
   fontSize: 12.5,

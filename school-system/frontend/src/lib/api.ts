@@ -804,6 +804,7 @@ export const api = {
         body: JSON.stringify({
           userUuid: user?.userId || user?.id,
           password: body.newPassword,
+          confirmOldPassword: body?.oldPassword,
         }),
       });
     }

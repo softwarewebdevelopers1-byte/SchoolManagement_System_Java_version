@@ -19,6 +19,7 @@ import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.SchoolResourceRestrictedException;
+import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.models.MarksRow;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.School;
@@ -76,6 +77,14 @@ public class UserUpdate {
             user.setEmail(email);
         }
         if (password != null) {
+            String oldPassword = userUpdate.confirmOldPassword();
+            if (oldPassword == null || oldPassword == "") {
+                throw new SchoolResourceBadInputExceptionHandler("old password is missing");
+            }
+            if (!passwordHashing.PasswordEncoder().matches(oldPassword,
+                    user.getPassword() != null ? user.getPassword() : null)) {
+                throw new SchoolResourceLockedExceptionHandler("old password mismatch");
+            }
             String userPassword = passwordHashing.PasswordEncoder().encode(password);
             user.setPassword(userPassword);
         }
