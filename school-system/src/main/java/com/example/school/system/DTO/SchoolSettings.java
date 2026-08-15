@@ -11,4 +11,5 @@ public class SchoolSettings {
     private String motto;
     private String schoolAddress;
     private String phoneNumber;
+    private String schoolCode;
 }

@@ -226,7 +226,8 @@ public class SchoolService {
         }
         return GetExamTypeYearAndTerm.builder().examType(examSettings.getExamType())
                 .term(schoolSettings.getCurrentSchoolTerm()).year(schoolSettings.getAcademicYear())
-                .finalGrade(schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade().toString() : "not set")
+                .finalGrade(
+                        schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade().toString() : "not set")
                 .build();
     }
 
@@ -235,6 +236,7 @@ public class SchoolService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
 
         return com.example.school.system.DTO.SchoolSettings.builder().schoolName(school.getSchoolName())
+                .schoolCode(school.getSchoolCode() != null ? school.getSchoolCode() : null)
                 .schoolEmail(school.getEmail() != null ? school.getEmail() : null)
                 .motto(school.getSchoolMotto() != null ? school.getSchoolMotto() : null)
                 .schoolAddress(school.getAddress() != null ? school.getAddress() : null)

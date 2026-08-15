@@ -35,6 +35,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     motto: "",
     schoolAddress: "",
     phoneNumber: "",
+    schoolCode: "",
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
@@ -54,6 +55,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
       update("motto", data?.motto);
       update("schoolAddress", data?.schoolAddress);
       update("phoneNumber", data?.phoneNumber);
+      update("schoolCode", data?.schoolCode);
     })();
   }, []);
   const handleSubmit = async (event: React.FormEvent) => {
@@ -176,6 +178,14 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
             value={form.motto}
             onChange={(event) => update("motto", event.target.value)}
             style={inputStyle}
+          />
+        </label>
+        <label>
+          <span style={labelStyle}>School Code</span>
+          <input
+            value={form.schoolCode}
+            style={inputStyle}
+            disabled
           />
         </label>
         <label style={{ gridColumn: "1 / -1" }}>
