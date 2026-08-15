@@ -68,26 +68,29 @@ public class GetStudentsService {
                 UserRoles.STUDENT,
                 pageable);
 
-        return allStudents.stream().map(s -> {
-            StudentProfile studentProfile = s.getStudentProfile();
-            return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
-                    .guardianName(studentProfile.getGuardianName() != null ? studentProfile.getGuardianName() : null)
-                    .gender(studentProfile.getGender())
-                    .studentAdm(studentProfile.getStudentAdm())
-                    .phoneNumber(studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : null)
-                    .status(s.getStatus()).userId(s.getId())
-                    .email(s.getEmail())
-                    .classGrade(s.getStudentProfile().getSchoolClass() != null
-                            ? s.getStudentProfile().getSchoolClass().getClassGrade().toString()
-                            : null)
-                    .classStream(s.getStudentProfile().getSchoolClass() != null
-                            ? s.getStudentProfile().getSchoolClass().getClassStream()
-                            : null)
-                    .classId(s.getStudentProfile() != null
-                            ? s.getStudentProfile().getSchoolClass().getClassId().toString()
-                            : null)
-                    .build();
-        }).toList();
+        return allStudents.stream()
+                .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted() == false).map(s -> {
+                    StudentProfile studentProfile = s.getStudentProfile();
+                    return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
+                            .guardianName(
+                                    studentProfile.getGuardianName() != null ? studentProfile.getGuardianName() : null)
+                            .gender(studentProfile.getGender())
+                            .studentAdm(studentProfile.getStudentAdm())
+                            .phoneNumber(
+                                    studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : null)
+                            .status(s.getStatus()).userId(s.getId())
+                            .email(s.getEmail())
+                            .classGrade(s.getStudentProfile().getSchoolClass() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassGrade().toString()
+                                    : null)
+                            .classStream(s.getStudentProfile().getSchoolClass() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassStream()
+                                    : null)
+                            .classId(s.getStudentProfile() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassId().toString()
+                                    : null)
+                            .build();
+                }).toList();
     }
 
 }
