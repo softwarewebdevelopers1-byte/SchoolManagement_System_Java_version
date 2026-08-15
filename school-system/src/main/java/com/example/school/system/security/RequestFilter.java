@@ -37,8 +37,9 @@ public class RequestFilter {
                         .requestMatchers("/api/schools/create-school").permitAll()
                         .requestMatchers("/api/reset/password/request").permitAll()
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
-                        .requestMatchers("/api/attendance/**").permitAll().requestMatchers("/api/complex/login")
-                        .permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require authentication
+                        .requestMatchers("/api/complex/login")
+                        .permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require
+                                                                                       // authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
                 // Add JWT filter before Spring Security's authentication

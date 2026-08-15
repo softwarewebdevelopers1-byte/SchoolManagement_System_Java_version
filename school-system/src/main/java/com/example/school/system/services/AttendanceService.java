@@ -164,7 +164,8 @@ public class AttendanceService {
                 SchoolClass classFound = schoolClassRepository.findById(attendaceSheetSpecificDate.classId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
 
-                if (!classFound.getTeacher().getId().equals(attendaceSheetSpecificDate.teacherId())) {
+                if (attendaceSheetSpecificDate.teacherId() != null
+                                && !classFound.getTeacher().getId().equals(attendaceSheetSpecificDate.teacherId())) {
                         throw new SchoolResourceLockedExceptionHandler("Not your class");
                 }
                 AttendanceSheet sheet = attendanceSheetRepository

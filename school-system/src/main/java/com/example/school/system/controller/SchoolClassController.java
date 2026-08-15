@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class SchoolClassController {
     private final SchoolClassService schoolClassService;
 
+    @PreAuthorize("hasAnyRole('ADMIN','DEPUTYTEACHER','HEADTEACHER')")
     @GetMapping("/all/classes/{id}")
     public SchoolApiResponse<?> getAllClasses(@PathVariable UUID id) {
         return schoolClassService.getAllClasses(id);
