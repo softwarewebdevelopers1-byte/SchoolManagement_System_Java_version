@@ -1,7 +1,6 @@
 package com.example.school.system.controller;
 
 import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,13 +10,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
 import com.example.school.system.DTO.UnassignClassTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SchoolClassService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +42,28 @@ public class SchoolClassController {
         SchoolApiResponse<?> updateCycleRes = schoolClassService.updateSchoolClassCycle(id);
         return ResponseEntity.status(200).body(updateCycleRes);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all/class/snapshots/{id}")
+    public ResponseEntity<?> getClassSnapshots(@PathVariable UUID id) {
+        var res = schoolClassService.getAllClassHistoriesSnaphots(id);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
+    @GetMapping("/class/snapshots/{id}")
+    public ResponseEntity<?> getSingleClassSnapshots(@PathVariable UUID id) {
+        var res = schoolClassService.getClassHistoriesSnaphots(id);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
+    @GetMapping("/class/snapshots/students/{id}")
+    public ResponseEntity<?> getSingleClassStudentsSnapshots(@PathVariable UUID id) {
+        var res = schoolClassService.getClassHistoriesStudentsForClass(id);
+        return ResponseEntity.status(200).body(res);
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PatchMapping("/update/class")
     public ResponseEntity<?> updateClassDetails(@Valid @RequestBody SchoolClassUpdate classUpdate) {

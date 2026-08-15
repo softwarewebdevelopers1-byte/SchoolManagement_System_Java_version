@@ -8,8 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.example.school.system.DTO.GetAllClassesDTO;
+import com.example.school.system.DTO.GetClassSnapshot;
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
+import com.example.school.system.DTO.StudentsOfSpecificClassRes;
 import com.example.school.system.DTO.UnassignClassTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
@@ -84,8 +86,12 @@ public class SchoolClassService {
 
         List<SchoolClass> classes = schoolFound.getClasses();
         if (!classes.isEmpty()) {
-            for (SchoolClass c : classes) { 
+            for (SchoolClass c : classes) {
                 ClassHistory classHistory = new ClassHistory();
+
+                if (c.getStudent() == null || c.getStudent().isEmpty()) {
+                    continue;
+                }
 
                 classHistory.setCode(c.getClassGrade().toString() + " " + c.getClassStream() + "-"
                         + academicYear);
@@ -95,7 +101,11 @@ public class SchoolClassService {
                 classHistory.setSchool(schoolFound);
 
                 if (c.getStudent() != null) {
-                    classHistory.setStudentProfiles(c.getStudent().stream().map(s->s.getId()).toList());
+                    classHistory.setStudentProfiles(c.getStudent().stream().map(s -> s.getId()).toList());
+                }
+
+                if (c.getTeacher() != null) {
+                    classHistory.setClassTeacher(c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName());
                 }
 
                 classHistory.setLinkedClass(c.getClassId());
@@ -111,6 +121,33 @@ public class SchoolClassService {
         ;
         schoolFound.setClasses(classes);
         return SchoolApiResponse.success("classes updated and student class history recorded");
+    }
+
+    public List<GetClassSnapshot> getAllClassHistoriesSnaphots(UUID schoolId) {
+        List<GetClassSnapshot> getClassSnapshots = classHistoryRepository.findBySchoolId(schoolId).stream().map(c -> {
+            return GetClassSnapshot.builder().className(c.getCode())
+                    .classTeacherName(c.getClassTeacher() != null ? c.getClassTeacher() : null)
+                    .studentsCount(c.getStudentProfiles().size()).build();
+        }).toList();
+        return getClassSnapshots;
+    }
+
+    public List<GetClassSnapshot> getClassHistoriesSnaphots(UUID classId) {
+        List<GetClassSnapshot> getClassSnapshots = classHistoryRepository.findByLinkedClass(classId).stream().map(c -> {
+            return GetClassSnapshot.builder().className(c.getCode())
+                    .classTeacherName(c.getClassTeacher() != null ? c.getClassTeacher() : null)
+                    .studentsCount(c.getStudentProfiles().size()).build();
+        }).toList();
+        return getClassSnapshots;
+    }
+
+    public List<StudentsOfSpecificClassRes> getClassHistoriesStudentsForClass(UUID classHistoryId) {
+        ClassHistory classHistory = classHistoryRepository.findById(classHistoryId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class history not found"));
+        List<UUID> studentIds = classHistory.getStudentProfiles();
+        return studentRepository.findAllById(studentIds).stream().map(s -> {
+            return StudentsOfSpecificClassRes.builder().fullName(s.getStudentFullName()).Adm(s.getStudentAdm()).build();
+        }).toList();
     }
 
     public SchoolApiResponse<?> createClass(SchoolClassCreateDTO classDTO) {

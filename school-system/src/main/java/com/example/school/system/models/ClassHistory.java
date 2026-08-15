@@ -30,6 +30,8 @@ public class ClassHistory {
     @Column(columnDefinition = "BINARY(16)")
     private UUID linkedClass;
 
+    private String classTeacher;
+
     private LocalDate createdAt;
 
     List<UUID> studentProfiles;
