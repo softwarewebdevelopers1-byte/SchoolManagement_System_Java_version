@@ -125,7 +125,7 @@ public class SchoolClassService {
 
     public List<GetClassSnapshot> getAllClassHistoriesSnaphots(UUID schoolId) {
         List<GetClassSnapshot> getClassSnapshots = classHistoryRepository.findBySchoolId(schoolId).stream().map(c -> {
-            return GetClassSnapshot.builder().className(c.getCode())
+            return GetClassSnapshot.builder().classHistoryId(c.getId()).className(c.getCode())
                     .classTeacherName(c.getClassTeacher() != null ? c.getClassTeacher() : null)
                     .studentsCount(c.getStudentProfiles().size()).build();
         }).toList();
@@ -134,7 +134,7 @@ public class SchoolClassService {
 
     public List<GetClassSnapshot> getClassHistoriesSnaphots(UUID classId) {
         List<GetClassSnapshot> getClassSnapshots = classHistoryRepository.findByLinkedClass(classId).stream().map(c -> {
-            return GetClassSnapshot.builder().className(c.getCode())
+            return GetClassSnapshot.builder().classHistoryId(c.getId()).className(c.getCode())
                     .classTeacherName(c.getClassTeacher() != null ? c.getClassTeacher() : null)
                     .studentsCount(c.getStudentProfiles().size()).build();
         }).toList();
@@ -146,7 +146,8 @@ public class SchoolClassService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class history not found"));
         List<UUID> studentIds = classHistory.getStudentProfiles();
         return studentRepository.findAllById(studentIds).stream().map(s -> {
-            return StudentsOfSpecificClassRes.builder().fullName(s.getStudentFullName()).Adm(s.getStudentAdm()).build();
+            return StudentsOfSpecificClassRes.builder().studentId(s.getId()).fullName(s.getStudentFullName())
+                    .Adm(s.getStudentAdm()).build();
         }).toList();
     }
 
