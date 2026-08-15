@@ -29,11 +29,11 @@ public class AttendanceSheet {
     @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(unique = true)
+    @Column(updatable = false)
     private LocalDate date;
 
     @Enumerated(EnumType.STRING)
-    private WholeAttendanceSheetStatus status=WholeAttendanceSheetStatus.DRAFT;
+    private WholeAttendanceSheetStatus status = WholeAttendanceSheetStatus.DRAFT;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")

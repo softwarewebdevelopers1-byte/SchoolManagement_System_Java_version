@@ -1,0 +1,272 @@
+/* === School Registration Page - Matches Cohort Nexus Dashboard === */
+
+.reg-page {
+  min-height: 100vh;
+  display: flex;
+  background-color: #F7F3EE;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Left Branding Panel */
+.reg-branding {
+  display: none;
+  width: 50%;
+  background-color: #163325;
+  color: #fff;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+}
+
+.reg-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.reg-brand-header img {
+  width: 32px;
+  height: 32px;
+  color: #D4A373;
+}
+
+.reg-brand-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.reg-branding h2 {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 16px 0;
+}
+
+.reg-branding p.accent {
+  color: #C9963D;
+  font-size: 16px;
+  margin: 0;
+}
+
+.reg-footer {
+  font-size: 14px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+/* Right Form Panel */
+.reg-form-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.reg-card {
+  width: 100%;
+  max-width: 600px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  padding: 32px;
+  border: 1px solid #EADDCF;
+}
+
+.reg-card-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.reg-card-header svg {
+  width: 48px;
+  height: 48px;
+  color: #C9963D;
+  margin-bottom: 8px;
+}
+
+.reg-card-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2D2A26;
+  margin: 0 0 4px 0;
+}
+
+.reg-card-header p {
+  color: #6B7280;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Form Elements */
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reg-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.reg-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.reg-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #C9963D;
+  margin-bottom: 6px;
+}
+
+.reg-label svg {
+  width: 16px;
+  height: 16px;
+  color: #C9963D;
+}
+
+.reg-input,.reg-textarea {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #EADDCF;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.reg-input:focus,.reg-textarea:focus {
+  border-color: #8B5A2B;
+  box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+}
+
+.reg-textarea {
+  resize: none;
+}
+
+/* Button */
+.reg-btn {
+  width: 100%;
+  background-color: #C9963D;
+  color: #fff;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(139, 90, 43, 0.2);
+}
+
+.reg-btn:hover:not(:disabled) {
+  background-color: #734A20;
+}
+
+.reg-btn:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.reg-spinner {
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer Link */
+.reg-login-link {
+  text-align: center;
+  font-size: 14px;
+  color: #6B7280;
+  margin-top: 24px;
+}
+
+.reg-login-link a {
+  color: #8B5A2B;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.reg-login-link a:hover {
+  text-decoration: underline;
+}
+
+/* Success State */
+.reg-success {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F7F3EE;
+}
+
+.reg-success-card {
+  text-align: center;
+  padding: 40px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: 1px solid #EADDCF;
+}
+
+.reg-success-card svg {
+  width: 64px;
+  height: 64px;
+  color: #16A34A;
+  margin-bottom: 16px;
+}
+
+.reg-success-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2D2A26;
+  margin: 0 0 8px 0;
+}
+
+.reg-school-code {
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: #8B5A2B;
+  letter-spacing: 2px;
+  margin: 8px 0;
+}
+
+/* Responsive */
+@media (min-width: 1024px) {
+ .reg-branding {
+    display: flex;
+  }
+ .reg-form-container {
+    width: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+ .reg-form-row {
+    grid-template-columns: 1fr;
+  }
+ .reg-card {
+    padding: 24px;
+  }
+}
