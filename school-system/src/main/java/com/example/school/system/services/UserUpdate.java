@@ -315,7 +315,7 @@ public class UserUpdate {
     public String getGraduationSettings(UUID schoolId) {
         SchoolSettings settings = schoolSettingsRepository.findBySchoolId(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school settings not found"));
-        return settings.getFinalGrade() != null ? settings.getFinalGrade() : "Final Grade";
+        return settings.getFinalGrade() != null ? settings.getFinalGrade().toString() : "Final Grade";
     }
 
     @Transactional
@@ -324,7 +324,7 @@ public class UserUpdate {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school settings not found"));
         settings.setFinalGrade(dto.getFinalGrade());
         schoolSettingsRepository.save(settings);
-        return dto.getFinalGrade();
+        return dto.getFinalGrade().toString();
     }
 
     @Transactional

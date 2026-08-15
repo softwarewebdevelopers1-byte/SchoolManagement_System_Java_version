@@ -226,7 +226,7 @@ public class SchoolService {
         }
         return GetExamTypeYearAndTerm.builder().examType(examSettings.getExamType())
                 .term(schoolSettings.getCurrentSchoolTerm()).year(schoolSettings.getAcademicYear())
-                .finalGrade(schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade() : "not set")
+                .finalGrade(schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade().toString() : "not set")
                 .build();
     }
 

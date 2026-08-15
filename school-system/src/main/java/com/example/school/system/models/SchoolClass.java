@@ -49,6 +49,8 @@ public class SchoolClass {
 
     private LocalDate updatedAt;
 
+    private boolean completed;
+
     @OneToMany(mappedBy = "schoolClass")
     private List<SubjectJoint> subjectJoints;
 

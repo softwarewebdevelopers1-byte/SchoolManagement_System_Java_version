@@ -51,21 +51,23 @@ public class SchoolClassService {
     @Transactional
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
         List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId);
-        List<GetAllClassesDTO> allClasses = classes.stream().map(c -> {
-            long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
-            return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
-                    .stream(c.getClassStream())
-                    .className(c.getClassGrade().toString() + " " + c.getClassStream())
-                    // teacher user id is the one passed not teacherProfileId
-                    .classTeacherId(
-                            c.getTeacher() != null && c.getTeacher().getTeacher() != null
-                                    ? c.getTeacher().getTeacher().getId()
-                                    : null)
-                    .classTeacher(
-                            c.getTeacher() != null ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
-                                    : null)
-                    .totalStudents(allStudents).build();
-        }).toList();
+        List<GetAllClassesDTO> allClasses = classes.stream().filter(classFound -> classFound.isCompleted() == false)
+                .map(c -> {
+                    long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
+                    return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
+                            .stream(c.getClassStream())
+                            .className(c.getClassGrade().toString() + " " + c.getClassStream())
+                            // teacher user id is the one passed not teacherProfileId
+                            .classTeacherId(
+                                    c.getTeacher() != null && c.getTeacher().getTeacher() != null
+                                            ? c.getTeacher().getTeacher().getId()
+                                            : null)
+                            .classTeacher(
+                                    c.getTeacher() != null
+                                            ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
+                                            : null)
+                            .totalStudents(allStudents).build();
+                }).toList();
         return SchoolApiResponse.success(allClasses, "all classes loaded");
     }
 
@@ -84,7 +86,7 @@ public class SchoolClassService {
                 .map(s -> s.getAcademicYear())
                 .orElse(String.valueOf(LocalDate.now().getYear()));
 
-        List<SchoolClass> classes = schoolFound.getClasses();
+        List<SchoolClass> classes = schoolFound.getClasses().stream().filter(s -> s.isCompleted() == false).toList();
         if (!classes.isEmpty()) {
             for (SchoolClass c : classes) {
                 ClassHistory classHistory = new ClassHistory();
@@ -93,6 +95,14 @@ public class SchoolClassService {
                     continue;
                 }
 
+                if (c.getClassGrade() >= schoolFound.getSchoolSettings().getFinalGrade()) {
+                    c.setCompleted(true);
+                    if (c.getTeacher() != null) {
+                        c.getTeacher().setSchoolClass(null);
+                    }
+                    c.setClassStream(c.getClassStream() + "-" + academicYear);
+                    continue;
+                }
                 classHistory.setCode(c.getClassGrade().toString() + " " + c.getClassStream() + "-"
                         + academicYear);
 

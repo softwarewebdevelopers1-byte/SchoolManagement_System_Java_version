@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class GraduationSettingsDTO {
     @NotBlank(message = "final grade is required")
-    private String finalGrade;
+    private Integer finalGrade;
     @NotNull(message = "school id cannot be null")
     UUID schoolId;
 }

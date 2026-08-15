@@ -54,7 +54,7 @@ public class SchoolSettings {
   private ExamSettings examSettings;
 
   @Column(name = "final_grade")
-  private String finalGrade;
+  private Integer finalGrade;
 
   @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<SchoolBreak> breaks = new ArrayList<>();
