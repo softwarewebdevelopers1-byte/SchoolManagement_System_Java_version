@@ -186,6 +186,10 @@ public class SchoolService {
                         term);
                 schoolSettings.setCurrentSchoolTerm(term);
             }
+            if (updateTermAndExam.finalGrade() != null) {
+                changed = true;
+                schoolSettings.setFinalGrade(updateTermAndExam.finalGrade());
+            }
             if (examType != null) {
                 changed = true;
                 log.info("Exam type for school {} changed term to term {}", updateTermAndExam.schoolId(),

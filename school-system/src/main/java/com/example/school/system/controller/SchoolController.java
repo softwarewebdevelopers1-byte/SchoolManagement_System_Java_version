@@ -71,7 +71,7 @@ public class SchoolController {
         return schoolService.bulkUpdateTerm(updateTermAndExam);
     }
 
-    @GetMapping("/update/term/exam/{id}")
+    @GetMapping("/get/term/exam/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','HEADTEACHER','DEPUTYTEACHER','SUBJECTTEACHER','STUDENT')")
     public ResponseEntity<?> getTermYearAndExamType(@PathVariable UUID id) {
         var res = schoolService.getTermYearAndExamType(id);

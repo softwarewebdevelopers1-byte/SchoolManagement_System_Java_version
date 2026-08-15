@@ -40,7 +40,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
   useEffect(() => {
     async function getTermYearAndExamType(): Promise<req> {
       return await request(
-        `/schools/update/term/exam/${encodeURIComponent(getSchoolId()!)}`,
+        `/schools/get/term/exam/${encodeURIComponent(getSchoolId() || "")}`,
       );
     }
     (async () => {
@@ -143,7 +143,9 @@ export const CycleTab: React.FC<CycleTabProps> = ({
               cursor: promoting ? "not-allowed" : "pointer",
             }}
           >
-            {promoting ? "Updating school cycle..." : "Update all students to next class"}
+            {promoting
+              ? "Updating school cycle..."
+              : "Update all students to next class"}
           </button>
         </div>
 

@@ -830,7 +830,7 @@ export const api = {
       });
     }
     if (path === "/users/graduation-settings") {
-      return request<T>("/users/graduation-settings", {
+      return request<T>(`/schools/update/term/exam`, {
         method: "PUT",
         body: JSON.stringify(body),
       });

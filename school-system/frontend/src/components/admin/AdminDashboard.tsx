@@ -868,11 +868,14 @@ const AdminDashboard: React.FC = () => {
 
   const handleFinalGradeUpdate = async (nextFinalGrade: string) => {
     try {
-      const response = await api.put<{ message?: string; finalGrade: string }>(
-        "/users/graduation-settings",
-        { finalGrade: nextFinalGrade },
-      );
-      showSuccess(response.message || "Final grade setting updated.");
+      const response: any = await request("/schools/update/term/exam", {
+        method: "PUT",
+        body: JSON.stringify({
+          finalGrade: nextFinalGrade,
+          schoolId: getSchoolId() || "",
+        }),
+      });
+      showSuccess(response?.message || "Final grade setting updated.");
     } catch (err) {
       showError(
         err instanceof Error ? err.message : "Failed to update final grade.",
