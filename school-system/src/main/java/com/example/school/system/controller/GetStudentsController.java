@@ -34,4 +34,12 @@ public class GetStudentsController {
         List<?> res = getStudentsService.getAllStudents(new GetAllStudentsDTO(schoolId), page, size);
         return ResponseEntity.status(200).body(res);
     }
+
+    @GetMapping("/exited/students")
+    public ResponseEntity<?> getAllExitedStudents(@RequestParam java.util.UUID schoolId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<?> res = getStudentsService.getAllExitedStudents(new GetAllStudentsDTO(schoolId), page, size);
+        return ResponseEntity.status(200).body(res);
+    }
 }

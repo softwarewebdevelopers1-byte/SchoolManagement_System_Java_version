@@ -160,16 +160,14 @@ export interface ExitedStudentExamSummary {
 }
 
 export interface ExitedStudent {
-  _id: string;
-  id?: string;
-  studentId: string;
-  admissionNo: string;
-  name: string;
+  userId: string;
+  studentAdm: string;
+  studentFullName: string;
   gender?: string | null;
   guardianName?: string | null;
-  guardianPhone?: string | null;
-  finalClassGrade: string;
-  finalClassStream: string;
+  phoneNumber?: string | null;
+  classGrade: string;
+  classStream: string;
   exitReason: string;
   exitedAt: string;
   examSummaries: ExitedStudentExamSummary[];

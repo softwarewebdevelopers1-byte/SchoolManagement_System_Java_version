@@ -93,4 +93,38 @@ public class GetStudentsService {
                 }).toList();
     }
 
+    public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
+        if (!schoolRepository.existsById(getAllStudentsDTO.schoolId())) {
+            throw new SchoolResourceNotFoundExceptionHandler("school not found");
+        }
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
+                UserRoles.STUDENT,
+                pageable);
+
+        return allStudents.stream()
+                .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted()).map(s -> {
+                    StudentProfile studentProfile = s.getStudentProfile();
+                    return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
+                            .guardianName(
+                                    studentProfile.getGuardianName() != null ? studentProfile.getGuardianName() : null)
+                            .gender(studentProfile.getGender())
+                            .studentAdm(studentProfile.getStudentAdm())
+                            .phoneNumber(
+                                    studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : null)
+                            .status(s.getStatus()).userId(s.getId())
+                            .email(s.getEmail())
+                            .classGrade(s.getStudentProfile().getSchoolClass() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassGrade().toString()
+                                    : null)
+                            .classStream(s.getStudentProfile().getSchoolClass() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassStream()
+                                    : null)
+                            .classId(s.getStudentProfile() != null
+                                    ? s.getStudentProfile().getSchoolClass().getClassId().toString()
+                                    : null)
+                            .build();
+                }).toList();
+    }
+
 }

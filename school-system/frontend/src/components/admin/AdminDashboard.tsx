@@ -368,7 +368,6 @@ const AdminDashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<ApiAssignment[]>([]);
-  const [exitedStudents, setExitedStudents] = useState<ExitedStudent[]>([]);
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
@@ -420,7 +419,6 @@ const AdminDashboard: React.FC = () => {
       );
       setSubjects(response.subjects || []);
       setAssignments(response.assignments || []);
-      setExitedStudents(response.exitedStudents || []);
       setClassSubjectSettings(subjectSettings || []);
     } catch (err) {
       setError(
@@ -1146,7 +1144,6 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "exited") {
       return (
         <ExitedStudentsView
-          exitedStudents={exitedStudents}
           onRefresh={loadDashboardUsers}
           allowDelete
         />
