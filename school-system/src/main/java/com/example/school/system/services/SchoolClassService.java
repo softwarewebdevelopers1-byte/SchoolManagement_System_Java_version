@@ -1,34 +1,30 @@
 package com.example.school.system.services;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import com.example.school.system.DTO.GetAllClassesDTO;
 import com.example.school.system.DTO.SchoolClassCreateDTO;
 import com.example.school.system.DTO.SchoolClassUpdate;
 import com.example.school.system.DTO.UnassignClassTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.DTO.DTOResponse.StudentClassHistoryDTO;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.models.ClassHistory;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.SchoolSettings;
-import com.example.school.system.models.StudentClassHistory;
-import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
+import com.example.school.system.repository.ClassHistoryRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
-import com.example.school.system.repository.StudentClassHistoryRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
@@ -48,7 +44,7 @@ public class SchoolClassService {
     private final UserRepository userRepository;
     private final TeacherProfileRepository teacherProfileRepository;
     private final SchoolSettingsRepository schoolSettingsRepository;
-    private final StudentClassHistoryRepository studentClassHistoryRepository;
+    private final ClassHistoryRepository classHistoryRepository;
 
     @Transactional
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
@@ -83,16 +79,30 @@ public class SchoolClassService {
                     "Cannot update school since we are on current year " + currentYear);
         }
         String academicYear = schoolSettingsRepository.findBySchoolId(schoolId)
-                .map(SchoolSettings::getAcademicYear)
+                .map(s -> s.getAcademicYear())
                 .orElse(String.valueOf(LocalDate.now().getYear()));
 
         List<SchoolClass> classes = schoolFound.getClasses();
         if (!classes.isEmpty()) {
-            recordStudentClassHistory(schoolFound, classes, academicYear);
-            classes.stream().forEach(c -> {
+            for (SchoolClass c : classes) { 
+                ClassHistory classHistory = new ClassHistory();
+
+                classHistory.setCode(c.getClassGrade().toString() + " " + c.getClassStream() + "-"
+                        + academicYear);
+
+                classHistory.setCreatedAt(LocalDate.now());
+
+                classHistory.setSchool(schoolFound);
+
+                if (c.getStudent() != null) {
+                    classHistory.setStudentProfiles(c.getStudent().stream().map(s->s.getId()).toList());
+                }
+
+                classHistory.setLinkedClass(c.getClassId());
+                classHistoryRepository.save(classHistory);
                 c.setClassGrade(c.getClassGrade() + 1);
                 c.setUpdatedAt(LocalDate.now());
-            });
+            }
         }
         SchoolSettings settings = schoolFound.getSchoolSettings();
         settings.setAcademicYear(String.valueOf(currentYear));
@@ -101,74 +111,6 @@ public class SchoolClassService {
         ;
         schoolFound.setClasses(classes);
         return SchoolApiResponse.success("classes updated and student class history recorded");
-    }
-
-    @Transactional(readOnly = true)
-    public List<StudentClassHistoryDTO> getStudentClassHistory(UUID studentId) {
-        if (!studentRepository.existsById(studentId)) {
-            throw new SchoolResourceNotFoundExceptionHandler("student not found");
-        }
-        return studentClassHistoryRepository.findAllByStudentIdOrderByAcademicYearDesc(studentId)
-                .stream()
-                .map(this::toStudentClassHistoryDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<StudentClassHistoryDTO> getSchoolClassHistory(UUID schoolId, String academicYear) {
-        if (!schoolRepository.existsById(schoolId)) {
-            throw new SchoolResourceNotFoundExceptionHandler("school not found");
-        }
-        return studentClassHistoryRepository
-                .findAllBySchoolIdAndAcademicYearOrderByClassGradeAscClassStreamAscStudentStudentFullNameAsc(
-                        schoolId,
-                        academicYear)
-                .stream()
-                .map(this::toStudentClassHistoryDTO)
-                .toList();
-    }
-
-    private void recordStudentClassHistory(School school, List<SchoolClass> classes, String academicYear) {
-        var alreadyRecordedStudentIds = new HashSet<>(
-                studentClassHistoryRepository.findRecordedStudentIdsForSchoolYear(school.getId(), academicYear));
-        List<StudentClassHistory> histories = classes.stream()
-                .flatMap(schoolClass -> studentRepository.findAllBySchoolClassClassId(schoolClass.getClassId())
-                        .stream()
-                        .filter(student -> alreadyRecordedStudentIds.add(student.getId()))
-                        .map(student -> toStudentClassHistory(school, schoolClass, student, academicYear)))
-                .toList();
-        if (!histories.isEmpty()) {
-            studentClassHistoryRepository.saveAll(histories);
-        }
-    }
-
-    private StudentClassHistory toStudentClassHistory(
-            School school,
-            SchoolClass schoolClass,
-            StudentProfile student,
-            String academicYear) {
-        StudentClassHistory history = new StudentClassHistory();
-        history.setSchool(school);
-        history.setSchoolClass(schoolClass);
-        history.setStudent(student);
-        history.setAcademicYear(academicYear);
-        history.setClassGrade(schoolClass.getClassGrade());
-        history.setClassStream(schoolClass.getClassStream());
-        return history;
-    }
-
-    private StudentClassHistoryDTO toStudentClassHistoryDTO(StudentClassHistory history) {
-        StudentProfile student = history.getStudent();
-        return StudentClassHistoryDTO.builder()
-                .studentId(student.getId())
-                .studentName(student.getStudentFullName())
-                .admissionNumber(student.getStudentAdm())
-                .classId(history.getSchoolClass().getClassId())
-                .classGrade(history.getClassGrade())
-                .classStream(history.getClassStream())
-                .academicYear(history.getAcademicYear())
-                .recordedAt(history.getRecordedAt())
-                .build();
     }
 
     public SchoolApiResponse<?> createClass(SchoolClassCreateDTO classDTO) {

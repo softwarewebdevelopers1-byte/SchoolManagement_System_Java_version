@@ -45,21 +45,6 @@ public class SchoolClassController {
         SchoolApiResponse<?> updateCycleRes = schoolClassService.updateSchoolClassCycle(id);
         return ResponseEntity.status(200).body(updateCycleRes);
     }
-
-    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @GetMapping("/student/{studentId}/class-history")
-    public ResponseEntity<?> getStudentClassHistory(@PathVariable UUID studentId) {
-        var res = schoolClassService.getStudentClassHistory(studentId);
-        return ResponseEntity.ok(SchoolApiResponse.success(res, "student class history loaded"));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @GetMapping("/school/{schoolId}/class-history/{academicYear}")
-    public ResponseEntity<?> getSchoolClassHistory(@PathVariable UUID schoolId, @PathVariable String academicYear) {
-        var res = schoolClassService.getSchoolClassHistory(schoolId, academicYear);
-        return ResponseEntity.ok(SchoolApiResponse.success(res, "school class history loaded"));
-    }
-
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @PatchMapping("/update/class")
     public ResponseEntity<?> updateClassDetails(@Valid @RequestBody SchoolClassUpdate classUpdate) {
