@@ -552,6 +552,7 @@ const AdminDashboard: React.FC = () => {
           phoneNumber: payload.phone,
           roles: payload.roles,
           teacherId: teacherId,
+          password: payload?.password,
         }),
       });
     } else {
@@ -1142,12 +1143,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     if (activeTab === "exited") {
-      return (
-        <ExitedStudentsView
-          onRefresh={loadDashboardUsers}
-          allowDelete
-        />
-      );
+      return <ExitedStudentsView onRefresh={loadDashboardUsers} allowDelete />;
     }
 
     return <OverviewTab onSwitchTab={handleSelectTab} />;
