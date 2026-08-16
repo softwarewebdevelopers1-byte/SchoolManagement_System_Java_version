@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getClassId, request } from "../../lib/api";
+import { getClassId, getCurrentTeacherProfileId, request } from "../../lib/api";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | string;
 
@@ -129,7 +129,11 @@ export default function ClassTeacherAttendanceHistory({
           `/attendance/get/attendance-sheet`,
           {
             method: "POST",
-            body: JSON.stringify({ classId: getClassId() || "", date }),
+            body: JSON.stringify({
+              classId: getClassId() || "",
+              date,
+              teacherId: getCurrentTeacherProfileId() || "",
+            }),
           },
         );
 
@@ -731,9 +735,7 @@ export default function ClassTeacherAttendanceHistory({
                           >
                             <td>{index + 1}</td>
                             <td>
-                              {record.studentAdm ||
-                                record.studentId ||
-                                "—"}
+                              {record.studentAdm || record.studentId || "—"}
                             </td>
                             <td className="attendance-history-student">
                               {record.studentName || record.name || "Unknown"}
