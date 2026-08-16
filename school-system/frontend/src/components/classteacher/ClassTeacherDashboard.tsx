@@ -36,7 +36,9 @@ import {
   BookOpen,
   ListChecks,
   LayoutDashboard,
+  History,
 } from "lucide-react";
+import ClassTeacherAttendanceHistory from "./ClassTeacherAttendanceHistory";
 
 // Wrapper icons for lucide components to match existing Icon interface
 const OverviewIcon = () => <LayoutDashboard size={16} />;
@@ -86,6 +88,12 @@ const NAV = [
     label: "Attendance",
     desc: "Mark and review student attendance.",
     Icon: CalIcon,
+  },
+  {
+    id: "attendance-history",
+    label: "Attendance History",
+    desc: "Load attendance history.",
+    Icon: History,
   },
   {
     id: "timetable",
@@ -351,6 +359,8 @@ export default function ClassTeacherDashboard() {
             classInfo={`Grade ${currentUser?.classGrade}${currentUser?.classStream}`}
           />
         );
+      case "attendance-history":
+        return <ClassTeacherAttendanceHistory />;
       case "marks":
         return (
           <MarksManagement

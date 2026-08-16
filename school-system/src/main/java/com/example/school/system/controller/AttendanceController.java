@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.util.UUID;
@@ -49,7 +50,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
-    @GetMapping("/get/attendance-sheet")
+    @PostMapping("/get/attendance-sheet")
     public ResponseEntity<?> getAttendanceSheet(
             @RequestBody LoadAttendaceSheetSpecificDate loadAttendaceSheetSpecificDate) {
         // pass class teacher id if loading for a specifc class
@@ -57,3 +58,4 @@ public class AttendanceController {
         return ResponseEntity.status(200).body(response);
     }
 }
+

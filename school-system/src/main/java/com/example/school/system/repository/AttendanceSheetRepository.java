@@ -13,6 +13,9 @@ import com.example.school.system.types.WholeAttendanceSheetStatus;
 public interface AttendanceSheetRepository extends JpaRepository<AttendanceSheet, UUID> {
     Optional<AttendanceSheet> findBySchoolClassClassIdAndDate(UUID classId, LocalDate date);
 
+    Optional<AttendanceSheet> findBySchoolClassClassIdAndDateAndStatus(UUID classId, LocalDate date,
+            WholeAttendanceSheetStatus status);
+
     @Query("""
             SELECT a FROM AttendanceSheet a WHERE id = :id AND schoolClass.classId= :classId AND a.status !=LOCKED
                 """)

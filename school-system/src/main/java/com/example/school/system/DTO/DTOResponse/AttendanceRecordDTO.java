@@ -17,5 +17,5 @@ public class AttendanceRecordDTO {
     private UUID recordId;
     private String studentName;
     private ClassAttendanceStatus status;
+    private String studentAdm;
 }
-

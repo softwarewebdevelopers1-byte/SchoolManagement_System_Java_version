@@ -87,6 +87,7 @@ public class AttendanceService {
 
                 List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
                         AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder().recordId(r.getId())
+                                        .studentAdm(r.getStudent().getStudentAdm())
                                         .studentName(r.getStudent().getStudentFullName()).status(r.getStatus()).build();
                         return recordDTO;
                 }).toList();
@@ -169,8 +170,8 @@ public class AttendanceService {
                         throw new SchoolResourceLockedExceptionHandler("Not your class");
                 }
                 AttendanceSheet sheet = attendanceSheetRepository
-                                .findBySchoolClassClassIdAndDate(attendaceSheetSpecificDate.classId(),
-                                                attendaceSheetSpecificDate.date())
+                                .findBySchoolClassClassIdAndDateAndStatus(attendaceSheetSpecificDate.classId(),
+                                                attendaceSheetSpecificDate.date(), WholeAttendanceSheetStatus.LOCKED)
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
                                                 "attendance sheet not found"));
                 return toAttendanceSheetDto(sheet);
@@ -195,3 +196,4 @@ public class AttendanceService {
         }
 
 }
+
