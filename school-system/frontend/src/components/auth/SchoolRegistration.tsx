@@ -49,13 +49,9 @@ const SchoolRegistration: React.FC = () => {
         body: JSON.stringify(formData),
       });
       const data = await res;
-      if (res.ok) {
-        setReturnedCode(data?.schoolCode);
-        setSuccess(true);
-        setTimeout(() => (window.location.href = `/login`), 2500);
-      } else {
-        alert(data?.message || "Registration failed");
-      }
+      setReturnedCode(data);
+      setSuccess(true);
+      setTimeout(() => (window.location.href = `/login`),10000);
     } catch (err) {
       alert(err);
     } finally {
@@ -72,7 +68,7 @@ const SchoolRegistration: React.FC = () => {
           <p>Your School Code:</p>
           <p className="reg-school-code">{returnedCode}</p>
           <p style={{ fontSize: "14px", color: "#6B7280" }}>
-            Save this code. Redirecting to create Admin account...
+            Save this code. Redirecting to create user account...
           </p>
         </div>
       </div>
