@@ -9,6 +9,8 @@ import {
   normalizeUser,
   request,
 } from "../../lib/api";
+import { useNavigate } from "react-router-dom";
+import { Home } from "lucide-react";
 
 // Role labels removed
 
@@ -122,10 +124,10 @@ const FeatureIcon: React.FC<{ d: string }> = ({ d }) => (
 const hasTeacherProfile = (user: any) =>
   Boolean(
     user?.teacherProfileId ||
-      user?.teacherId ||
-      user?.teacherProfileDto?.teacherProfileId ||
-      user?.teacherProfile?.teacherProfileId ||
-      user?.teacherProfile?.id,
+    user?.teacherId ||
+    user?.teacherProfileDto?.teacherProfileId ||
+    user?.teacherProfile?.teacherProfileId ||
+    user?.teacherProfile?.id,
   );
 
 interface LoginPageProps {
@@ -140,6 +142,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     text: string;
     type: "success" | "error";
   } | null>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -295,7 +298,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       localStorage.setItem("user", JSON.stringify(session));
       const roles = normalizeRoles(user.roles);
       window.location.href =
-        roles.length > 1 ? "/edunex-org/dashboard" : getDefaultDashboardPath(user);
+        roles.length > 1
+          ? "/edunex-org/dashboard"
+          : getDefaultDashboardPath(user);
     } catch (err: any) {
       setError(err.message || "Unable to save teacher profile.");
     } finally {
@@ -383,6 +388,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {/* Header */}
             <div className={styles.formHeader}>
               <p className={styles.formSubtitle}>Portal Access</p>
+              <button
+                type="button"
+                className={styles.authModeButton}
+                onClick={() => {
+                  navigate("/");
+                }}
+              >
+                <Home size={18} /> Home
+              </button>
               <h2 className={styles.formTitle}>
                 {profileSession
                   ? "Complete teacher profile"
@@ -395,150 +409,176 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {/* Form */}
             {profileSession && (
               <div className={styles.profileModalBackdrop}>
-                <form onSubmit={completeProfile} className={styles.profileModal}>
+                <form
+                  onSubmit={completeProfile}
+                  className={styles.profileModal}
+                >
                   <p className={styles.formSubtitle}>Teacher Profile</p>
                   <h3 className={styles.modalTitle}>Complete your profile</h3>
                   <p className={styles.modalCopy}>
                     Your account is accepted, but no teacher profile exists yet.
                   </p>
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>First name</label>
-                  <input
-                    value={profileFirstName}
-                    onChange={(event) => setProfileFirstName(event.target.value)}
-                    className={styles.input}
-                    required
-                  />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>Last name</label>
-                  <input
-                    value={profileLastName}
-                    onChange={(event) => setProfileLastName(event.target.value)}
-                    className={styles.input}
-                    required
-                  />
-                </div>
-                {error && (
-                  <div className={styles.errorMessage}>
-                    <span className={styles.errorIcon}><WarnIcon /></span>
-                    <span className={styles.errorText}>{error}</span>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.inputLabel}>First name</label>
+                    <input
+                      value={profileFirstName}
+                      onChange={(event) =>
+                        setProfileFirstName(event.target.value)
+                      }
+                      className={styles.input}
+                      required
+                    />
                   </div>
-                )}
-                <button type="submit" className={styles.submitButton} disabled={loading}>
-                  {loading ? <span className={styles.loader} /> : "Save Profile"}
-                </button>
-              </form>
+                  <div className={styles.inputGroup}>
+                    <label className={styles.inputLabel}>Last name</label>
+                    <input
+                      value={profileLastName}
+                      onChange={(event) =>
+                        setProfileLastName(event.target.value)
+                      }
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+                  {error && (
+                    <div className={styles.errorMessage}>
+                      <span className={styles.errorIcon}>
+                        <WarnIcon />
+                      </span>
+                      <span className={styles.errorText}>{error}</span>
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    className={styles.submitButton}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className={styles.loader} />
+                    ) : (
+                      "Save Profile"
+                    )}
+                  </button>
+                </form>
               </div>
             )}
             {authMode === "login" ? (
-            <form onSubmit={handleSubmit} className={styles.form}>
-              {/* Login Identifier Field */}
-              <div className={styles.inputGroup}>
-                <label htmlFor="loginIdentifier" className={styles.inputLabel}>
-                  Email or Parent Phone
-                </label>
-                <div className={styles.inputWrapper}>
-                  <span
-                    className={`${styles.inputIcon} ${focusedField === "loginIdentifier" ? styles.inputIconFocused : ""}`}
+              <form onSubmit={handleSubmit} className={styles.form}>
+                {/* Login Identifier Field */}
+                <div className={styles.inputGroup}>
+                  <label
+                    htmlFor="loginIdentifier"
+                    className={styles.inputLabel}
                   >
-                    <MailIcon />
-                  </span>
-                  <input
-                    id="loginIdentifier"
-                    type="text"
-                    inputMode="email"
-                    value={loginIdentifier}
-                    onChange={(e) => setLoginIdentifier(e.target.value)}
-                    onFocus={() => setFocusedField("loginIdentifier")}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="teacher@school.com or 0712345678"
-                    required
-                    autoComplete="username"
-                    className={`${styles.input} ${focusedField === "loginIdentifier" ? styles.inputFocused : ""}`}
-                  />
+                    Email or Parent Phone
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span
+                      className={`${styles.inputIcon} ${focusedField === "loginIdentifier" ? styles.inputIconFocused : ""}`}
+                    >
+                      <MailIcon />
+                    </span>
+                    <input
+                      id="loginIdentifier"
+                      type="text"
+                      inputMode="email"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      onFocus={() => setFocusedField("loginIdentifier")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="teacher@school.com or 0712345678"
+                      required
+                      autoComplete="username"
+                      className={`${styles.input} ${focusedField === "loginIdentifier" ? styles.inputFocused : ""}`}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Password Field */}
-              <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.inputLabel}>
-                  Password
-                </label>
-                <div className={styles.inputWrapper}>
-                  <span
-                    className={`${styles.inputIcon} ${focusedField === "password" ? styles.inputIconFocused : ""}`}
+                {/* Password Field */}
+                <div className={styles.inputGroup}>
+                  <label htmlFor="password" className={styles.inputLabel}>
+                    Password
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span
+                      className={`${styles.inputIcon} ${focusedField === "password" ? styles.inputIconFocused : ""}`}
+                    >
+                      <LockIcon />
+                    </span>
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setFocusedField("password")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="current-password"
+                      className={`${styles.input} ${styles.inputWithRightPadding} ${focusedField === "password" ? styles.inputFocused : ""}`}
+                    />
+                    <button
+                      type="button"
+                      className={styles.eyeButton}
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Options */}
+                <div className={styles.formOptions}>
+                  <label className={styles.checkboxLabel}>
+                    <input type="checkbox" className={styles.checkbox} />
+                    <span>Remember me</span>
+                  </label>
+                  <a href="#" className={styles.forgotLink}>
+                    Forgot password?
+                  </a>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className={styles.errorMessage}>
+                    <span className={styles.errorIcon}>
+                      <WarnIcon />
+                    </span>
+                    <span className={styles.errorText}>{error}</span>
+                  </div>
+                )}
+                {notice && (
+                  <div
+                    className={
+                      notice.type === "success"
+                        ? styles.successMessage
+                        : styles.errorMessage
+                    }
                   >
-                    <LockIcon />
-                  </span>
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="current-password"
-                    className={`${styles.input} ${styles.inputWithRightPadding} ${focusedField === "password" ? styles.inputFocused : ""}`}
-                  />
-                  <button
-                    type="button"
-                    className={styles.eyeButton}
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <EyeIcon open={showPassword} />
-                  </button>
-                </div>
-              </div>
+                    <span className={styles.errorText}>{notice.text}</span>
+                  </div>
+                )}
 
-              {/* Options */}
-              <div className={styles.formOptions}>
-                <label className={styles.checkboxLabel}>
-                  <input type="checkbox" className={styles.checkbox} />
-                  <span>Remember me</span>
-                </label>
-                <a href="#" className={styles.forgotLink}>
-                  Forgot password?
-                </a>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className={styles.errorMessage}>
-                  <span className={styles.errorIcon}>
-                    <WarnIcon />
-                  </span>
-                  <span className={styles.errorText}>{error}</span>
-                </div>
-              )}
-              {notice && (
-                <div className={notice.type === "success" ? styles.successMessage : styles.errorMessage}>
-                  <span className={styles.errorText}>{notice.text}</span>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={loading}
-              >
-                {loading ? <span className={styles.loader} /> : "Sign In"}
-              </button>
-              <button
-                type="button"
-                className={styles.authModeButton}
-                onClick={() => {
-                  setAuthMode("signup");
-                  setError("");
-                  setNotice(null);
-                }}
-              >
-                Create teacher account
-              </button>
-            </form>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? <span className={styles.loader} /> : "Sign In"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.authModeButton}
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setError("");
+                    setNotice(null);
+                  }}
+                >
+                  Create teacher account
+                </button>
+              </form>
             ) : (
               <form onSubmit={handleSignup} className={styles.form}>
                 <div className={styles.inputGroup}>
@@ -553,35 +593,78 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       className={styles.input}
                       required
                     />
-                    <button type="button" className={styles.codeButton} onClick={handleVerifySchoolCode} disabled={codeChecking}>
+                    <button
+                      type="button"
+                      className={styles.codeButton}
+                      onClick={handleVerifySchoolCode}
+                      disabled={codeChecking}
+                    >
                       {codeChecking ? "Checking..." : "Submit Code"}
                     </button>
                   </div>
-                  {verifiedSchool && <p className={styles.schoolFound}>{verifiedSchool}</p>}
+                  {verifiedSchool && (
+                    <p className={styles.schoolFound}>{verifiedSchool}</p>
+                  )}
                 </div>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Email</label>
-                  <input type="email" value={signupEmail} onChange={(event) => setSignupEmail(event.target.value)} className={styles.input} required />
+                  <input
+                    type="email"
+                    value={signupEmail}
+                    onChange={(event) => setSignupEmail(event.target.value)}
+                    className={styles.input}
+                    required
+                  />
                 </div>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Password</label>
-                  <input type="password" value={signupPassword} onChange={(event) => setSignupPassword(event.target.value)} className={styles.input} required />
+                  <input
+                    type="password"
+                    value={signupPassword}
+                    onChange={(event) => setSignupPassword(event.target.value)}
+                    className={styles.input}
+                    required
+                  />
                 </div>
                 {error && (
                   <div className={styles.errorMessage}>
-                    <span className={styles.errorIcon}><WarnIcon /></span>
+                    <span className={styles.errorIcon}>
+                      <WarnIcon />
+                    </span>
                     <span className={styles.errorText}>{error}</span>
                   </div>
                 )}
                 {notice && (
-                  <div className={notice.type === "success" ? styles.successMessage : styles.errorMessage}>
+                  <div
+                    className={
+                      notice.type === "success"
+                        ? styles.successMessage
+                        : styles.errorMessage
+                    }
+                  >
                     <span className={styles.errorText}>{notice.text}</span>
                   </div>
                 )}
-                <button type="submit" className={styles.submitButton} disabled={loading || !verifiedSchool}>
-                  {loading ? <span className={styles.loader} /> : "Create Account"}
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={loading || !verifiedSchool}
+                >
+                  {loading ? (
+                    <span className={styles.loader} />
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
-                <button type="button" className={styles.authModeButton} onClick={() => { setAuthMode("login"); setError(""); setNotice(null); }}>
+                <button
+                  type="button"
+                  className={styles.authModeButton}
+                  onClick={() => {
+                    setAuthMode("login");
+                    setError("");
+                    setNotice(null);
+                  }}
+                >
                   Back to sign in
                 </button>
               </form>
