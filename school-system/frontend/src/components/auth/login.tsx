@@ -184,7 +184,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         roles.includes("CLASSTEACHER") ||
         roles.includes("HEADTEACHER") ||
         roles.includes("DEPUTYTEACHER") ||
-        roles.includes("ADMIN");
+        roles.includes("ADMIN") ||
+        roles.includes("SUPERADMIN");
       if (isTeacher && !hasTeacherProfile(user)) {
         setProfileSession(session);
         setProfileFirstName(user.firstName || "");
