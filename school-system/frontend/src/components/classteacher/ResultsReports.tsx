@@ -148,14 +148,10 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           }
         }),
       );
-      console.log("Results ", subjectResults);
-
       subjectResults.forEach((result) => {
         if (result.status !== "fulfilled" || !result.value) return;
         const { subjectId, data } = result.value;
         (data as any[]).forEach((row: any) => {
-          console.log("row data --> ", row);
-
           const studentId = String(row.studentId || "");
           if (!studentId) return;
           const finalScore = row.marks?.finalScore;
@@ -182,7 +178,6 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             marksByStudent[studentId] = marksByStudent[studentId] || {};
             marksByStudent[studentId][subjectId] = mark;
           }
-          console.log("loaded marks ", mark);
         });
       });
 
@@ -194,8 +189,6 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           marks: marksByStudent[studentId] || {},
         };
       });
-
-      console.log("enriched student ", enrichedStudents);
 
       setStudentsWithMarks(enrichedStudents);
     } catch (err) {
@@ -212,8 +205,6 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
 
   const buildMetrics = (student: any) => {
     const marks = marksForStudentSubjects(student, subjects);
-    console.log("marksForStudentSubjects ", marks);
-
     const attempted = Object.keys(marks).length;
     const totalMarks = sum(marks);
     const totalPoints = sumPoints(marks, cbcBands);
