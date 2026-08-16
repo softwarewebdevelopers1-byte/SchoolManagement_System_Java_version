@@ -11,6 +11,7 @@ import com.example.school.system.models.Users;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;
+import com.example.school.system.types.SchoolStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +35,9 @@ public class LoginService {
             throw new SchoolResourceNotFoundExceptionHandler(message);
 
         }
+        if (userFound.getSchool().getStatus() != SchoolStatus.ACTIVE) {
+            throw new SchoolResourceLockedExceptionHandler("school is " + userFound.getSchool().getStatus().toString().toLowerCase());
+        }
         StringBuilder statusSender = new StringBuilder();
         if (userStatus.toString().contains("_")) {
             String[] userStatusSplitted = userStatus.toString().toLowerCase().split("_");
@@ -54,5 +58,3 @@ public class LoginService {
         return authMapperDto.toLoginResponse(token, userFound);
     }
 }
-
-
