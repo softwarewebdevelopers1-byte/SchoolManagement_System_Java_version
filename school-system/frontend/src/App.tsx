@@ -140,8 +140,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* <Route path="/" element={<LandingPage />} /> */}
-        <Route path="/" element={<SuperAdminDashboard />} />
+        <Route path="/complex/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
