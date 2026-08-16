@@ -43,12 +43,12 @@ const SchoolRegistration: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res: Response = await request("/schools/create-school", {
+      const res: any = await request("/schools/create-school", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
+      const data = await res;
       if (res.ok) {
         setReturnedCode(data?.schoolCode);
         setSuccess(true);
