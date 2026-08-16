@@ -378,7 +378,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {/* Footer */}
           <div className={styles.leftFooter}>
             <div className={styles.footerDivider} />
-            <p className={styles.copyright}>© 2024 School Management System</p>
+            <p className={styles.copyright}>
+              © {new Date().getFullYear()} Edunex
+            </p>
           </div>
         </div>
 
