@@ -3,8 +3,8 @@
 .reg-page {
   min-height: 100vh;
   display: flex;
-  background-color: #F7F3EE;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background-color: #f7f3ee;
+  font-family: "Inter", "Segoe UI", sans-serif;
 }
 
 /* Left Branding Panel */
@@ -28,7 +28,7 @@
 .reg-brand-header img {
   width: 32px;
   height: 32px;
-  color: #D4A373;
+  color: #d4a373;
 }
 
 .reg-brand-header h1 {
@@ -45,14 +45,14 @@
 }
 
 .reg-branding p.accent {
-  color: #C9963D;
+  color: #c9963d;
   font-size: 16px;
   margin: 0;
 }
 
 .reg-footer {
   font-size: 14px;
-  color: #9CA3AF;
+  color: #9ca3af;
   margin: 0;
 }
 
@@ -71,9 +71,9 @@
   max-width: 600px;
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   padding: 32px;
-  border: 1px solid #EADDCF;
+  border: 1px solid #eaddcf;
 }
 
 .reg-card-header {
@@ -84,19 +84,19 @@
 .reg-card-header svg {
   width: 48px;
   height: 48px;
-  color: #C9963D;
+  color: #c9963d;
   margin-bottom: 8px;
 }
 
 .reg-card-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #2D2A26;
+  color: #2d2a26;
   margin: 0 0 4px 0;
 }
 
 .reg-card-header p {
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
   font-size: 14px;
 }
@@ -125,20 +125,21 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #C9963D;
+  color: #c9963d;
   margin-bottom: 6px;
 }
 
 .reg-label svg {
   width: 16px;
   height: 16px;
-  color: #C9963D;
+  color: #c9963d;
 }
 
-.reg-input,.reg-textarea {
+.reg-input,
+.reg-textarea {
   width: 100%;
   padding: 10px 16px;
-  border: 1px solid #EADDCF;
+  border: 1px solid #eaddcf;
   border-radius: 8px;
   font-size: 15px;
   outline: none;
@@ -146,8 +147,9 @@
   box-sizing: border-box;
 }
 
-.reg-input:focus,.reg-textarea:focus {
-  border-color: #8B5A2B;
+.reg-input:focus,
+.reg-textarea:focus {
+  border-color: #8b5a2b;
   box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
 }
 
@@ -158,7 +160,7 @@
 /* Button */
 .reg-btn {
   width: 100%;
-  background-color: #C9963D;
+  background-color: #c9963d;
   color: #fff;
   padding: 14px;
   border-radius: 8px;
@@ -175,11 +177,11 @@
 }
 
 .reg-btn:hover:not(:disabled) {
-  background-color: #734A20;
+  background-color: #734a20;
 }
 
 .reg-btn:disabled {
-  background-color: #9CA3AF;
+  background-color: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -190,19 +192,21 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer Link */
 .reg-login-link {
   text-align: center;
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin-top: 24px;
 }
 
 .reg-login-link a {
-  color: #8B5A2B;
+  color: #8b5a2b;
   font-weight: 600;
   text-decoration: none;
 }
@@ -217,7 +221,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #F7F3EE;
+  background-color: #f7f3ee;
 }
 
 .reg-success-card {
@@ -225,48 +229,48 @@
   padding: 40px;
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  border: 1px solid #EADDCF;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eaddcf;
 }
 
 .reg-success-card svg {
   width: 64px;
   height: 64px;
-  color: #16A34A;
+  color: #16a34a;
   margin-bottom: 16px;
 }
 
 .reg-success-card h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #2D2A26;
+  color: #2d2a26;
   margin: 0 0 8px 0;
 }
 
 .reg-school-code {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 24px;
   font-weight: 700;
-  color: #8B5A2B;
+  color: #8b5a2b;
   letter-spacing: 2px;
   margin: 8px 0;
 }
 
 /* Responsive */
 @media (min-width: 1024px) {
- .reg-branding {
+  .reg-branding {
     display: flex;
   }
- .reg-form-container {
+  .reg-form-container {
     width: 50%;
   }
 }
 
 @media (max-width: 768px) {
- .reg-form-row {
+  .reg-form-row {
     grid-template-columns: 1fr;
   }
- .reg-card {
+  .reg-card {
     padding: 24px;
   }
 }

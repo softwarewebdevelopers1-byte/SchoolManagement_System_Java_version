@@ -45,15 +45,11 @@ const SuperAdminDashboard: React.FC = () => {
   }, []);
 
   const fetchSchools = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/superadmin/schools");
-      const data = await res.json();
-      setSchools(data);
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const res = await fetch("/api/superadmin/schools");
+    const data = await res.json();
+    setSchools(data);
+    setLoading(false);
   };
 
   const handleApprove = async (schoolCode: string) => {
@@ -96,13 +92,19 @@ const SuperAdminDashboard: React.FC = () => {
 
   return (
     <div className="super-page">
+      {" "}
+      {/* 1. OPEN div */}
       {/* Sidebar */}
       <aside className="super-sidebar">
+        {" "}
+        {/* 2. OPEN aside */}
         <div className="super-brand">
           <Shield size={28} />
-          <h1>Edunex</h1>
+          <h1>EduNex</h1>
         </div>
         <nav>
+          {" "}
+          {/* 3. OPEN nav */}
           <button className="super-nav-item active">
             <BarChart3 size={18} /> Dashboard
           </button>
@@ -118,9 +120,10 @@ const SuperAdminDashboard: React.FC = () => {
           <button className="super-nav-item">
             <DollarSign size={18} /> Billing
           </button>
-        </nav>
-      </aside>
-
+        </nav>{" "}
+        {/* 3. CLOSE nav */}
+      </aside>{" "}
+      {/* 2. CLOSE aside */}
       {/* Main Content */}
       <main className="super-main">
         <header className="super-header">
@@ -263,7 +266,6 @@ const SuperAdminDashboard: React.FC = () => {
           )}
         </div>
       </main>
-
       {/* School Detail Modal */}
       {selectedSchool && (
         <div
@@ -296,7 +298,7 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </div> /* 1. CLOSE div */
   );
 };
 
