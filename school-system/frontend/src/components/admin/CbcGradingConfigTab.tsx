@@ -98,8 +98,6 @@ export const CbcGradingConfigTab: React.FC = () => {
   } | null>(null);
 
   const validationMessage = useMemo(() => validateLocally(bands), [bands]);
-  console.log(bands);
-
   const updateBand = (
     index: number,
     key: keyof CbcGradingBand,

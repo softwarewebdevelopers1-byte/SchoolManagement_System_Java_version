@@ -37,7 +37,6 @@ export const isStudentSubject = (student: any, subject: any) => {
   const enrollments = Array.isArray(student?.enrolledSubjects)
     ? student.enrolledSubjects
     : [];
-  console.log("student enrolled subjects ", enrollments);
 
   if (enrollments.length === 0) {
     return true;
@@ -69,12 +68,10 @@ export const marksForStudentSubjects = (student: any, subjects: any[]) => {
     if (aElective === bElective) return 0;
     return aElective ? 1 : -1;
   });
-  console.log("sorted subjects ", sortedSubjects);
 
   sortedSubjects.forEach((sub) => {
     if (isStudentSubject(student, sub)) {
       const slotId = sub.sharedSlotId ? String(sub.sharedSlotId) : null;
-      console.log("sslot id ", slotId, "subject ", sub);
 
       // If this subject is in a shared slot that we already filled for this student, skip
       if (slotId && slotTaken.has(slotId)) {

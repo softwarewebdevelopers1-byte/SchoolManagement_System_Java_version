@@ -408,8 +408,6 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const { teachers, classesFound, refresh } = useClassesData();
-  console.log(classesFound, "<--teachers found");
-
   const openAssignModal = (currentClass: any) => {
     showModal(
       <ClassTeacherModal

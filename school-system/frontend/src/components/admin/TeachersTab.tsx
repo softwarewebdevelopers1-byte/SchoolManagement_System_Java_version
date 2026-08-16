@@ -167,7 +167,6 @@ const StaffFormModal: React.FC<{
   const [classStream, setClassStream] = useState(teacher?.classStream || "");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  console.log(teacher);
 
   return (
     <div
@@ -492,7 +491,6 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
-  console.log("all teachers ", teachers);
 
   const filteredTeachers = teachers.filter(
     (teacher: any) =>

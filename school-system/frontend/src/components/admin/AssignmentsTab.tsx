@@ -281,7 +281,6 @@ const SubjectConfigurationModal: React.FC<{
   const [sharedSlotId, setSharedSlotId] = useState(subject.electiveCode || "");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  console.log("subject ", subject);
 
   return (
     <div>

@@ -412,7 +412,6 @@ const AdminDashboard: React.FC = () => {
       );
       const mappedStudents = mapStudentsFromApi(response.students);
       setTeachers(mapStaffToTeachers(response.staff));
-      console.log("response staff ", response.staff);
 
       setStudents(
         mappedStudents.filter((student) => student.status !== "Completed"),
@@ -519,7 +518,6 @@ const AdminDashboard: React.FC = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
-      console.log("Id to be deleted ", studentId);
 
       await api.delete(`/users/${studentId}`);
       await loadDashboardUsers();
@@ -717,8 +715,6 @@ const AdminDashboard: React.FC = () => {
             : "Subject dropped for the selected class."),
       );
     } catch (err) {
-      console.log("error ", err);
-
       showError(
         isOffered
           ? "Failed to add the subject back to this class."
@@ -734,8 +730,6 @@ const AdminDashboard: React.FC = () => {
   ) => {
     if (subjectTeacherId) {
       try {
-        console.log("unassign details \n", subjectId, classId, subjectId);
-
         await request(`/unassign/subject/teacher`, {
           method: "PATCH",
           body: JSON.stringify({
