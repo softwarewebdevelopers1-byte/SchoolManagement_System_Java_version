@@ -52,7 +52,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
       : sheetStatus === "SUBMITTED"
         ? { label: "Saved", bg: "var(--sBg)", color: "var(--sText)" }
         : { label: "Not saved", bg: "var(--wBg)", color: "var(--wText)" };
-  
+
   const loadSheet = useCallback(async () => {
     if (!fetchClassId || !teacherId) return;
     setLoading(true);
@@ -272,7 +272,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
         <div
           style={{
             padding: "12px 18px",
-            background: message.type === "success" ? "var(--sBg)" : "var(--dBg)",
+            background:
+              message.type === "success" ? "var(--sBg)" : "var(--dBg)",
             color: message.type === "success" ? "var(--sText)" : "var(--dText)",
             borderRadius: 8,
             marginBottom: 20,
@@ -321,7 +322,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                       left: 0,
                       background: "var(--sand)",
                       zIndex: 5,
-                      minWidth: 160,
+                      whiteSpace: "nowrap",
+                      width: "50px",
                     }}
                   >
                     Student Name
@@ -336,25 +338,10 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.05em",
-                      width: 100,
+                      width: 140,
                     }}
                   >
-                    Present
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "center",
-                      padding: "14px 16px",
-                      borderBottom: "1px solid var(--border)",
-                      color: "var(--textMut)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      width: 100,
-                    }}
-                  >
-                    Absent
+                    Status
                   </th>
                 </tr>
               </thead>
@@ -378,6 +365,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                       style={{
                         padding: "14px 16px",
                         fontSize: 14,
+                        width: "auto",
                         fontWeight: 600,
                         color: "var(--text)",
                         position: "sticky",
@@ -385,74 +373,44 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
                         background: "var(--white)",
                         zIndex: 2,
                         boxShadow: "2px 0 5px rgba(0,0,0,0.03)",
-                        minWidth: 160,
                       }}
                     >
                       {record.studentName}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      <div
+                      <button
+                        onClick={() =>
+                          handleStatusChange(
+                            record.recordId,
+                            record.status === "PRESENT" ? "ABSENT" : "PRESENT",
+                          )
+                        }
+                        disabled={sheetStatus === "LOCKED"}
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 36,
-                          height: 36,
-                          borderRadius: "50%",
+                          padding: "8px 16px",
+                          borderRadius: 8,
+                          fontWeight: 700,
+                          fontSize: 13,
+                          cursor:
+                            sheetStatus === "LOCKED"
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: sheetStatus === "LOCKED" ? 0.6 : 1,
+                          transition: "all 0.2s",
+                          minWidth: 90,
                           background:
                             record.status === "PRESENT"
-                              ? "rgba(40,167,69,0.1)"
-                              : "transparent",
-                          transition: "all 0.2s",
+                              ? "rgba(40,167,69,0.15)"
+                              : "rgba(220,53,69,0.15)",
+                          color:
+                            record.status === "PRESENT" ? "#28a745" : "#dc3545",
+                          border: `1px solid ${
+                            record.status === "PRESENT" ? "#28a745" : "#dc3545"
+                          }`,
                         }}
                       >
-                        <input
-                          type="radio"
-                          name={`attendance-${record.recordId}`}
-                          checked={record.status === "PRESENT"}
-                          onChange={() =>
-                            handleStatusChange(record.recordId, "PRESENT")
-                          }
-                          style={{
-                            cursor: "pointer",
-                            width: 18,
-                            height: 18,
-                            accentColor: "#28a745",
-                          }}
-                        />
-                      </div>
-                    </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 36,
-                          height: 36,
-                          borderRadius: "50%",
-                          background:
-                            record.status === "ABSENT"
-                              ? "rgba(220,53,69,0.1)"
-                              : "transparent",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name={`attendance-${record.recordId}`}
-                          checked={record.status === "ABSENT"}
-                          onChange={() =>
-                            handleStatusChange(record.recordId, "ABSENT")
-                          }
-                          style={{
-                            cursor: "pointer",
-                            width: 18,
-                            height: 18,
-                            accentColor: "#dc3545",
-                          }}
-                        />
-                      </div>
+                        {record.status === "PRESENT" ? "Present" : "Absent"}
+                      </button>
                     </td>
                   </tr>
                 ))}
