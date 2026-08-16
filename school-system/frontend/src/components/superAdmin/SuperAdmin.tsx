@@ -1,305 +1,497 @@
 import React, { useState, useEffect } from "react";
 import {
-  Building2,
+  Menu,
+  X,
+  School,
   Users,
+  Link,
+  BarChart3,
+  Settings,
+  LogOut,
   CheckCircle,
   XCircle,
-  Mail,
-  Search,
-  BarChart3,
+  Pause,
+  Send,
   Shield,
-  Bell,
-  DollarSign,
-  Ban,
-  Eye,
-  GraduationCap,
-  Loader2,
+  FileText,
 } from "lucide-react";
 import "./SuperAdmin.css";
 
+type SchoolStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
+type UserStatus = "ACTIVE" | "SUSPENDED";
+
 interface School {
-  id: number;
-  schoolCode: string;
-  schoolName: string;
-  schoolEmail: string;
-  schoolPhone: string;
-  schoolAddress: string;
-  motto: string;
-  status: "PENDING" | "ACTIVE" | "SUSPENDED";
-  createdAt: string;
-  studentCount: number;
-  adminEmail: string;
+  id: string;
+  name: string;
+  county: string;
+  students: number;
+  status: SchoolStatus;
+  plan: string;
+}
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  school: string;
+  status: UserStatus;
+}
+interface AdminInvite {
+  id: string;
+  email: string;
+  school: string;
+  token: string;
+  expiresAt: Date;
+  used: boolean;
+}
+interface AuditLog {
+  id: string;
+  action: string;
+  by: string;
+  at: Date;
 }
 
-const SuperAdminDashboard: React.FC = () => {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [filter, setFilter] = useState<
-    "ALL" | "PENDING" | "ACTIVE" | "SUSPENDED"
-  >("ALL");
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+const menuItems = [
+  { key: "overview", name: "Overview", icon: BarChart3 },
+  { key: "schools", name: "Schools", icon: School },
+  { key: "users", name: "Users", icon: Users },
+  { key: "invites", name: "Admin Invites", icon: Link },
+  { key: "audit", name: "Audit Log", icon: FileText },
+  { key: "settings", name: "Settings", icon: Settings },
+];
 
-  useEffect(() => {
-    fetchSchools();
-  }, []);
+export default function SuperAdminDashboard() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: "", schoolId: "" });
 
-  const fetchSchools = async () => {
-    setLoading(true);
-    const res = await fetch("/api/superadmin/schools");
-    const data = await res.json();
-    setSchools(data);
-    setLoading(false);
+  const [schools, setSchools] = useState<School[]>([
+    {
+      id: "1",
+      name: "St. Mary's High",
+      county: "Nairobi",
+      students: 0,
+      status: "PENDING",
+      plan: "Trial",
+    },
+    {
+      id: "2",
+      name: "Athi River Academy",
+      county: "Machakos",
+      students: 1200,
+      status: "ACTIVE",
+      plan: "Pro",
+    },
+  ]);
+
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: "1",
+      name: "Jane Doe",
+      email: "jane@stmarys.ac.ke",
+      role: "SCHOOL_ADMIN",
+      school: "St. Mary's High",
+      status: "ACTIVE",
+    },
+    {
+      id: "2",
+      name: "Peter Kim",
+      email: "peter@athiriver.ac.ke",
+      role: "TEACHER",
+      school: "Athi River Academy",
+      status: "ACTIVE",
+    },
+  ]);
+
+  const [invites, setInvites] = useState<AdminInvite[]>([]);
+  const [audit, setAudit] = useState<AuditLog[]>([
+    {
+      id: "1",
+      action: "Created SuperAdmin account",
+      by: "System",
+      at: new Date(),
+    },
+  ]);
+
+  const logAction = (action: string) => {
+    setAudit((prev) => [
+      { id: Date.now().toString(), action, by: "Super Admin", at: new Date() },
+      ...prev,
+    ]);
   };
 
-  const handleApprove = async (schoolCode: string) => {
-    await fetch(`/api/superadmin/schools/${schoolCode}/approve`, {
-      method: "POST",
-    });
-    await sendEmail(schoolCode, "APPROVED");
-    fetchSchools();
+  const handleSchoolAction = (id: string, action: SchoolStatus) => {
+    setSchools((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: action } : s)),
+    );
+    logAction(`${action} school ${schools.find((s) => s.id === id)?.name}`);
   };
 
-  const handleSuspend = async (schoolCode: string) => {
-    await fetch(`/api/superadmin/schools/${schoolCode}/suspend`, {
-      method: "POST",
-    });
-    await sendEmail(schoolCode, "SUSPENDED");
-    fetchSchools();
+  const handleUserStatus = (id: string, status: UserStatus) => {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
+    logAction(`${status} user ${users.find((u) => u.id === id)?.name}`);
   };
 
-  const sendEmail = async (schoolCode: string, type: string) => {
-    await fetch("/api/superadmin/send-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ schoolCode, type }),
-    });
+  const handleSendInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newInvite: AdminInvite = {
+      id: Date.now().toString(),
+      email: inviteForm.email,
+      school: schools.find((s) => s.id === inviteForm.schoolId)?.name || "",
+      token: crypto.randomUUID(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      used: false,
+    };
+    setInvites((prev) => [newInvite, ...prev]);
+    logAction(`Sent admin invite to ${inviteForm.email}`);
+    setInviteForm({ email: "", schoolId: "" });
+    setShowInviteModal(false);
   };
 
-  const filteredSchools = schools.filter(
-    (s) =>
-      (filter === "ALL" || s.status === filter) &&
-      (s.schoolName.toLowerCase().includes(search.toLowerCase()) ||
-        s.schoolCode.toLowerCase().includes(search.toLowerCase())),
-  );
-
-  const stats = {
-    total: schools.length,
-    pending: schools.filter((s) => s.status === "PENDING").length,
-    active: schools.filter((s) => s.status === "ACTIVE").length,
-    students: schools.reduce((acc, s) => acc + s.studentCount, 0),
-  };
-
-  return (
-    <div className="super-page">
-      {" "}
-      {/* 1. OPEN div */}
-      {/* Sidebar */}
-      <aside className="super-sidebar">
-        {" "}
-        {/* 2. OPEN aside */}
-        <div className="super-brand">
-          <Shield size={28} />
-          <h1>EduNex</h1>
-        </div>
-        <nav>
-          {" "}
-          {/* 3. OPEN nav */}
-          <button className="super-nav-item active">
-            <BarChart3 size={18} /> Dashboard
-          </button>
-          <button className="super-nav-item">
-            <Building2 size={18} /> All Schools
-          </button>
-          <button className="super-nav-item">
-            <Users size={18} /> All Users
-          </button>
-          <button className="super-nav-item">
-            <Mail size={18} /> Send Broadcast
-          </button>
-          <button className="super-nav-item">
-            <DollarSign size={18} /> Billing
-          </button>
-        </nav>{" "}
-        {/* 3. CLOSE nav */}
-      </aside>{" "}
-      {/* 2. CLOSE aside */}
-      {/* Main Content */}
-      <main className="super-main">
-        <header className="super-header">
-          <h2>Super Admin Dashboard</h2>
-          <div className="super-header-actions">
-            <Bell size={20} />
-            <div className="super-profile">SA</div>
-          </div>
-        </header>
-
-        {/* Stats Cards */}
-        <div className="super-stats-grid">
-          <div className="super-stat-card">
-            <Building2 />
-            <div>
-              <p>Total Schools</p>
-              <h3>{stats.total}</h3>
-            </div>
-          </div>
-          <div className="super-stat-card amber">
-            <CheckCircle />
-            <div>
-              <p>Pending Approval</p>
-              <h3>{stats.pending}</h3>
-            </div>
-          </div>
-          <div className="super-stat-card green">
-            <Users />
-            <div>
-              <p>Active Schools</p>
-              <h3>{stats.active}</h3>
-            </div>
-          </div>
-          <div className="super-stat-card blue">
-            <GraduationCap />
-            <div>
-              <p>Total Students</p>
-              <h3>{stats.students.toLocaleString()}</h3>
-            </div>
-          </div>
-        </div>
-
-        {/* Schools Table */}
-        <div className="super-card">
-          <div className="super-card-header">
-            <h3>School Management</h3>
-            <div className="super-tools">
-              <div className="super-search">
-                <Search size={16} />
-                <input
-                  type="text"
-                  placeholder="Search school or code..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <>
+            <div className="sa-grid">
+              <div className="sa-stat-card">
+                <h4>Total Schools</h4>
+                <h2>{schools.length}</h2>
               </div>
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
-                className="super-select"
-              >
-                <option value="ALL">All Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="ACTIVE">Active</option>
-                <option value="SUSPENDED">Suspended</option>
-              </select>
+              <div className="sa-stat-card">
+                <h4>Active Schools</h4>
+                <h2>{schools.filter((s) => s.status === "ACTIVE").length}</h2>
+              </div>
+              <div className="sa-stat-card">
+                <h4>Total Users</h4>
+                <h2>{users.length}</h2>
+              </div>
+              <div className="sa-stat-card">
+                <h4>Pending Approvals</h4>
+                <h2>{schools.filter((s) => s.status === "PENDING").length}</h2>
+              </div>
             </div>
-          </div>
-
-          {loading ? (
-            <Loader2 className="super-loader" />
-          ) : (
-            <table className="super-table">
+            <div className="sa-card">
+              <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
+                Recent Activity
+              </h2>
+              {audit.slice(0, 5).map((a) => (
+                <p key={a.id} style={{ fontSize: "0.875rem" }}>
+                  {a.at.toLocaleString()} - {a.action}
+                </p>
+              ))}
+            </div>
+          </>
+        );
+      case "schools":
+        return (
+          <div className="sa-card">
+            <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
+              Schools
+            </h2>
+            <table className="sa-table">
               <thead>
                 <tr>
                   <th>School</th>
-                  <th>Code</th>
-                  <th>Admin</th>
+                  <th>County</th>
+                  <th>Plan</th>
                   <th>Students</th>
                   <th>Status</th>
-                  <th>Registered</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredSchools.map((school) => (
-                  <tr key={school.id}>
+                {schools.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.name}</td>
+                    <td>{s.county}</td>
+                    <td>{s.plan}</td>
+                    <td>{s.students}</td>
                     <td>
-                      <div className="super-school-cell">
-                        <Building2 size={18} />
-                        <div>
-                          <strong>{school.schoolName}</strong>
-                          <p>{school.schoolEmail}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="super-code">{school.schoolCode}</span>
-                    </td>
-                    <td>{school.adminEmail}</td>
-                    <td>{school.studentCount}</td>
-                    <td>
-                      <span
-                        className={`super-badge ${school.status.toLowerCase()}`}
-                      >
-                        {school.status}
+                      <span className={`sa-badge ${s.status.toLowerCase()}`}>
+                        {s.status}
                       </span>
                     </td>
-                    <td>{new Date(school.createdAt).toLocaleDateString()}</td>
-                    <td>
-                      <div className="super-actions">
+                    <td style={{ display: "flex", gap: "0.5rem" }}>
+                      {s.status === "PENDING" && (
                         <button
-                          className="super-icon-btn"
-                          onClick={() => setSelectedSchool(school)}
+                          className="sa-btn primary"
+                          onClick={() => handleSchoolAction(s.id, "ACTIVE")}
                         >
-                          <Eye size={16} />
+                          <CheckCircle size={14} />
+                          Approve
                         </button>
-                        {school.status === "PENDING" && (
-                          <button
-                            className="super-icon-btn approve"
-                            onClick={() => handleApprove(school.schoolCode)}
-                          >
-                            <CheckCircle size={16} />
-                          </button>
-                        )}
-                        {school.status === "ACTIVE" && (
-                          <button
-                            className="super-icon-btn suspend"
-                            onClick={() => handleSuspend(school.schoolCode)}
-                          >
-                            <Ban size={16} />
-                          </button>
-                        )}
-                      </div>
+                      )}
+                      {s.status === "PENDING" && (
+                        <button
+                          className="sa-btn danger"
+                          onClick={() => handleSchoolAction(s.id, "REJECTED")}
+                        >
+                          <XCircle size={14} />
+                          Reject
+                        </button>
+                      )}
+                      {s.status === "ACTIVE" && (
+                        <button
+                          className="sa-btn outline"
+                          onClick={() => handleSchoolAction(s.id, "SUSPENDED")}
+                        >
+                          <Pause size={14} />
+                          Suspend
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
-      </main>
-      {/* School Detail Modal */}
-      {selectedSchool && (
-        <div
-          className="super-modal-overlay"
-          onClick={() => setSelectedSchool(null)}
-        >
-          <div className="super-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{selectedSchool.schoolName}</h3>
-            <p>
-              <strong>Code:</strong> {selectedSchool.schoolCode}
-            </p>
-            <p>
-              <strong>Email:</strong> {selectedSchool.schoolEmail}
-            </p>
-            <p>
-              <strong>Phone:</strong> {selectedSchool.schoolPhone}
-            </p>
-            <p>
-              <strong>Address:</strong> {selectedSchool.schoolAddress}
-            </p>
-            <p>
-              <strong>Motto:</strong> "{selectedSchool.motto}"
-            </p>
-            <button
-              onClick={() => setSelectedSchool(null)}
-              className="super-btn-close"
+          </div>
+        );
+      case "users":
+        return (
+          <div className="sa-card">
+            <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
+              All Users
+            </h2>
+            <table className="sa-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>School</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.name}</td>
+                    <td>{u.email}</td>
+                    <td>{u.role}</td>
+                    <td>{u.school}</td>
+                    <td>
+                      <span className={`sa-badge ${u.status.toLowerCase()}`}>
+                        {u.status}
+                      </span>
+                    </td>
+                    <td>
+                      {u.status === "ACTIVE" ? (
+                        <button
+                          className="sa-btn outline"
+                          onClick={() => handleUserStatus(u.id, "SUSPENDED")}
+                        >
+                          Suspend
+                        </button>
+                      ) : (
+                        <button
+                          className="sa-btn primary"
+                          onClick={() => handleUserStatus(u.id, "ACTIVE")}
+                        >
+                          Activate
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      case "invites":
+        return (
+          <div className="sa-card">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "1rem",
+              }}
             >
-              Close
-            </button>
+              <h2 style={{ color: "var(--edu-green)" }}>Admin Invites</h2>
+              <button
+                className="sa-btn primary"
+                onClick={() => setShowInviteModal(true)}
+              >
+                <Send size={14} />
+                Send Invite
+              </button>
+            </div>
+            <table className="sa-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>School</th>
+                  <th>Link</th>
+                  <th>Expires</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map((i) => (
+                  <tr key={i.id}>
+                    <td>{i.email}</td>
+                    <td>{i.school}</td>
+                    <td>
+                      <code>
+                        edunex.co.ke/register?token={i.token.slice(0, 8)}...
+                      </code>
+                    </td>
+                    <td>{i.expiresAt.toLocaleDateString()}</td>
+                    <td>
+                      <span
+                        className={`sa-badge ${i.used ? "active" : "pending"}`}
+                      >
+                        {i.used ? "USED" : "PENDING"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      case "audit":
+        return (
+          <div className="sa-card">
+            <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
+              Audit Trail
+            </h2>
+            <table className="sa-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Action</th>
+                  <th>By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {audit.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.at.toLocaleString()}</td>
+                    <td>{a.action}</td>
+                    <td>{a.by}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      default:
+        return <div className="sa-card">Settings coming soon</div>;
+    }
+  };
+
+  return (
+    <div className="sa-container">
+      <aside className={`sa-sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="sa-sidebar-header">
+          <h1 className="sa-logo">
+            <span className="edu">Edu</span>
+            <span className="nex">Nex</span>
+          </h1>
+          <button
+            className="sa-close-btn"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="sa-nav">
+          {menuItems.map((item) => (
+            <div
+              key={item.key}
+              className={`sa-nav-item ${activeTab === item.key ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab(item.key);
+                setSidebarOpen(false);
+              }}
+            >
+              <item.icon size={18} />
+              {item.name}
+            </div>
+          ))}
+        </nav>
+        <button className="sa-logout">
+          <LogOut size={16} /> Logout
+        </button>
+      </aside>
+
+      {sidebarOpen && (
+        <div
+          className="sa-overlay show"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="sa-main">
+        <header className="sa-topbar">
+          <button className="sa-menu-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Shield size={18} color="var(--nex-gold)" /> Super Admin
+          </div>
+        </header>
+
+        <main className="sa-content">{renderContent()}</main>
+      </div>
+
+      {showInviteModal && (
+        <div className="sa-modal" onClick={() => setShowInviteModal(false)}>
+          <div
+            className="sa-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sa-modal-header">
+              <h3>Send Admin Invite</h3>
+              <button
+                className="sa-close-btn"
+                onClick={() => setShowInviteModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleSendInvite}>
+              <div className="sa-form-group">
+                <label>Select School</label>
+                <select
+                  className="sa-input"
+                  value={inviteForm.schoolId}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, schoolId: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">-- Select --</option>
+                  {schools.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sa-form-group">
+                <label>Admin Email</label>
+                <input
+                  type="email"
+                  className="sa-input"
+                  value={inviteForm.email}
+                  onChange={(e) =>
+                    setInviteForm({ ...inviteForm, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <button type="submit" className="sa-btn primary">
+                Generate Link
+              </button>
+            </form>
           </div>
         </div>
       )}
-    </div> /* 1. CLOSE div */
+    </div>
   );
-};
-
-export default SuperAdminDashboard;
+}
