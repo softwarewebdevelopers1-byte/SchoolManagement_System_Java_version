@@ -676,6 +676,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
                           type="number"
                           min="0"
                           max="100"
+                          disabled
                           inputMode="decimal"
                           value={marks.finalScore ?? ""}
                           placeholder={
