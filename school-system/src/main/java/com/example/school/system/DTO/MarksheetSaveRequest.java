@@ -15,7 +15,6 @@ public record MarksheetSaveRequest(
                 Boolean cat1Entry,
                 Boolean cat2Entry,
                 Boolean cat3Entry,
-                @NotNull(message = "class id is required") UUID classId,
                 @NotNull(message = "marks input is required") List<MarkInputDTO> markInputDTOs,
                 String enrollmentCode) {
 

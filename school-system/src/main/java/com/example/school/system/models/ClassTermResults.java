@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import lombok.Setter;
 @Table(name = "class_term_result")
 @NoArgsConstructor
 @Getter
+@Entity
 @Setter
 public class ClassTermResults {
     @Id

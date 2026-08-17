@@ -132,14 +132,15 @@ public class MarksEntryService {
         SubjectJoint subjectJoint = subjectJointRepo.findById(marksheetSaveRequest.subjectJointId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
         GradingScale gradingScale = gradingService.getOrCreateDefaultScale(marksheetSaveRequest.schoolId());
+        UUID classId = subjectJoint.getSchoolClass().getClassId();
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
 
-        Integer totalSubjects = subjectJointRepo.countByclassIdWithoutSubjectType(marksheetSaveRequest.classId(),
+        Integer totalSubjects = subjectJointRepo.countByclassIdWithoutSubjectType(classId,
                 SubjectType.DROPPED);
 
         Integer submittedSheets = marksSheetRepo.countByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
-                marksheetSaveRequest.classId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
+                classId, settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
                 settings.getExamSettings().getExamType(), MarksSheetStatus.SUBMITTED);
 
         MarksSheet marksSheet = marksSheetRepo
@@ -245,11 +246,11 @@ public class MarksEntryService {
                 marksRepo.save(marks);
             }
         }
-        marksSheet.setClassId(marksheetSaveRequest.classId());
+        marksSheet.setClassId(classId);
         marksSheet.setStatus(MarksSheetStatus.SUBMITTED);
 
         if (totalSubjects > 0 && totalSubjects == submittedSheets) {
-            eventPublisher.publishEvent(GradingClassStudents.builder().classId(marksheetSaveRequest.classId())
+            eventPublisher.publishEvent(GradingClassStudents.builder().classId(classId)
                     .academicYear(settings.getAcademicYear()).currentSchoolTerm(settings.getCurrentSchoolTerm())
                     .examType(settings.getExamSettings().getExamType()).gradingScale(gradingScale).build());
         }
