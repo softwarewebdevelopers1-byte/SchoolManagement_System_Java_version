@@ -202,6 +202,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
           <div style={{ position: "relative" }}>
             <input
               type="date"
+              disabled
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
               style={{
