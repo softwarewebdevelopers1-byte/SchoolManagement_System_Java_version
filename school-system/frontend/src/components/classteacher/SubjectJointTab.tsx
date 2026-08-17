@@ -99,7 +99,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         classGrade: user.classGrade,
         classStream: user.classStream || "",
         isOffered: !currentIsOffered,
-        enrollmentMode: "compulsory",
+        enrollmentMode: subjectType,
       });
       showMsg(
         currentIsOffered

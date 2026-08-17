@@ -288,9 +288,9 @@ public class SubjectService {
             }
             subjectJoint.setElectiveCode(electiveCode);
         } else {
-            if (subjectJoint.getSubjectType() == SubjectType.ELECTIVE) {
-                studentSubjectSelectionRepo.deleteBySubjectJointId(subjectJointId);
-            }
+            // if (subjectJoint.getSubjectType() == SubjectType.ELECTIVE) {
+            //     studentSubjectSelectionRepo.deleteBySubjectJointId(subjectJointId);
+            // }
             subjectJoint.setElectiveCode(null);
         }
         subjectJoint.setSubjectType(subjectType != null ? subjectType : SubjectType.COMPULSORY);

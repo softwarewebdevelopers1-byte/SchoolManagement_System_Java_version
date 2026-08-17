@@ -10,6 +10,8 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -32,6 +34,10 @@ public class MarksSheet {
 
     private UUID classId;
 
+    private Integer grade;
+
+    private UUID schoolId;
+
     private Integer maxExam;
     private boolean ExamEntry = true;
 
@@ -50,6 +56,7 @@ public class MarksSheet {
 
     private ExamType examType;
 
+    @Enumerated(EnumType.STRING)
     private MarksSheetStatus status = MarksSheetStatus.NOT_SUBMITTED;
 
     @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true)

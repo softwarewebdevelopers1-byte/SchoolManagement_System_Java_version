@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.MarkInputDTO;
@@ -16,7 +14,6 @@ import com.example.school.system.DTO.MarksRowDTO;
 import com.example.school.system.DTO.MarksSheetDTO;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
-import com.example.school.system.academicsEvents.events.GradingClassStudents;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.GradeBand;
@@ -50,7 +47,6 @@ public class MarksEntryService {
     private final SchoolSettingsRepository settingsRepository;
     private final MarksSheetRepo marksSheetRepo;
     private final GradingService gradingService;
-    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public MarksSheetDTO loadMarksEntrySheet(UUID subjectJointId) {
@@ -135,14 +131,6 @@ public class MarksEntryService {
         UUID classId = subjectJoint.getSchoolClass().getClassId();
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
-
-        Integer totalSubjects = subjectJointRepo.countByclassIdWithoutSubjectType(classId,
-                SubjectType.DROPPED);
-
-        Integer submittedSheets = marksSheetRepo.countByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
-                classId, settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
-                settings.getExamSettings().getExamType(), MarksSheetStatus.SUBMITTED);
-
         MarksSheet marksSheet = marksSheetRepo
                 .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
                         subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
@@ -215,8 +203,6 @@ public class MarksEntryService {
                 skippedStudentsCount++;
                 continue;
             }
-            log.info(String.valueOf(marksSheet.getMaxExam()));
-
             MarksRow marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
                     .orElseGet(() -> {
                         MarksRow newMarks = new MarksRow();
@@ -243,17 +229,13 @@ public class MarksEntryService {
             }
             calculate(marksSheet, marks, gradingScale);
             if (changed) {
-                marksRepo.save(marks);
+                marksRepo.saveAndFlush(marks);
             }
         }
         marksSheet.setClassId(classId);
+        marksSheet.setGrade(subjectJoint.getSchoolClass().getClassGrade());
+        marksSheet.setSchoolId(marksheetSaveRequest.schoolId());
         marksSheet.setStatus(MarksSheetStatus.SUBMITTED);
-
-        if (totalSubjects > 0 && totalSubjects == submittedSheets) {
-            eventPublisher.publishEvent(GradingClassStudents.builder().classId(classId)
-                    .academicYear(settings.getAcademicYear()).currentSchoolTerm(settings.getCurrentSchoolTerm())
-                    .examType(settings.getExamSettings().getExamType()).gradingScale(gradingScale).build());
-        }
 
         if (rubricChanged) {
             marksSheetRepo.save(marksSheet);
@@ -284,7 +266,6 @@ public class MarksEntryService {
                 scored += marks.getCat3();
             }
         }
-        log.info(String.valueOf(marksSheet.isCat1Entry()));
         if (marksSheet.isExamEntry()) {
             maxPossible += marksSheet.getMaxExam();
             if (marks.getExam() != null)

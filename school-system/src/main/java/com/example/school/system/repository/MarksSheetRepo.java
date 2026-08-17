@@ -18,4 +18,7 @@ public interface MarksSheetRepo extends JpaRepository<MarksSheet, UUID> {
         List<MarksSheet> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(UUID classId,
                         String academicYear, Integer currentSchoolTerm, ExamType examType, MarksSheetStatus status);
 
+        List<MarksSheet> findAllBySchoolIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(UUID schoolId,
+                        String academicYear, Integer currentSchoolTerm, ExamType examType,MarksSheetStatus status);
+
 }
