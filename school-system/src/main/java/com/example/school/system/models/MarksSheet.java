@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.example.school.system.types.ExamType;
+import com.example.school.system.types.MarksSheetStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
@@ -29,9 +30,10 @@ public class MarksSheet {
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    private Integer maxExam;
-        private boolean ExamEntry = true;
+    private UUID classId;
 
+    private Integer maxExam;
+    private boolean ExamEntry = true;
 
     private Integer maxCat1;
     private boolean Cat1Entry = false;
@@ -47,6 +49,8 @@ public class MarksSheet {
     private Integer currentSchoolTerm;
 
     private ExamType examType;
+
+    private MarksSheetStatus status = MarksSheetStatus.NOT_SUBMITTED;
 
     @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true)
     List<MarksRow> marks;

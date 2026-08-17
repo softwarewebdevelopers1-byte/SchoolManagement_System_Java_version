@@ -52,6 +52,9 @@ public class StudentProfile {
     private Gender gender;
 
     @OneToMany(mappedBy = "studentProfile")
+    private List<ClassTermResults> classTermResults;
+
+    @OneToMany(mappedBy = "studentProfile")
     private List<StudentSubjectSelection> studentSubjectSelections;
 
     @OneToMany(mappedBy = "StudentProfile")

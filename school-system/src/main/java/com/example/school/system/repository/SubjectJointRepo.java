@@ -31,6 +31,12 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
         Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
                         @Param("subjectType") SubjectType subjectType);
 
+        @Query("""
+                        SELECT COUNT(s) FROM SubjectJoint s WHERE NOT s.subjectType = :subjectType AND  schoolClass.classId= :id
+                        """)
+        Integer countByclassIdWithoutSubjectType(@Param("id") UUID subjectJointId,
+                        @Param("subjectType") SubjectType subjectType);
+
         List<SubjectJoint> findBySubjectTypeAndElectiveCode(SubjectType subjectType, String electiveCode);
 
         List<SubjectJoint> findAllByTeacherProfileId(UUID teacherProfileId);

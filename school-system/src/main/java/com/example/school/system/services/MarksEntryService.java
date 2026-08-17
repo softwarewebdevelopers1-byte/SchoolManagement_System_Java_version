@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.MarkInputDTO;
@@ -14,6 +16,7 @@ import com.example.school.system.DTO.MarksRowDTO;
 import com.example.school.system.DTO.MarksSheetDTO;
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.academicsEvents.events.GradingClassStudents;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.GradeBand;
@@ -31,6 +34,7 @@ import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
+import com.example.school.system.types.MarksSheetStatus;
 import com.example.school.system.types.SubjectType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +50,7 @@ public class MarksEntryService {
     private final SchoolSettingsRepository settingsRepository;
     private final MarksSheetRepo marksSheetRepo;
     private final GradingService gradingService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public MarksSheetDTO loadMarksEntrySheet(UUID subjectJointId) {
@@ -129,6 +134,13 @@ public class MarksEntryService {
         GradingScale gradingScale = gradingService.getOrCreateDefaultScale(marksheetSaveRequest.schoolId());
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
+
+        Integer totalSubjects = subjectJointRepo.countByclassIdWithoutSubjectType(marksheetSaveRequest.classId(),
+                SubjectType.DROPPED);
+
+        Integer submittedSheets = marksSheetRepo.countByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
+                marksheetSaveRequest.classId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
+                settings.getExamSettings().getExamType(), MarksSheetStatus.SUBMITTED);
 
         MarksSheet marksSheet = marksSheetRepo
                 .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
@@ -233,6 +245,15 @@ public class MarksEntryService {
                 marksRepo.save(marks);
             }
         }
+        marksSheet.setClassId(marksheetSaveRequest.classId());
+        marksSheet.setStatus(MarksSheetStatus.SUBMITTED);
+
+        if (totalSubjects > 0 && totalSubjects == submittedSheets) {
+            eventPublisher.publishEvent(GradingClassStudents.builder().classId(marksheetSaveRequest.classId())
+                    .academicYear(settings.getAcademicYear()).currentSchoolTerm(settings.getCurrentSchoolTerm())
+                    .examType(settings.getExamSettings().getExamType()).gradingScale(gradingScale).build());
+        }
+
         if (rubricChanged) {
             marksSheetRepo.save(marksSheet);
         }
