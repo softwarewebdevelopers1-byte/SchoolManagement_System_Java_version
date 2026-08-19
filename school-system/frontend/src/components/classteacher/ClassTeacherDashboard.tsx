@@ -425,11 +425,11 @@ export default function ClassTeacherDashboard() {
             examType={currentUser.examType}
           />
         );
-      case "analytics":
+      case "analytics":        
         return (
           <Analytics
             students={students}
-            subjects={subjects}
+            subjects={subjects.filter(s=>s.enrollmentMode!=="DROPPED")}
             classGrade={currentUser.classGrade}
             classStream={currentUser.classStream}
             term={currentUser.term}

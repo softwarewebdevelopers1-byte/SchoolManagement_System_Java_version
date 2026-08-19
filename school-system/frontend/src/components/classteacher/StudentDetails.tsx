@@ -40,9 +40,6 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
         student?.enrolledSubjects.includes(s.id)) ||
       s?.enrollmentMode === "COMPULSORY",
   );
-
-  console.log("loadful students marks ",studentMarks);
-
   return (
     <div className="ct-anim">
       <button

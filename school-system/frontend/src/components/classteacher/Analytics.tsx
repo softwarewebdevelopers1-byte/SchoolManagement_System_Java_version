@@ -195,7 +195,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
     if (!students.length || !subjects.length) {
       setStudentsWithMarks(students);
       return;
-    }
+    }   
     setLoadingMarks(true);
     const marksByStudent: Record<string, Record<string, number>> = {};
     await Promise.allSettled(
