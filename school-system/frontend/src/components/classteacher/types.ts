@@ -26,6 +26,7 @@ export interface Student {
   dob: string;
   parentName: string;
   parentPhone: string;
+  guardianName?: string | undefined;
   status: string;
   marks: Record<string, number>;
 }

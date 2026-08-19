@@ -97,6 +97,7 @@ export interface ApiTeacher {
 export interface ApiStudent {
   id: string;
   studentFullName: string;
+  guardianName: string;
   studentAdm: string;
   email: string;
   phoneNumber: string;

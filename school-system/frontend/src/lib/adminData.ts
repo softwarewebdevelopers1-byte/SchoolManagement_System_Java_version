@@ -44,14 +44,13 @@ export const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
 
 export const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
   students.map((student) => {
-    console.log(`each student ${student.studentFullName}`);
-
     return {
       id: student.id,
       studentFullName: student.studentFullName,
       studentAdm: student.studentAdm,
       email: student.email,
       phoneNumber: student.phoneNumber,
+      guardianName: student.guardianName || "",
       classId: student.classId,
       schoolId: student.schoolId,
       gender: student.gender,
