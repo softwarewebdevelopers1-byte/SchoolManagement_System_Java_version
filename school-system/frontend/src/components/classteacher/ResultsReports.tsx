@@ -12,6 +12,7 @@ import {
   getSubId,
   isStudentSubject,
   marksForStudentSubjects,
+  sum,
   sumPoints,
 } from "./shared/helpers";
 import { Avatar } from "./shared/Avatar";
