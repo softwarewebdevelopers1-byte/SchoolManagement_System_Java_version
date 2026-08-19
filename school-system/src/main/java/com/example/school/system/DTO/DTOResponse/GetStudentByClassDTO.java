@@ -15,6 +15,9 @@ import lombok.Setter;
 public class GetStudentByClassDTO {
     String name;
     String adm;
+    String email;
+    String guardianName;
+    String phoneNumber;
     UUID id;
     List<EnrolledSubjects> enrolledSubjects;
 }

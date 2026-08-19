@@ -16,6 +16,7 @@ import {
 } from "./lib/api";
 import SchoolRegistration from "./components/auth/SchoolRegistration";
 import SuperAdminDashboard from "./components/superAdmin/SuperAdmin";
+import SuperAdminLogin from "./components/superAdmin/SuperAdminLogin";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -140,7 +141,16 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/complex/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route path="/complex/dashboard" element={<Navigate to="/edunex-org/superAdmin" replace />} />
+        <Route
+          path="/edunex-org/superAdmin"
+          element={
+            <ProtectedRoute>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/" element={<LandingPage />} />
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />

@@ -51,6 +51,7 @@ export const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
       studentFullName: student.studentFullName,
       studentAdm: student.studentAdm,
       email: student.email,
+      guardianName: student.guardianName || "",
       phoneNumber: student.phoneNumber,
       classId: student.classId,
       schoolId: student.schoolId,

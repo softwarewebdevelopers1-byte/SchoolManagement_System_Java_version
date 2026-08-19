@@ -301,7 +301,7 @@ const LandingPage: React.FC = () => {
               Kenyan schools actually work.
             </p>
             <div className={styles.heroActions}>
-              <a href="#pricing" className={styles.btnPrimary}>
+              <a href="/register/school" className={styles.btnPrimary}>
                 Get started free
                 <svg
                   width="15"
@@ -1780,7 +1780,7 @@ const LandingPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <a href="#" className={`${styles.priceBtn} ${styles.outline}`}>
+              <a href="/register/school" className={`${styles.priceBtn} ${styles.outline}`}>
                 Get started
               </a>
             </div>
@@ -1827,7 +1827,7 @@ const LandingPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <a href="#" className={`${styles.priceBtn} ${styles.goldBtn}`}>
+              <a href="/register/school" className={`${styles.priceBtn} ${styles.goldBtn}`}>
                 Get started free →
               </a>
             </div>
@@ -1926,7 +1926,7 @@ const LandingPage: React.FC = () => {
             </p>
             <div className={styles.ctaActions}>
               <a
-                href="#"
+                href="/register/school"
                 className={`${styles.btnPrimary} ${styles.ctaPrimary}`}
               >
                 Start for free

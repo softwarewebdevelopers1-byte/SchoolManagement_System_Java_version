@@ -434,6 +434,7 @@ export default function ClassTeacherDashboard() {
             classStream={currentUser.classStream}
             term={currentUser.term}
             year={currentUser.year}
+            examType={currentUser.examType}
           />
         );
       case "archives":

@@ -3,9 +3,20 @@ import { api, getSchoolId, request } from "../../lib/api";
 import type { ExitedStudent } from "../admin/types";
 
 interface ExitedStudentsViewProps {
+  exitedStudents?: ExitedStudent[] | { content?: ExitedStudent[] };
   onRefresh?: () => Promise<void>;
   allowDelete?: boolean;
 }
+
+const normalizeExitedStudents = (
+  value: ExitedStudentsViewProps["exitedStudents"] | unknown,
+): ExitedStudent[] => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object" && Array.isArray((value as any).content)) {
+    return (value as any).content;
+  }
+  return [];
+};
 
 const panelStyle: React.CSSProperties = {
   background: "var(--white, var(--dh-white))",
@@ -36,26 +47,29 @@ const buttonStyle: React.CSSProperties = {
 };
 
 export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
+  exitedStudents: initialExitedStudents,
   onRefresh,
   allowDelete = false,
 }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ExitedStudent | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [exitedStudents, setExitedStudents] = useState<ExitedStudent[]>([]);
+  const [exitedStudents, setExitedStudents] = useState<ExitedStudent[]>(
+    normalizeExitedStudents(initialExitedStudents),
+  );
 
   useEffect(() => {
     (async () => {
-      async function getStudents(): Promise<ExitedStudent[]> {
-        return await request(
-          `/get/exited/students?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
-        );
+      if (initialExitedStudents) {
+        setExitedStudents(normalizeExitedStudents(initialExitedStudents));
+        return;
       }
-      console.log("exited students ", await getStudents());
-
-      setExitedStudents(await getStudents());
+      const data = await request<ExitedStudent[] | { content?: ExitedStudent[] }>(
+        `/get/exited/students?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
+      );
+      setExitedStudents(normalizeExitedStudents(data));
     })();
-  }, []);
+  }, [initialExitedStudents]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();

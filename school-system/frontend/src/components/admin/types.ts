@@ -99,6 +99,7 @@ export interface ApiStudent {
   studentFullName: string;
   studentAdm: string;
   email: string;
+  guardianName?: string;
   phoneNumber: string;
   classId: string;
   schoolId: string;

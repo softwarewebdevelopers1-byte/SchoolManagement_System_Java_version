@@ -9,6 +9,11 @@
   --success: #10b981;
 }
 
+[data-theme="dark"] {
+  --bg-gray: #101813;
+  --text-dark: #f7f0e3;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -24,6 +29,51 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
+}
+
+.sa-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #173326, #0f241b);
+  padding: 24px;
+}
+.sa-login-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 16px;
+  background: #fffdf8;
+  border: 1px solid #e7ddc8;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+}
+.sa-login-brand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--edu-green);
+}
+.sa-login-brand span,
+.sa-login-kicker {
+  color: var(--nex-gold);
+}
+.sa-login-card h1 {
+  color: var(--edu-green);
+  font-size: 1.65rem;
+}
+.sa-login-card label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #665b49;
+}
+.sa-login-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.85rem;
 }
 
 /* Sidebar */

@@ -29,9 +29,6 @@ export const isStudentSubject = (student: any, subject: any) => {
   const mode = String(subject.enrollmentMode || "compulsory").toLowerCase();
   const isElective = mode === "elective" || !!subject.sharedSlotId;
 
-  if (isElective) {
-    return true;
-  }
   if (!isElective) return true;
 
   const enrollments = Array.isArray(student?.enrolledSubjects)
@@ -39,16 +36,25 @@ export const isStudentSubject = (student: any, subject: any) => {
     : [];
 
   if (enrollments.length === 0) {
-    return true;
+    return false;
   }
 
   const exactEnrollment = enrollments.some((entry: any) => {
-    const entrySubId = getSubId(entry?.subjectId);
+    const entrySubId = getSubId(
+      entry?.subjectId || entry?.subjectJointId || entry?.enrolledSubjectId,
+    );
     return entrySubId === subjectId && entry?.isActive !== false;
   });
 
-  if (exactEnrollment) {
-    return true;
+  if (exactEnrollment) return true;
+
+  const subjectSlot = subject.sharedSlotId ? String(subject.sharedSlotId) : "";
+  if (subjectSlot) {
+    return enrollments.some(
+      (entry: any) =>
+        String(entry?.sharedSlotId || entry?.electiveCode || "") === subjectSlot &&
+        entry?.isActive !== false,
+    );
   }
 
   return false;

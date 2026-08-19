@@ -1,7 +1,5 @@
 package com.example.school.system.controller;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +21,7 @@ public class GetStudentsController {
     public ResponseEntity<?> getStudentsOfSpecificClass(
             @RequestParam java.util.UUID classId,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getStudentByClass(new GetStudentsOfSpecificClass(classId), page, size);
+        var res = getStudentsService.getStudentByClass(new GetStudentsOfSpecificClass(classId), page, size);
         return ResponseEntity.status(200).body(res);
     }
 
@@ -31,7 +29,7 @@ public class GetStudentsController {
     public ResponseEntity<?> getAllStudents(@RequestParam java.util.UUID schoolId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        List<?> res = getStudentsService.getAllStudents(new GetAllStudentsDTO(schoolId), page, size);
+        var res = getStudentsService.getAllStudents(new GetAllStudentsDTO(schoolId), page, size);
         return ResponseEntity.status(200).body(res);
     }
 
@@ -39,7 +37,7 @@ public class GetStudentsController {
     public ResponseEntity<?> getAllExitedStudents(@RequestParam java.util.UUID schoolId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getAllExitedStudents(new GetAllStudentsDTO(schoolId), page, size);
+        var res = getStudentsService.getAllExitedStudents(new GetAllStudentsDTO(schoolId), page, size);
         return ResponseEntity.status(200).body(res);
     }
 }

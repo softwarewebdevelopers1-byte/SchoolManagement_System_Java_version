@@ -131,6 +131,63 @@ const unwrapResponse = <T>(data: any): T => {
   return data as T;
 };
 
+export interface PaginatedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export const isPaginatedResponse = <T = any>(
+  value: unknown,
+): value is PaginatedResponse<T> =>
+  Boolean(
+    value &&
+      typeof value === "object" &&
+      Array.isArray((value as any).content) &&
+      "page" in (value as any) &&
+      "totalPages" in (value as any),
+  );
+
+const pageContent = <T>(value: T[] | PaginatedResponse<T>): T[] =>
+  isPaginatedResponse<T>(value) ? value.content : value || [];
+
+const requestAllPages = async <T>(
+  path: string,
+  params: Record<string, any> = {},
+): Promise<T[]> => {
+  const size = Number(params.size || 100);
+  let page = Number(params.page || 0);
+  const first = await request<T[] | PaginatedResponse<T>>(
+    withQuery(path, { ...params, page, size }),
+  );
+  if (!isPaginatedResponse<T>(first)) return first || [];
+  const rows = [...first.content];
+  while (!first.last && page + 1 < first.totalPages) {
+    page += 1;
+    const next = await request<PaginatedResponse<T>>(
+      withQuery(path, { ...params, page, size }),
+    );
+    rows.push(...pageContent(next));
+    if (!isPaginatedResponse<T>(next) || next.last) break;
+  }
+  return rows;
+};
+
+const withQuery = (path: string, params?: Record<string, any>) => {
+  if (!params) return path;
+  const query = Object.entries(params)
+    .filter(([_, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+  return query ? `${path}${path.includes("?") ? "&" : "?"}${query}` : path;
+};
+
 export class ApiError extends Error {
   status: number;
   data: any;
@@ -481,9 +538,7 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
     throw new ApiError("No school is linked to this account.", 400, null);
 
   const [students, teachers, subjects, subjectJoints] = await Promise.all([
-    request<any[]>(
-      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
-    ),
+    requestAllPages<any>(`/get/all/students`, { schoolId, size: 100 }),
     request<any[]>(`/users/${encodeURIComponent(schoolId)}/teachers`),
     request<any[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
     request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
@@ -555,9 +610,7 @@ const fetchStudentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
-  return request<T>(
-    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
-  );
+  return requestAllPages<any>(`/get/all/students`, { schoolId, size: 100 }) as Promise<T>;
 };
 
 const fetchTeachersData = async <T>(): Promise<T> => {
@@ -596,9 +649,7 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
 
-  const students = await request<any[]>(
-    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
-  );
+  const students = await requestAllPages<any>(`/get/all/students`, { schoolId, size: 100 });
   const teachers = await request<any[]>(
     `/users/${encodeURIComponent(schoolId)}/teachers`,
   );
@@ -725,9 +776,7 @@ export const api = {
       const stream = parts[4] || "";
       return findClassId(grade, stream).then((classId) =>
         classId
-          ? request<T>(
-              `/get/students?classId=${encodeURIComponent(classId)}&size=500`,
-            )
+          ? (requestAllPages<any>(`/get/students`, { classId, size: 100 }) as Promise<T>)
           : ([] as T),
       );
     }
