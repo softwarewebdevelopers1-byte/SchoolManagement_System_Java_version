@@ -33,7 +33,7 @@ const buildElectiveGroups = (subjects: any[]) => {
 
 const isEnrolled = (student: any, subjectId: string) => {
   return (student.enrolledSubjects || []).some(
-    (e: any) => String(e.enrolledSubjectId).trim() === String(subjectId).trim(),
+    (e: any) => String(e).trim() === String(subjectId).trim(),
   );
 };
 
