@@ -16,5 +16,8 @@ public class GetStudentByClassDTO {
     String name;
     String adm;
     UUID id;
+    String email;
+    String guardianPhone;
+    String guardianName;
     List<EnrolledSubjects> enrolledSubjects;
 }

@@ -46,7 +46,7 @@ public class GetStudentsService {
                 pageable);
         List<?> students = studentProfiles.stream().map(s -> {
             return GetStudentByClassDTO.builder().enrolledSubjects(toEnrolledSubjects(s.getStudentSubjectSelections()))
-                    .id(s.getId()).name(s.getStudentFullName()).adm(s.getStudentAdm())
+                    .id(s.getId()).name(s.getStudentFullName()).adm(s.getStudentAdm()).guardianName(s.getGuardianName()).guardianPhone(s.getPhoneNumber()).email(s.getStudent().getEmail())
                     .build();
         }).toList();
 

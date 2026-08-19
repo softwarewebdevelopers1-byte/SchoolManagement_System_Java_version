@@ -1,9 +1,7 @@
 // components/classteacher/StudentRecords.tsx
 import React, { useState } from "react";
-import { gradeColor, isStudentSubject, marksForStudentSubjects, sumPoints } from "./shared/helpers";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
-import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 
 interface StudentRecordsProps {
   students: any[];
@@ -22,8 +20,12 @@ const StatusPill: React.FC<{ status: string }> = ({ status }) => (
       fontWeight: 600,
       fontFamily: FONT.sans,
       letterSpacing: "0.03em",
-      background: status === "Active" || status === "active" ? C.successBg : C.dangerBg,
-      color: status === "Active" || status === "active" ? C.successText : C.dangerText,
+      background:
+        status === "Active" || status === "active" ? C.successBg : C.dangerBg,
+      color:
+        status === "Active" || status === "active"
+          ? C.successText
+          : C.dangerText,
     }}
   >
     {status}
@@ -91,57 +93,19 @@ const SectionHeader: React.FC<{
 
 export const StudentRecords: React.FC<StudentRecordsProps> = ({
   students,
-  subjects,
   onViewStudent,
-  classInfo
+  classInfo,
 }) => {
-  const { bands: cbcBands } = useCbcGradingBands();
+  console.log("students ", students);
+
   const [search, setSearch] = useState("");
   const filtered = students.filter(
     (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      (s.admissionNo && s.admissionNo.includes(search)),
+      String(s.name || s.studentFullName || "")
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      String(s.admissionNo || s.adm || s.studentAdm || "").includes(search),
   );
-
-  const displaySubjects = React.useMemo(() => {
-    if (!subjects) return [];
-    const grouped: any[] = [];
-    const usedIds = new Set<string>();
-
-    subjects.forEach((s) => {
-      if (usedIds.has(s.id)) return;
-
-      if (s.sharedSlotId) {
-        const siblings = subjects.filter(
-          (other) => other.sharedSlotId === s.sharedSlotId && other.id !== s.id,
-        );
-        if (siblings.length > 0) {
-          const groupName = [s, ...siblings]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((item) => item.name.substring(0, 3))
-            .join("/");
-
-          grouped.push({
-            id: `group-${s.sharedSlotId}`,
-            name: groupName,
-            fullName: [s, ...siblings]
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((item) => item.name)
-              .join("/"),
-            isGroup: true,
-            memberIds: [s.id, ...siblings.map((sib) => sib.id)],
-          });
-          [s, ...siblings].forEach((item) => usedIds.add(item.id));
-          return;
-        }
-      }
-
-      grouped.push({ ...s, isGroup: false });
-      usedIds.add(s.id);
-    });
-
-    return grouped;
-  }, [subjects]);
 
   return (
     <div className="ct-anim">
@@ -182,11 +146,20 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: C.cream, borderBottom: `2px solid ${C.text}` }}>
+            <tr
+              style={{
+                background: C.cream,
+                borderBottom: `2px solid ${C.text}`,
+              }}
+            >
               {[
                 "Student",
                 "Adm. No",
+                "Email",
+                "Guardian",
+                "Guardian Phone",
                 "Status",
+                "Action",
               ].map((h) => (
                 <th
                   key={h}
@@ -211,64 +184,11 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                   {h}
                 </th>
               ))}
-              {displaySubjects.map(s => (
-                <th
-                  key={s.id}
-                  scope="col"
-                  style={{
-                    padding: "12px 14px",
-                    textAlign: "center",
-                    fontFamily: FONT.sans,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: C.text,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    whiteSpace: "nowrap",
-                    position: "sticky",
-                    top: 0,
-                    background: C.cream,
-                    zIndex: 10,
-                    boxShadow: `inset 0 -1px 0 ${C.text}`,
-                  }}
-                  title={s.fullName || s.name}
-                >
-                  {s.name}
-                </th>
-              ))}
-              {[
-                "T.Pts",
-                "Action",
-              ].map((h) => (
-                <th
-                  key={h}
-                  scope="col"
-                  style={{
-                    padding: "12px 14px",
-                    textAlign: h === "Action" ? "left" : "center",
-                    fontFamily: FONT.sans,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    color: h === "Action" ? C.text : "#fff",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    whiteSpace: "nowrap",
-                    background: h !== "Action" ? "#333" : C.cream,
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-                    boxShadow: `inset 0 -1px 0 ${C.text}`,
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
             </tr>
           </thead>
           <tbody>
-
             {filtered.map((s) => {
-              const studentMarks = marksForStudentSubjects(s, subjects);
+              const studentName = s.name || s.studentFullName || "-";
               return (
                 <tr
                   key={s.id}
@@ -278,15 +198,20 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                     cursor: "pointer",
                     transition: "background 0.2s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--ct-hover, rgba(0,0,0,0.02))"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--ct-hover, rgba(0,0,0,0.02))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                   onClick={() => onViewStudent(s)}
                 >
                   <td style={{ padding: "12px 14px" }}>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 10 }}
                     >
-                      <Avatar name={s.name} size={32} />
+                      <Avatar name={studentName} size={32} />
                       <span
                         style={{
                           fontFamily: FONT.sans,
@@ -295,7 +220,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                           color: C.text,
                         }}
                       >
-                        {s.name}
+                        {studentName}
                       </span>
                     </div>
                   </td>
@@ -307,51 +232,40 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                       color: C.textMuted,
                     }}
                   >
-                    {s.admissionNo}
+                    {s.admissionNo || s.adm || s.studentAdm || "-"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      fontFamily: FONT.sans,
+                      fontSize: 12.5,
+                      color: C.textMuted,
+                    }}
+                  >
+                    {s.email || "-"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      fontFamily: FONT.sans,
+                      fontSize: 12.5,
+                      color: C.textMuted,
+                    }}
+                  >
+                    {s.guardianName || s.guardian || "-"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      fontFamily: FONT.sans,
+                      fontSize: 12.5,
+                      color: C.textMuted,
+                    }}
+                  >
+                    {s.phoneNumber || s.guardianPhone || "-"}
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <StatusPill status={s.status} />
-                  </td>
-                  {displaySubjects.map(sub => {
-                    let mark = null;
-                    if (sub.isGroup) {
-                      for (const mid of sub.memberIds) {
-                        const subjectObj = subjects.find(item => (item.id || item._id) === mid);
-                        if (subjectObj && isStudentSubject(s, subjectObj)) {
-                          mark = studentMarks[mid];
-                          if (mark != null) break;
-                        }
-                      }
-                    } else {
-                      if (isStudentSubject(s, sub)) {
-                        mark = studentMarks[sub.id];
-                      }
-                    }
-                    
-                    return (
-                      <td key={sub.id} style={{ 
-                        padding: "12px 14px",
-                        textAlign: "center",
-                        fontFamily: FONT.sans,
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        color: mark != null ? gradeColor(resolveCbcBand(mark, cbcBands).cbcBand) : C.textMuted
-                      }}>
-                        {mark != null ? `${mark}%` : "-"}
-                      </td>
-                    );
-                  })}
-                  <td style={{ padding: "12px 14px", textAlign: "center", background: C.goldPale, borderLeft: `1px solid ${C.border}` }}>
-                    <span
-                      style={{
-                        fontFamily: FONT.serif,
-                        fontSize: 16,
-                        fontWeight: 900,
-                        color: C.text,
-                      }}
-                    >
-                      {sumPoints(studentMarks, cbcBands)}
-                    </span>
+                    <StatusPill status={s.status || "Active"} />
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <button
