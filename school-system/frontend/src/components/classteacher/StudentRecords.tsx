@@ -93,7 +93,6 @@ const SectionHeader: React.FC<{
 
 export const StudentRecords: React.FC<StudentRecordsProps> = ({
   students,
-  onViewStudent,
   classInfo,
 }) => {
   console.log("students ", students);
@@ -159,7 +158,6 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                 "Guardian",
                 "Guardian Phone",
                 "Status",
-                "Action",
               ].map((h) => (
                 <th
                   key={h}
@@ -205,7 +203,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
                   }
-                  onClick={() => onViewStudent(s)}
+                  // onClick={() => onViewStudent(s)}
                 >
                   <td style={{ padding: "12px 14px" }}>
                     <div
@@ -267,7 +265,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                   <td style={{ padding: "12px 14px" }}>
                     <StatusPill status={s.status?.toLowerCase() || "Active"} />
                   </td>
-                  <td style={{ padding: "12px 14px" }}>
+                  {/* <td style={{ padding: "12px 14px" }}>
                     <button
                       className="ct-pill"
                       onClick={(e) => {
@@ -289,7 +287,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                     >
                       View
                     </button>
-                  </td>
+                  </td> */}
                 </tr>
               );
             })}

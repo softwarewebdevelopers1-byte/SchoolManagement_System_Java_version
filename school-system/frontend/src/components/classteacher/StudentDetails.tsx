@@ -41,14 +41,7 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
       s?.enrollmentMode === "COMPULSORY",
   );
 
-  console.log(
-    "loadful students ",
-    student,
-    "subjects ",
-    subjects,
-    "students subjects ",
-    student?.enrolledSubjects,
-  );
+  console.log("loadful students marks ",studentMarks);
 
   return (
     <div className="ct-anim">

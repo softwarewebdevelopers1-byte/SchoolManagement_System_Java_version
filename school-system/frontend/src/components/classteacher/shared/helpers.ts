@@ -80,6 +80,8 @@ export const marksForStudentSubjects = (student: any, subjects: any[]) => {
 
       const sid = getSubId(sub.id || sub._id);
       const mark = student?.marks ? student.marks[sid] : null;
+      console.log("loader ",student);
+      
 
       if (typeof mark === "number") {
         filteredMarks[sid] = mark;
