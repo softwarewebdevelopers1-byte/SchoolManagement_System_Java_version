@@ -12,8 +12,6 @@ import {
   getSubId,
   isStudentSubject,
   marksForStudentSubjects,
-  subjectsForStudent,
-  sum,
   sumPoints,
 } from "./shared/helpers";
 import { Avatar } from "./shared/Avatar";
@@ -370,8 +368,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           setTimeout(() => setMsg(null), 3500);
           return;
         }
+        console.log("slip ", slip);
 
-        const slipSubjects = subjectsForStudent(slip, subjects);
+        const slipSubjects = subjects.filter(
+          (s) =>
+            (s?.enrollmentMode === "ELECTIVE" &&
+              slip?.enrolledSubjects.includes(s.id)) ||
+            s?.enrollmentMode === "COMPULSORY",
+        );
         const doc = buildStudentReportSlipPdf({
           studentName: slip.name,
           admissionNo:
