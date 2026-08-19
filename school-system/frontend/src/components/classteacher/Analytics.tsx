@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React from "react";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
 import { gradeColor, marksForStudentSubjects, getSubId, sumPoints } from "./shared/helpers";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
-import { api } from "../../lib/api";
 
 interface AnalyticsProps {
   students: any[];
@@ -12,7 +11,6 @@ interface AnalyticsProps {
   classStream: string;
   term?: number;
   year?: number;
-  examType?: string;
 }
 
 const MetricCard: React.FC<{ label: string; value: string; note?: string; color?: string }> = ({ label, value, note, color }) => (
@@ -31,55 +29,6 @@ const SectionHeader: React.FC<{ eyebrow: string; title: string; sub?: string }> 
   </div>
 );
 
-const SubjectAverageChart: React.FC<{ data: Array<{ id: string; name: string; avg: number }>; bands: any[] }> = ({ data, bands }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = 280;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
-    const pad = { left: 42, right: 16, top: 18, bottom: 58 };
-    const chartW = width - pad.left - pad.right;
-    const chartH = height - pad.top - pad.bottom;
-    ctx.strokeStyle = "#e7ddc8";
-    ctx.lineWidth = 1;
-    ctx.font = "11px system-ui, sans-serif";
-    ctx.fillStyle = "#8b8170";
-    [0, 25, 50, 75, 100].forEach((tick) => {
-      const y = pad.top + chartH - (tick / 100) * chartH;
-      ctx.beginPath();
-      ctx.moveTo(pad.left, y);
-      ctx.lineTo(width - pad.right, y);
-      ctx.stroke();
-      ctx.fillText(String(tick), 8, y + 4);
-    });
-    const barW = Math.max(18, chartW / Math.max(data.length, 1) - 14);
-    data.forEach((item, index) => {
-      const x = pad.left + index * (chartW / Math.max(data.length, 1)) + 7;
-      const h = (Math.max(0, Math.min(100, item.avg)) / 100) * chartH;
-      const y = pad.top + chartH - h;
-      ctx.fillStyle = gradeColor(resolveCbcBand(item.avg, bands).cbcBand);
-      ctx.fillRect(x, y, barW, h);
-      ctx.fillStyle = "#2f2a22";
-      ctx.textAlign = "center";
-      ctx.fillText(`${item.avg}%`, x + barW / 2, y - 6);
-      ctx.save();
-      ctx.translate(x + barW / 2, height - 12);
-      ctx.rotate(-Math.PI / 5);
-      ctx.fillText(item.name.slice(0, 12), 0, 0);
-      ctx.restore();
-    });
-  }, [data, bands]);
-  return <canvas ref={canvasRef} style={{ width: "100%", height: 280, display: "block" }} />;
-};
-
 export const Analytics: React.FC<AnalyticsProps> = ({
   students,
   subjects,
@@ -87,66 +36,23 @@ export const Analytics: React.FC<AnalyticsProps> = ({
   classStream,
   term = 1,
   year = 2024,
-  examType = "opener",
 }) => {
   const { bands: cbcBands } = useCbcGradingBands();
-  const [studentsWithMarks, setStudentsWithMarks] = useState<any[]>(students);
-  const [loadingMarks, setLoadingMarks] = useState(false);
 
-  const loadMarks = useCallback(async () => {
-    if (!students.length || !subjects.length) {
-      setStudentsWithMarks(students);
-      return;
-    }
-    setLoadingMarks(true);
-    const marksByStudent: Record<string, Record<string, number>> = {};
-    await Promise.allSettled(
-      subjects.map(async (subject: any) => {
-        const subjectId = getSubId(subject?.id || subject?._id);
-        if (!subjectId) return;
-        const rows: any[] = await api.get("/marks", {
-          subjectId,
-          classGrade,
-          classStream,
-          term,
-          year,
-          examType,
-        });
-        rows.forEach((row) => {
-          const studentId = String(row.studentId || "");
-          const raw = row.marks?.avgPercentage ?? row.marks?.finalScore ?? row.marks?.totalMarks;
-          const mark = Number(String(raw ?? "").replace("%", ""));
-          if (!studentId || !Number.isFinite(mark)) return;
-          marksByStudent[studentId] = marksByStudent[studentId] || {};
-          marksByStudent[studentId][subjectId] = mark;
-        });
-      }),
-    );
-    setStudentsWithMarks(students.map((student) => ({
-      ...student,
-      marks: { ...(student.marks || {}), ...(marksByStudent[String(student.id || student.userId)] || {}) },
-    })));
-    setLoadingMarks(false);
-  }, [students, subjects, classGrade, classStream, term, year, examType]);
-
-  useEffect(() => {
-    void loadMarks();
-  }, [loadMarks]);
-
-  if (studentsWithMarks.length === 0) {
+  if (students.length === 0) {
     return <div style={{ padding: 40, textAlign: "center", color: C.textMuted }}>No analytics data available.</div>;
   }
 
   const subjectAvgs = subjects.map((subject) => {
     const sid = getSubId(subject.id || subject._id);
-    const marks = studentsWithMarks
+    const marks = students
       .filter((student) => marksForStudentSubjects(student, subjects)[sid] !== undefined)
       .map((student) => marksForStudentSubjects(student, subjects)[sid]);
     const total = marks.reduce((a, b) => a + (b || 0), 0);
     return { ...subject, avg: marks.length > 0 ? Math.round(total / marks.length) : 0 };
   });
 
-  const studentAvgs = studentsWithMarks
+  const studentAvgs = students
     .map((student) => {
       const studentMarks = marksForStudentSubjects(student, subjects);
       const totalPoints = sumPoints(studentMarks, cbcBands);
@@ -171,7 +77,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: "1.6rem" }}>
-        <MetricCard label="Scored learners" value={loadingMarks ? "..." : `${scoredLearners}`} note={`${studentsWithMarks.length} learners enrolled`} color={C.successText} />
+        <MetricCard label="Scored learners" value={`${scoredLearners}`} note={`${students.length} learners enrolled`} color={C.successText} />
         <MetricCard label="Top student" value={studentAvgs[0]?.name || "N/A"} note={studentAvgs[0] ? `${studentAvgs[0].points} pts` : "N/A"} color={C.successText} />
         <MetricCard label="Best subject" value={bestSubject?.name.split(" ")[0] || "N/A"} note="Subject-level view" color={C.gold} />
         <MetricCard label="Subjects tracked" value={`${subjects.length}`} note="Subject bands remain on subject marks" color={C.warnText} />
@@ -180,7 +86,22 @@ export const Analytics: React.FC<AnalyticsProps> = ({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "1.4rem" }}>
           <p style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 1.2rem" }}>Subject averages</p>
-          <SubjectAverageChart data={subjectAvgs} bands={cbcBands} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {subjectAvgs.map((subject) => {
+              const band = resolveCbcBand(subject.avg, cbcBands).cbcBand;
+              return (
+                <div key={subject.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontFamily: FONT.sans, fontSize: 13, color: C.textMid }}>{subject.name}</span>
+                    <span style={{ fontFamily: FONT.serif, fontSize: 14, fontWeight: 600, color: gradeColor(band) }}>{subject.avg}% | {band}</span>
+                  </div>
+                  <div style={{ height: 9, background: C.sand, borderRadius: 5, overflow: "hidden" }}>
+                    <div style={{ width: `${subject.avg}%`, height: "100%", background: gradeColor(band), borderRadius: 5 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "1.4rem" }}>

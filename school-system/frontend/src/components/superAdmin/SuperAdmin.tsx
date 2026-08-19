@@ -16,7 +16,6 @@ import {
   FileText,
 } from "lucide-react";
 import "./SuperAdmin.css";
-import { api } from "../../lib/api";
 
 type SchoolStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
 type UserStatus = "ACTIVE" | "SUSPENDED";
@@ -114,31 +113,6 @@ export default function SuperAdminDashboard() {
       at: new Date(),
     },
   ]);
-  const [loadingSchools, setLoadingSchools] = useState(false);
-  const [loadError, setLoadError] = useState("");
-
-  useEffect(() => {
-    const loadSchools = async () => {
-      setLoadingSchools(true);
-      setLoadError("");
-      try {
-        const data: any[] = await api.get("/complex/get/all/schools");
-        setSchools((data || []).map((school: any) => ({
-          id: school.id || school.schoolId,
-          name: school.name || school.schoolName || "School",
-          county: school.county || school.location || "-",
-          students: school.students || school.totalStudents || 0,
-          status: school.status || school.schoolStatus || "PENDING",
-          plan: school.plan || "Trial",
-        })));
-      } catch (err: any) {
-        setLoadError(err?.message || "Failed to load schools.");
-      } finally {
-        setLoadingSchools(false);
-      }
-    };
-    void loadSchools();
-  }, []);
 
   const logAction = (action: string) => {
     setAudit((prev) => [
@@ -216,7 +190,6 @@ export default function SuperAdminDashboard() {
             <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
               Schools
             </h2>
-            {loadError && <div className="sa-login-error">{loadError}</div>}
             <table className="sa-table">
               <thead>
                 <tr>
@@ -229,9 +202,7 @@ export default function SuperAdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {loadingSchools ? (
-                  <tr><td colSpan={6}>Loading schools...</td></tr>
-                ) : schools.map((s) => (
+                {schools.map((s) => (
                   <tr key={s.id}>
                     <td>{s.name}</td>
                     <td>{s.county}</td>

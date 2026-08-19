@@ -13,7 +13,6 @@ import com.example.school.system.DTO.GetAllStudentsDTO;
 import com.example.school.system.DTO.GetStudentsOfSpecificClass;
 import com.example.school.system.DTO.DTOResponse.GetAllStudentsDTORes;
 import com.example.school.system.DTO.DTOResponse.GetStudentByClassDTO;
-import com.example.school.system.DTO.DTOResponse.PageResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.StudentSubjectSelection;
@@ -37,7 +36,7 @@ public class GetStudentsService {
     private final SchoolRepository schoolRepository;
 
     @Transactional
-    public PageResponse<?> getStudentByClass(GetStudentsOfSpecificClass schoolClassDTO, int page, int size) {
+    public List<?> getStudentByClass(GetStudentsOfSpecificClass schoolClassDTO, int page, int size) {
 
         schoolClassRepository.findById(schoolClassDTO.classId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
@@ -48,13 +47,10 @@ public class GetStudentsService {
         List<?> students = studentProfiles.stream().map(s -> {
             return GetStudentByClassDTO.builder().enrolledSubjects(toEnrolledSubjects(s.getStudentSubjectSelections()))
                     .id(s.getId()).name(s.getStudentFullName()).adm(s.getStudentAdm())
-                    .email(s.getStudent() != null ? s.getStudent().getEmail() : null)
-                    .guardianName(s.getGuardianName())
-                    .phoneNumber(s.getPhoneNumber())
                     .build();
         }).toList();
 
-        return toPageResponse(studentProfiles, students);
+        return students;
     }
 
     private List<EnrolledSubjects> toEnrolledSubjects(List<StudentSubjectSelection> studentSubjectSelections) {
@@ -63,7 +59,7 @@ public class GetStudentsService {
         }).toList();
     }
 
-    public PageResponse<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
+    public List<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
         if (!schoolRepository.existsById(getAllStudentsDTO.schoolId())) {
             throw new SchoolResourceNotFoundExceptionHandler("school not found");
         }
@@ -72,7 +68,7 @@ public class GetStudentsService {
                 UserRoles.STUDENT,
                 pageable);
 
-        List<?> students = allStudents.stream()
+        return allStudents.stream()
                 .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted() == false).map(s -> {
                     StudentProfile studentProfile = s.getStudentProfile();
                     return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
@@ -95,10 +91,9 @@ public class GetStudentsService {
                                     : null)
                             .build();
                 }).toList();
-        return toPageResponse(allStudents, students);
     }
 
-    public PageResponse<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
+    public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
         if (!schoolRepository.existsById(getAllStudentsDTO.schoolId())) {
             throw new SchoolResourceNotFoundExceptionHandler("school not found");
         }
@@ -107,7 +102,7 @@ public class GetStudentsService {
                 UserRoles.STUDENT,
                 pageable);
 
-        List<?> students = allStudents.stream()
+        return allStudents.stream()
                 .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted()).map(s -> {
                     StudentProfile studentProfile = s.getStudentProfile();
                     return GetAllStudentsDTORes.builder().studentFullName(studentProfile.getStudentFullName())
@@ -130,20 +125,6 @@ public class GetStudentsService {
                                     : null)
                             .build();
                 }).toList();
-        return toPageResponse(allStudents, students);
-    }
-
-    private PageResponse<?> toPageResponse(Page<?> page, List<?> content) {
-        return new PageResponse<>(
-                content,
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.isFirst(),
-                page.isLast(),
-                page.hasNext(),
-                page.hasPrevious());
     }
 
 }
