@@ -265,7 +265,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                     {s.phoneNumber || s.guardianPhone || "-"}
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <StatusPill status={s.status || "Active"} />
+                    <StatusPill status={s.status?.toLowerCase() || "Active"} />
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <button

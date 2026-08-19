@@ -1,13 +1,27 @@
 // components/classteacher/StudentDetails.tsx
 import React from "react";
-import { gradeColor, gradeBg, marksForStudentSubjects, subjectsForStudent, sumPoints } from "./shared/helpers";
+import {
+  gradeColor,
+  gradeBg,
+  marksForStudentSubjects,
+  subjectsForStudent,
+  sumPoints,
+} from "./shared/helpers";
 import { Avatar } from "./shared/Avatar";
 import { BackIcon } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 
 interface StudentDetailsProps {
-  student: any;
+  student: {
+    name: string;
+    enrolledSubjects: any[];
+    guardianPhone: string;
+    guardianName: string;
+    adm: string;
+    status: string;
+    gender: string;
+  };
   subjects: any[];
   onBack: () => void;
 }
@@ -20,6 +34,21 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
   const { bands: cbcBands } = useCbcGradingBands();
   const studentMarks = marksForStudentSubjects(student, subjects);
   const totalPoints = sumPoints(studentMarks, cbcBands);
+  const subjectsFiltered = subjects.filter(
+    (s) =>
+      (s?.enrollmentMode === "ELECTIVE" &&
+        student?.enrolledSubjects.includes(s.id)) ||
+      s?.enrollmentMode === "COMPULSORY",
+  );
+
+  console.log(
+    "loadful students ",
+    student,
+    "subjects ",
+    subjects,
+    "students subjects ",
+    student?.enrolledSubjects,
+  );
 
   return (
     <div className="ct-anim">
@@ -85,8 +114,7 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
                   margin: 0,
                 }}
               >
-                {student.admissionNumber} · {student.gender} ·{" "}
-                Grade {student.classGrade} {student.classStream}
+                {student.adm} · {student.gender?.toLowerCase()}
               </p>
             </div>
             <div style={{ marginLeft: "auto", textAlign: "right" }}>
@@ -121,8 +149,8 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
             }}
           >
             {[
-              ["Parent", student.parentName],
-              ["Phone", student.parentPhone],
+              ["Parent", student.guardianName],
+              ["Phone", student.guardianPhone],
               ["Status", student.status],
             ].map(([k, v]) => (
               <div
@@ -185,7 +213,7 @@ export const StudentDetails: React.FC<StudentDetailsProps> = ({
             Subject marks
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {subjectsForStudent(student, subjects).map((sub) => {
+            {subjectsFiltered.map((sub) => {
               const m = studentMarks[sub.id || sub._id];
               const band = resolveCbcBand(m, cbcBands).cbcBand;
               return (
