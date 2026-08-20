@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
@@ -31,6 +33,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class SchoolClass {
     @Id
     @Column(name = "class_id", columnDefinition = "BINARY(16)")

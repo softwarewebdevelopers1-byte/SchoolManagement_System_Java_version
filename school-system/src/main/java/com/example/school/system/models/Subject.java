@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
@@ -27,6 +29,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class Subject {
     @Id
     @Column(name = "id", nullable = false, insertable = true, updatable = true, columnDefinition = "BINARY(16)")

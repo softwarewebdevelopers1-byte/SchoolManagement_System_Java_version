@@ -2,6 +2,9 @@ package com.example.school.system.models;
 
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +28,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Setter
 @Getter
+@BatchSize(size = 50)
 public class TeacherProfile {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id")

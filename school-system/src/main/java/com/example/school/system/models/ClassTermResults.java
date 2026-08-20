@@ -3,6 +3,9 @@ package com.example.school.system.models;
 import com.example.school.system.types.ExamType;
 import com.github.f4b6a3.uuid.UuidCreator;
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
@@ -18,6 +21,7 @@ import lombok.Setter;
 @Getter
 @Entity
 @Setter
+@BatchSize(size = 50)
 public class ClassTermResults {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.example.school.system.types.AccountStatus;
@@ -40,6 +41,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class Users {
   @Id
   @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)

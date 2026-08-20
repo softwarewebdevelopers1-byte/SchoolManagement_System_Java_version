@@ -1,6 +1,9 @@
 package com.example.school.system.models;
 
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +24,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
+@BatchSize(size = 50)
 public class MarksRow {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
@@ -50,7 +54,7 @@ public class MarksRow {
     @Column(nullable = true, name = "average_marks%")
     private Integer averageMarksPercentage;
 
-    @ManyToOne(fetch=FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private StudentProfile StudentProfile;
 

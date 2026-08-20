@@ -3,6 +3,9 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,6 +25,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class ClassHistory {
     @Id
     @Column(name = "class_id", columnDefinition = "BINARY(16)")

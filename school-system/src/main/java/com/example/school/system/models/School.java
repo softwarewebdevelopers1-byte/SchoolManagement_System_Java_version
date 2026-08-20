@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.example.school.system.types.SchoolStatus;
@@ -33,6 +34,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@BatchSize(size = 50)
 public class School {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", updatable = false, nullable = false)

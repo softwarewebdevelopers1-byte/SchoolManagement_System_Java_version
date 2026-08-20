@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.ExamType;
 import com.example.school.system.types.MarksSheetStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
@@ -28,6 +30,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "marks_sheet")
+@BatchSize(size = 50)
 public class MarksSheet {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)

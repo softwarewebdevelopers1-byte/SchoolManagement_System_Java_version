@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.Gender;
 import com.github.f4b6a3.uuid.UuidCreator;
 
@@ -31,6 +33,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class StudentProfile {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "student_id", nullable = false, updatable = false)

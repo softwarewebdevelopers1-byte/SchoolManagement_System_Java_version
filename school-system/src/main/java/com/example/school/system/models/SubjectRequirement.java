@@ -2,6 +2,8 @@ package com.example.school.system.models;
 
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.SubjectTimePreference;
 import com.github.f4b6a3.uuid.UuidCreator;
 
@@ -34,6 +36,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class SubjectRequirement {
     @Id
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)

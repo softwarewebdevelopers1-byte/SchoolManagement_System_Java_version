@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.time.DayOfWeek;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.TimetableConflictType;
 import com.github.f4b6a3.uuid.UuidCreator;
 
@@ -29,6 +31,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class ConflictLog {
     @Id
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)

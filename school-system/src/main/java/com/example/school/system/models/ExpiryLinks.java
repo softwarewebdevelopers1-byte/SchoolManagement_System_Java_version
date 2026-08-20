@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
@@ -19,6 +21,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "expiry_links")
+@BatchSize(size = 50)
 public class ExpiryLinks {
     @Id
     @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")

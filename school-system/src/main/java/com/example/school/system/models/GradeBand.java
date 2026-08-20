@@ -1,6 +1,9 @@
 package com.example.school.system.models;
 
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +23,7 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
+@BatchSize(size = 50)
 public class GradeBand {
     @Id
     @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")

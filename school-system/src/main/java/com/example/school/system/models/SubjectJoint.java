@@ -2,6 +2,9 @@ package com.example.school.system.models;
 
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.SubjectType;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
@@ -22,6 +25,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "subject_joint")
+@BatchSize(size = 50)
 public class SubjectJoint {
     @Id
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false, insertable = false)

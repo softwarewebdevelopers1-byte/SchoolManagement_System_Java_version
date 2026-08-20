@@ -3,6 +3,8 @@ package com.example.school.system.models;
 import java.time.LocalTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
@@ -30,6 +32,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@BatchSize(size = 50)
 public class TeachingPeriod {
     @Id
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)

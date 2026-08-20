@@ -2,6 +2,8 @@ package com.example.school.system.models;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.OtpPurpose;
 
 import jakarta.persistence.Column;
@@ -24,6 +26,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "otp_verifications")
+@BatchSize(size = 50)
 public class OTP {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -3,6 +3,9 @@ package com.example.school.system.models;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.WholeAttendanceSheetStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.CascadeType;
@@ -23,6 +26,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
+@BatchSize(size = 50)
 @RequiredArgsConstructor
 public class AttendanceSheet {
     @Id

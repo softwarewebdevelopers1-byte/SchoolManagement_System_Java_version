@@ -2,6 +2,8 @@ package com.example.school.system.models;
 
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import com.example.school.system.types.ExamType;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
@@ -22,6 +24,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "exam_settings")
+@BatchSize(size = 50)
 public class ExamSettings {
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
