@@ -95,8 +95,6 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
   students,
   classInfo,
 }) => {
-  console.log("students ", students);
-
   const [search, setSearch] = useState("");
   const filtered = students.filter(
     (s) =>

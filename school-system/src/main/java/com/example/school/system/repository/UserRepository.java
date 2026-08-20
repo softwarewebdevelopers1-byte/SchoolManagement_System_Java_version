@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +22,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
 
   boolean existsByEmailAndStatus(String email, AccountStatus status);
 
+  @EntityGraph(attributePaths = {"studentProfile","studentProfile.schoolClass"})
   @Query("""
       SELECT u
       FROM Users u
@@ -29,7 +31,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
       """)
   Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
       Pageable pageable);
-
+      
   Optional<Users> findByEmail(String email);
 
   Optional<Users> findByEmailAndStatus(String email, String status);
