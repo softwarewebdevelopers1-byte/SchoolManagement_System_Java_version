@@ -33,6 +33,7 @@ public class GradingScale {
 
     @OrderBy("minScore DESC")
     @OneToMany(mappedBy = "gradingScale", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<GradeBand> bands;
 
     @PrePersist

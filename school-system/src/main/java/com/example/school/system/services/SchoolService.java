@@ -175,6 +175,8 @@ public class SchoolService {
         try {
             ExamType examType = updateTermAndExam.examType();
             Integer term = updateTermAndExam.term();
+
+            
             School schoolFound = schoolRepository.findById(updateTermAndExam.schoolId())
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
             SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
