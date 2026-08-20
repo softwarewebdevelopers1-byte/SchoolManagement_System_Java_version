@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -42,14 +43,14 @@ public class TeacherProfile {
     // @Column(name = "available_connections")
     // private Integer connections = 6;
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
     private List<SubjectJoint> subjectJoints;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_account")
     private Users teacher;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
     SchoolClass schoolClass;
 

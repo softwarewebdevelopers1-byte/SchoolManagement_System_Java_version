@@ -7,6 +7,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -34,7 +35,7 @@ public class TeachingPeriod {
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)
     private UUID id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false,fetch=FetchType.LAZY)
     @JoinColumn(name = "school_id")
     private School school;
 

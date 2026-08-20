@@ -9,6 +9,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -46,17 +47,17 @@ public class SchoolSettings {
   private Integer minutesPerLesson = 40;
 
   // relationship between settings and school
-  @OneToOne
+  @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "school_id")
   private School school;
 
-  @OneToOne(mappedBy = "schoolSettings",cascade = CascadeType.ALL)
+  @OneToOne(mappedBy = "schoolSettings", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private ExamSettings examSettings;
 
   @Column(name = "final_grade")
   private Integer finalGrade;
 
-  @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "schoolSettings", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   private List<SchoolBreak> breaks = new ArrayList<>();
 
   @PrePersist

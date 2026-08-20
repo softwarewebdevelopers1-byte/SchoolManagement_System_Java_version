@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
@@ -30,7 +31,7 @@ public class ExamSettings {
     @Enumerated(EnumType.STRING)
     private ExamType examType = ExamType.OPENER;
 
-    @OneToOne
+    @OneToOne(fetch=FetchType.LAZY)
     private SchoolSettings schoolSettings;
 
     @PrePersist

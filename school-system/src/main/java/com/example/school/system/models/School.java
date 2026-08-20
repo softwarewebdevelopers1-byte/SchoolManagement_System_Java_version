@@ -14,6 +14,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -64,19 +65,19 @@ public class School {
     @CreationTimestamp
     private LocalDate date;
 
-    @OneToMany(mappedBy = "school")
+    @OneToMany(mappedBy = "school", fetch = FetchType.LAZY)
     List<ClassHistory> classHistories;
 
-    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Subject> subjects;
     // creating reltionship between school and class
-    @OneToMany(mappedBy = "school")
+    @OneToMany(mappedBy = "school", fetch = FetchType.LAZY)
     List<SchoolClass> classes;
     // creating relationship between school and user
-    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "school", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Users> users;
     // creating relationship between school and school settings
-    @OneToOne(mappedBy = "school", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "school", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private SchoolSettings schoolSettings;
 
     @PreUpdate

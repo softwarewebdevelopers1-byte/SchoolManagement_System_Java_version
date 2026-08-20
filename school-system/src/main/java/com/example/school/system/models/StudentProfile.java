@@ -11,6 +11,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -51,24 +52,24 @@ public class StudentProfile {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToMany(mappedBy = "studentProfile")
+    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY)
     private List<ClassTermResults> classTermResults;
 
-    @OneToMany(mappedBy = "studentProfile")
+    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY)
     private List<StudentSubjectSelection> studentSubjectSelections;
 
-    @OneToMany(mappedBy = "StudentProfile")
+    @OneToMany(mappedBy = "StudentProfile", fetch = FetchType.LAZY)
     List<MarksRow> marks;
     // relationship between student and class
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_account")
     private Users student;
 
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AttendanceRecords> attendanceRecords;
 
     @PreUpdate

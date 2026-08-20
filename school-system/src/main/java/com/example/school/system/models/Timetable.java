@@ -13,6 +13,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -38,7 +39,7 @@ public class Timetable {
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)
     private UUID id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false,fetch=FetchType.LAZY)
     @JoinColumn(name = "school_id")
     private School school;
 
@@ -61,7 +62,7 @@ public class Timetable {
     @Column(name = "completeness_percentage")
     private Double completenessPercentage;
 
-    @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true,fetch=FetchType.LAZY)
     private List<TimetableEntry> entries = new ArrayList<>();
 
     @PrePersist

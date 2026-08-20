@@ -19,6 +19,7 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -67,16 +68,17 @@ public class Users {
   @Enumerated(EnumType.STRING)
   private AccountStatus status = AccountStatus.ACTIVE;
 
-  @OneToOne(mappedBy = "teacher", cascade = CascadeType.ALL)
+  @OneToOne(mappedBy = "teacher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   TeacherProfile teacherProfile;
 
-  @OneToOne(mappedBy = "student", cascade = CascadeType.ALL)
+  @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   StudentProfile studentProfile;
   // relationship between teacher and school
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "school_id")
   private School school;
-  @OneToMany(mappedBy = "users")
+  
+  @OneToMany(mappedBy = "users", fetch = FetchType.LAZY)
   List<ExpiryLinks> expiryLinks;
 
   @PreUpdate

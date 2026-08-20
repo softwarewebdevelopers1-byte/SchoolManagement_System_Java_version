@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,23 +29,23 @@ public class SubjectJoint {
     @Enumerated(EnumType.STRING)
     private SubjectType subjectType = SubjectType.COMPULSORY;
 
-    @ManyToOne
+    @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    @OneToMany(mappedBy = "subjectJoint")
+    @OneToMany(mappedBy = "subjectJoint",fetch = FetchType.LAZY)
     List<MarksSheet> marksSheets;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
-    @OneToMany(mappedBy = "subjectJoint")
+    @OneToMany(mappedBy = "subjectJoint",fetch = FetchType.LAZY)
     List<StudentSubjectSelection> studentSubjectSelections;
 
     private String electiveCode;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private TeacherProfile teacherProfile;
 
     @PrePersist

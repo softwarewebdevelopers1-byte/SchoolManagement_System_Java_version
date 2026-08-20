@@ -7,6 +7,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
@@ -43,7 +44,7 @@ public class SchoolBreak {
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "settings_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private SchoolSettings schoolSettings;
 

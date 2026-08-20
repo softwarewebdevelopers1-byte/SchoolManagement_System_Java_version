@@ -7,6 +7,7 @@ import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -35,11 +36,11 @@ public class Subject {
     @NotBlank(message = "subject name is missing")
     String subjectName;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id")
     private School school;
 
-    @OneToMany(mappedBy = "subject")
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     private List<SubjectJoint> subjectJoints;
 
     @PreUpdate
