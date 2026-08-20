@@ -73,6 +73,7 @@ public class StudentProfile {
     private Users student;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     private List<AttendanceRecords> attendanceRecords;
 
     @PreUpdate

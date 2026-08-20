@@ -44,6 +44,7 @@ public class AttendanceSheet {
     private SchoolClass schoolClass;
 
     @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 100)
     List<AttendanceRecords> attendanceRecords;
 
     @PrePersist
