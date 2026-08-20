@@ -15,9 +15,10 @@ public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
 
     Optional<StudentProfile> findByStudentAdm(String studentAdm);;
 
-    @EntityGraph(attributePaths = {"studentSubjectSelections"})
-    Page <StudentProfile> findBySchoolClassClassId(UUID classId,Pageable pageable);
-     List <StudentProfile> findAllBySchoolClassClassId(UUID classId);
+    @EntityGraph(attributePaths = { "studentSubjectSelections", "student" })
+    Page<StudentProfile> findBySchoolClassClassId(UUID classId, Pageable pageable);
 
-     long countByschoolClassClassId(UUID classId);
+    List<StudentProfile> findAllBySchoolClassClassId(UUID classId);
+
+    long countByschoolClassClassId(UUID classId);
 }

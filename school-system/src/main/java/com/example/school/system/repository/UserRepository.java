@@ -16,65 +16,66 @@ import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
 
 public interface UserRepository extends JpaRepository<Users, UUID> {
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
+    boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
 
-  boolean existsByEmailAndStatus(String email, AccountStatus status);
+    boolean existsByEmailAndStatus(String email, AccountStatus status);
 
-  @EntityGraph(attributePaths = {"studentProfile","studentProfile.schoolClass"})
-  @Query("""
-      SELECT u
-      FROM Users u
-       WHERE u.school.id = :schoolId
-        AND :role MEMBER OF u.roles
-      """)
-  Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
-      Pageable pageable);
-      
-  Optional<Users> findByEmail(String email);
+    @EntityGraph(attributePaths = { "studentProfile", "studentProfile.schoolClass" })
+    @Query("""
+            SELECT u
+            FROM Users u
+             WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles
+            """)
+    Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
+            Pageable pageable);
 
-  Optional<Users> findByEmailAndStatus(String email, String status);
+    @EntityGraph(attributePaths = { "school" })
+    Optional<Users> findByEmail(String email);
 
-  Optional<Users> findByIdAndEmail(UUID id, String email);
+    Optional<Users> findByEmailAndStatus(String email, String status);
 
-  List<Users> findAllBySchoolId(UUID id);
+    Optional<Users> findByIdAndEmail(UUID id, String email);
 
-  @Query("""
-          SELECT u
-          FROM Users u
-          WHERE u.school.id = :schoolId
-            AND :role NOT MEMBER OF u.roles AND status!=PENDING_APPROVAL AND status!=REJECTED_INVITE
-      """)
-  List<Users> findUsersBySchoolWithoutRole(
-      @Param("schoolId") UUID schoolId,
-      @Param("role") UserRoles role);
+    List<Users> findAllBySchoolId(UUID id);
 
-  Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
+    @Query("""
+                SELECT u
+                FROM Users u
+                WHERE u.school.id = :schoolId
+                  AND :role NOT MEMBER OF u.roles AND status!=PENDING_APPROVAL AND status!=REJECTED_INVITE
+            """)
+    List<Users> findUsersBySchoolWithoutRole(
+            @Param("schoolId") UUID schoolId,
+            @Param("role") UserRoles role);
 
-  @Query("""
-          SELECT u
-          FROM Users u
-          WHERE u.school.id = :schoolId
-             AND status=PENDING_APPROVAL
-      """)
-  List<Users> findBySchoolIdGetPendingInvites(@Param("schoolId") UUID schoolId);
+    Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
 
-  int deleteAllByStatus(AccountStatus status);
+    @Query("""
+                SELECT u
+                FROM Users u
+                WHERE u.school.id = :schoolId
+                   AND status=PENDING_APPROVAL
+            """)
+    List<Users> findBySchoolIdGetPendingInvites(@Param("schoolId") UUID schoolId);
 
-  int deleteAllByStatusAndDeletedAtBefore(AccountStatus status, Instant deletedAt);
+    int deleteAllByStatus(AccountStatus status);
 
-  @Query("""
-      SELECT u
-      FROM Users u
-        WHERE 'STUDENT' MEMBER OF u.roles
-      """)
-  List<Users> findAllStudents();
+    int deleteAllByStatusAndDeletedAtBefore(AccountStatus status, Instant deletedAt);
 
-  @Query("""
-      SELECT u
-      FROM Users u
-       WHERE :role NOT MEMBER OF u.roles
-      """)
-  List<Users> findAllTeachers(@Param("role") UserRoles exceptedRole, Pageable pageable);
+    @Query("""
+            SELECT u
+            FROM Users u
+              WHERE 'STUDENT' MEMBER OF u.roles
+            """)
+    List<Users> findAllStudents();
+
+    @Query("""
+            SELECT u
+            FROM Users u
+             WHERE :role NOT MEMBER OF u.roles
+            """)
+    List<Users> findAllTeachers(@Param("role") UserRoles exceptedRole, Pageable pageable);
 }

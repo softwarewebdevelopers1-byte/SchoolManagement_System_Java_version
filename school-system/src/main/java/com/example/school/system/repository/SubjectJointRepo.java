@@ -3,6 +3,8 @@ package com.example.school.system.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +30,7 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
         @Query("""
                         SELECT s FROM SubjectJoint s WHERE NOT s.subjectType = :subjectType AND id = :id
                         """)
+        @EntityGraph(attributePaths = {"schoolClass"})
         Optional<SubjectJoint> findByIdWithoutSubjectType(@Param("id") UUID subjectJointId,
                         @Param("subjectType") SubjectType subjectType);
 

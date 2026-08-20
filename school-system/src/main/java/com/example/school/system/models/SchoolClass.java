@@ -56,6 +56,7 @@ public class SchoolClass {
     private boolean completed;
 
     @OneToMany(mappedBy = "schoolClass", fetch = FetchType.LAZY)
+    @BatchSize(size = 10)
     private List<SubjectJoint> subjectJoints;
 
     // relationship between school and student
