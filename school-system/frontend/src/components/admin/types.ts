@@ -7,9 +7,12 @@ import type {
 
 export interface Teacher {
   id: string;
+  userId?: string;
+  usersId?: string;
   name: string;
   email: string;
   phone: string;
+  phoneNumber?: string;
   status: string;
   department: string;
   roles: string[];
@@ -17,6 +20,7 @@ export interface Teacher {
   teacherNumber?: string;
   classGrade?: string;
   classStream?: string;
+  schoolClass?: string;
   subjects?: string[];
   joinDate?: string;
   term?: number;
@@ -36,10 +40,13 @@ export interface Subject {
 export interface Class {
   id: string;
   classId?: string;
+  className?: string;
   name: string;
   grade: string;
   stream?: string;
   students: number;
+  totalStudents?: number;
+  classTeacher?: string | null;
   classTeacherId?: string;
   subjectAssignments: Record<string, string>;
   subjectSettings: Record<string, ClassSubjectSetting>;
@@ -77,9 +84,12 @@ export interface Student {
 
 export interface ApiTeacher {
   id: string;
+  userId?: string;
+  usersId?: string;
   name: string;
   email: string;
   phone: string;
+  phoneNumber?: string;
   status: string;
   department: string;
   roles: string[];
@@ -87,6 +97,7 @@ export interface ApiTeacher {
   teacherNumber?: string;
   classGrade?: string;
   classStream?: string;
+  schoolClass?: string;
   subjects?: string[];
   joinDate?: string;
   term?: number;
@@ -96,6 +107,7 @@ export interface ApiTeacher {
 
 export interface ApiStudent {
   id: string;
+  userId?: string;
   studentFullName: string;
   guardianName: string;
   studentAdm: string;

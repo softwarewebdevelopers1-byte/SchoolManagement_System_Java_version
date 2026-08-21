@@ -30,6 +30,7 @@ import {
   Subject,
   Student,
   ExitedStudent,
+  subjectJoints,
 } from "./types";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
@@ -37,7 +38,6 @@ import {
   buildClassId,
   getClassSubjectSetting,
 } from "../../lib/subjectEnrollment";
-import { useClassesData } from "../../lib/adminData";
 const navItems: NavItem[] = [
   {
     id: "overview",
@@ -136,22 +136,53 @@ const normalizeStatus = (value?: string) => {
 
 const isActiveStudent = (student: Student) => student.status === "Active";
 
+const splitClassName = (className: unknown) => {
+  const [grade = "", ...streamParts] = String(className || "")
+    .trim()
+    .split(/\s+/);
+  return {
+    grade,
+    classStream: streamParts.join(" "),
+  };
+};
+
 const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
-  staff.map((member) => ({
-    ...member,
-    status: normalizeStatus(member.status),
-    subjects: member.subjects || [],
-  }));
+  staff.map((member) => {
+    const parsedClass = splitClassName(member.schoolClass);
+    const roles = Array.isArray(member.roles) ? member.roles : [];
+    return {
+      ...member,
+      id: member.id || member.teacherProfileId || member.usersId || "",
+      userId: member.userId || member.usersId,
+      usersId: member.usersId || member.userId,
+      name:
+        member.name ||
+        [member.firstName, member.lastName].filter(Boolean).join(" ") ||
+        member.email,
+      phone: member.phone || member.phoneNumber || "",
+      status: normalizeStatus(member.status),
+      subjects: member.subjects || [],
+      roleLabel: member.roleLabel || roles.join(", "),
+      classGrade: member.classGrade || parsedClass.grade,
+      classStream: member.classStream || parsedClass.classStream,
+      schoolClass: member.schoolClass,
+    };
+  });
 
 const mapStudentsFromApi = (students: any): Student[] =>
   students.map((student: any) => ({
-    id: student.id,
-    studentAdm: student.admissionNo,
-    studentFullName: student.name,
+    id: student.id || student.userId || "",
+    userId: student.userId || student.id,
+    studentAdm: student.studentAdm || student.admissionNo || student.adm || "",
+    studentFullName:
+      student.studentFullName || student.name || student.fullName || "",
     gender: student.gender,
     guardianName: student.guardianName,
     guardianPhone: student.guardianPhone,
-    classId: buildClassId(student.classGrade, student.classStream),
+    email: student.email || "",
+    phoneNumber: student.phoneNumber || student.guardianPhone || "",
+    classId:
+      student.classId || buildClassId(student.classGrade, student.classStream),
     classGrade: student.classGrade,
     classStream: student.classStream || "",
     enrolledSubjects: student.enrolledSubjects || [],
@@ -323,6 +354,73 @@ const deriveClasses = (
   );
 };
 
+const mergeClassLists = (apiClasses: any[], derivedClasses: Class[]) => {
+  const derivedById = new Map<string, Class>();
+  const derivedByKey = new Map<string, Class>();
+
+  derivedClasses.forEach((currentClass) => {
+    derivedById.set(String(currentClass.classId || currentClass.id), currentClass);
+    derivedByKey.set(
+      buildClassId(currentClass.grade, currentClass.stream || ""),
+      currentClass,
+    );
+  });
+
+  const merged = (apiClasses || []).map((item) => {
+    const parsed = splitClassName(item.className || item.name);
+    const grade = String(
+      item.grade || item.classGrade || parsed.grade || "",
+    ).trim();
+    const stream = String(
+      item.stream || item.classStream || parsed.classStream || "",
+    ).trim();
+    const fallbackId = buildClassId(grade, stream);
+    const classId = String(item.classId || item.id || fallbackId);
+    const derived =
+      derivedById.get(classId) || derivedByKey.get(buildClassId(grade, stream));
+    const students = Number(item.totalStudents ?? item.students ?? derived?.students ?? 0);
+    const name =
+      item.name ||
+      item.className ||
+      derived?.name ||
+      `Grade ${grade}${stream ? ` ${stream}` : ""}`;
+
+    return {
+      ...(derived || {
+        subjectAssignments: {},
+        subjectSettings: {},
+        offeredSubjectIds: [],
+        droppedSubjectIds: [],
+        compulsorySubjectIds: [],
+        electiveSubjectIds: [],
+      }),
+      ...item,
+      id: classId,
+      classId,
+      className: item.className || name,
+      name,
+      grade,
+      stream,
+      students,
+      totalStudents: students,
+      classTeacherId: item.classTeacherId || derived?.classTeacherId || "",
+      classTeacher: item.classTeacher || null,
+    } as Class;
+  });
+
+  const seenIds = new Set(merged.map((item) => String(item.classId || item.id)));
+  const missingDerivedClasses = derivedClasses
+    .filter((item) => !seenIds.has(String(item.classId || item.id)))
+    .map((item) => ({
+      ...item,
+      classId: item.classId || item.id,
+      className: item.className || item.name,
+      totalStudents: item.totalStudents ?? item.students,
+    }));
+
+  return [...merged, ...missingDerivedClasses];
+};
+
 const emptyStateStyle: React.CSSProperties = {
   minHeight: 220,
   display: "flex",
@@ -368,6 +466,11 @@ const AdminDashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<ApiAssignment[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [classesFound, setClassesFound] = useState<Class[]>([]);
+  const [subjectJointsData, setSubjectJointsData] = useState<subjectJoints[]>(
+    [],
+  );
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
@@ -397,28 +500,43 @@ const AdminDashboard: React.FC = () => {
     window.location.href = "/change-password";
   };
 
-  const { classesFound, classes: derivedClasses } = useClassesData();
-
   const loadDashboardUsers = async () => {
     try {
       setLoading(true);
       setError("");
-      const [response, subjectSettings, graduationSettings] = await Promise.all(
-        [
-          api.get<UsersDashboardResponse>("/users"),
-          api.get<ClassSubjectSetting[]>("/school/class-subjects"),
-          api.get<{ finalGrade: string }>("/users/graduation-settings"),
-        ],
-      );
+      const schoolId = getSchoolId();
+      if (!schoolId) {
+        throw new Error("No school is linked to this account.");
+      }
+      const [response, apiClasses] = await Promise.all([
+        api.get<UsersDashboardResponse>("/users"),
+        request<Class[]>(`/all/classes/${encodeURIComponent(schoolId)}`),
+      ]);
       const mappedStudents = mapStudentsFromApi(response.students);
-      setTeachers(mapStaffToTeachers(response.staff));
+      const mappedTeachers = mapStaffToTeachers(response.staff);
+      const nextSubjects = response.subjects || [];
+      const nextAssignments = response.assignments || [];
+      const nextClassSubjectSettings =
+        (response.subjectJoints || response.assignments || []) as ClassSubjectSetting[];
+      const nextClasses = deriveClasses(
+        mappedStudents,
+        mappedTeachers,
+        nextSubjects,
+        nextAssignments,
+        nextClassSubjectSettings,
+      );
+      const mergedClasses = mergeClassLists(apiClasses || [], nextClasses);
 
+      setTeachers(mappedTeachers);
       setStudents(
         mappedStudents.filter((student) => student.status !== "Completed"),
       );
-      setSubjects(response.subjects || []);
-      setAssignments(response.assignments || []);
-      setClassSubjectSettings(subjectSettings || []);
+      setSubjects(nextSubjects);
+      setAssignments(nextAssignments);
+      setClassSubjectSettings(nextClassSubjectSettings);
+      setSubjectJointsData((response.subjectJoints || []) as subjectJoints[]);
+      setClasses(mergedClasses);
+      setClassesFound(mergedClasses);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to load dashboard data.",
@@ -459,8 +577,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     void loadDashboardUsers();
-    void refreshUser();
-  }, [refreshUser]);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 900);
@@ -985,7 +1102,9 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "classes") {
       return (
         <ClassesTab
+          classes={classesFound}
           teachers={teachers}
+          onRefresh={loadDashboardUsers}
           onUnassignClassTeacher={unassignClassTeacher}
           onBulkTermUpdate={handleBulkTermUpdate}
           onSwitchTab={handleSelectTab}
@@ -1018,7 +1137,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <SubjectsTab
           subjects={subjects}
-          classes={classesFound}
+          classes={classes}
           onSaveSubject={saveSubject}
           onDeleteSubject={deleteSubject}
           showModal={showModal}
@@ -1054,7 +1173,7 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "performance") {
       return (
         <PerformanceTab
-          classes={derivedClasses}
+          classes={classes}
           students={students}
           subjects={subjects}
           avatar={avatar}
@@ -1066,7 +1185,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <TeachersTab
           teachers={teachers}
-          classes={classesFound}
+          classes={classes}
           onSaveTeacher={saveTeacher}
           onDeleteTeacher={deleteTeacher}
           avatar={avatar}
@@ -1085,7 +1204,8 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "assignments") {
       return (
         <AssignmentsTab
-          classes={classesFound}
+          classes={classes}
+          subjects={subjectJointsData}
           teachers={teachers}
           students={students}
           onSaveAssignment={saveAssignment}
@@ -1140,7 +1260,17 @@ const AdminDashboard: React.FC = () => {
       return <ExitedStudentsView onRefresh={loadDashboardUsers} allowDelete />;
     }
 
-    return <OverviewTab onSwitchTab={handleSelectTab} />;
+    return (
+      <OverviewTab
+        classesFound={classesFound}
+        students={students}
+        teachers={teachers}
+        subjects={subjects}
+        assignments={assignments}
+        onSwitchTab={handleSelectTab}
+        onRefresh={loadDashboardUsers}
+      />
+    );
   };
 
   return (

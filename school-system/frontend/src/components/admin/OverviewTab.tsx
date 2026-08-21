@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { Class, Student, Subject, Teacher } from "./types";
 import {
-  useClassesData,
   avatar,
   pill,
   emptyStateStyle,
@@ -10,7 +9,13 @@ import {
 } from "../../lib/adminData";
 
 interface OverviewTabProps {
+  classesFound: Class[];
+  students: Student[];
+  teachers: Teacher[];
+  subjects: Subject[];
+  assignments: Array<{ subjectId: string }>;
   onSwitchTab: (tab: string) => void;
+  onRefresh: () => void | Promise<void>;
 }
 
 const MetricCard: React.FC<{
@@ -34,10 +39,15 @@ const MetricCard: React.FC<{
   </div>
 );
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
-  const { classesFound, students, teachers, subjects, assignments, loading, error, refresh } =
-    useClassesData();
-
+export const OverviewTab: React.FC<OverviewTabProps> = ({
+  classesFound,
+  students,
+  teachers,
+  subjects,
+  assignments,
+  onSwitchTab,
+  onRefresh,
+}) => {
   const unassignedCT = useMemo(
     () => classesFound.filter((currentClass) => !currentClass.classTeacherId).length,
     [classesFound],
@@ -82,15 +92,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
     },
   ];
 
-  if (loading) {
-    return <div style={emptyStateStyle}>Loading overview statistics...</div>;
-  }
-
-  if (error) {
+  if (classesFound.length === 0 && students.length === 0) {
     return (
       <div style={emptyStateStyle}>
-        <p style={{ margin: 0 }}>{error}</p>
-        <button onClick={refresh} style={primaryButtonStyle}>
+        <p style={{ margin: 0 }}>No live class data is available yet.</p>
+        <button onClick={() => void onRefresh()} style={primaryButtonStyle}>
           Retry
         </button>
       </div>
@@ -197,7 +203,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onSwitchTab }) => {
           <p style={sectionLabelStyle}>Class teacher roster</p>
           {classesFound.map((currentClass,i) => {
             const classTeacher = teachers.find(
-              (teacher) => teacher.id === currentClass.classTeacherId,
+              (teacher) =>
+                teacher.id === currentClass.classTeacherId ||
+                teacher.userId === currentClass.classTeacherId,
             );
             return (
               <div

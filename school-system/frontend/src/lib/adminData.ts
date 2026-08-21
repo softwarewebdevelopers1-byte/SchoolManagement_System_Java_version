@@ -45,18 +45,22 @@ export const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
 export const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
   students.map((student) => {
     return {
-      id: student.id,
-      studentFullName: student.studentFullName,
-      studentAdm: student.studentAdm,
+      id: student.id || student.userId || "",
+      userId: student.userId || student.id,
+      studentFullName:
+        student.studentFullName || (student as any).name || (student as any).fullName || "",
+      studentAdm:
+        student.studentAdm || (student as any).admissionNo || (student as any).adm || "",
       email: student.email,
       phoneNumber: student.phoneNumber,
       guardianName: student.guardianName || "",
-      classId: student.classId,
+      classId:
+        student.classId || buildClassId(student.classGrade, student.classStream),
       schoolId: student.schoolId,
       gender: student.gender,
       classGrade: student.classGrade,
       classStream: student.classStream,
-      status: student.status,
+      status: normalizeStatus(student.status),
     };
   });
 
@@ -296,9 +300,8 @@ export interface DashboardStats {
 
 export const fetchStudents = async (): Promise<Student[]> => {
   const response = await api.get<ApiStudent[]>(
-    `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}`,
+    `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}&size=500`,
   );
-  console.log("response ", response);
 
   return mapStudentsFromApi(response || []).filter(
     (student) => student.status !== "Completed",
@@ -479,15 +482,25 @@ export const useClassesData = () => {
         );
         return res;
       };
-      const fetchedStudents = await fetchStudents();
+      const [
+        fetchedStudents,
+        fetchedTeachers,
+        fetchedSubjects,
+        fetchedAssignments,
+        fetchedSettings,
+        fetchedClassesFound,
+      ] = await Promise.all([
+        fetchStudents(),
+        fetchTeachers(),
+        fetchSubjects(),
+        fetchAssignments(),
+        fetchClassSubjectSettings(),
+        classesFound(),
+      ]);
       setStudents(fetchedStudents);
-      const fetchedTeachers = await fetchTeachers();
       setTeachers(fetchedTeachers);
-      const fetchedSubjects = await fetchSubjects();
       setSubjects(fetchedSubjects);
-      const fetchedAssignments = await fetchAssignments();
       setAssignments(fetchedAssignments);
-      const fetchedSettings = await fetchClassSubjectSettings();
       setClassSubjectSettings(fetchedSettings);
       const derivedClasses = deriveClasses(
         fetchedStudents,
@@ -497,8 +510,7 @@ export const useClassesData = () => {
         fetchedSettings,
       );
       setClasses(derivedClasses);
-      setClassesFound(await classesFound());
-      console.log(await classesFound());
+      setClassesFound(fetchedClassesFound);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load data.");
     } finally {

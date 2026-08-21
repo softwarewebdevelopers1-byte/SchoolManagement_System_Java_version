@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { Class } from "./types";
-import { useClassesData } from "../../lib/adminData";
 import { getSchoolId, request } from "../../lib/api";
 
 const miniButtonStyle: React.CSSProperties = {
@@ -386,7 +385,9 @@ const RenameClassModal: React.FC<{
 };
 
 interface ClassesTabProps {
+  classes: Class[];
   teachers: any;
+  onRefresh: () => void | Promise<void>;
   onUnassignClassTeacher: (teacherId: string) => Promise<void>;
   avatar: (name: string, size: number) => string;
   showModal: (content: React.ReactNode) => void;
@@ -401,13 +402,19 @@ interface ClassesTabProps {
 }
 
 export const ClassesTab: React.FC<ClassesTabProps> = ({
+  classes,
+  teachers,
+  onRefresh,
   avatar,
   showModal,
   closeModal,
   showConfirm,
 }) => {
   const [search, setSearch] = useState("");
-  const { teachers, classesFound, refresh } = useClassesData();
+  const classesFound = classes;
+  const refresh = () => {
+    void onRefresh();
+  };
   const openAssignModal = (currentClass: any) => {
     showModal(
       <ClassTeacherModal

@@ -8,6 +8,18 @@ import { buildClassId } from "./subjectEnrollment";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
+const GET_CACHE_TTL_MS = 10_000;
+const getResponseCache = new Map<
+  string,
+  { expiresAt: number; data: unknown }
+>();
+const inflightGetRequests = new Map<string, Promise<unknown>>();
+
+export const invalidateApiCache = () => {
+  getResponseCache.clear();
+  inflightGetRequests.clear();
+};
+
 export const ROLE_PATHS: Record<string, string> = {
   SUPERADMIN: "/superAdmin",
   ADMIN: "/admin",
@@ -149,33 +161,68 @@ export const request = async <T>(
 ): Promise<T> => {
   const target = input.startsWith("http") ? input : `${API_BASE_URL}${input}`;
   const token = getStoredSession()?.token || "";
+  const method = (init?.method || "GET").toUpperCase();
+  const cacheKey = `${token}:${target}`;
 
-  const response = await fetch(target, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers || {}),
-    },
-    ...init,
-  });
+  const execute = async () => {
+    const response = await fetch(target, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers || {}),
+      },
+      ...init,
+    });
 
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
 
-  if (!response.ok) {
-    if (response.status === 401 && !input.includes("/login")) {
-      // Optional: Handle token expiration/unauthorized
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+    if (!response.ok) {
+      if (response.status === 401 && !input.includes("/login")) {
+        // Optional: Handle token expiration/unauthorized
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
+      throw new ApiError(
+        data.message || "Request failed.",
+        response.status,
+        data,
+      );
     }
-    throw new ApiError(
-      data.message || "Request failed.",
-      response.status,
-      data,
-    );
+
+    return unwrapResponse<T>(data);
+  };
+
+  if (method === "GET") {
+    const cached = getResponseCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data as T;
+    }
+
+    const pending = inflightGetRequests.get(cacheKey);
+    if (pending) {
+      return pending as Promise<T>;
+    }
+
+    const promise = execute().then((data) => {
+      getResponseCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + GET_CACHE_TTL_MS,
+      });
+      return data;
+    });
+    inflightGetRequests.set(cacheKey, promise);
+
+    try {
+      return (await promise) as T;
+    } finally {
+      inflightGetRequests.delete(cacheKey);
+    }
   }
 
-  return unwrapResponse<T>(data);
+  const data = await execute();
+  invalidateApiCache();
+  return data;
 };
 
 const splitName = (name = "") => {
@@ -475,6 +522,35 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
   });
 };
 
+const normalizeSubjectJoint = (joint: any) => {
+  const parsed = splitClassName(joint.className);
+  const subjectJointId = joint.subjectJointId || joint.id || joint.subjectId;
+  const subjectType = String(
+    joint.subjectType || joint.enrollmentMode || "COMPULSORY",
+  ).toUpperCase();
+  const subjectTeacherName =
+    joint.subjectTeacherName || joint.teacherName || "";
+
+  return {
+    ...joint,
+    id: subjectJointId,
+    subjectId: subjectJointId,
+    subjectJointId,
+    name: joint.subjectName || joint.name,
+    classGrade: joint.classGrade || parsed.classGrade,
+    classStream: joint.classStream || parsed.classStream,
+    teacherId: joint.subjectTeacherId || joint.teacherId || null,
+    subjectTeacherId: joint.subjectTeacherId || joint.teacherId || null,
+    teacherName: subjectTeacherName,
+    subjectTeacherName,
+    subjectType,
+    enrollmentMode: subjectType === "ELECTIVE" ? "elective" : "compulsory",
+    isOffered: subjectType !== "DROPPED",
+    sharedSlotId: joint.electiveCode || joint.sharedSlotId || null,
+    electiveCode: joint.electiveCode || joint.sharedSlotId || null,
+  };
+};
+
 const composeUsersDashboard = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
@@ -488,12 +564,14 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
     request<any[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
     request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
   ]);
+  const normalizedSubjectJoints = (subjectJoints || []).map(normalizeSubjectJoint);
 
   return {
     students: (students || []).map((student: any) => ({
       id: student.userId || student.id,
-      studentFullName: student.fullName || student.name,
-      studentAdm: student.adm || student.admissionNo,
+      userId: student.userId || student.id,
+      studentFullName: student.studentFullName || student.fullName || student.name,
+      studentAdm: student.studentAdm || student.adm || student.admissionNo,
       email: student.email,
       phoneNumber: student.phoneNumber || "",
       classId:
@@ -507,9 +585,11 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
     })),
     staff: (teachers || []).map((teacher: any) => {
       const roles = normalizeRoles(teacher.roles);
+      const parsedClass = splitClassName(teacher.schoolClass);
       return {
         id: teacher.teacherProfileId || teacher.usersId || teacher.id,
         userId: teacher.usersId,
+        usersId: teacher.usersId,
         email: teacher.email,
         name: `${teacher?.firstName} ${teacher?.lastName}`,
         firstName: teacher.firstName,
@@ -517,9 +597,11 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         roles,
         roleLabel: roles.join(", "),
         status: teacher.status || "Active",
-        classGrade: teacher.schoolClass,
-        classStream: teacher.classStream,
+        classGrade: teacher.classGrade || parsedClass.classGrade,
+        classStream: teacher.classStream || parsedClass.classStream,
+        schoolClass: teacher.schoolClass,
         department: teacher.department || "General",
+        phone: teacher.phoneNumber || "",
         phoneNumber: teacher.phoneNumber || "",
         subjects: teacher.subjects || [],
         teacherNumber: teacher.teacherNumber || "",
@@ -534,19 +616,8 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       name: subject.subjectName || subject.name,
       department: subject.department || "General",
     })),
-    assignments: (subjectJoints || []).map((joint: any) => {
-      const parsed = splitClassName(joint.className);
-      return {
-        id: joint.subjectJointId,
-        subjectId: joint.subjectJointId,
-        teacherId: joint.subjectTeacherId,
-        classGrade: parsed.classGrade,
-        classStream: parsed.classStream,
-        enrollmentMode:
-          joint.subjectType === "ELECTIVE" ? "elective" : "compulsory",
-        sharedSlotId: joint.electiveCode || null,
-      };
-    }),
+    assignments: normalizedSubjectJoints,
+    subjectJoints: normalizedSubjectJoints,
     exitedStudents: [],
   } as T;
 };
@@ -608,12 +679,11 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
   const subjectJoints = await request<any[]>(
     `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
   );
-  const classSubjectSettings = await loadSubjectJoints();
 
   const mappedStudents = (students || []).map((student: any) => ({
     id: student.userId || student.id,
-    admissionNo: student.adm || student.admissionNo,
-    name: student.fullName || student.name,
+    admissionNo: student.studentAdm || student.adm || student.admissionNo,
+    name: student.studentFullName || student.fullName || student.name,
     status: student.status,
     classGrade: student.classGrade,
     classStream: student.classStream,
@@ -623,6 +693,7 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
   }));
   const mappedTeachers = (teachers || []).map((teacher: any) => {
     const roles = normalizeRoles(teacher.roles);
+    const parsedClass = splitClassName(teacher.schoolClass);
     return {
       id: teacher.teacherProfileId || teacher.usersId || teacher.id,
       name:
@@ -630,8 +701,8 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
         teacher.email,
       roles,
       status: teacher.status,
-      classGrade: teacher.schoolClass,
-      classStream: teacher.classStream,
+      classGrade: teacher.classGrade || parsedClass.classGrade,
+      classStream: teacher.classStream || parsedClass.classStream,
       department: teacher.department,
       term: teacher.term,
       year: teacher.year,
@@ -673,7 +744,7 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
       (t) => t.status?.toLowerCase() !== "inactive",
     ).length,
     assignedSubjectsCount: new Set(
-      (subjectJoints || []).map((a: any) => a.subjectId),
+      (subjectJoints || []).map((a: any) => a.subjectJointId || a.subjectId),
     ).size,
   } as T;
 };
