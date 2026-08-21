@@ -1,0 +1,17 @@
+# Exclude build outputs, VCS, secrets, and editor configs
+target/
+build/
+.git/
+.env
+.mvn/
+.gradle/
+.idea/
+.vscode/
+node_modules/
+**/node_modules
+dist/
+tmp/
+*.log
+/.classpath
+/.project
+/*.iml
