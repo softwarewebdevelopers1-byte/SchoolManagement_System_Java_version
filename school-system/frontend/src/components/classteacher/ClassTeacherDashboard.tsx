@@ -366,7 +366,7 @@ export default function ClassTeacherDashboard() {
           <MarksManagement
             students={students}
             subjects={subjects}
-            onRefresh={loadData}
+            // onRefresh={loadData}
             user={currentUser}
           />
         );
@@ -389,7 +389,7 @@ export default function ClassTeacherDashboard() {
           <SubjectJointTab
             subjects={classSubjectCatalog}
             user={currentUser}
-            onRefresh={loadData}
+            // onRefresh={loadData}
           />
         );
       case "elective-enrollment":
@@ -398,7 +398,7 @@ export default function ClassTeacherDashboard() {
             students={students}
             subjects={classSubjectCatalog}
             user={currentUser}
-            onRefresh={loadData}
+            // onRefresh={loadData}
           />
         );
       case "attendance":

@@ -73,7 +73,7 @@ interface DisplaySubjectOption extends Subject {
 interface MarksManagementProps {
   students: any[];
   subjects: any[];
-  onRefresh?: () => void;
+  // onRefresh?: () => void;
   user: any;
 }
 
@@ -126,7 +126,7 @@ const resolveStudentSubjectSelection = (
 export const MarksManagement: React.FC<MarksManagementProps> = ({
   students: rosterStudents,
   subjects,
-  onRefresh,
+  // onRefresh,
   user,
 }) => {
   const marksSubjectStorageKey = useMemo(
@@ -497,7 +497,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       );
 
       setMsg({ text: "Marks saved successfully!", type: "success" });
-      if (onRefresh) onRefresh();
+      // if (onRefresh) onRefresh();
       await loadDetailedMarks();
     } catch (err: any) {
       setMsg({ text: "Failed to save: " + err.message, type: "error" });

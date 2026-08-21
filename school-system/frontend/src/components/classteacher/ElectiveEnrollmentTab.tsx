@@ -9,7 +9,7 @@ interface ElectiveEnrollmentTabProps {
   students: any[];
   subjects: any[]; // classSubjectCatalog (includes isOffered, enrollmentMode)
   user: any;
-  onRefresh: () => void;
+  // onRefresh: () => void;
 }
 
 const buildElectiveGroups = (subjects: any[]) => {
@@ -41,7 +41,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   students,
   subjects,
   user,
-  onRefresh,
+  // onRefresh,
 }) => {
   const [saving, setSaving] = useState<string | null>(null); // subjectId being saved
   const [msg, setMsg] = useState<{
@@ -105,7 +105,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
           : "Student unenrolled.",
         "success",
       );
-      onRefresh();
+      // onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Operation failed.", "error");
     } finally {
@@ -146,7 +146,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
         "success",
       );
       setBulkSelected(new Set());
-      onRefresh();
+      // onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Bulk operation failed.", "error");
     } finally {
