@@ -331,12 +331,11 @@ public class UserUpdate {
     public void bulkEnrollElective(BulkEnrollElectiveDTO dto) {
         SubjectJoint subjectJoint = subjectJointRepo.findById(dto.getSubjectId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
-        for (UUID studentId : dto.getStudentIds()) {
-            StudentProfile student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
+        List<StudentProfile> students = studentRepository.findAllById(dto.getStudentIds());
+        for (StudentProfile student : students) {
             if ("enroll".equalsIgnoreCase(dto.getAction())) {
                 if (!studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(
-                        subjectJoint.getElectiveCode(), studentId)) {
+                        subjectJoint.getElectiveCode(), student.getId())) {
                     com.example.school.system.models.StudentSubjectSelection selection = new com.example.school.system.models.StudentSubjectSelection();
                     selection.setElectiveCode(subjectJoint.getElectiveCode());
                     selection.setStudentProfile(student);
@@ -345,7 +344,7 @@ public class UserUpdate {
                 }
             } else if ("unenroll".equalsIgnoreCase(dto.getAction())) {
                 studentSubjectSelectionRepo.deleteByElectiveCodeAndStudentProfileId(
-                        subjectJoint.getElectiveCode(), studentId);
+                        subjectJoint.getElectiveCode(), student.getId());
             }
         }
     }

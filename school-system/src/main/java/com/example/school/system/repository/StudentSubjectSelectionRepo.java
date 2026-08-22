@@ -3,6 +3,7 @@ package com.example.school.system.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,7 @@ public interface StudentSubjectSelectionRepo extends JpaRepository<StudentSubjec
 
     boolean existsByElectiveCodeAndStudentProfileId(String electiveCode, UUID studentProfileId);
 
+    @EntityGraph(attributePaths = { "studentProfile", "studentProfile.schoolClass" })
     List<StudentSubjectSelection> findAllBySubjectJointId(UUID subjectJointId);
 
     @Query("""

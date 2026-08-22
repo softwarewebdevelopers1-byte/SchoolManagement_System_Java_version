@@ -217,7 +217,7 @@ public class SchoolService {
     }
 
     public GetExamTypeYearAndTerm getTermYearAndExamType(UUID id) {
-        School schoolFound = schoolRepository.findById(id)
+        School schoolFound = schoolRepository.findByIdWithSettings(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
         ExamSettings examSettings = schoolSettings.getExamSettings();

@@ -15,8 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.school.system.error.InvalidTokenExceptionHandler;
-import com.example.school.system.repository.UserRepository;
-import com.example.school.system.types.SchoolStatus;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -28,11 +26,9 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtValidator jwtValidator;
-    private final UserRepository repository;
 
-    public JwtFilter(JwtValidator jwtValidator, UserRepository userRepository) {
+    public JwtFilter(JwtValidator jwtValidator) {
         this.jwtValidator = jwtValidator;
-        this.repository = userRepository;
     }
 
     @Override
@@ -78,9 +74,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 String userId = claims.getSubject();
 
-                if (!repository.existsByIdAndSchoolStatus(UUID.fromString(userId), SchoolStatus.ACTIVE)) {
-                    throw new InvalidTokenExceptionHandler("Unauthorized");
-                }
                 // Extract roles from claims (they already have "ROLE_" prefix)
                 @SuppressWarnings("unchecked")
                 List<String> roles = claims.get("roles", List.class);

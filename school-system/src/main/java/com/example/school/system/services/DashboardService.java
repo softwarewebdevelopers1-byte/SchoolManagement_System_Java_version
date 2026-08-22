@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.DTOResponse.DashboardSummary;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
-import com.example.school.system.models.Users;
 import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SubjectRepository;
@@ -28,27 +28,29 @@ public class DashboardService {
     private final AttendanceSheetRepository attendanceSheetRepository;
     private final TimetableRepository timetableRepository;
 
+    @Transactional(readOnly = true)
     public DashboardSummary summary() {
-        Users user = userRepository.findById(authenticatedUserService.currentUserId())
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("Authenticated user was not found"));
-        if (user.getSchool() == null) {
+        var currentUser = authenticatedUserService.currentUser();
+        UUID schoolId = currentUser.user().getSchoolId();
+        if (schoolId == null) {
             throw new SchoolResourceNotFoundExceptionHandler("Authenticated user is not assigned to a school");
         }
 
-        UUID schoolId = user.getSchool().getId();
-        List<String> roles = user.getRoles().stream().map(Enum::name).sorted().toList();
+        List<String> roles = currentUser.permissions();
+        long studentCount = userRepository.countBySchoolIdAndRolesContaining(schoolId, UserRoles.STUDENT);
+        long teacherCount = userRepository.countBySchoolIdAndRolesNotContaining(schoolId, UserRoles.STUDENT);
+        long classCount = schoolClassRepository.countBySchoolId(schoolId);
+        long subjectCount = subjectRepository.countBySchoolId(schoolId);
+        long attendanceSheetsToday = attendanceSheetRepository.countBySchoolClassSchoolIdAndDate(schoolId, LocalDate.now());
+        boolean hasActiveTimetable = timetableRepository.existsBySchoolId(schoolId);
         return new DashboardSummary(
                 roles,
-                userRepository.findUsersBySchoolIdWithRole(schoolId, UserRoles.STUDENT,
-                        org.springframework.data.domain.Pageable.unpaged()).getTotalElements(),
-                userRepository.findUsersBySchoolWithoutRole(schoolId, UserRoles.STUDENT).size(),
-                schoolClassRepository.findBySchoolId(schoolId).size(),
-                subjectRepository.findAllBySchoolId(schoolId).size(),
-                attendanceSheetRepository.findAll().stream()
-                        .filter(sheet -> sheet.getDate().equals(LocalDate.now()))
-                        .filter(sheet -> sheet.getSchoolClass().getSchool().getId().equals(schoolId))
-                        .count(),
-                !timetableRepository.findAllBySchoolIdOrderByGeneratedAtDesc(schoolId).isEmpty(),
+                studentCount,
+                teacherCount,
+                classCount,
+                subjectCount,
+                attendanceSheetsToday,
+                hasActiveTimetable,
                 LocalDate.now());
     }
 }

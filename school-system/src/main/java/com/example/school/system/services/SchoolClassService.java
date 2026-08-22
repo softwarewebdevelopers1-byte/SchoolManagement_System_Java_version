@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,6 @@ import com.example.school.system.models.Users;
 import com.example.school.system.repository.ClassHistoryRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
-import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.UserRepository;
@@ -45,15 +45,15 @@ public class SchoolClassService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final TeacherProfileRepository teacherProfileRepository;
-    private final SchoolSettingsRepository schoolSettingsRepository;
     private final ClassHistoryRepository classHistoryRepository;
 
     @Transactional
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
         List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId);
+        Map<UUID, Long> studentCounts = studentRepository.countBySchoolIdAsMap(schoolId);
         List<GetAllClassesDTO> allClasses = classes.stream().filter(classFound -> classFound.isCompleted() == false)
                 .map(c -> {
-                    long allStudents = studentRepository.countByschoolClassClassId(c.getClassId());
+                    long allStudents = studentCounts.getOrDefault(c.getClassId(), 0L);
                     return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
                             .stream(c.getClassStream())
                             .className(c.getClassGrade().toString() + " " + c.getClassStream())
@@ -73,7 +73,7 @@ public class SchoolClassService {
 
     @Transactional
     public SchoolApiResponse<?> updateSchoolClassCycle(UUID schoolId) {
-        School schoolFound = schoolRepository.findById(schoolId)
+        School schoolFound = schoolRepository.findByIdWithSettings(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         int currentYear = LocalDate.now().getYear();
         int settingsYear = Integer.parseInt(schoolFound.getSchoolSettings().getAcademicYear());
@@ -82,11 +82,10 @@ public class SchoolClassService {
             throw new SchoolResourceBadInputExceptionHandler(
                     "Cannot update school since we are on current year " + currentYear);
         }
-        String academicYear = schoolSettingsRepository.findBySchoolId(schoolId)
-                .map(s -> s.getAcademicYear())
-                .orElse(String.valueOf(LocalDate.now().getYear()));
+        String academicYear = schoolFound.getSchoolSettings().getAcademicYear();
 
-        List<SchoolClass> classes = schoolFound.getClasses().stream().filter(s -> s.isCompleted() == false).toList();
+        List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId).stream()
+                .filter(s -> s.isCompleted() == false).toList();
         if (!classes.isEmpty()) {
             for (SchoolClass c : classes) {
                 ClassHistory classHistory = new ClassHistory();

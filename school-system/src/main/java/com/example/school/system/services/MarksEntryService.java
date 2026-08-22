@@ -198,18 +198,19 @@ public class MarksEntryService {
             rubricChanged = true;
         }
         int skippedStudentsCount = 0;
+        Map<UUID, MarksRow> existingMarksMap = marksRepo.findAllByMarksSheetId(marksSheet.getId()).stream()
+                .collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
         for (MarkInputDTO input : marksheetSaveRequest.markInputDTOs()) {
             if (!validStudentIds.contains(input.studentId())) {
                 skippedStudentsCount++;
                 continue;
             }
-            MarksRow marks = marksRepo.findByStudentProfileIdAndMarksSheetId(input.studentId(), marksSheet.getId())
-                    .orElseGet(() -> {
-                        MarksRow newMarks = new MarksRow();
-                        newMarks.setMarksSheet(marksSheet);
-                        newMarks.setStudentProfile(studentRepository.getReferenceById(input.studentId()));
-                        return newMarks;
-                    });
+            MarksRow marks = existingMarksMap.get(input.studentId());
+            if (marks == null) {
+                marks = new MarksRow();
+                marks.setMarksSheet(marksSheet);
+                marks.setStudentProfile(studentRepository.getReferenceById(input.studentId()));
+            }
             boolean changed = false;
             if (!Objects.equals(marks.getCat1(), input.cat1())) {
                 marks.setCat1(input.cat1());

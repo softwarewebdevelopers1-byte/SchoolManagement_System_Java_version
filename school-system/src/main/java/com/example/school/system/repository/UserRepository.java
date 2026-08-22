@@ -27,7 +27,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             SELECT u
             FROM Users u
              WHERE u.school.id = :schoolId
-              AND :role MEMBER OF u.roles
+               AND :role MEMBER OF u.roles
             """)
     Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
             Pageable pageable);
@@ -47,6 +47,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
                 WHERE u.school.id = :schoolId
                   AND :role NOT MEMBER OF u.roles AND status!=PENDING_APPROVAL AND status!=REJECTED_INVITE
             """)
+    @EntityGraph(attributePaths = { "teacherProfile", "teacherProfile.schoolClass", "studentProfile", "studentProfile.schoolClass" })
     List<Users> findUsersBySchoolWithoutRole(
             @Param("schoolId") UUID schoolId,
             @Param("role") UserRoles role);
@@ -64,6 +65,24 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     int deleteAllByStatus(AccountStatus status);
 
     int deleteAllByStatusAndDeletedAtBefore(AccountStatus status, Instant deletedAt);
+
+    @Query("""
+            SELECT COUNT(u)
+            FROM Users u
+            WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles
+            """)
+    long countBySchoolIdAndRolesContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
+
+    @Query("""
+            SELECT COUNT(u)
+            FROM Users u
+            WHERE u.school.id = :schoolId
+              AND :role NOT MEMBER OF u.roles
+              AND status != PENDING_APPROVAL
+              AND status != REJECTED_INVITE
+            """)
+    long countBySchoolIdAndRolesNotContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
 
     @Query("""
             SELECT u
