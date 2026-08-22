@@ -91,6 +91,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             """)
     List<Users> findAllStudents();
 
+    @EntityGraph(attributePaths = { "school", "teacherProfile" })
     @Query("""
             SELECT u
             FROM Users u

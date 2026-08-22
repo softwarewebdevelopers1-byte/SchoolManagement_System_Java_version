@@ -65,11 +65,10 @@ public class GetStudentsService {
         }
 
         public List<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
-                if (!schoolRepository.existsById(getAllStudentsDTO.schoolId())) {
-                        throw new SchoolResourceNotFoundExceptionHandler("school not found");
-                }
+                var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
+                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
+                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(school.getId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
@@ -108,11 +107,10 @@ public class GetStudentsService {
         }
 
         public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
-                if (!schoolRepository.existsById(getAllStudentsDTO.schoolId())) {
-                        throw new SchoolResourceNotFoundExceptionHandler("school not found");
-                }
+                var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
+                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
+                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(school.getId(),
                                 UserRoles.STUDENT,
                                 pageable);
 

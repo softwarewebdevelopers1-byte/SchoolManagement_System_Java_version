@@ -14,9 +14,12 @@ public class GetAllSchools {
     private final SchoolRepository schoolRepo;
 
     public List<SchoolDtoRes> getAllSchools() {
-        List<SchoolDtoRes> schools = schoolRepo.findAll().stream().map(s -> {
-            return SchoolDtoRes.builder().schoolId(s.getId()).schoolCode(s.getSchoolCode()).schoolName(s.getSchoolName()).build();
-        }).toList();
-        return schools;
+        return schoolRepo.findAllSchoolSummaries().stream()
+                .map(s -> SchoolDtoRes.builder()
+                        .schoolId(s.id())
+                        .schoolCode(s.schoolCode())
+                        .schoolName(s.schoolName())
+                        .build())
+                .toList();
     }
 }

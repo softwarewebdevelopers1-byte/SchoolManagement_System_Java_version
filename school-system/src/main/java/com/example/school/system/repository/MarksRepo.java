@@ -19,7 +19,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
         Optional<MarksRow> findByStudentProfileIdAndMarksSheetId(
                         @Param("studentId") UUID studentProfileId, @Param("marksSheetId") UUID marksSheetId);
 
-        @EntityGraph(attributePaths = { "studentProfile", "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
+        @EntityGraph(attributePaths = { "StudentProfile", "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
         List<MarksRow> findAllByMarksSheetId(UUID sheetId);
 
         @EntityGraph(attributePaths = { "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })

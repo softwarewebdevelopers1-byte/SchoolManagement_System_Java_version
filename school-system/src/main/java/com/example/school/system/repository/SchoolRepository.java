@@ -28,6 +28,9 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
 
     Optional<School> findByIdAndSchoolNameAndStatus(UUID id, String schoolName,SchoolStatus status);
 
+    @Query("SELECT new com.example.school.system.repository.SchoolSummaryRow(s.id, s.schoolCode, s.schoolName) FROM School s")
+    List<SchoolSummaryRow> findAllSchoolSummaries();
+
     @EntityGraph(attributePaths = { "schoolSettings", "schoolSettings.examSettings" })
     @Query("SELECT s FROM School s WHERE s.id = :id")
     Optional<School> findByIdWithSettings(@Param("id") UUID id);

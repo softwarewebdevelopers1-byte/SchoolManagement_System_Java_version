@@ -29,4 +29,6 @@ public interface AttendanceSheetRepository extends JpaRepository<AttendanceSheet
 
     @EntityGraph(attributePaths = { "attendanceRecords" })
     List<AttendanceSheet> findAllByStatus(WholeAttendanceSheetStatus attendanceSheetStatus);
+
+    long countBySchoolClassSchoolIdAndDate(UUID schoolId, LocalDate date);
 }
