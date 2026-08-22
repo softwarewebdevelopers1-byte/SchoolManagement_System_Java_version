@@ -454,7 +454,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
       currentSubjectMarks.push({
         studentId,
         ...marks,
-      });
+      }); 
       marksByActualSubject.set(actualSubjectId, currentSubjectMarks);
 
       if (hasAnyStoredValue(marks)) {
