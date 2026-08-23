@@ -14,7 +14,7 @@ import com.example.school.system.DTO.DTOResponse.GetStudentByClassDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.StudentSubjectSelection;
-import com.example.school.system.models.Users;
+import com.example.school.system.projection.StudentsLoaded;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
@@ -68,84 +68,52 @@ public class GetStudentsService {
                 var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(school.getId(),
+                Page<StudentsLoaded> allStudents = userRepository.findLiveStudentsBySchoolIdWithRole(school.getId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
-                return allStudents.stream()
-                                .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted() == false)
-                                .map(s -> {
-                                        StudentProfile studentProfile = s.getStudentProfile();
-                                        return GetAllStudentsDTORes.builder()
-                                                        .studentFullName(studentProfile.getStudentFullName())
-                                                        .guardianName(
-                                                                        studentProfile.getGuardianName() != null
-                                                                                        ? studentProfile.getGuardianName()
-                                                                                        : null)
-                                                        .gender(studentProfile.getGender())
-                                                        .studentAdm(studentProfile.getStudentAdm())
-                                                        .phoneNumber(
-                                                                        studentProfile.getPhoneNumber() != null
-                                                                                        ? studentProfile.getPhoneNumber()
-                                                                                        : null)
-                                                        .status(s.getStatus()).userId(s.getId())
-                                                        .email(s.getEmail())
-                                                        .classGrade(s.getStudentProfile().getSchoolClass() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassGrade().toString()
-                                                                        : null)
-                                                        .classStream(s.getStudentProfile().getSchoolClass() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassStream()
-                                                                        : null)
-                                                        .classId(s.getStudentProfile() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassId().toString()
-                                                                        : null)
-                                                        .build();
-                                }).toList();
+                return allStudents.stream().map(s -> {
+                        return GetAllStudentsDTORes.builder()
+                                        .studentFullName(s.getFullName())
+                                        .guardianName(
+                                                        s.getGuardianName())
+                                        .gender(s.getGender())
+                                        .studentAdm(s.getAdm())
+                                        .phoneNumber(
+                                                        s.getPhoneNumber())
+                                        .status(s.getStatus()).userId(s.getUserId())
+                                        .email(s.getEmail())
+                                        .classGrade(s.getClassGrade().toString())
+                                        .classStream(s.getClassStream())
+                                        .classId(null)
+                                        .build();
+                }).toList();
         }
 
         public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
                 var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<Users> allStudents = userRepository.findUsersBySchoolIdWithRole(school.getId(),
+                Page<StudentsLoaded> allStudents = userRepository.findExitedStudentsBySchoolIdWithRole(school.getId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
-                return allStudents.stream()
-                                .filter(student -> student.getStudentProfile().getSchoolClass().isCompleted())
-                                .map(s -> {
-                                        StudentProfile studentProfile = s.getStudentProfile();
-                                        return GetAllStudentsDTORes.builder()
-                                                        .studentFullName(studentProfile.getStudentFullName())
-                                                        .guardianName(
-                                                                        studentProfile.getGuardianName() != null
-                                                                                        ? studentProfile.getGuardianName()
-                                                                                        : null)
-                                                        .gender(studentProfile.getGender())
-                                                        .studentAdm(studentProfile.getStudentAdm())
-                                                        .phoneNumber(
-                                                                        studentProfile.getPhoneNumber() != null
-                                                                                        ? studentProfile.getPhoneNumber()
-                                                                                        : null)
-                                                        .status(s.getStatus()).userId(s.getId())
-                                                        .email(s.getEmail())
-                                                        .classGrade(s.getStudentProfile().getSchoolClass() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassGrade().toString()
-                                                                        : null)
-                                                        .classStream(s.getStudentProfile().getSchoolClass() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassStream()
-                                                                        : null)
-                                                        .classId(s.getStudentProfile() != null
-                                                                        ? s.getStudentProfile().getSchoolClass()
-                                                                                        .getClassId().toString()
-                                                                        : null)
-                                                        .build();
-                                }).toList();
+                return allStudents.stream().map(s -> {
+                        return GetAllStudentsDTORes.builder()
+                                        .studentFullName(s.getFullName())
+                                        .guardianName(
+                                                        s.getGuardianName())
+                                        .gender(s.getGender())
+                                        .studentAdm(s.getAdm())
+                                        .phoneNumber(
+                                                        s.getPhoneNumber())
+                                        .status(s.getStatus()).userId(s.getUserId())
+                                        .email(s.getEmail())
+                                        .classGrade(s.getClassGrade().toString())
+                                        .classStream(s.getClassStream())
+                                        .classId(null)
+                                        .build();
+                }).toList();
         }
 
 }

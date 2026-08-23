@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.Users;
 import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginView;
+import com.example.school.system.projection.StudentsLoaded;
 import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
@@ -24,16 +25,27 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
 
     boolean existsByEmailAndStatus(String email, AccountStatus status);
+    
+    @Query("""
+             SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.classGrade as classGrade, c.classStream as classStream
+            FROM Users u
+            LEFT JOIN u.studentProfile sp
+            LEFT JOIN sp.schoolClass c
+            WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles AND c.completed  = false
+            """)
+    Page<StudentsLoaded> findLiveStudentsBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
+            Pageable pageable);
 
     @Query("""
-            SELECT u
+            SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.classGrade as classGrade, c.classStream as classStream
             FROM Users u
-            LEFT JOIN FETCH u.studentProfile studentProfile
-            LEFT JOIN FETCH studentProfile.schoolClass
+            LEFT JOIN u.studentProfile sp
+            LEFT JOIN sp.schoolClass c
             WHERE u.school.id = :schoolId
-              AND :role MEMBER OF u.roles
+              AND :role MEMBER OF u.roles AND c.completed = true
             """)
-    Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
+    Page<StudentsLoaded> findExitedStudentsBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
             Pageable pageable);
 
     @Query("""
@@ -53,7 +65,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByIdAndEmail(UUID id, String email);
 
     List<Users> findAllBySchoolId(UUID id);
-    
+
     @Query("""
                 SELECT u.id as userId, u.email as email, u.status as status,  r as roles, c.classStream as classStream,c.classGrade as classGrade, tp.firstName as firstName, tp.lastName as lastName, tp.phoneNumber as phoneNumber, tp.id as teacherId
                 FROM Users u
