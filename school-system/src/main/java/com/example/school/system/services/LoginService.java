@@ -2,19 +2,17 @@ package com.example.school.system.services;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.DTO.DTOResponse.AuthMapperDto;
 import com.example.school.system.DTO.DTOResponse.LoginResponse;
-import com.example.school.system.models.Users;
+import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginView;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -30,14 +28,16 @@ public class LoginService {
     @Transactional(readOnly = true)
     public LoginResponse LoginUser(LoginUserDTO user) {
         String message = "Invalid email or password";
-        LoginView userFound = userRepository.findByEmail(user.email())
+        CredentialsView credentials = userRepository.findCredentialsByEmail(user.email())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
-        AccountStatus userStatus = userFound.getStatus();
 
-        if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
+        if (!passwordHashing.PasswordEncoder().matches(user.password(), credentials.getPassword())) {
             throw new SchoolResourceNotFoundExceptionHandler(message);
 
         }
+        LoginView userFound = userRepository.findByUserId(credentials.getUserId())
+            .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
+        AccountStatus userStatus = userFound.getStatus();
         if (userFound.getSchoolStatus() != SchoolStatus.ACTIVE) {
             throw new SchoolResourceLockedExceptionHandler("school is " + userFound.getSchoolStatus().toString().toLowerCase());
         }

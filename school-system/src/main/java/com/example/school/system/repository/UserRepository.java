@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginView;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
@@ -33,14 +34,16 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
   Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
       Pageable pageable);
 
-  @Query("""
-      SELECT u.id as userId,u.email as email, tp.id as teacherId,r as roles,tp.firstName as firstName ,tp.lastName as lastName ,tp.schoolClass.classId as classId ,tp.schoolClass.classGrade as classGrade,tp.schoolClass.classStream as classStream, u.school.id as schoolId,u.school.schoolSettings.examSettings.examType as examType,u.school.schoolSettings.academicYear as academicYear,u.school.schoolSettings.currentSchoolTerm as currentSchoolTerm, u.password as password, u.school.status as schoolStatus,u.status as status FROM Users u LEFT JOIN u.teacherProfile tp LEFT JOIN u.roles r WHERE u.email = :email
-                      """)
-  Optional<LoginView> findByEmail(@Param("email") String email);
+    @Query("""
+      SELECT u.id as userId, u.email as email, u.password as password
+      FROM Users u
+      WHERE u.email = :email
+      """)
+    Optional<CredentialsView> findCredentialsByEmail(@Param("email") String email);
 
-  @Query("""
-      SELECT u.id as userId,u.email as email, tp.id as teacherId,r as roles,tp.firstName as firstName ,tp.lastName as lastName ,tp.schoolClass.classId as classId ,tp.schoolClass.classGrade as classGrade,tp.schoolClass.classStream as classStream, u.school.id as schoolId,u.school.schoolSettings.examSettings.examType as examType,u.school.schoolSettings.academicYear as academicYear,u.school.schoolSettings.currentSchoolTerm as currentSchoolTerm, u.password as password, u.school.status as schoolStatus,u.status as status FROM Users u LEFT JOIN u.teacherProfile tp INNER JOIN u.roles r WHERE u.email = :email
-                      """)
+    @EntityGraph(attributePaths = { "roles", "teacherProfile", "teacherProfile.schoolClass", "school",
+      "school.schoolSettings", "school.schoolSettings.examSettings" })
+    @Query("SELECT u FROM Users u WHERE u.id = :id")
   Optional<LoginView> findByUserId(@Param("id") UUID id);
 
   Optional<Users> findByEmailAndStatus(String email, String status);

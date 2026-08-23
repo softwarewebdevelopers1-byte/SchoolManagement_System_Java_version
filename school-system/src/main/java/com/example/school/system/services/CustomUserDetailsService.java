@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginView;
 import com.example.school.system.repository.UserRepository;
 
@@ -19,8 +20,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        LoginView user = repository.findByEmail(username)
+        CredentialsView credentials = repository.findCredentialsByEmail(username)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
+        LoginView user = repository.findByUserId(credentials.getUserId())
+            .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("User not found"));
         String[] userRoles = user.getRoles().stream().map(role -> role.name()).toArray(String[]::new);
         return User.builder().username(user.getEmail()).password(user.getPassword()).roles(userRoles).build();
     }
