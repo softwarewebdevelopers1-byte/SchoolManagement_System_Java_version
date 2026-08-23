@@ -19,6 +19,7 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
@@ -44,28 +45,26 @@ public class TeachersService {
 
     public List<?> getTeachers(UUID id, String authHeader) {
         tokenIssuedValidator(id, authHeader);
-        List<Users> users = userRepository.findUsersBySchoolWithoutRole(id, UserRoles.STUDENT);
+        List<TeachersLoaded> users = userRepository.findUsersBySchoolWithoutRole(id, UserRoles.STUDENT);
         return users.stream().map(user -> {
             GetTeachersDTO teachersDTO = new GetTeachersDTO();
             teachersDTO.setEmail(user.getEmail());
             teachersDTO.setStatus(user.getStatus());
             teachersDTO.setRoles(user.getRoles());
-            teachersDTO.setUsersId(user.getId());
-            TeacherProfile profile = user.getTeacherProfile();
-            if (profile != null) {
+            teachersDTO.setUsersId(user.getUserId());
+            if (user.getTeacherId() != null) {
                 StringBuilder userClass = new StringBuilder();
-                var teacherClass = profile.getSchoolClass();
-                if (teacherClass != null) {
-                    userClass.append(teacherClass.getClassGrade());
+                if (user.getClassGrade() != null) {
+                    userClass.append(user.getClassGrade());
                     userClass.append(" ");
-                    userClass.append(teacherClass.getClassStream());
+                    userClass.append(user.getClassStream());
 
                     teachersDTO.setSchoolClass(userClass.toString());
                 }
-                teachersDTO.setTeacherProfileId(profile.getId());
-                teachersDTO.setFirstName(profile.getFirstName());
-                teachersDTO.setLastName(profile.getLastName());
-                teachersDTO.setPhoneNumber(profile.getPhoneNumber());
+                teachersDTO.setTeacherProfileId(user.getTeacherId());
+                teachersDTO.setFirstName(user.getFirstName());
+                teachersDTO.setLastName(user.getLastName());
+                teachersDTO.setPhoneNumber(user.getPhoneNumber());
             }
             return teachersDTO;
 

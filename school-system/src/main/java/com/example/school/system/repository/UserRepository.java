@@ -13,105 +13,106 @@ import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.Users;
 import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginView;
+import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
 
 public interface UserRepository extends JpaRepository<Users, UUID> {
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
+    boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
 
-  boolean existsByEmailAndStatus(String email, AccountStatus status);
-
-  @Query("""
-      SELECT u
-      FROM Users u
-      LEFT JOIN FETCH u.studentProfile studentProfile
-      LEFT JOIN FETCH studentProfile.schoolClass
-      WHERE u.school.id = :schoolId
-        AND :role MEMBER OF u.roles
-      """)
-  Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
-      Pageable pageable);
+    boolean existsByEmailAndStatus(String email, AccountStatus status);
 
     @Query("""
-      SELECT u.id as userId, u.email as email, u.password as password
-      FROM Users u
-      WHERE u.email = :email
-      """)
+            SELECT u
+            FROM Users u
+            LEFT JOIN FETCH u.studentProfile studentProfile
+            LEFT JOIN FETCH studentProfile.schoolClass
+            WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles
+            """)
+    Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
+            Pageable pageable);
+
+    @Query("""
+            SELECT u.id as userId, u.email as email, u.password as password
+            FROM Users u
+            WHERE u.email = :email
+            """)
     Optional<CredentialsView> findCredentialsByEmail(@Param("email") String email);
 
     @EntityGraph(attributePaths = { "roles", "teacherProfile", "teacherProfile.schoolClass", "school",
-      "school.schoolSettings", "school.schoolSettings.examSettings" })
+            "school.schoolSettings", "school.schoolSettings.examSettings" })
     @Query("SELECT u FROM Users u WHERE u.id = :id")
-  Optional<LoginView> findByUserId(@Param("id") UUID id);
+    Optional<LoginView> findByUserId(@Param("id") UUID id);
 
-  Optional<Users> findByEmailAndStatus(String email, String status);
+    Optional<Users> findByEmailAndStatus(String email, String status);
 
-  Optional<Users> findByIdAndEmail(UUID id, String email);
+    Optional<Users> findByIdAndEmail(UUID id, String email);
 
-  List<Users> findAllBySchoolId(UUID id);
+    List<Users> findAllBySchoolId(UUID id);
+    
+    @Query("""
+                SELECT u.id as userId, u.email as email, u.status as status,  r as roles, c.classStream as classStream,c.classGrade as classGrade, tp.firstName as firstName, tp.lastName as lastName, tp.phoneNumber as phoneNumber, tp.id as teacherId
+                FROM Users u
+                LEFT JOIN u.roles r
+                LEFT JOIN u.teacherProfile tp
+                LEFT JOIN tp.schoolClass c
+                WHERE u.school.id = :schoolId
+                  AND :role NOT MEMBER OF u.roles
+                  AND u.status != PENDING_APPROVAL
+                  AND u.status != REJECTED_INVITE
+            """)
+    List<TeachersLoaded> findUsersBySchoolWithoutRole(
+            @Param("schoolId") UUID schoolId,
+            @Param("role") UserRoles role);
 
-  @Query("""
-          SELECT DISTINCT u
-          FROM Users u
-          LEFT JOIN FETCH u.roles
-          LEFT JOIN FETCH u.teacherProfile teacherProfile
-          LEFT JOIN FETCH teacherProfile.schoolClass
-          WHERE u.school.id = :schoolId
-            AND :role NOT MEMBER OF u.roles
-            AND u.status != PENDING_APPROVAL
-            AND u.status != REJECTED_INVITE
-      """)
-  List<Users> findUsersBySchoolWithoutRole(
-      @Param("schoolId") UUID schoolId,
-      @Param("role") UserRoles role);
+    Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
 
-  Optional<Users> findByIdAndRolesContaining(UUID id, UserRoles role);
+    @Query("""
+                SELECT u
+                FROM Users u
+                WHERE u.school.id = :schoolId
+                   AND status=PENDING_APPROVAL
+            """)
+    List<Users> findBySchoolIdGetPendingInvites(@Param("schoolId") UUID schoolId);
 
-  @Query("""
-          SELECT u
-          FROM Users u
-          WHERE u.school.id = :schoolId
-             AND status=PENDING_APPROVAL
-      """)
-  List<Users> findBySchoolIdGetPendingInvites(@Param("schoolId") UUID schoolId);
+    int deleteAllByStatus(AccountStatus status);
 
-  int deleteAllByStatus(AccountStatus status);
+    int deleteAllByStatusAndDeletedAtBefore(AccountStatus status, Instant deletedAt);
 
-  int deleteAllByStatusAndDeletedAtBefore(AccountStatus status, Instant deletedAt);
+    @Query("""
+            SELECT COUNT(u)
+            FROM Users u
+            WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles
+            """)
+    long countBySchoolIdAndRolesContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
 
-  @Query("""
-      SELECT COUNT(u)
-      FROM Users u
-      WHERE u.school.id = :schoolId
-        AND :role MEMBER OF u.roles
-      """)
-  long countBySchoolIdAndRolesContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
+    @Query("""
+            SELECT COUNT(u)
+            FROM Users u
+            WHERE u.school.id = :schoolId
+              AND :role NOT MEMBER OF u.roles
+              AND status != PENDING_APPROVAL
+              AND status != REJECTED_INVITE
+            """)
+    long countBySchoolIdAndRolesNotContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
 
-  @Query("""
-      SELECT COUNT(u)
-      FROM Users u
-      WHERE u.school.id = :schoolId
-        AND :role NOT MEMBER OF u.roles
-        AND status != PENDING_APPROVAL
-        AND status != REJECTED_INVITE
-      """)
-  long countBySchoolIdAndRolesNotContaining(@Param("schoolId") UUID schoolId, @Param("role") UserRoles role);
+    @Query("""
+            SELECT u
+            FROM Users u
+              WHERE 'STUDENT' MEMBER OF u.roles
+            """)
+    List<Users> findAllStudents();
 
-  @Query("""
-      SELECT u
-      FROM Users u
-        WHERE 'STUDENT' MEMBER OF u.roles
-      """)
-  List<Users> findAllStudents();
-
-  @EntityGraph(attributePaths = { "school", "teacherProfile" })
-  @Query("""
-      SELECT u
-      FROM Users u
-       WHERE :role NOT MEMBER OF u.roles
-      """)
-  List<Users> findAllTeachers(@Param("role") UserRoles exceptedRole, Pageable pageable);
+    @EntityGraph(attributePaths = { "school", "teacherProfile" })
+    @Query("""
+            SELECT u
+            FROM Users u
+             WHERE :role NOT MEMBER OF u.roles
+            """)
+    List<Users> findAllTeachers(@Param("role") UserRoles exceptedRole, Pageable pageable);
 }

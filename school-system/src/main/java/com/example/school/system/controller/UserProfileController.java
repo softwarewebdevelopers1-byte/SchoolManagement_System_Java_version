@@ -83,7 +83,7 @@ public class UserProfileController {
     public ResponseEntity<?> updateGraduationSettings(@RequestBody Map<String, String> payload) {
         return ResponseEntity.ok(SchoolApiResponse.success(Map.of("finalGrade", payload.get("finalGrade")), "graduation settings updated"));
     }
-
+    
     @PostMapping("/users/bulk-enroll-elective")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     public ResponseEntity<?> bulkEnrollElective(@RequestBody Map<String, Object> payload) {
