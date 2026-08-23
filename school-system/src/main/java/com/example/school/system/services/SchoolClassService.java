@@ -49,7 +49,7 @@ public class SchoolClassService {
 
     @Transactional
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
-        List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId);
+        List<SchoolClass> classes = schoolClassRepository.findAllBySchoolIdWithTeacherAndStudents(schoolId);
         Map<UUID, Long> studentCounts = studentRepository.countBySchoolIdAsMap(schoolId);
         List<GetAllClassesDTO> allClasses = classes.stream().filter(classFound -> classFound.isCompleted() == false)
                 .map(c -> {
@@ -84,7 +84,7 @@ public class SchoolClassService {
         }
         String academicYear = schoolFound.getSchoolSettings().getAcademicYear();
 
-        List<SchoolClass> classes = schoolClassRepository.findBySchoolId(schoolId).stream()
+        List<SchoolClass> classes = schoolClassRepository.findAllBySchoolIdWithTeacherAndStudents(schoolId).stream()
                 .filter(s -> s.isCompleted() == false).toList();
         if (!classes.isEmpty()) {
             for (SchoolClass c : classes) {

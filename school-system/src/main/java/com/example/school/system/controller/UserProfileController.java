@@ -59,7 +59,7 @@ public class UserProfileController {
             return ResponseEntity.ok(SchoolApiResponse.success(List.of(), "class students loaded"));
         }
         // Find classId by grade and stream
-        var classes = schoolClassRepository.findBySchoolId(schoolId).stream()
+        var classes = schoolClassRepository.findAllBySchoolIdWithTeacherAndStudents(schoolId).stream()
                 .filter(c -> String.valueOf(c.getClassGrade()).equals(grade))
                 .filter(c -> c.getClassStream().equalsIgnoreCase(stream))
                 .toList();

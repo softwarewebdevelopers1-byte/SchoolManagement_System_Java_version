@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.Subject;
 
 public interface SubjectRepository extends JpaRepository<Subject, UUID> {
@@ -12,7 +14,13 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
 
     Optional<Subject> findBySubjectNameAndSchoolId(String subjectName, UUID schoolId);
 
-    List<Subject> findAllBySchoolId(UUID schoolId);
+        @Query("""
+            SELECT s
+            FROM Subject s
+            LEFT JOIN FETCH s.school
+            WHERE s.school.id = :schoolId
+            """)
+        List<Subject> findAllBySchoolIdWithSchool(@Param("schoolId") UUID schoolId);
 
     Optional<Subject> findByIdAndSchoolId(UUID id, UUID schoolId);
 

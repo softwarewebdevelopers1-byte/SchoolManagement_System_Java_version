@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.StudentProfile;
 
 public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
@@ -23,6 +24,15 @@ public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
 
     @EntityGraph(attributePaths = { "studentSubjectSelections", "studentSubjectSelections.subjectJoint", "student", "schoolClass" })
     List<StudentProfile> findAllBySchoolClassClassId(UUID classId);
+
+        @Query("""
+            SELECT sp
+            FROM StudentProfile sp
+            LEFT JOIN FETCH sp.student
+            LEFT JOIN FETCH sp.schoolClass
+            WHERE sp.schoolClass.school.id = :schoolId
+            """)
+        List<StudentProfile> findAllBySchoolIdWithAccountAndClass(@Param("schoolId") UUID schoolId);
 
     long countByschoolClassClassId(UUID classId);
 

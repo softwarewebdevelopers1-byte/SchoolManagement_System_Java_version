@@ -173,7 +173,7 @@ public class SubjectService {
     public SchoolApiResponse<?> getSubjects(UUID schoolId) {
         schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
-        List<Subject> subjects = subjectRepository.findAllBySchoolId(schoolId);
+        List<Subject> subjects = subjectRepository.findAllBySchoolIdWithSchool(schoolId);
         List<GetSubjectsDTORes> subjectsDTORes = toSubjectsDTORes(subjects);
         return SchoolApiResponse.success(subjectsDTORes, "subjects loaded successfully");
     }

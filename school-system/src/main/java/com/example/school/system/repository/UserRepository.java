@@ -24,12 +24,13 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
 
   boolean existsByEmailAndStatus(String email, AccountStatus status);
 
-  @EntityGraph(attributePaths = { "studentProfile", "studentProfile.schoolClass" })
   @Query("""
       SELECT u
       FROM Users u
-       WHERE u.school.id = :schoolId
-         AND :role MEMBER OF u.roles
+      LEFT JOIN FETCH u.studentProfile studentProfile
+      LEFT JOIN FETCH studentProfile.schoolClass
+      WHERE u.school.id = :schoolId
+        AND :role MEMBER OF u.roles
       """)
   Page<Users> findUsersBySchoolIdWithRole(@Param("schoolId") UUID id, @Param("role") UserRoles role,
       Pageable pageable);
@@ -53,13 +54,16 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
   List<Users> findAllBySchoolId(UUID id);
 
   @Query("""
-          SELECT u
+          SELECT DISTINCT u
           FROM Users u
+          LEFT JOIN FETCH u.roles
+          LEFT JOIN FETCH u.teacherProfile teacherProfile
+          LEFT JOIN FETCH teacherProfile.schoolClass
           WHERE u.school.id = :schoolId
-            AND :role NOT MEMBER OF u.roles AND status!=PENDING_APPROVAL AND status!=REJECTED_INVITE
+            AND :role NOT MEMBER OF u.roles
+            AND u.status != PENDING_APPROVAL
+            AND u.status != REJECTED_INVITE
       """)
-  @EntityGraph(attributePaths = { "teacherProfile", "teacherProfile.schoolClass", "studentProfile",
-      "studentProfile.schoolClass" })
   List<Users> findUsersBySchoolWithoutRole(
       @Param("schoolId") UUID schoolId,
       @Param("role") UserRoles role);
