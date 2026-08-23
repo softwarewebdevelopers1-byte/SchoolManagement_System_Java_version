@@ -1,46 +1,42 @@
 package com.example.school.system.DTO.DTOResponse;
 
 import org.springframework.stereotype.Service;
-
+import com.example.school.system.projection.LoginView;
 import com.example.school.system.DTO.ClassDto;
 import com.example.school.system.DTO.TeacherProfileDto;
 import com.example.school.system.DTO.UserDto;
-import com.example.school.system.models.SchoolClass;
-import com.example.school.system.models.TeacherProfile;
-import com.example.school.system.models.Users;
 
 @Service
 public class AuthMapperDto {
-    public LoginResponse toLoginResponse(String token, Users user) {
+    public LoginResponse toLoginResponse(String token, LoginView user,String email) {
         return new LoginResponse(token, toUserDto(user));
     }
 
-    public UserDto toUserDto(Users user) {
-        return UserDto.builder().term(user.getSchool().getSchoolSettings().getCurrentSchoolTerm().toString())
-                .year(user.getSchool().getSchoolSettings().getAcademicYear())
-                .examType(user.getSchool().getSchoolSettings().getExamSettings().getExamType())
-                .userId(user.getId()).email(user.getEmail()).roles(user.getRoles())
-                .schoolId(user.getSchool().getId())
-                .classGrade(user.getTeacherProfile() != null && user.getTeacherProfile().getSchoolClass() != null
-                        ? user.getTeacherProfile().getSchoolClass().getClassGrade().toString()
-                        : null)
-                .classStream(user.getTeacherProfile() != null && user.getTeacherProfile().getSchoolClass() != null
-                        ? user.getTeacherProfile().getSchoolClass().getClassStream()
-                        : null)
-                .teacherProfileDto(
-                        user.getTeacherProfile() == null ? null : toTeacherProfileDto(user.getTeacherProfile()))
+    public UserDto toUserDto(LoginView user) {
+        return UserDto.builder().term(user.getCurrentSchoolTerm().toString())
+                .year(user.getAcademicYear())
+                .examType(user.getExamType())
+                .userId(user.getUserId()).email(user.getEmail()).roles(user.getRoles())
+                .schoolId(user.getSchoolId())
+                .classGrade(user.getClassGrade().toString())
+                .classStream(user.getClassStream())
+                .teacherProfileDto(TeacherProfileDto.builder().firstName(user.getFirstName())
+                        .lastName(user.getLastName()).teacherProfileId(user.getTeacherId())
+                        .classDto(ClassDto.builder().id(user.getClassId()).stream(user.getClassStream())
+                                .classGrade(user.getClassGrade()).build())
+                        .build())
                 .build();
     }
 
-    private TeacherProfileDto toTeacherProfileDto(TeacherProfile teacherProfile) {
-        return TeacherProfileDto.builder().firstName(teacherProfile.getFirstName())
-                .lastName(teacherProfile.getLastName())
-                .classDto(teacherProfile.getSchoolClass() != null ? toClassDto(teacherProfile.getSchoolClass()) : null)
-                .teacherProfileId(teacherProfile.getTeacher() != null ? teacherProfile.getId() : null)
-                .build();
-    }
+    // private TeacherProfileDto toTeacherProfileDto(TeacherProfile teacherProfile) {
+    //     return TeacherProfileDto.builder().firstName(teacherProfile.getFirstName())
+    //             .lastName(teacherProfile.getLastName())
+    //             .classDto(teacherProfile.getSchoolClass() != null ? toClassDto(teacherProfile.getSchoolClass()) : null)
+    //             .teacherProfileId(teacherProfile.getTeacher() != null ? teacherProfile.getId() : null)
+    //             .build();
+    // }
 
-    private ClassDto toClassDto(SchoolClass schoolClass) {
-        return new ClassDto(schoolClass.getClassId(), schoolClass.getClassStream(), schoolClass.getClassGrade());
-    }
+    // private ClassDto toClassDto(SchoolClass schoolClass) {
+    //     return new ClassDto(schoolClass.getClassId(), schoolClass.getClassStream(), schoolClass.getClassGrade());
+    // }
 }

@@ -8,14 +8,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
 import com.example.school.system.models.ExpiryLinks;
-import com.example.school.system.models.Users;
+import com.example.school.system.projection.LoginView;
 
 public interface ExpiryLinksRepository extends JpaRepository<ExpiryLinks, UUID> {
     Optional<ExpiryLinks> findByToken(String token);
 
     Optional<ExpiryLinks> findByTokenAndUsed(String token, boolean value);
 
-    int deleteByUsers(Users user);
+    int deleteByUsers(LoginView user);
 
     @Modifying
     int deleteAllByExpirationTimeBeforeOrUsedTrue(LocalDateTime expTime);

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.LoginView;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -47,17 +48,17 @@ public class JwtCreationService {
                 .compact();
     }
 
-    public String GenerateToken(Users users) {
+    public String GenerateToken(LoginView userFound) {
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + expiration);
 
         // Convert roles to Strings with "ROLE_" prefix
-        List<String> rolesWithPrefix = users.getRoles().stream()
+        List<String> rolesWithPrefix = userFound.getRoles().stream()
                 .map(role -> "ROLE_" + role.name().toUpperCase()) // ← ADD THIS!
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .subject(users.getId().toString()).claim("school", users.getSchool().getId())
+                .subject(userFound.getUserId().toString()).claim("school", userFound.getSchoolId())
                 .claim("roles", rolesWithPrefix) // Now has "ROLE_ADMIN", "ROLE_USER"
                 .issuedAt(now)
                 .expiration(expirationDate)

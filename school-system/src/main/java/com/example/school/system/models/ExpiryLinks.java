@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.hibernate.annotations.BatchSize;
 
+import com.example.school.system.projection.LoginView;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.Column;
@@ -36,8 +37,7 @@ public class ExpiryLinks {
     @Column(name = "expiration")
     LocalDateTime expirationTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    Users users;
+    UUID users;
 
     @PrePersist
     private void generateId() {
