@@ -412,6 +412,25 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     });
   };
 
+  const handleImportMarks = (
+    subjectId: string,
+    imported: Record<string, Record<string, string | null>>,
+  ) => {
+    setMarksData((previous) => ({
+      ...previous,
+      [subjectId]: {
+        ...(previous[subjectId] || {}),
+        ...Object.fromEntries(
+          Object.entries(imported).map(([studentId, marks]) => [
+            studentId,
+            { ...(previous[subjectId]?.[studentId] || createEmptyMarks()), ...marks },
+          ]),
+        ),
+      },
+    }));
+    setMsg({ text: "Excel marks loaded. Review and save the subject marks.", type: "success" });
+  };
+
   const handleSaveMarks = async (subjectId: string, catConfigs?: any) => {
     const currentSubject = displaySubjects.find(
       (subject) => subject.id === subjectId,
@@ -561,6 +580,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         onSubjectChange={handleSubjectChange}
         onMarkUpdate={handleMarkUpdate}
         onSaveMarks={handleSaveMarks}
+        onImportMarks={handleImportMarks}
         onConfigUpdate={handleConfigUpdate}
         onRemoveCat={handleRemoveCat}
         avatar={avatar}

@@ -1,6 +1,7 @@
 package com.example.school.system.repository;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.Users;
 import com.example.school.system.projection.CredentialsView;
+import com.example.school.system.projection.LoginData;
 import com.example.school.system.projection.LoginView;
 import com.example.school.system.projection.StudentsLoaded;
 import com.example.school.system.projection.TeachersLoaded;
@@ -55,10 +57,31 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             """)
     Optional<CredentialsView> findCredentialsByEmail(@Param("email") String email);
 
-    @EntityGraph(attributePaths = { "roles", "teacherProfile", "teacherProfile.schoolClass", "school",
-            "school.schoolSettings", "school.schoolSettings.examSettings" })
-    @Query("SELECT u FROM Users u WHERE u.id = :id")
-    Optional<LoginView> findByUserId(@Param("id") UUID id);
+        @Query("""
+                        SELECT new com.example.school.system.projection.LoginData(
+                                u.id, u.email, tp.id, tp.firstName, tp.lastName,
+                                c.classId, c.classStream, c.classGrade, s.id,
+                                es.examType, ss.academicYear, ss.currentSchoolTerm,
+                                s.status, u.password, u.status)
+                        FROM Users u
+                        LEFT JOIN u.teacherProfile tp
+                        LEFT JOIN tp.schoolClass c
+                        LEFT JOIN u.school s
+                        LEFT JOIN s.schoolSettings ss
+                        LEFT JOIN ss.examSettings es
+                        WHERE u.id = :id
+                        """)
+        Optional<LoginData> findLoginDataById(@Param("id") UUID id);
+
+        @Query("SELECT r FROM Users u JOIN u.roles r WHERE u.id = :id")
+        List<UserRoles> findRolesByUserId(@Param("id") UUID id);
+
+        default Optional<LoginView> findByUserId(UUID id) {
+                return findLoginDataById(id).map(loginData -> {
+                        loginData.setRoles(new HashSet<>(findRolesByUserId(id)));
+                        return loginData;
+                });
+        }
 
     Optional<Users> findByEmailAndStatus(String email, String status);
 

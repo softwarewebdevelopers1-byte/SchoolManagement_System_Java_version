@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import styles from "./MarksEntry.module.css";
 import { Subject, Student, MarksData } from "../subjectteacher/types";
 import { formatSubjectOfferingTag } from "../../lib/subjectEnrollment";
@@ -27,6 +28,10 @@ interface MarksEntryProps {
   onSaveMarks: (
     subjectId: string,
     catConfigs?: Record<string, number | string | null>,
+  ) => void;
+  onImportMarks?: (
+    subjectId: string,
+    marks: Record<string, Record<string, string | null>>,
   ) => void;
   onPushMarks?: (subjectId: string) => void;
   onConfigUpdate?: (
@@ -98,6 +103,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
   onSubjectChange,
   onMarkUpdate,
   onSaveMarks,
+  onImportMarks,
   onPushMarks,
   onConfigUpdate,
   onRemoveCat,
@@ -247,6 +253,51 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
 
     setCatConfigs((previous) => ({ ...previous, [key]: nextValue }));
     onConfigUpdate?.(activeSubjectId, key, nextValue);
+  };
+
+  const importMarks = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !onImportMarks) return;
+
+    const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: "",
+    });
+    const normalize = (value: unknown) =>
+      String(value ?? "").trim().toLowerCase().replace(/\s+/g, "");
+    const studentByKey = new Map<string, Student>();
+    students.forEach((student) => {
+      studentByKey.set(normalize(student.id), student);
+      studentByKey.set(normalize(student.adm), student);
+    });
+    const imported: Record<string, Record<string, string | null>> = {};
+    const invalidRows: number[] = [];
+    rows.forEach((row, index) => {
+      const values = Object.fromEntries(
+        Object.entries(row).map(([key, value]) => [normalize(key), value]),
+      );
+      const student = studentByKey.get(
+        normalize(values.studentid || values.studentadm || values.adm || values.admissionno),
+      );
+      if (!student) {
+        invalidRows.push(index + 2);
+        return;
+      }
+      const rowMarks: Record<string, string | null> = {};
+      ["cat1", "cat2", "cat3", "cat4", "cat5", "exam"].forEach((key) => {
+        const value = values[key];
+        rowMarks[key] = value === "" || value === undefined ? null : String(value);
+      });
+      imported[student.id] = rowMarks;
+    });
+    if (!rows.length) return;
+    if (invalidRows.length) {
+      window.alert(`No matching student for Excel row(s): ${invalidRows.join(", ")}`);
+      return;
+    }
+    onImportMarks(activeSubjectId, imported);
   };
 
   return (
@@ -425,6 +476,17 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
             >
               Save Progress
             </button>
+            {onImportMarks && (
+              <label className={styles.btnGhost} style={{ cursor: "pointer" }}>
+                Upload Excel
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={importMarks}
+                  style={{ display: "none" }}
+                />
+              </label>
+            )}
           </div>
         </div>
 

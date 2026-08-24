@@ -103,6 +103,7 @@ export interface MarksTabProps {
   onConfigUpdate?: (subjectId: string, key: string, value: number | string | null) => void;
   onRemoveCat?: (subjectId: string, catIndex: number) => void;
   onSaveMarks: (subjectId: string, catConfigs?: any) => void;
+  onImportMarks?: (subjectId: string, marks: Record<string, Record<string, string | null>>) => void;
   onPushMarks: (subjectId: string) => void;
   avatar: (name: string, size: number) => string;
   term?: number;

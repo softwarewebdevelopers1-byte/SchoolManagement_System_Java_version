@@ -13,12 +13,14 @@ public class AuthMapperDto {
     }
 
     public UserDto toUserDto(LoginView user) {
-        return UserDto.builder().term(user.getCurrentSchoolTerm().toString())
-                .year(user.getAcademicYear())
+        String term = user.getCurrentSchoolTerm() != null ? user.getCurrentSchoolTerm().toString() : "1";
+        String year = user.getAcademicYear() != null ? user.getAcademicYear() : String.valueOf(java.time.Year.now().getValue());
+        return UserDto.builder().term(term)
+                .year(year)
                 .examType(user.getExamType())
                 .userId(user.getUserId()).email(user.getEmail()).roles(user.getRoles())
                 .schoolId(user.getSchoolId())
-                .classGrade(user.getClassGrade().toString())
+            .classGrade(user.getClassGrade() != null ? user.getClassGrade().toString() : null)
                 .classStream(user.getClassStream())
                 .teacherProfileDto(TeacherProfileDto.builder().firstName(user.getFirstName())
                         .lastName(user.getLastName()).teacherProfileId(user.getTeacherId())

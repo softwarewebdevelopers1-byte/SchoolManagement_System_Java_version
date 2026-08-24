@@ -7,6 +7,7 @@ export const MarksTab: React.FC<MarksTabProps> = ({
   onConfigUpdate, 
   onRemoveCat, 
   onSaveMarks, 
+  onImportMarks,
   ...props 
 }) => {
   return (
@@ -15,6 +16,7 @@ export const MarksTab: React.FC<MarksTabProps> = ({
       onConfigUpdate={onConfigUpdate}
       onRemoveCat={onRemoveCat}
       onSaveMarks={onSaveMarks}
+      onImportMarks={onImportMarks}
       mode="subject"
     />
   );

@@ -231,6 +231,8 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   showConfirm,
 }) => {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
 
   const openSubjectModal = (subject?: Subject) => {
     showModal(
@@ -261,6 +263,16 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
       subject.department.toLowerCase().includes(query)
     );
   });
+  const totalPages = Math.max(1, Math.ceil(filteredSubjects.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedSubjects = filteredSubjects.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const getUsageCount = (subjectId: string) =>
     classes?.reduce(
@@ -324,7 +336,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
             </tr>
           </thead>
           <tbody>
-            {filteredSubjects.map((subject) => {
+            {pagedSubjects.map((subject) => {
               const usageCount = getUsageCount(subject.id);
               return (
                 <tr
@@ -410,6 +422,42 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
           </tbody>
         </table>
       </div>
+      {filteredSubjects.length > pageSize && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
+          >
+            Page {currentPage} of {totalPages} | {filteredSubjects.length} subjects
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={secondaryButtonStyle}
+              disabled={currentPage <= 1}
+              onClick={() => setPage((previous) => Math.max(1, previous - 1))}
+            >
+              Previous
+            </button>
+            <button
+              style={secondaryButtonStyle}
+              disabled={currentPage >= totalPages}
+              onClick={() =>
+                setPage((previous) => Math.min(totalPages, previous + 1))
+              }
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

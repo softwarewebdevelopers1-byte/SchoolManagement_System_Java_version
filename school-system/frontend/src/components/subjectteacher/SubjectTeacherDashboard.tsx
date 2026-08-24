@@ -435,6 +435,28 @@ const SubjectTeacherDashboard: React.FC = () => {
     });
   };
 
+  const handleImportMarks = useCallback(
+    (
+      subjectId: string,
+      imported: Record<string, Record<string, string | null>>,
+    ) => {
+      setMarksData((previous) => ({
+        ...previous,
+        [subjectId]: {
+          ...(previous[subjectId] || {}),
+          ...Object.fromEntries(
+            Object.entries(imported).map(([studentId, marks]) => [
+              studentId,
+              { ...(previous[subjectId]?.[studentId] || {}), ...marks },
+            ]),
+          ),
+        },
+      }));
+      setMsg({ text: "Excel marks loaded. Review and save the subject marks.", type: "success" });
+    },
+    [],
+  );
+
   const handleSaveMarks = useCallback(
     async (assignmentId: string, catConfigs?: any) => {
       const currentSubject = subjects.find((s) => s.id === assignmentId);
@@ -609,6 +631,7 @@ const SubjectTeacherDashboard: React.FC = () => {
             onSaveMarks={handleSaveMarks}
             onConfigUpdate={handleConfigUpdate}
             onRemoveCat={handleRemoveCat}
+            onImportMarks={handleImportMarks}
             onPushMarks={handlePushMarks}
             avatar={avatar}
             term={term}

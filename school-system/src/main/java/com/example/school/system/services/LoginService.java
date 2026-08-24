@@ -13,6 +13,7 @@ import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
+import com.example.school.system.types.UserRoles;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,7 +39,8 @@ public class LoginService {
         LoginView userFound = userRepository.findByUserId(credentials.getUserId())
             .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
         AccountStatus userStatus = userFound.getStatus();
-        if (userFound.getSchoolStatus() != SchoolStatus.ACTIVE) {
+        boolean isSuperAdmin = userFound.getRoles() != null && userFound.getRoles().contains(UserRoles.SUPERADMIN);
+        if (!isSuperAdmin && userFound.getSchoolStatus() != SchoolStatus.ACTIVE) {
             throw new SchoolResourceLockedExceptionHandler("school is " + userFound.getSchoolStatus().toString().toLowerCase());
         }
         StringBuilder statusSender = new StringBuilder();

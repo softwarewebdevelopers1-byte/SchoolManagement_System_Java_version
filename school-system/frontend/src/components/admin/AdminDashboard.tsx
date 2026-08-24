@@ -408,17 +408,7 @@ const mergeClassLists = (apiClasses: any[], derivedClasses: Class[]) => {
     } as Class;
   });
 
-  const seenIds = new Set(merged.map((item) => String(item.classId || item.id)));
-  const missingDerivedClasses = derivedClasses
-    .filter((item) => !seenIds.has(String(item.classId || item.id)))
-    .map((item) => ({
-      ...item,
-      classId: item.classId || item.id,
-      className: item.className || item.name,
-      totalStudents: item.totalStudents ?? item.students,
-    }));
-
-  return [...merged, ...missingDerivedClasses];
+  return merged;
 };
 
 const emptyStateStyle: React.CSSProperties = {

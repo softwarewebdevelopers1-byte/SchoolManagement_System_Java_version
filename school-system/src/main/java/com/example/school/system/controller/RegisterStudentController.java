@@ -1,5 +1,6 @@
 package com.example.school.system.controller;
 
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,12 @@ public class RegisterStudentController {
     @PostMapping("/register/students")
     public ResponseEntity<?> SchoolReg(@Valid @RequestBody RegisterStudentDTO registerStudentDTO) {
         var res = studentRegistrationService.registerStudent(registerStudentDTO);
+        return ResponseEntity.status(201).body(res);
+    }
+
+    @PostMapping("/register/students/bulk")
+    public ResponseEntity<?> bulkSchoolReg(@RequestBody List<RegisterStudentDTO> students) {
+        var res = studentRegistrationService.registerStudents(students);
         return ResponseEntity.status(201).body(res);
     }
 }

@@ -55,6 +55,6 @@ public class SchoolsController {
     @PostMapping("/approve/school")
     public ResponseEntity<?> approveSchool(@Valid @RequestBody ApproveSchoolDto approval) {
         var res = schoolAcceptance.acceptSchool(approval.schoolId(), approval.schoolName(), approval.schoolStatus());
-        return ResponseEntity.status(0).body(res);
+        return ResponseEntity.status(200).body(res);
     }
 }

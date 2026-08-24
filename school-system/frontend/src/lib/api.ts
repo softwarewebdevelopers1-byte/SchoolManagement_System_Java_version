@@ -37,6 +37,7 @@ const PATH_TO_ROLE: Record<string, string> = {
   "/classTeacher": "CLASSTEACHER",
   "/subjectTeacher": "SUBJECTTEACHER",
   "/students": "STUDENT",
+  "/superAdmin": "SUPERADMIN",
 };
 
 export const getSchoolId = (): string | null => {
@@ -977,6 +978,28 @@ export const api = {
     }
     return request<T>(path, {
       method: "DELETE",
+    });
+  },
+};
+
+export const superAdminApi = {
+  getSchools: async (): Promise<any> => {
+    return request<any>("/superadmin/schools");
+  },
+  updateSchoolStatus: async (schoolId: string, status: string): Promise<any> => {
+    return request<any>(`/superadmin/schools/${encodeURIComponent(schoolId)}/status?status=${encodeURIComponent(status)}`, {
+      method: "PATCH",
+    });
+  },
+  getUsers: async (): Promise<any> => {
+    return request<any>("/superadmin/users");
+  },
+  getTeachers: async (): Promise<any> => {
+    return request<any>("/superadmin/users/teachers");
+  },
+  updateUserStatus: async (userId: string, status: string): Promise<any> => {
+    return request<any>(`/superadmin/users/${encodeURIComponent(userId)}/status?status=${encodeURIComponent(status)}`, {
+      method: "PATCH",
     });
   },
 };

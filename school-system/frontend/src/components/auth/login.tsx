@@ -156,6 +156,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [profileSession, setProfileSession] = useState<any | null>(null);
   const [profileFirstName, setProfileFirstName] = useState("");
   const [profileLastName, setProfileLastName] = useState("");
+  const [isSuperAdminLogin, setIsSuperAdminLogin] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50);
@@ -390,7 +391,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <div className={styles.formContainer}>
             {/* Header */}
             <div className={styles.formHeader}>
-              <p className={styles.formSubtitle}>Portal Access</p>
+              <p className={styles.formSubtitle}>
+                {isSuperAdminLogin ? "Super Admin Portal" : "Portal Access"}
+              </p>
               <button
                 type="button"
                 className={styles.authModeButton}
@@ -403,10 +406,31 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               <h2 className={styles.formTitle}>
                 {profileSession
                   ? "Complete teacher profile"
-                  : authMode === "login"
-                    ? "Sign in to your account"
-                    : "Create teacher account"}
+                  : isSuperAdminLogin
+                    ? "Super Admin Sign In"
+                    : authMode === "login"
+                      ? "Sign in to your account"
+                      : "Create teacher account"}
               </h2>
+              {!profileSession && (
+                <button
+                  type="button"
+                  className={styles.authModeButton}
+                  onClick={() => {
+                    setIsSuperAdminLogin(!isSuperAdminLogin);
+                    setError("");
+                    setNotice(null);
+                  }}
+                  style={{
+                    marginTop: 8,
+                    background: isSuperAdminLogin ? "var(--edu-green)" : "transparent",
+                    color: isSuperAdminLogin ? "#fff" : "var(--edu-green)",
+                    border: "1px solid var(--edu-green)",
+                  }}
+                >
+                  {isSuperAdminLogin ? "Switch to School Login" : "Switch to Super Admin Login"}
+                </button>
+              )}
             </div>
 
             {/* Form */}

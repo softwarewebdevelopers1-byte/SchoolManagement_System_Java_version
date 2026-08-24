@@ -1,6 +1,7 @@
 package com.example.school.system.services;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -96,6 +97,17 @@ public class StudentRegistrationService {
         log.info("student registered {} ", studentProfile.getStudentAdm().toString());
         studentProfileRepository.save(studentProfile);
         return SchoolApiResponse.success("student registered successfully");
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> registerStudents(List<RegisterStudentDTO> students) {
+        if (students == null || students.isEmpty()) {
+            throw new IllegalArgumentException("At least one student is required");
+        }
+        for (RegisterStudentDTO student : students) {
+            registerStudent(student);
+        }
+        return SchoolApiResponse.success(students.size() + " students registered successfully");
     }
 
     private String generateUniqueEmail() {
