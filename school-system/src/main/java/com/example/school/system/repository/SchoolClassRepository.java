@@ -35,7 +35,7 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
             WHERE c.school.id = :schoolId
             """)
         List<SchoolClass> findAllBySchoolIdWithTeacherAndStudents(@Param("schoolId") UUID schoolId);
-
+        
          @Query("""
             SELECT DISTINCT c.classGrade as classGrade, c.classStream as classStream, ta.id as userId,t.firstName as firstName, t.lastName as lastName,c.classId as classId
             FROM SchoolClass c

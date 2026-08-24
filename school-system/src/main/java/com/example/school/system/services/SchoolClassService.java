@@ -47,7 +47,7 @@ public class SchoolClassService {
     private final TeacherProfileRepository teacherProfileRepository;
     private final ClassHistoryRepository classHistoryRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
         List<GetAllClasses> classes = schoolClassRepository.findAllProjectionBySchoolIdWithTeacherAndStudents(schoolId);
         // Map<UUID, Long> studentCounts =
@@ -69,7 +69,7 @@ public class SchoolClassService {
                 }).toList();
         return SchoolApiResponse.success(allClasses, "all classes loaded");
     }
-    
+
     @Transactional
     public SchoolApiResponse<?> updateSchoolClassCycle(UUID schoolId) {
         School schoolFound = schoolRepository.findByIdWithSettings(schoolId)

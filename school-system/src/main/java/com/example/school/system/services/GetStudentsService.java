@@ -62,9 +62,11 @@ public class GetStudentsService {
                 }).toList();
         }
 
+        @Transactional(readOnly = true)
         public List<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size);
-                Page<StudentsLoaded> allStudents = userRepository.findLiveStudentsBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
+                Page<StudentsLoaded> allStudents = userRepository.findLiveStudentsBySchoolIdWithRole(
+                                getAllStudentsDTO.schoolId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
@@ -86,9 +88,11 @@ public class GetStudentsService {
                 }).toList();
         }
 
+        @Transactional(readOnly = true)
         public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size);
-                Page<StudentsLoaded> allStudents = userRepository.findExitedStudentsBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
+                Page<StudentsLoaded> allStudents = userRepository.findExitedStudentsBySchoolIdWithRole(
+                                getAllStudentsDTO.schoolId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
