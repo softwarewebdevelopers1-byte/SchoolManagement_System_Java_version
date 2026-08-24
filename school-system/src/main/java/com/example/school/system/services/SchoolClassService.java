@@ -2,7 +2,6 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -24,6 +23,7 @@ import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.GetAllClasses;
 import com.example.school.system.repository.ClassHistoryRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
@@ -49,28 +49,27 @@ public class SchoolClassService {
 
     @Transactional
     public SchoolApiResponse<?> getAllClasses(UUID schoolId) {
-        List<SchoolClass> classes = schoolClassRepository.findAllBySchoolIdWithTeacherAndStudents(schoolId);
-        Map<UUID, Long> studentCounts = studentRepository.countBySchoolIdAsMap(schoolId);
-        List<GetAllClassesDTO> allClasses = classes.stream().filter(classFound -> classFound.isCompleted() == false)
+        List<GetAllClasses> classes = schoolClassRepository.findAllProjectionBySchoolIdWithTeacherAndStudents(schoolId);
+        // Map<UUID, Long> studentCounts =
+        // studentRepository.countBySchoolIdAsMap(schoolId);
+        List<GetAllClassesDTO> allClasses = classes.stream()
                 .map(c -> {
-                    long allStudents = studentCounts.getOrDefault(c.getClassId(), 0L);
+                    // long allStudents = studentCounts.getOrDefault(c.getClassId(), 0L);
                     return GetAllClassesDTO.builder().classId(c.getClassId()).grade(c.getClassGrade().toString())
                             .stream(c.getClassStream())
                             .className(c.getClassGrade().toString() + " " + c.getClassStream())
                             // teacher user id is the one passed not teacherProfileId
                             .classTeacherId(
-                                    c.getTeacher() != null && c.getTeacher().getTeacher() != null
-                                            ? c.getTeacher().getTeacher().getId()
-                                            : null)
+                                    c.getUserId())
                             .classTeacher(
-                                    c.getTeacher() != null
-                                            ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
+                                    c.getUserId() != null
+                                            ? c.getFirstName() + " " + c.getLastName()
                                             : null)
-                            .totalStudents(allStudents).build();
+                            .totalStudents(0).build();
                 }).toList();
         return SchoolApiResponse.success(allClasses, "all classes loaded");
     }
-
+    
     @Transactional
     public SchoolApiResponse<?> updateSchoolClassCycle(UUID schoolId) {
         School schoolFound = schoolRepository.findByIdWithSettings(schoolId)
