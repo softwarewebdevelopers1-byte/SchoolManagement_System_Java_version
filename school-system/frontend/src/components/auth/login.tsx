@@ -170,14 +170,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response: any = await api.post("/login", {
+      const response: any = await api.post(
+        isSuperAdminLogin ? "/superadmin/login" : "/login",
+        {
         email: loginIdentifier.trim(),
         password,
-      });
+        },
+      );
 
-      const user = normalizeUser(response.user);
+      const user = isSuperAdminLogin
+        ? normalizeUser({
+            userId: response.user?.userId,
+            email: loginIdentifier.trim(),
+            roles: ["SUPERADMIN"],
+          })
+        : normalizeUser(response.user);
       const session = { ...response, user };
       localStorage.setItem("user", JSON.stringify(session));
+
+      if (isSuperAdminLogin) {
+        window.location.href = "/edunex-org/superAdmin";
+        return;
+      }
 
       const roles = normalizeRoles(user.roles);
       const isTeacher =

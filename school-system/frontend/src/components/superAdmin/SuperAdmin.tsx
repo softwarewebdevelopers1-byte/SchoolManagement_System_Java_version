@@ -16,6 +16,7 @@ import {
   FileText,
 } from "lucide-react";
 import "./SuperAdmin.css";
+import { api } from "../../lib/api";
 
 type SchoolStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
 type UserStatus = "ACTIVE" | "SUSPENDED";
@@ -66,43 +67,9 @@ export default function SuperAdminDashboard() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", schoolId: "" });
 
-  const [schools, setSchools] = useState<School[]>([
-    {
-      id: "1",
-      name: "St. Mary's High",
-      county: "Nairobi",
-      students: 0,
-      status: "PENDING",
-      plan: "Trial",
-    },
-    {
-      id: "2",
-      name: "Athi River Academy",
-      county: "Machakos",
-      students: 1200,
-      status: "ACTIVE",
-      plan: "Pro",
-    },
-  ]);
+  const [schools, setSchools] = useState<School[]>([]);
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "Jane Doe",
-      email: "jane@stmarys.ac.ke",
-      role: "SCHOOL_ADMIN",
-      school: "St. Mary's High",
-      status: "ACTIVE",
-    },
-    {
-      id: "2",
-      name: "Peter Kim",
-      email: "peter@athiriver.ac.ke",
-      role: "TEACHER",
-      school: "Athi River Academy",
-      status: "ACTIVE",
-    },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [audit, setAudit] = useState<AuditLog[]>([
@@ -113,6 +80,36 @@ export default function SuperAdminDashboard() {
       at: new Date(),
     },
   ]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [schoolData, userData] = await Promise.all([
+          api.get<any[]>("/superadmin/schools"),
+          api.get<any[]>("/superadmin/users/teachers"),
+        ]);
+        setSchools((schoolData || []).map((school) => ({
+          id: school.schoolId,
+          name: school.schoolName,
+          county: school.address || "-",
+          students: school.totalUsers || 0,
+          status: school.status === "ACTIVE" ? "ACTIVE" : school.status === "SUSPENDED" ? "SUSPENDED" : school.status === "REJECTED" ? "REJECTED" : "PENDING",
+          plan: "-",
+        })));
+        setUsers((userData || []).map((user) => ({
+          id: user.userId,
+          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email,
+          email: user.email,
+          role: (user.roles || []).join(", "),
+          school: user.schoolName,
+          status: user.status === "SUSPENDED" ? "SUSPENDED" : "ACTIVE",
+        })));
+      } catch (error) {
+        logAction(error instanceof Error ? error.message : "Unable to load super-admin data");
+      }
+    };
+    void loadData();
+  }, []);
 
   const logAction = (action: string) => {
     setAudit((prev) => [
@@ -133,20 +130,24 @@ export default function SuperAdminDashboard() {
     logAction(`${status} user ${users.find((u) => u.id === id)?.name}`);
   };
 
-  const handleSendInvite = (e: React.FormEvent) => {
+  const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newInvite: AdminInvite = {
-      id: Date.now().toString(),
-      email: inviteForm.email,
-      school: schools.find((s) => s.id === inviteForm.schoolId)?.name || "",
-      token: crypto.randomUUID(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      used: false,
-    };
-    setInvites((prev) => [newInvite, ...prev]);
-    logAction(`Sent admin invite to ${inviteForm.email}`);
-    setInviteForm({ email: "", schoolId: "" });
-    setShowInviteModal(false);
+    try {
+      const invite = await api.post<any>("/superadmin/invites", inviteForm);
+      setInvites((prev) => [{
+        id: invite.id,
+        email: invite.email,
+        school: invite.schoolName,
+        token: invite.token,
+        expiresAt: new Date(invite.expiresAt),
+        used: invite.used,
+      }, ...prev]);
+      logAction(`Generated admin invite for ${invite.email}`);
+      setInviteForm({ email: "", schoolId: "" });
+      setShowInviteModal(false);
+    } catch (error) {
+      logAction(error instanceof Error ? error.message : "Unable to generate invite");
+    }
   };
 
   const renderContent = () => {
@@ -336,7 +337,7 @@ export default function SuperAdminDashboard() {
                     <td>{i.school}</td>
                     <td>
                       <code>
-                        edunex.co.ke/register?token={i.token.slice(0, 8)}...
+                        {window.location.origin}/register/school?token={i.token}
                       </code>
                     </td>
                     <td>{i.expiresAt.toLocaleDateString()}</td>

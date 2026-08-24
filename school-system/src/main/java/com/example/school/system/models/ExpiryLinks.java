@@ -37,6 +37,7 @@ public class ExpiryLinks {
     @Column(name = "expiration")
     LocalDateTime expirationTime;
 
+    @Column(name = "users_id")
     UUID users;
 
     @PrePersist

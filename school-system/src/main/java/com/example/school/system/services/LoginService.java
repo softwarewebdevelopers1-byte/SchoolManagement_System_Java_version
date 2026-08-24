@@ -36,6 +36,9 @@ public class LoginService {
             throw new SchoolResourceNotFoundExceptionHandler(message);
 
         }
+        if (userRepository.findRolesByUserId(credentials.getUserId()).contains(UserRoles.SUPERADMIN)) {
+            throw new SchoolResourceLockedExceptionHandler("Use the super-admin login endpoint");
+        }
         LoginView userFound = userRepository.findByUserId(credentials.getUserId())
             .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
         AccountStatus userStatus = userFound.getStatus();

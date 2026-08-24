@@ -23,6 +23,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const saved = localStorage.getItem("user");
+  if (!saved) return <Navigate to="/login" replace />;
+  try {
+    const session = JSON.parse(saved);
+    const roles = normalizeRoles(session.user?.roles || session.roles);
+    return roles.includes("SUPERADMIN") ? <>{children}</> : <Navigate to="/login" replace />;
+  } catch {
+    return <Navigate to="/login" replace />;
+  }
+};
+
 const DashboardSelector = () => {
   const saved = localStorage.getItem("user");
   if (!saved) return <Navigate to="/login" replace />;
@@ -140,7 +152,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/edunex-org/superAdmin" element={<SuperAdminDashboard />} />
+        <Route
+          path="/edunex-org/superAdmin"
+          element={
+            <SuperAdminRoute>
+              <SuperAdminDashboard />
+            </SuperAdminRoute>
+          }
+        />
         <Route path="/" element={<LandingPage />} />
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />

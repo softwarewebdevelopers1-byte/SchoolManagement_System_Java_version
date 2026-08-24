@@ -15,6 +15,9 @@ public interface ExpiryLinksRepository extends JpaRepository<ExpiryLinks, UUID> 
 
     Optional<ExpiryLinks> findByTokenAndUsed(String token, boolean value);
 
+        Optional<ExpiryLinks> findByTokenAndUsedAndExpirationTimeAfter(String token, boolean used,
+            LocalDateTime now);
+
     int deleteByUsers(LoginView user);
 
     @Modifying

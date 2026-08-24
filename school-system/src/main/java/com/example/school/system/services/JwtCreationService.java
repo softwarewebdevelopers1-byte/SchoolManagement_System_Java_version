@@ -2,6 +2,8 @@ package com.example.school.system.services;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import com.example.school.system.models.Users;
 import com.example.school.system.projection.LoginView;
+import com.example.school.system.types.UserRoles;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -44,6 +47,18 @@ public class JwtCreationService {
                 .claim("roles", rolesWithPrefix) // Now has "ROLE_ADMIN", "ROLE_USER"
                 .issuedAt(now)
                 .expiration(expirationDate)
+                .signWith(secretKeyBuilder(secret))
+                .compact();
+    }
+
+    public String GenerateSuperAdminToken(UUID userId, Set<UserRoles> roles) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("scope", "SUPERADMIN")
+                .claim("roles", roles.stream().map(role -> "ROLE_" + role.name()).toList())
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + expiration))
                 .signWith(secretKeyBuilder(secret))
                 .compact();
     }

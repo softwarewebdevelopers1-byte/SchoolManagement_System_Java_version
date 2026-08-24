@@ -29,6 +29,8 @@ public class RequestFilter {
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/login/**").permitAll().requestMatchers("/api/reset/password/token**")
                         .permitAll()
+                        .requestMatchers("/api/superadmin/login").permitAll()
+                        .requestMatchers("/api/superadmin/invites/**").permitAll()
                         .requestMatchers("/api/auth/teacher/create-account").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
