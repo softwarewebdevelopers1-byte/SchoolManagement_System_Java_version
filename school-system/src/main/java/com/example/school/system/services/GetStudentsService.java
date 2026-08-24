@@ -16,7 +16,6 @@ import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.StudentSubjectSelection;
 import com.example.school.system.projection.StudentsLoaded;
 import com.example.school.system.repository.SchoolClassRepository;
-import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.Gender;
@@ -32,7 +31,6 @@ public class GetStudentsService {
         private final SchoolClassRepository schoolClassRepository;
         private final StudentRepository studentProfileRepo;
         private final UserRepository userRepository;
-        private final SchoolRepository schoolRepository;
 
         @Transactional
         public List<?> getStudentByClass(GetStudentsOfSpecificClass schoolClassDTO, int page, int size) {
@@ -65,10 +63,8 @@ public class GetStudentsService {
         }
 
         public List<?> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
-                var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<StudentsLoaded> allStudents = userRepository.findLiveStudentsBySchoolIdWithRole(school.getId(),
+                Page<StudentsLoaded> allStudents = userRepository.findLiveStudentsBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
                                 UserRoles.STUDENT,
                                 pageable);
 
@@ -91,10 +87,8 @@ public class GetStudentsService {
         }
 
         public List<?> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
-                var school = schoolRepository.findById(getAllStudentsDTO.schoolId())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
                 Pageable pageable = PageRequest.of(page, size);
-                Page<StudentsLoaded> allStudents = userRepository.findExitedStudentsBySchoolIdWithRole(school.getId(),
+                Page<StudentsLoaded> allStudents = userRepository.findExitedStudentsBySchoolIdWithRole(getAllStudentsDTO.schoolId(),
                                 UserRoles.STUDENT,
                                 pageable);
 

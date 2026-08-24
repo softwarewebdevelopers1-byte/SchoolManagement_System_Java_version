@@ -4,21 +4,20 @@ import {
   X,
   School,
   Users,
-  Link,
   BarChart3,
   Settings,
   LogOut,
   CheckCircle,
   XCircle,
   Pause,
-  Send,
   Shield,
   FileText,
+  Loader2,
 } from "lucide-react";
 import "./SuperAdmin.css";
-import { api } from "../../lib/api";
+import { superAdminApi } from "../../lib/api";
 
-type SchoolStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
+type SchoolStatus = "ACTIVE" | "SUSPENDED" | "PENDING" | "REJECTED";
 type UserStatus = "ACTIVE" | "SUSPENDED";
 
 interface School {
@@ -37,14 +36,6 @@ interface User {
   school: string;
   status: UserStatus;
 }
-interface AdminInvite {
-  id: string;
-  email: string;
-  school: string;
-  token: string;
-  expiresAt: Date;
-  used: boolean;
-}
 interface AuditLog {
   id: string;
   action: string;
@@ -56,7 +47,6 @@ const menuItems = [
   { key: "overview", name: "Overview", icon: BarChart3 },
   { key: "schools", name: "Schools", icon: School },
   { key: "users", name: "Users", icon: Users },
-  { key: "invites", name: "Admin Invites", icon: Link },
   { key: "audit", name: "Audit Log", icon: FileText },
   { key: "settings", name: "Settings", icon: Settings },
 ];
@@ -64,52 +54,65 @@ const menuItems = [
 export default function SuperAdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", schoolId: "" });
-
   const [schools, setSchools] = useState<School[]>([]);
-
   const [users, setUsers] = useState<User[]>([]);
+  const [audit, setAudit] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [invites, setInvites] = useState<AdminInvite[]>([]);
-  const [audit, setAudit] = useState<AuditLog[]>([
-    {
-      id: "1",
-      action: "Created SuperAdmin account",
-      by: "System",
-      at: new Date(),
-    },
-  ]);
+  const loadData = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [schoolData, userData] = await Promise.all([
+        superAdminApi.getSchools(),
+        superAdminApi.getTeachers(),
+      ]);
+      setSchools((schoolData || []).map((school: any) => ({
+        id: school.schoolId,
+        name: school.schoolName,
+        county: school.address || "-",
+        students: school.totalUsers || 0,
+        status: mapSchoolStatus(school.status),
+        plan: "-",
+      })));
+      setUsers((userData || []).map((user: any) => ({
+        id: user.userId,
+        name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email,
+        email: user.email,
+        role: (user.roles || []).join(", "),
+        school: user.schoolName,
+        status: mapUserStatus(user.status),
+      })));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load super-admin data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [schoolData, userData] = await Promise.all([
-          api.get<any[]>("/superadmin/schools"),
-          api.get<any[]>("/superadmin/users/teachers"),
-        ]);
-        setSchools((schoolData || []).map((school) => ({
-          id: school.schoolId,
-          name: school.schoolName,
-          county: school.address || "-",
-          students: school.totalUsers || 0,
-          status: school.status === "ACTIVE" ? "ACTIVE" : school.status === "SUSPENDED" ? "SUSPENDED" : school.status === "REJECTED" ? "REJECTED" : "PENDING",
-          plan: "-",
-        })));
-        setUsers((userData || []).map((user) => ({
-          id: user.userId,
-          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email,
-          email: user.email,
-          role: (user.roles || []).join(", "),
-          school: user.schoolName,
-          status: user.status === "SUSPENDED" ? "SUSPENDED" : "ACTIVE",
-        })));
-      } catch (error) {
-        logAction(error instanceof Error ? error.message : "Unable to load super-admin data");
-      }
-    };
     void loadData();
   }, []);
+
+  const mapSchoolStatus = (status: string): SchoolStatus => {
+    const normalized = status?.toUpperCase();
+    if (["ACTIVE", "SUSPENDED", "PENDING", "REJECTED"].includes(normalized)) {
+      return normalized as SchoolStatus;
+    }
+    return "PENDING";
+  };
+
+  const mapUserStatus = (status: string): UserStatus => {
+    const normalized = status?.toUpperCase();
+    if (normalized === "SUSPENDED" || normalized === "INACTIVE") {
+      return "SUSPENDED";
+    }
+    if (normalized === "DELETED") {
+      return "SUSPENDED";
+    }
+    return "ACTIVE";
+  };
 
   const logAction = (action: string) => {
     setAudit((prev) => [
@@ -118,39 +121,54 @@ export default function SuperAdminDashboard() {
     ]);
   };
 
-  const handleSchoolAction = (id: string, action: SchoolStatus) => {
-    setSchools((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: action } : s)),
-    );
-    logAction(`${action} school ${schools.find((s) => s.id === id)?.name}`);
-  };
-
-  const handleUserStatus = (id: string, status: UserStatus) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
-    logAction(`${status} user ${users.find((u) => u.id === id)?.name}`);
-  };
-
-  const handleSendInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSchoolAction = async (id: string, action: SchoolStatus) => {
     try {
-      const invite = await api.post<any>("/superadmin/invites", inviteForm);
-      setInvites((prev) => [{
-        id: invite.id,
-        email: invite.email,
-        school: invite.schoolName,
-        token: invite.token,
-        expiresAt: new Date(invite.expiresAt),
-        used: invite.used,
-      }, ...prev]);
-      logAction(`Generated admin invite for ${invite.email}`);
-      setInviteForm({ email: "", schoolId: "" });
-      setShowInviteModal(false);
-    } catch (error) {
-      logAction(error instanceof Error ? error.message : "Unable to generate invite");
+      const statusValue = action === "REJECTED" ? "REJECTED_APPROVAL" : action;
+      await superAdminApi.updateSchoolStatus(id, statusValue);
+      setSchools((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: action } : s)),
+      );
+      logAction(`${action} school ${schools.find((s) => s.id === id)?.name}`);
+    } catch (err) {
+      logAction(`Failed to ${action.toLowerCase()} school: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   };
 
+  const handleUserStatus = async (id: string, status: UserStatus) => {
+    try {
+      const statusValue = status === "SUSPENDED" ? "SUSPENDED" : "ACTIVE";
+      await superAdminApi.updateUserStatus(id, statusValue);
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
+      logAction(`${status} user ${users.find((u) => u.id === id)?.name}`);
+    } catch (err) {
+      logAction(`Failed to ${status.toLowerCase()} user: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  };
+
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+          <Loader2 className="sa-spinner" />
+          <span style={{ marginLeft: 12, color: "var(--textMut)" }}>Loading live dashboard data...</span>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div style={{ textAlign: "center", padding: "2rem" }}>
+          <p style={{ color: "var(--dText)", marginBottom: "1rem" }}>{error}</p>
+          <button onClick={loadData} className="sa-btn primary">Retry</button>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "overview":
         return (
@@ -177,6 +195,7 @@ export default function SuperAdminDashboard() {
               <h2 style={{ color: "var(--edu-green)", marginBottom: "1rem" }}>
                 Recent Activity
               </h2>
+              {audit.length === 0 && <p style={{ color: "var(--textMut)", fontSize: "0.875rem" }}>No activity yet.</p>}
               {audit.slice(0, 5).map((a) => (
                 <p key={a.id} style={{ fontSize: "0.875rem" }}>
                   {a.at.toLocaleString()} - {a.action}
@@ -301,59 +320,6 @@ export default function SuperAdminDashboard() {
             </table>
           </div>
         );
-      case "invites":
-        return (
-          <div className="sa-card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "1rem",
-              }}
-            >
-              <h2 style={{ color: "var(--edu-green)" }}>Admin Invites</h2>
-              <button
-                className="sa-btn primary"
-                onClick={() => setShowInviteModal(true)}
-              >
-                <Send size={14} />
-                Send Invite
-              </button>
-            </div>
-            <table className="sa-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>School</th>
-                  <th>Link</th>
-                  <th>Expires</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invites.map((i) => (
-                  <tr key={i.id}>
-                    <td>{i.email}</td>
-                    <td>{i.school}</td>
-                    <td>
-                      <code>
-                        {window.location.origin}/register/school?token={i.token}
-                      </code>
-                    </td>
-                    <td>{i.expiresAt.toLocaleDateString()}</td>
-                    <td>
-                      <span
-                        className={`sa-badge ${i.used ? "active" : "pending"}`}
-                      >
-                        {i.used ? "USED" : "PENDING"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
       case "audit":
         return (
           <div className="sa-card">
@@ -415,7 +381,7 @@ export default function SuperAdminDashboard() {
             </div>
           ))}
         </nav>
-        <button className="sa-logout">
+        <button className="sa-logout" onClick={handleLogout}>
           <LogOut size={16} /> Logout
         </button>
       </aside>
@@ -439,60 +405,6 @@ export default function SuperAdminDashboard() {
 
         <main className="sa-content">{renderContent()}</main>
       </div>
-
-      {showInviteModal && (
-        <div className="sa-modal" onClick={() => setShowInviteModal(false)}>
-          <div
-            className="sa-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sa-modal-header">
-              <h3>Send Admin Invite</h3>
-              <button
-                className="sa-close-btn"
-                onClick={() => setShowInviteModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleSendInvite}>
-              <div className="sa-form-group">
-                <label>Select School</label>
-                <select
-                  className="sa-input"
-                  value={inviteForm.schoolId}
-                  onChange={(e) =>
-                    setInviteForm({ ...inviteForm, schoolId: e.target.value })
-                  }
-                  required
-                >
-                  <option value="">-- Select --</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sa-form-group">
-                <label>Admin Email</label>
-                <input
-                  type="email"
-                  className="sa-input"
-                  value={inviteForm.email}
-                  onChange={(e) =>
-                    setInviteForm({ ...inviteForm, email: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <button type="submit" className="sa-btn primary">
-                Generate Link
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

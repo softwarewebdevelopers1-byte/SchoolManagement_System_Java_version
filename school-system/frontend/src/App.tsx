@@ -16,6 +16,7 @@ import {
 } from "./lib/api";
 import SchoolRegistration from "./components/auth/SchoolRegistration";
 import SuperAdminDashboard from "./components/superAdmin/SuperAdmin";
+import SuperAdminLoginPage from "./components/superAdmin/SuperAdminLogin";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
