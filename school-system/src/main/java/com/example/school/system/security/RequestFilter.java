@@ -2,6 +2,7 @@ package com.example.school.system.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,6 +28,7 @@ public class RequestFilter {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - no authentication required
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/login/**").permitAll().requestMatchers("/api/reset/password/token**")
                         .permitAll()
                         .requestMatchers("/api/superadmin/login").permitAll()
@@ -41,7 +43,7 @@ public class RequestFilter {
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
                         .requestMatchers("/api/complex/login")
                         .permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require
-                                                                                       // authentication
+                                                                                        // authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
                 // Add JWT filter before Spring Security's authentication
