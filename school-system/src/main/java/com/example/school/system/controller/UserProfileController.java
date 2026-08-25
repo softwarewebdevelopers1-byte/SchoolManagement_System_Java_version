@@ -152,13 +152,13 @@ public class UserProfileController {
         var students = getStudentsService.getAllStudents(
             new com.example.school.system.DTO.GetAllStudentsDTO(schoolId), 0, 500);
         var staff = teachersService.getTeachers(schoolId, "Bearer " + getAuthToken());
-        var subjectsResponse = subjectService.getSubjects(schoolId);
+        var subjects = subjectService.getSubjects(schoolId);
         var assignments = subjectService.getAllSubjectJoints(schoolId);
 
         var dashboardData = new HashMap<String, Object>();
-        dashboardData.put("students", students != null ? students.content() : List.of());
+        dashboardData.put("students", students);
         dashboardData.put("staff", staff);
-        dashboardData.put("subjects", subjectsResponse != null && subjectsResponse.getData() != null ? subjectsResponse.getData() : List.of());
+        dashboardData.put("subjects", subjects);
         dashboardData.put("assignments", assignments);
         dashboardData.put("exitedStudents", List.of());
 

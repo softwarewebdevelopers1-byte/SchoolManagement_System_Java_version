@@ -10,6 +10,7 @@ import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.DTO.DTOResponse.AuthMapperDto;
 import com.example.school.system.DTO.DTOResponse.LoginResponse;
 import com.example.school.system.projection.LoginData;
+import com.example.school.system.projection.LoginSummaryProjection;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;

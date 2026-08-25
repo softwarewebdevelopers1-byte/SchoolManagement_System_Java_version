@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.example.school.system.DTO.student.StudentEnrollmentDTO;
 import com.example.school.system.DTO.student.StudentSummaryDTO;
 import com.example.school.system.models.StudentProfile;
 
