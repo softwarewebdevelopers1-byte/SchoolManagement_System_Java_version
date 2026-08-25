@@ -114,15 +114,12 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   };
 
   const handleBulkAction = async (action: "enroll" | "unenroll") => {
-    console.log("Bulk action hitted, enrollment mode ", action);
     if (!selectedSubjectId || bulkSelected.size === 0) return;
     setSaving("bulk");
     const enrolledSubjectCode = subjects.filter(
       (v) => v.id == selectedSubjectId,
     );
     try {
-      console.log(Array.from(bulkSelected));
-
       action === "enroll"
         ? await request("/register/multpile/students/subject-joint", {
             method: "POST",
@@ -535,7 +532,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
 
                     return (
                       <tr
-                        key={student.id}
+                        key={student.studentId}
                         style={{
                           borderBottom: `1px solid ${C.border}`,
                           background: enrolled
@@ -560,7 +557,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                               gap: 9,
                             }}
                           >
-                            <Avatar name={student.name} size={30} />
+                            <Avatar name={student.fullName} size={30} />
                             <span
                               style={{
                                 fontFamily: FONT.sans,
@@ -569,7 +566,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                                 color: C.text,
                               }}
                             >
-                              {student.name}
+                              {student.fullName}
                             </span>
                           </div>
                         </td>

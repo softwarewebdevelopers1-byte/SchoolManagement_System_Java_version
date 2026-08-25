@@ -98,7 +98,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
   const [search, setSearch] = useState("");
   const filtered = students.filter(
     (s) =>
-      String(s.name || s.studentFullName || "")
+      String(s.fullName)
         .toLowerCase()
         .includes(search.toLowerCase()) ||
       String(s.admissionNo || s.adm || s.studentAdm || "").includes(search),
@@ -184,10 +184,10 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
           </thead>
           <tbody>
             {filtered.map((s) => {
-              const studentName = s.name || s.studentFullName || "-";
+              const studentName = s.fullName || "-";
               return (
                 <tr
-                  key={s.id}
+                  key={s.studentId}
                   className="ct-row"
                   style={{
                     borderTop: `1px solid ${C.borderLight}`,

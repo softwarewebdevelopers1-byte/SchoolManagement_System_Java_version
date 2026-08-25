@@ -312,7 +312,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
         />
         <MetricCard
           label="Top student"
-          value={studentAvgs[0]?.name || "N/A"}
+          value={studentAvgs[0]?.fullName || "N/A"}
           note={studentAvgs[0] ? `${studentAvgs[0].points} pts` : "N/A"}
           color={C.successText}
         />
@@ -394,7 +394,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
                 >
                   {index + 1}
                 </span>
-                <Avatar name={student.name} size={30} />
+                <Avatar name={student.fullName} size={30} />
                 <span
                   style={{
                     fontFamily: FONT.sans,
@@ -404,7 +404,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
                     flex: 1,
                   }}
                 >
-                  {student.name}
+                  {student.fullName}
                 </span>
                 <span
                   style={{

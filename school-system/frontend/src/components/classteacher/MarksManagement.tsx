@@ -157,7 +157,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         sharedSlotId: subject.sharedSlotId || null,
       }))
       .filter((subject) => subject.id && subject.isOffered !== false);
-    console.log("display subjects", activeSubjects);
     const electiveGroups = buildElectiveSubjectGroups(activeSubjects);
     const electiveGroupsByKey = new Map(
       electiveGroups.map((group) => [group.key, group]),
@@ -199,7 +198,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     const result: DisplaySubjectOption[] = [];
 
     activeSubjects.forEach((subject) => {
-      console.log("each subject --> ", subject);
       if (subject.enrollmentMode === "DROPPED") {
         return;
       }

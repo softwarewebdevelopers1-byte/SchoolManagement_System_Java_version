@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { api, getSchoolId, request } from "./api";
+import { api, getSchoolId, PageResponse, request } from "./api";
 import {
   buildClassId,
   getClassSubjectSetting,
@@ -299,11 +299,11 @@ export interface DashboardStats {
 }
 
 export const fetchStudents = async (): Promise<Student[]> => {
-  const response = await api.get<ApiStudent[]>(
+  const page = await api.get<PageResponse<any>>(
     `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}&size=500`,
   );
 
-  return mapStudentsFromApi(response || []).filter(
+  return mapStudentsFromApi(page?.content || []).filter(
     (student) => student.status !== "Completed",
   );
 };

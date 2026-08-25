@@ -75,9 +75,8 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
 
   const loadAttendance = useCallback(async () => {
     try {
-      const { getClassId, getCurrentTeacherProfileId, request } = await import(
-        "../../lib/api"
-      );
+      const { getClassId, getCurrentTeacherProfileId, request } =
+        await import("../../lib/api");
       const classId = getClassId();
       const teacherId = getCurrentTeacherProfileId();
       if (!classId || !teacherId) return;
@@ -257,8 +256,7 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
               lineHeight: 1.25,
             }}
           >
-            Good day,{" "}
-            {user?.name?.split(" ")[0] || "Teacher"} 👋
+            Good day, {user?.name?.split(" ")[0] || "Teacher"} 👋
           </h1>
           <p
             style={{
@@ -502,7 +500,7 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
         >
           {activeStudents.slice(0, 12).map((s) => (
             <div
-              key={s.id}
+              key={s.studentId}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -513,7 +511,7 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
                 border: `1px solid ${C.border}`,
               }}
             >
-              <Avatar name={s.name} size={28} />
+              <Avatar name={s.fullName} size={28} />
               <div style={{ minWidth: 0 }}>
                 <p
                   style={{

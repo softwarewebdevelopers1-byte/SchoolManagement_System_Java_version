@@ -36,7 +36,7 @@ public class GetStudentsService {
         @Transactional(readOnly = true)
         public PageResponse<StudentSummaryDTO> getStudentByClass(GetStudentsOfSpecificClass schoolClassDTO, int page, int size) {
                 size = Math.min(size, 100);
-                Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
+                Pageable pageable = PageRequest.of(page, size, Sort.by("studentFullName").ascending());
 
                 // Query 1: Paginated student summaries (projection, no entity)
                 Page<StudentSummaryDTO> studentPage = studentRepository.findSummariesByClassId(

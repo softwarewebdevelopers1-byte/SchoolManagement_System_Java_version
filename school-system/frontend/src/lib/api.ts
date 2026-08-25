@@ -557,14 +557,15 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
 
-  const [students, teachers, subjects, subjectJoints] = await Promise.all([
-    request<any[]>(
-      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}`,
+  const [studentsPage, teachers, subjects, subjectJoints] = await Promise.all([
+    request<PageResponse<any>>(
+      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
     ),
     request<any[]>(`/users/${encodeURIComponent(schoolId)}/teachers`),
     request<any[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
     request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
   ]);
+  const students = studentsPage?.content || [];
   const normalizedSubjectJoints = (subjectJoints || []).map(normalizeSubjectJoint);
 
   return {

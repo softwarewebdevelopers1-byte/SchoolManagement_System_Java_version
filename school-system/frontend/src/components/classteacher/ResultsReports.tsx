@@ -182,7 +182,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
 
       // Attach marks to students
       const enrichedStudents = students.map((student: any) => {
-        const studentId = String(student.id || student.userId || "");
+        const studentId = String(student.studentId || student.userId || "");
         return {
           ...student,
           marks: marksByStudent[studentId] || {},
@@ -222,7 +222,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       diff = right.totalPoints - left.totalPoints;
     }
 
-    return diff || String(a.name || "").localeCompare(String(b.name || ""));
+    return (
+      diff || String(a.fullName || "").localeCompare(String(b.fullName || ""))
+    );
   });
 
   // Dense ranking: ties share the same rank, next position is consecutive (not skipped)
@@ -305,7 +307,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           ],
           body: rankedStudents.map((student) => [
             student.rank,
-            student.name,
+            student.fullName,
             student.adm ||
               student.admissionNumber ||
               student.admissionNo ||
@@ -330,10 +332,10 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           },
         });
         doc.save(`CBC_MeritList_Term${term}_${Date.now()}.pdf`);
-      } else if (type === "Excel Report") {
+      } else if (type === "Excel Report") {        
         const worksheetData = rankedStudents.map((student) => ({
           Rank: student.rank,
-          "Student Name": student.name,
+          "Student Name": student.fullName,
           ADM:
             student.adm ||
             student.admissionNumber ||
@@ -359,7 +361,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         XLSX.writeFile(wb, `CBC_Term${term}_Report_${Date.now()}.xlsx`);
       } else if (type === "Report Slip" || type === "Individual result slips") {
         const slip = rankedStudents.find(
-          (student) => student.name === studentName,
+          (student) => student.fullName === studentName,
         );
         if (!slip) {
           setMsg({
@@ -369,8 +371,6 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           setTimeout(() => setMsg(null), 3500);
           return;
         }
-        console.log("slip ", slip);
-
         const slipSubjects = subjects.filter(
           (s) =>
             (s?.enrollmentMode === "ELECTIVE" &&
@@ -378,7 +378,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             s?.enrollmentMode === "COMPULSORY",
         );
         const doc = buildStudentReportSlipPdf({
-          studentName: slip.name,
+          studentName: slip.fullName,
           admissionNo:
             slip.adm || slip.admissionNumber || slip.admissionNo || "-",
           classLabel: [
@@ -408,7 +408,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           totalMarks: slip.metrics.totalMarks,
           totalPoints: slip.metrics.totalPoints,
         });
-        doc.save(`${slip.name.replace(/\s+/g, "_")}_CBC_Report.pdf`);
+        doc.save(`${slip.fullName.replace(/\s+/g, "_")}_CBC_Report.pdf`);
       }
       setMsg({
         text: `Successfully downloaded ${type}${studentName ? ` for ${studentName}` : ""}`,
@@ -667,7 +667,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                 gap: 12,
               }}
             >
-              <Avatar name={student.name} size={40} />
+              <Avatar name={student.fullName} size={40} />
               <div>
                 <p
                   style={{
@@ -688,7 +688,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                     fontFamily: FONT.serif,
                   }}
                 >
-                  {student.name}
+                  {student.fullName}
                 </h4>
                 <p style={{ margin: 0, fontSize: 13, color: C.textMuted }}>
                   Points: <strong>{student.metrics.totalPoints}</strong>
@@ -827,7 +827,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             <tbody>
               {rankedStudents.map((student) => (
                 <tr
-                  key={student.id}
+                  key={student.studentId}
                   style={{ borderBottom: `1px solid ${C.border}` }}
                 >
                   <td
@@ -849,9 +849,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 10 }}
                     >
-                      <Avatar name={student.name} size={28} />
+                      <Avatar name={student.fullName} size={28} />
                       <span style={{ fontWeight: 700, color: C.text }}>
-                        {student.name}
+                        {student.fullName}
                       </span>
                     </div>
                   </td>
@@ -907,7 +907,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                   <td style={{ ...tdStyle, textAlign: "right" }}>
                     <button
                       onClick={() =>
-                        handleDownload("Report Slip", student.name)
+                        handleDownload("Report Slip", student.fullName)
                       }
                       className="ct-pill"
                       style={{

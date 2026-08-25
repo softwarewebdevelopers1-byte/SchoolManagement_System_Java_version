@@ -179,9 +179,8 @@ export default function ClassTeacherDashboard() {
         ),
         api.get(`/class/subject/${encodeURIComponent(getClassId()!)}`),
         api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`).then((r: any) => r?.content || []), // Get assignments and staff names
-      ])) as [any[], any[], any];
-      setStudents(studentsData);
-
+      ])) as [{content:[]}, any[], any];
+      setStudents(studentsData?.content);
       const mappedSubjects = subjectsData.map((subject: any) => ({
         ...subject,
         id: subject.id || subject._id,
