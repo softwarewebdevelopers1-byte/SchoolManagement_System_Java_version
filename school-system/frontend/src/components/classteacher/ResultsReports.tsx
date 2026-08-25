@@ -332,7 +332,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           },
         });
         doc.save(`CBC_MeritList_Term${term}_${Date.now()}.pdf`);
-      } else if (type === "Excel Report") {        
+      } else if (type === "Excel Report") {
         const worksheetData = rankedStudents.map((student) => ({
           Rank: student.rank,
           "Student Name": student.fullName,
@@ -363,6 +363,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         const slip = rankedStudents.find(
           (student) => student.fullName === studentName,
         );
+        console.log("slip ", slip);
         if (!slip) {
           setMsg({
             text: "Individual slip download requires a student selection.",
@@ -374,17 +375,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         const slipSubjects = subjects.filter(
           (s) =>
             (s?.enrollmentMode === "ELECTIVE" &&
-              slip?.enrolledSubjects.includes(s.id)) ||
+              slip?.enrolledSubjects?.includes(s.id)) ||
             s?.enrollmentMode === "COMPULSORY",
         );
         const doc = buildStudentReportSlipPdf({
           studentName: slip.fullName,
           admissionNo:
             slip.adm || slip.admissionNumber || slip.admissionNo || "-",
-          classLabel: [
-            `Grade ${slip.classGrade || ""}`.trim(),
-            slip.classStream,
-          ]
+          classLabel: [`Grade ${slip.grade || ""}`.trim(), slip.stream]
             .filter(Boolean)
             .join(" "),
           term,
@@ -416,6 +414,8 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       });
     } catch (_err) {
       setMsg({ text: `Failed to download ${type}`, type: "error" });
+      console.log(_err);
+      
     }
     setTimeout(() => setMsg(null), 3500);
   };
