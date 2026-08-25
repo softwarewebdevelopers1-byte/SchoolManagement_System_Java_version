@@ -12,6 +12,7 @@ import com.example.school.system.DTO.RegisterTeacherDTO;
 import com.example.school.system.DTO.TeacherAddProfile;
 import com.example.school.system.DTO.TeacherCreateDTO;
 import com.example.school.system.DTO.DTOResponse.GetTeachersDTO;
+import com.example.school.system.DTO.DTOResponse.PendingInviteDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
@@ -188,21 +189,19 @@ public class TeachersService {
     private void toTeacherProfile(TeacherAddProfile teacherAddProfile, UUID id) {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
-        TeacherProfile profile = new TeacherProfile();
+        TeacherProfile profile = teacherProfileRepository.findByTeacher_Id(id).orElseGet(() -> {
+            TeacherProfile newProfile = new TeacherProfile();
+            newProfile.setTeacher(user);
+            return newProfile;
+        });
         profile.setFirstName(teacherAddProfile.firstName());
         profile.setLastName(teacherAddProfile.lastName());
-        profile.setTeacher(user);
         teacherProfileRepository.save(profile);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public SchoolApiResponse<?> getPendingInvites(UUID schoolId) {
-        List<Users> pendingInvites = userRepository.findBySchoolIdGetPendingInvites(schoolId);
-        List<GetTeachersDTO> inviteList = pendingInvites.stream().map(i -> {
-            GetTeachersDTO teacherInvite = GetTeachersDTO.builder().email(i.getEmail()).status(i.getStatus())
-                    .usersId(i.getId()).build();
-            return teacherInvite;
-        }).toList();
+        List<PendingInviteDTO> inviteList = userRepository.findPendingInvitesBySchoolId(schoolId);
         return SchoolApiResponse.success(inviteList, "Invites loaded");
     }
 

@@ -43,7 +43,7 @@ public class AttendanceSheet {
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
 
-    @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 100)
     List<AttendanceRecords> attendanceRecords;
 

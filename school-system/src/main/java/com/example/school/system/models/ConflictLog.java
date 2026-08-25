@@ -8,6 +8,7 @@ import org.hibernate.annotations.BatchSize;
 import com.example.school.system.types.TimetableConflictType;
 import com.github.f4b6a3.uuid.UuidCreator;
 
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,7 +38,7 @@ public class ConflictLog {
     @Column(columnDefinition = "BINARY(16)", nullable = false, updatable = false)
     private UUID id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "generation_history_id")
     private GenerationHistory generationHistory;
 

@@ -1,19 +1,22 @@
 package com.example.school.system.services;
 
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.DTO.LoginUserDTO;
 import com.example.school.system.DTO.DTOResponse.AuthMapperDto;
 import com.example.school.system.DTO.DTOResponse.LoginResponse;
-import com.example.school.system.projection.CredentialsView;
-import com.example.school.system.projection.LoginView;
+import com.example.school.system.projection.LoginData;
+import com.example.school.system.projection.LoginSummaryProjection;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,27 +28,29 @@ public class LoginService {
     // private final RecaptchaService recaptchaService;
     private final AuthMapperDto authMapperDto;
 
-    // login user service
     @Transactional(readOnly = true)
     public LoginResponse LoginUser(LoginUserDTO user) {
         String message = "Invalid email or password";
-        CredentialsView credentials = userRepository.findCredentialsByEmail(user.email())
+
+        LoginData userFound = userRepository.findLoginDataByEmail(user.email().trim().toLowerCase())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
 
-        if (!passwordHashing.PasswordEncoder().matches(user.password(), credentials.getPassword())) {
+        if (!passwordHashing.PasswordEncoder().matches(user.password(), userFound.getPassword())) {
             throw new SchoolResourceNotFoundExceptionHandler(message);
+        }
 
-        }
-        if (userRepository.findRolesByUserId(credentials.getUserId()).contains(UserRoles.SUPERADMIN)) {
-            throw new SchoolResourceLockedExceptionHandler("Use the super-admin login endpoint");
-        }
-        LoginView userFound = userRepository.findByUserId(credentials.getUserId())
-            .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(message));
         AccountStatus userStatus = userFound.getStatus();
-        boolean isSuperAdmin = userFound.getRoles() != null && userFound.getRoles().contains(UserRoles.SUPERADMIN);
-        if (!isSuperAdmin && userFound.getSchoolStatus() != SchoolStatus.ACTIVE) {
-            throw new SchoolResourceLockedExceptionHandler("school is " + userFound.getSchoolStatus().toString().toLowerCase());
+        SchoolStatus schoolStatus = userFound.getSchoolStatus();
+
+        Set<UserRoles> roles = Set.copyOf(userRepository.findRolesByUserId(userFound.getUserId()));
+        userFound.setRoles(roles);
+
+        boolean isSuperAdmin = roles.contains(UserRoles.SUPERADMIN);
+
+        if (!isSuperAdmin && schoolStatus != SchoolStatus.ACTIVE) {
+            throw new SchoolResourceLockedExceptionHandler("school is " + schoolStatus.toString().toLowerCase());
         }
+
         StringBuilder statusSender = new StringBuilder();
         if (userStatus.toString().contains("_")) {
             String[] userStatusSplitted = userStatus.toString().toLowerCase().split("_");
@@ -59,10 +64,8 @@ public class LoginService {
         if (!userStatus.equals(AccountStatus.ACTIVE)) {
             throw new SchoolResourceLockedExceptionHandler("Account is " + statusSender + " try again later");
         }
-        // if (!recaptchaService.validateRecaptchaToken(user.captchaToken())) {
-        // throw new InvalidTokenExceptionHandler("Unable to validate recaptcha");
-        // }
+
         var token = jwtService.GenerateToken(userFound);
-        return authMapperDto.toLoginResponse(token,userFound, user.email());
+        return authMapperDto.toLoginResponse(token, userFound, user.email());
     }
 }

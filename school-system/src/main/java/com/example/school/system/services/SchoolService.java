@@ -177,10 +177,13 @@ public class SchoolService {
             Integer term = updateTermAndExam.term();
 
             
-            School schoolFound = schoolRepository.findById(updateTermAndExam.schoolId())
+            School schoolFound = schoolRepository.findByIdWithSettings(updateTermAndExam.schoolId())
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
             SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
-            ;
+            if (schoolSettings == null) {
+                schoolSettings = new SchoolSettings();
+                schoolSettings.setSchool(schoolFound);
+            }
             boolean changed = false;
             if (term != null) {
                 changed = true;
@@ -216,33 +219,30 @@ public class SchoolService {
         }
     }
 
+    @Transactional(readOnly = true)
     public GetExamTypeYearAndTerm getTermYearAndExamType(UUID id) {
         School schoolFound = schoolRepository.findByIdWithSettings(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         SchoolSettings schoolSettings = schoolFound.getSchoolSettings();
-        ExamSettings examSettings = schoolSettings.getExamSettings();
+        ExamSettings examSettings = schoolSettings != null ? schoolSettings.getExamSettings() : null;
         if (examSettings == null) {
             examSettings = new ExamSettings();
             examSettings.setExamType(ExamType.OPENER);
-            examSettings.setSchoolSettings(schoolSettings);
+            if (schoolSettings != null) {
+                examSettings.setSchoolSettings(schoolSettings);
+            }
         }
         return GetExamTypeYearAndTerm.builder().examType(examSettings.getExamType())
-                .term(schoolSettings.getCurrentSchoolTerm()).year(schoolSettings.getAcademicYear())
+                .term(schoolSettings != null ? schoolSettings.getCurrentSchoolTerm() : 1)
+                .year(schoolSettings != null ? schoolSettings.getAcademicYear() : null)
                 .finalGrade(
-                        schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade().toString() : "not set")
+                        schoolSettings != null && schoolSettings.getFinalGrade() != null ? schoolSettings.getFinalGrade().toString() : "not set")
                 .build();
     }
 
-    public com.example.school.system.DTO.SchoolSettings schoolSettings(UUID schoolId) {
-        School school = schoolRepository.findById(schoolId)
+    @Transactional(readOnly = true)
+    public com.example.school.system.DTO.DTOResponse.SchoolSettingsDTO schoolSettings(UUID schoolId) {
+        return schoolRepository.findSchoolSettingsById(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
-
-        return com.example.school.system.DTO.SchoolSettings.builder().schoolName(school.getSchoolName())
-                .schoolCode(school.getSchoolCode() != null ? school.getSchoolCode() : null)
-                .schoolEmail(school.getEmail() != null ? school.getEmail() : null)
-                .motto(school.getSchoolMotto() != null ? school.getSchoolMotto() : null)
-                .schoolAddress(school.getAddress() != null ? school.getAddress() : null)
-                .phoneNumber(school.getPhoneNumber() != null ? school.getPhoneNumber() : null).build();
-
     }
 }

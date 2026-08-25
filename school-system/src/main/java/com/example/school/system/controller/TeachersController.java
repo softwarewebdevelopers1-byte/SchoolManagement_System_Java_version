@@ -1,7 +1,5 @@
 package com.example.school.system.controller;
-
 import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +16,6 @@ import com.example.school.system.DTO.TeacherCreateDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.TeacherEditDTO;
 import com.example.school.system.services.TeachersService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

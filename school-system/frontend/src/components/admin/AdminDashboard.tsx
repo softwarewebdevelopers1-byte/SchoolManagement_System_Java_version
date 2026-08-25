@@ -507,7 +507,7 @@ const AdminDashboard: React.FC = () => {
       const nextSubjects = response.subjects || [];
       const nextAssignments = response.assignments || [];
       const nextClassSubjectSettings =
-        (response.subjectJoints || response.assignments || []) as ClassSubjectSetting[];
+        (response.subjectJoints || response.assignments || []) as unknown as ClassSubjectSetting[];
       const nextClasses = deriveClasses(
         mappedStudents,
         mappedTeachers,
@@ -524,7 +524,7 @@ const AdminDashboard: React.FC = () => {
       setSubjects(nextSubjects);
       setAssignments(nextAssignments);
       setClassSubjectSettings(nextClassSubjectSettings);
-      setSubjectJointsData((response.subjectJoints || []) as subjectJoints[]);
+      setSubjectJointsData((response.subjectJoints || []) as unknown as subjectJoints[]);
       setClasses(mergedClasses);
       setClassesFound(mergedClasses);
     } catch (err) {
@@ -1195,7 +1195,6 @@ const AdminDashboard: React.FC = () => {
       return (
         <AssignmentsTab
           classes={classes}
-          subjects={subjectJointsData}
           teachers={teachers}
           students={students}
           onSaveAssignment={saveAssignment}

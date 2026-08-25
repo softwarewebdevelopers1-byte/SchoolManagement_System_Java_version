@@ -83,6 +83,9 @@ export interface Student {
 }
 
 export interface ApiTeacher {
+  teacherProfileId: string;
+  firstName: any;
+  lastName: any;
   id: string;
   userId?: string;
   usersId?: string;
@@ -152,6 +155,7 @@ export interface ClassSubjectSetting {
 }
 
 export interface UsersDashboardResponse {
+  subjectJoints: ApiAssignment[];
   staff: ApiTeacher[];
   students: ApiStudent[];
   subjects: Subject[];

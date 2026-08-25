@@ -13,6 +13,9 @@ import com.example.school.system.models.TeacherProfile;
 
 public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, UUID> {
     @EntityGraph(attributePaths = { "teacher", "schoolClass" })
+    Optional<TeacherProfile> findByTeacher_Id(UUID id);
+
+    @EntityGraph(attributePaths = { "teacher", "schoolClass" })
     Optional<TeacherProfile> findByTeacher(UUID id);
 
     @EntityGraph(attributePaths = { "teacher", "schoolClass" })

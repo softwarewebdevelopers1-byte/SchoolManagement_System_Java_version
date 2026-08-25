@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
 import { useClassesData } from "../../lib/adminData";
-import { getSchoolId, request } from "../../lib/api";
+import { getSchoolId, request, PageResponse } from "../../lib/api";
 import PhoneInput from "../shared/PhoneInput";
 
 const eyebrowStyle: React.CSSProperties = {
@@ -511,7 +511,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         );
         const className = normalized(values.classname || values.class || values["class name"]);
         const classFound = classByName.get(classKey(className));
-        const classIdValue = values.classid || values["class id"] || classFound?.classId || "";
+        const classIdValue = values.classid || values["class id"] || (classFound as any)?.classId || "";
         const classId = String(classIdValue).trim();
         return {
           studentFullName: String(values.studentfullname || values.name || "").trim(),
@@ -554,7 +554,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   useEffect(() => {
     (async () => {
       async function getStudents(): Promise<Student[]> {
-        return await request(`/get/all/students?schoolId=${getSchoolId()!}`);
+        const page = await request<PageResponse<any>>(`/get/all/students?schoolId=${getSchoolId()!}&size=500`);
+        return page?.content || [];
       }
       setStudents(await getStudents());
     })();

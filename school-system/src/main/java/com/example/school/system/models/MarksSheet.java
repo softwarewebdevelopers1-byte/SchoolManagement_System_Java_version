@@ -63,7 +63,7 @@ public class MarksSheet {
     @Enumerated(EnumType.STRING)
     private MarksSheetStatus status = MarksSheetStatus.NOT_SUBMITTED;
 
-    @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "marksSheet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<MarksRow> marks;
 
     @ManyToOne(fetch = FetchType.LAZY)

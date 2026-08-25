@@ -3,6 +3,7 @@ import { api, getSchoolId, request } from "../../lib/api";
 import type { ExitedStudent } from "../admin/types";
 
 interface ExitedStudentsViewProps {
+  exitedStudents?: any[];
   onRefresh?: () => Promise<void>;
   allowDelete?: boolean;
 }

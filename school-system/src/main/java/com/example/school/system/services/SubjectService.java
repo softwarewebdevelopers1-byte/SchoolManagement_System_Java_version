@@ -16,6 +16,10 @@ import com.example.school.system.DTO.UnenrollMultipleStudents;
 import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
 import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.DTO.DTOResponse.SubjectJointClassDTO;
+import com.example.school.system.DTO.DTOResponse.SubjectJointForTeacherDTO;
+import com.example.school.system.DTO.DTOResponse.SubjectJointSummaryDTO;
+import com.example.school.system.DTO.DTOResponse.SubjectListDTO;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -170,19 +174,10 @@ public class SubjectService {
         return SchoolApiResponse.success("subject deleted");
     }
 
+    @Transactional(readOnly = true)
     public SchoolApiResponse<?> getSubjects(UUID schoolId) {
-        schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
-        List<Subject> subjects = subjectRepository.findAllBySchoolIdWithSchool(schoolId);
-        List<GetSubjectsDTORes> subjectsDTORes = toSubjectsDTORes(subjects);
-        return SchoolApiResponse.success(subjectsDTORes, "subjects loaded successfully");
-    }
-
-    private List<GetSubjectsDTORes> toSubjectsDTORes(List<Subject> subjects) {
-        List<GetSubjectsDTORes> subjectsDTORes = subjects.stream().map(s -> {
-            return GetSubjectsDTORes.builder().subjectId(s.getId()).subjectName(s.getSubjectName()).build();
-        }).toList();
-        return subjectsDTORes;
+        List<SubjectListDTO> subjects = subjectRepository.findSubjectSummariesBySchoolId(schoolId);
+        return SchoolApiResponse.success(subjects, "subjects loaded successfully");
     }
 
     public void RegisterSubjectJoint(RegisterSubjectJoint registerSubjectJoint) {
@@ -211,30 +206,9 @@ public class SubjectService {
 
     }
 
-    public List<?> getAllSubjectJoints(UUID schoolId) {
-        List<SubjectJoint> subjectJoints = subjectJointRepo.findAllBySchoolClass_schoolId(schoolId);
-        List<?> subjectJointsDto = subjectJoints.stream().map(sj -> {
-            StringBuilder subjectTeacher = new StringBuilder();
-            TeacherProfile teacherProfile = sj.getTeacherProfile();
-            UUID teacherId = null;
-            if (teacherProfile != null) {
-                subjectTeacher.append(teacherProfile.getFirstName());
-                subjectTeacher.append(" ");
-                subjectTeacher.append(teacherProfile.getLastName());
-                teacherId = teacherProfile.getId();
-            }
-            StringBuilder className = new StringBuilder();
-            SchoolClass schoolClass = sj.getSchoolClass();
-            className.append(schoolClass.getClassGrade());
-            className.append(" ");
-            className.append(schoolClass.getClassStream());
-            return GetAllSubjectJointsDTO.builder().classId(schoolClass.getClassId())
-                    .subjectName(sj.getSubject().getSubjectName()).className(className)
-                    .subjectJointId(sj.getId()).subjectTeacherId(teacherId == null ? null : teacherId)
-                    .subjectTeacherName(subjectTeacher.toString()).subjectType(sj.getSubjectType())
-                    .electiveCode(sj.getElectiveCode()).build();
-        }).toList();
-        return subjectJointsDto;
+    @Transactional(readOnly = true)
+    public List<SubjectJointSummaryDTO> getAllSubjectJoints(UUID schoolId) {
+        return subjectJointRepo.findSubjectJointSummariesBySchoolId(schoolId);
     }
 
     public void registerStudentsToSubject(UUID studentId, UUID subjectJoint, UUID schoolId, String electiveCode) {
@@ -261,22 +235,28 @@ public class SubjectService {
                 .findByIdAndElectiveCodeAndSubjectTypeAndSchoolClass_schoolId(subjectJoint, electiveCode,
                         SubjectType.ELECTIVE, schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
-        studentId.forEach(id -> {
-            StudentProfile studentProfile = studentRepository.findById(id)
-                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("some students not found"));
-            if (studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, id)) {
-                log.info("elective code {}, students id {}, elective selection exists {}", electiveCode, id,
-                        studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, id));
-                throw new SchoolResourceExistsExceptionHandler(
-                        "Some students already enrolled in the same elective pair");
-            }
+        List<StudentProfile> students = studentRepository.findAllById(studentId);
+        if (students.size() != studentId.size()) {
+            throw new SchoolResourceNotFoundExceptionHandler("some students not found");
+        }
+
+        List<UUID> alreadyEnrolled = studentSubjectSelectionRepo
+                .findEnrolledStudentIdsByElectiveCodeAndStudentIds(electiveCode, studentId);
+        if (!alreadyEnrolled.isEmpty()) {
+            log.info("elective code {}, already enrolled student IDs: {}", electiveCode, alreadyEnrolled);
+            throw new SchoolResourceExistsExceptionHandler(
+                    "Some students already enrolled in the same elective pair");
+        }
+
+        List<StudentSubjectSelection> selections = students.stream().map(studentProfile -> {
             StudentSubjectSelection subjectSelection = new StudentSubjectSelection();
             subjectSelection.setElectiveCode(electiveCode);
             subjectSelection.setStudentProfile(studentProfile);
             subjectSelection.setSubjectJoint(subjectJointFound);
-            studentSubjectSelectionRepo.save(subjectSelection);
-        });
+            return subjectSelection;
+        }).toList();
 
+        studentSubjectSelectionRepo.saveAll(selections);
     }
 
     public void updateSubjectJointStatus(UUID subjectJointId, SubjectType subjectType, String electiveCode) {
@@ -316,27 +296,14 @@ public class SubjectService {
         return SchoolApiResponse.success("deleted above count of students");
     }
 
-    public List<SubjectJointRes> getSubjectJointForClass(UUID classId) {
-        List<SubjectJoint> subjectJoints = subjectJointRepo.findAllBySchoolClassClassId(classId);
-        return subjectJoints.stream().map(s -> {
-            return SubjectJointRes.builder().id(s.getId()).name(s.getSubject().getSubjectName())
-                    .enrollmentMode(s.getSubjectType()).sharedSlotId(s.getElectiveCode())
-                    .build();
-        }).toList();
+    @Transactional(readOnly = true)
+    public List<SubjectJointClassDTO> getSubjectJointForClass(UUID classId) {
+        return subjectJointRepo.findSummariesByClassId(classId);
     }
 
-    public List<GetSubjectJointsForSubjectTeacher> getSubjectJointForSubjectJointTeacher(UUID teacherProfileId,
+    @Transactional(readOnly = true)
+    public List<SubjectJointForTeacherDTO> getSubjectJointForSubjectJointTeacher(UUID teacherProfileId,
             UUID schoolId) {
-        if (!schoolRepository.existsById(schoolId)) {
-            throw new SchoolResourceNotFoundExceptionHandler("school not found");
-        }
-        List<SubjectJoint> getAllSubjectJoints = subjectJointRepo.findAllByTeacherProfileId(teacherProfileId);
-        return getAllSubjectJoints.stream().map(sj -> {
-            return GetSubjectJointsForSubjectTeacher.builder().subjectId(sj.getId())
-                    .classGrade(sj.getSchoolClass() != null ? sj.getSchoolClass().getClassGrade() : null)
-                    .classStream(sj.getSchoolClass() != null ? sj.getSchoolClass().getClassStream() : null)
-                    .subjectName(sj.getSubject().getSubjectName())
-                    .enrollmentMode(sj.getSubjectType()).sharedSlotId(sj.getElectiveCode()).build();
-        }).toList();
+        return subjectJointRepo.findSummariesByTeacherProfileId(teacherProfileId);
     }
 }

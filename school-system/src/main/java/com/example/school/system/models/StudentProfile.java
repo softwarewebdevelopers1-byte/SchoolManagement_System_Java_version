@@ -55,13 +55,13 @@ public class StudentProfile {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY,cascade=CascadeType.ALL)
     private List<ClassTermResults> classTermResults;
 
-    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "studentProfile", fetch = FetchType.LAZY,cascade=CascadeType.ALL)
     private List<StudentSubjectSelection> studentSubjectSelections;
 
-    @OneToMany(mappedBy = "StudentProfile", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "StudentProfile", fetch = FetchType.LAZY,cascade=CascadeType.ALL)
     List<MarksRow> marks;
     // relationship between student and class
     @ManyToOne(fetch = FetchType.LAZY)

@@ -9,7 +9,7 @@ import com.example.school.system.DTO.UserDto;
 @Service
 public class AuthMapperDto {
     public LoginResponse toLoginResponse(String token, LoginView user,String email) {
-        return new LoginResponse(token, toUserDto(user));
+        return LoginResponse.builder().token(token).user(toUserDto(user)).build();
     }
 
     public UserDto toUserDto(LoginView user) {

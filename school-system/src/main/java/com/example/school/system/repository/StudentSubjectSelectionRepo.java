@@ -30,5 +30,20 @@ public interface StudentSubjectSelectionRepo extends JpaRepository<StudentSubjec
     int deleteByElectiveCodeAndStudentProfileId(String code, UUID profileId);
 
     Optional<StudentSubjectSelection> findByElectiveCodeAndStudentProfileId(String code, UUID profileId);
+
+    @Query("""
+        SELECT s.studentProfile.id FROM StudentSubjectSelection s
+        WHERE s.electiveCode = :electiveCode AND s.studentProfile.id IN :studentProfileIds
+    """)
+    List<UUID> findEnrolledStudentIdsByElectiveCodeAndStudentIds(
+            @Param("electiveCode") String electiveCode,
+            @Param("studentProfileIds") List<UUID> studentProfileIds);
+
+    @Query("""
+        SELECT s.studentProfile.id, s.subjectJoint.id
+        FROM StudentSubjectSelection s
+        WHERE s.studentProfile.schoolClass.classId = :classId
+    """)
+    List<Object[]> findEnrollmentPairsByClassId(@Param("classId") UUID classId);
 }
 

@@ -1,6 +1,6 @@
 package com.example.school.system.controller;
 
-import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.GetAllStudentsDTO;
 import com.example.school.system.DTO.GetStudentsOfSpecificClass;
+import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.DTO.pagination.PageResponse;
+import com.example.school.system.DTO.student.StudentSummaryDTO;
 import com.example.school.system.services.GetStudentsService;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -21,25 +25,29 @@ public class GetStudentsController {
 
     @GetMapping("/students")
     public ResponseEntity<?> getStudentsOfSpecificClass(
-            @RequestParam java.util.UUID classId,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getStudentByClass(new GetStudentsOfSpecificClass(classId), page, size);
-        return ResponseEntity.status(200).body(res);
+            @RequestParam UUID classId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<StudentSummaryDTO> res = getStudentsService.getStudentByClass(
+                new GetStudentsOfSpecificClass(classId), page, size);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Students loaded"));
     }
 
     @GetMapping("/all/students")
-    public ResponseEntity<?> getAllStudents(@RequestParam java.util.UUID schoolId,
+    public ResponseEntity<?> getAllStudents(@RequestParam UUID schoolId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        List<?> res = getStudentsService.getAllStudents(new GetAllStudentsDTO(schoolId), page, size);
-        return ResponseEntity.status(200).body(res);
+        PageResponse<StudentSummaryDTO> res = getStudentsService.getAllStudents(
+                new GetAllStudentsDTO(schoolId), page, size);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Students loaded"));
     }
 
     @GetMapping("/exited/students")
-    public ResponseEntity<?> getAllExitedStudents(@RequestParam java.util.UUID schoolId,
+    public ResponseEntity<?> getAllExitedStudents(@RequestParam UUID schoolId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<?> res = getStudentsService.getAllExitedStudents(new GetAllStudentsDTO(schoolId), page, size);
-        return ResponseEntity.status(200).body(res);
+        PageResponse<StudentSummaryDTO> res = getStudentsService.getAllExitedStudents(
+                new GetAllStudentsDTO(schoolId), page, size);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Exited students loaded"));
     }
 }

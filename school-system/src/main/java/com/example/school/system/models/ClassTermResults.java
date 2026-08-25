@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.hibernate.annotations.BatchSize;
 
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
@@ -27,7 +28,7 @@ public class ClassTermResults {
     @Column(columnDefinition = "BINARY(16)", name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private StudentProfile  studentProfile;
 
     private UUID classId;

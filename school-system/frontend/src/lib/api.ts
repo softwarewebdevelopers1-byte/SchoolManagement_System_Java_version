@@ -559,7 +559,7 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
 
   const [students, teachers, subjects, subjectJoints] = await Promise.all([
     request<any[]>(
-      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+      `/get/all/students?schoolId=${encodeURIComponent(schoolId)}`,
     ),
     request<any[]>(`/users/${encodeURIComponent(schoolId)}/teachers`),
     request<any[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
@@ -623,13 +623,22 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
   } as T;
 };
 
+export interface PageResponse<T> {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 const fetchStudentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
-  return request<T>(
+  const page = await request<PageResponse<any>>(
     `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
   );
+  return (page?.content || []) as T;
 };
 
 const fetchTeachersData = async <T>(): Promise<T> => {
@@ -657,10 +666,10 @@ const fetchExitedStudentsData = async <T>(): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
-  const data = await request<any[]>(
-    `/users/exited-students?schoolId=${encodeURIComponent(schoolId)}`,
+  const page = await request<PageResponse<any>>(
+    `/get/exited/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
   );
-  return data as T;
+  return (page?.content || []) as T;
 };
 
 const fetchDashboardStatsData = async <T>(): Promise<T> => {
@@ -668,9 +677,10 @@ const fetchDashboardStatsData = async <T>(): Promise<T> => {
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
 
-  const students = await request<any[]>(
+  const studentsPage = await request<PageResponse<any>>(
     `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
   );
+  const students = studentsPage?.content || [];
   const teachers = await request<any[]>(
     `/users/${encodeURIComponent(schoolId)}/teachers`,
   );
