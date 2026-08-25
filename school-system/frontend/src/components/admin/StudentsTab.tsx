@@ -417,7 +417,7 @@ const StudentFormModal: React.FC<{
                   classId: classSelectedId || "",
                   schoolId: getSchoolId()!,
                   email: email?.trim() || "",
-                  status: status,
+                  status: status.toUpperCase(),
                 });
                 onClose();
               } catch (err: any) {
@@ -464,6 +464,7 @@ interface StudentsTabProps {
 }
 
 export const StudentsTab: React.FC<StudentsTabProps> = ({
+  students,
   classes,
   subjects,
   classSubjectSettings,
@@ -477,7 +478,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [students, setStudents] = useState<Student[]>([]);
+  // const [students, setStudents] = useState<Student[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
   const pageSize = 50;
@@ -492,11 +493,17 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
       setUploadMessage("");
       const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, {
-        defval: "",
-      });
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        firstSheet,
+        {
+          defval: "",
+        },
+      );
       const normalized = (value: unknown) =>
-        String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+        String(value ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
       const classKey = (value: unknown) =>
         normalized(value).replace(/^(grade|class)\s+/, "");
       const classByName = new Map(
@@ -509,27 +516,45 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         const values = Object.fromEntries(
           Object.entries(row).map(([key, value]) => [normalized(key), value]),
         );
-        const className = normalized(values.classname || values.class || values["class name"]);
+        const className = normalized(
+          values.classname || values.class || values["class name"],
+        );
         const classFound = classByName.get(classKey(className));
-        const classIdValue = values.classid || values["class id"] || (classFound as any)?.classId || "";
+        const classIdValue =
+          values.classid ||
+          values["class id"] ||
+          (classFound as any)?.classId ||
+          "";
         const classId = String(classIdValue).trim();
         return {
-          studentFullName: String(values.studentfullname || values.name || "").trim(),
-          studentAdm: String(values.studentadm || values.admissionno || values.admission || "").trim(),
+          studentFullName: String(
+            values.studentfullname || values.name || "",
+          ).trim(),
+          studentAdm: String(
+            values.studentadm || values.admissionno || values.admission || "",
+          ).trim(),
           email: String(values.email || "").trim(),
-          guardianName: String(values.guardianname || values.guardian || "").trim(),
+          guardianName: String(
+            values.guardianname || values.guardian || "",
+          ).trim(),
           phoneNumber: String(values.phonenumber || values.phone || "").trim(),
-          gender: String(values.gender || "").trim().toUpperCase() || null,
+          gender:
+            String(values.gender || "")
+              .trim()
+              .toUpperCase() || null,
           classId,
           schoolId: getSchoolId(),
         };
       });
       const invalidRow = payload.findIndex(
-        (student) => !student.studentFullName || !student.classId || !student.schoolId,
+        (student) =>
+          !student.studentFullName || !student.classId || !student.schoolId,
       );
       if (!payload.length || invalidRow >= 0) {
         const availableClasses = classes
-          .map((currentClass: any) => currentClass.className || currentClass.name)
+          .map(
+            (currentClass: any) => currentClass.className || currentClass.name,
+          )
           .filter(Boolean)
           .join(", ");
         throw new Error(
@@ -545,21 +570,30 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
       setUploadMessage(`${payload.length} students imported successfully.`);
       window.location.reload();
     } catch (error) {
-      setUploadMessage(error instanceof Error ? error.message : "Unable to import students.");
+      setUploadMessage(
+        error instanceof Error ? error.message : "Unable to import students.",
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  useEffect(() => {
-    (async () => {
-      async function getStudents(): Promise<Student[]> {
-        const page = await request<PageResponse<any>>(`/get/all/students?schoolId=${getSchoolId()!}&size=500`);
-        return page?.content || [];
-      }
-      setStudents(await getStudents());
-    })();
-  }, []);
+  console.log("***",students);
+  
+
+  // useEffect(() => {
+  //   (async () => {
+  //     async function getStudents(): Promise<Student[]> {
+  //       const page = await request<PageResponse<any>>(
+  //         `/get/all/students?schoolId=${getSchoolId()!}&size=500`,
+  //       );
+  //       return page?.content || [];
+  //     }
+  //     console.log("page ", page);
+
+  //     setStudents(await getStudents());
+  //   })();
+  // }, []);
   const subjectLookup = useMemo(
     () =>
       subjects.reduce<Record<string, Subject>>((acc, subject) => {
@@ -628,7 +662,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   };
 
   const totalActive = students.filter(
-    (student) => student.status === "ACTIVE",
+    (student) => student.status.toLowerCase() === "active",
   ).length;
 
   return (
@@ -677,7 +711,12 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
           <button onClick={() => openStudentModal()} style={primaryButtonStyle}>
             + Add student
           </button>
-          <label style={{ ...secondaryButtonStyle, cursor: uploading ? "wait" : "pointer" }}>
+          <label
+            style={{
+              ...secondaryButtonStyle,
+              cursor: uploading ? "wait" : "pointer",
+            }}
+          >
             {uploading ? "Importing..." : "Import CSV / Excel"}
             <input
               type="file"
@@ -691,7 +730,14 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
       </div>
 
       {uploadMessage && (
-        <div style={{ ...emptyCellStyle, minHeight: 0, padding: "10px 14px", marginBottom: 12 }}>
+        <div
+          style={{
+            ...emptyCellStyle,
+            minHeight: 0,
+            padding: "10px 14px",
+            marginBottom: 12,
+          }}
+        >
           {uploadMessage}
         </div>
       )}
@@ -713,7 +759,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
         <StatCard
           label="Classes with learners"
           value={
-            students.filter((s) => s.status?.toLowerCase() === "active").length
+           classes?.length
           }
           accent="#1a4a99"
         />

@@ -566,13 +566,16 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
     request<any[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
   ]);
   const students = studentsPage?.content || [];
-  const normalizedSubjectJoints = (subjectJoints || []).map(normalizeSubjectJoint);
-
+  const normalizedSubjectJoints = (subjectJoints || []).map(
+    normalizeSubjectJoint,
+  );
+  console.log("mapped students ", students);
   return {
     students: (students || []).map((student: any) => ({
-      id: student.userId || student.id,
-      userId: student.userId || student.id,
-      studentFullName: student.studentFullName || student.fullName || student.name,
+      id: student.studentId || student.id,
+      userId: student.studentId || student.id,
+      studentFullName:
+        student.studentFullName || student.fullName || student.name,
       studentAdm: student.studentAdm || student.adm || student.admissionNo,
       email: student.email,
       phoneNumber: student.phoneNumber || "",
@@ -581,8 +584,8 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
         buildClassId(student.classGrade, student.classStream),
       schoolId: schoolId,
       gender: student.gender || "",
-      classGrade: student.classGrade || "",
-      classStream: student.classStream || "",
+      classGrade: student.grade || "",
+      classStream: student.stream || "",
       status: student.status || "Active",
     })),
     staff: (teachers || []).map((teacher: any) => {
@@ -997,10 +1000,16 @@ export const superAdminApi = {
   getSchools: async (): Promise<any> => {
     return request<any>("/superadmin/schools");
   },
-  updateSchoolStatus: async (schoolId: string, status: string): Promise<any> => {
-    return request<any>(`/superadmin/schools/${encodeURIComponent(schoolId)}/status?status=${encodeURIComponent(status)}`, {
-      method: "PATCH",
-    });
+  updateSchoolStatus: async (
+    schoolId: string,
+    status: string,
+  ): Promise<any> => {
+    return request<any>(
+      `/superadmin/schools/${encodeURIComponent(schoolId)}/status?status=${encodeURIComponent(status)}`,
+      {
+        method: "PATCH",
+      },
+    );
   },
   getUsers: async (): Promise<any> => {
     return request<any>("/superadmin/users");
@@ -1009,8 +1018,11 @@ export const superAdminApi = {
     return request<any>("/superadmin/users/teachers");
   },
   updateUserStatus: async (userId: string, status: string): Promise<any> => {
-    return request<any>(`/superadmin/users/${encodeURIComponent(userId)}/status?status=${encodeURIComponent(status)}`, {
-      method: "PATCH",
-    });
+    return request<any>(
+      `/superadmin/users/${encodeURIComponent(userId)}/status?status=${encodeURIComponent(status)}`,
+      {
+        method: "PATCH",
+      },
+    );
   },
 };
