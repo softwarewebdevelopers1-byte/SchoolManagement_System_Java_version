@@ -1,5 +1,6 @@
 package com.example.school.system.projection;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.example.school.system.types.AccountStatus;
@@ -25,4 +26,6 @@ public interface StudentsLoaded {
     String getClassStream();
 
     AccountStatus getStatus();
+
+    List<UUID> getEnrolledSubjects();
 }

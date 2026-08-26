@@ -69,6 +69,8 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       String(s.admissionNo || s.adm || "").includes(search),
   );
+  console.log("data ",filteredStudents);
+  
 
   const currentSubject = electives.find((e) => e.id === selectedSubjectId);
 
@@ -79,6 +81,8 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
     if (!selectedSubjectId) return;
     setSaving(studentId);
     try {
+      console.log(selectedSubjectId, studentId, currentSubject);
+
       action === "enroll"
         ? await request("/register/singlestudent/subject-joint", {
             method: "POST",
@@ -527,7 +531,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
                     const enrolled = selectedSubjectId
                       ? isEnrolled(student, selectedSubjectId)
                       : false;
-                    const sid = String(student.id);
+                    const sid = String(student.studentId);
                     const isSaving = saving === sid;
 
                     return (

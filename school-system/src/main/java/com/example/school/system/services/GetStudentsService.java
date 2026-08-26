@@ -88,7 +88,7 @@ public class GetStudentsService {
                                                 s.getStatus(),
                                                 null,
                                                 s.getClassGrade(),
-                                                s.getClassStream()))
+                                                s.getClassStream(),s.getEnrolledSubjects()))
                                 .toList();
 
                 return new PageResponse<>(
@@ -119,7 +119,7 @@ public class GetStudentsService {
                                                 s.getStatus(),
                                                 null,
                                                 s.getClassGrade(),
-                                                s.getClassStream()))
+                                                s.getClassStream(),s.getEnrolledSubjects()))
                                 .toList();
 
                 return new PageResponse<>(
