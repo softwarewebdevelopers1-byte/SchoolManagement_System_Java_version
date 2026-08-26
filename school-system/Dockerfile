@@ -4,8 +4,6 @@ WORKDIR /workspace
 
 # Step 1: Cache Maven dependencies (Only re-runs when pom.xml changes)
 COPY pom.xml .
-COPY mvnw .
-COPY .mvn .mvn
 RUN mvn dependency:go-offline -B
 
 # Step 2: Copy backend source code and build executable JAR
@@ -25,7 +23,7 @@ RUN chown appuser:appgroup /app/app.jar
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8080
 
-ENV PORT=8000
+ENV PORT=8080
 ENTRYPOINT ["sh", "-c", "exec java -XX:MaxRAMPercentage=75.0 -Xmx384m -Dserver.port=${PORT} -jar /app/app.jar"]
