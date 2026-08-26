@@ -69,7 +69,6 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       String(s.admissionNo || s.adm || "").includes(search),
   );
-  console.log("data ",filteredStudents);
   
 
   const currentSubject = electives.find((e) => e.id === selectedSubjectId);

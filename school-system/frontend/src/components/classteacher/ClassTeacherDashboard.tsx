@@ -1,5 +1,5 @@
 // components/classteacher/ClassTeacherDashboard.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlobalStyles } from "./shared/GlobalStyles";
 import { Sidebar } from "./Sidebar";
@@ -10,7 +10,6 @@ import { MarksManagement } from "./MarksManagement";
 import { ResultsReports } from "./ResultsReports";
 import { Analytics } from "./Analytics";
 import { Settings } from "./Settings";
-import { SubjectAssignments } from "./SubjectAssignments";
 import { ArchivesView } from "../shared/ArchivesView";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { ClassOverview } from "./ClassOverview";
@@ -22,14 +21,12 @@ import {
   FileIcon,
   BarIcon,
   SettIcon,
-  HomeIcon,
   ArchiveIcon,
   TimetableIcon,
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getClassId, normalizeRoles, normalizeUser } from "../../lib/api";
-import { type SubjectEnrollmentMode } from "../../lib/subjectEnrollment";
 import { AttendanceTab } from "./AttendanceTab";
 import {
   Calendar1Icon,
@@ -45,6 +42,20 @@ const OverviewIcon = () => <LayoutDashboard size={16} />;
 const BookOpenIcon = () => <BookOpen size={16} />;
 const ListChecksIcon = () => <ListChecks size={16} />;
 const CalIcon = () => <Calendar1Icon size={16} />;
+
+/**
+ * Returns all active elective subjects.
+ *
+ * The normalization makes this resilient in case the backend sends:
+ * ELECTIVE / elective / Elective.
+ */
+const buildElectiveGroups = (subjects: any[]) => {
+  return subjects.filter(
+    (subject) =>
+      subject.isOffered !== false &&
+      String(subject.enrollmentMode || "").toUpperCase() === "ELECTIVE",
+  );
+};
 
 const NAV = [
   {
@@ -65,12 +76,6 @@ const NAV = [
     desc: "Capture marks and review class performance.",
     Icon: MarkIcon,
   },
-  // {
-  //   id: "assignments",
-  //   label: "Subject Assignments",
-  //   desc: "See subjects and the assigned teachers.",
-  //   Icon: HomeIcon,
-  // },
   {
     id: "subject-joint",
     label: "Subject Registration",
@@ -132,32 +137,74 @@ const validClassTeacherTabs = new Set(NAV.map((item) => item.id));
 
 export default function ClassTeacherDashboard() {
   const navigate = useNavigate();
+
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("user");
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         return normalizeUser(parsed.user || parsed);
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to parse saved user.", e);
+      }
     }
+
     return null;
   });
 
   const [tab, setTab] = useState(() => {
     const saved = localStorage.getItem(CLASS_TEACHER_TAB_KEY);
+
     return saved && validClassTeacherTabs.has(saved) ? saved : "overview";
   });
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
-  const [selectedStudent, setSelectedStudent] = useState(null);
+
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classSubjectCatalog, setClassSubjectCatalog] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { theme, toggleTheme } = useDashboardTheme();
+
+  /**
+   * Detect all currently active elective subjects.
+   *
+   * The sidebar will automatically react whenever
+   * classSubjectCatalog changes.
+   */
+  const electiveSubjects = useMemo(() => {
+    return buildElectiveGroups(classSubjectCatalog);
+  }, [classSubjectCatalog]);
+
+  /**
+   * True only when this class currently has at least
+   * one active ELECTIVE subject.
+   */
+  const hasElectives = electiveSubjects.length > 0;
+
+  /**
+   * Build sidebar navigation dynamically.
+   *
+   * Elective Enrollment is completely removed when
+   * the class has no active elective subjects.
+   */
+  const navItems = useMemo(() => {
+    return NAV.filter((item) => {
+      if (item.id === "elective-enrollment") {
+        return hasElectives;
+      }
+
+      return true;
+    });
+  }, [hasElectives]);
 
   const loadData = useCallback(async () => {
     if (!currentUser?.classGrade || !currentUser?.classStream) {
@@ -165,9 +212,19 @@ export default function ClassTeacherDashboard() {
       setLoading(false);
       return;
     }
+
+    const classId = getClassId();
+
+    if (!classId) {
+      setError("No class ID is assigned to your profile.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+
       const [studentsData, subjectsData, staffData] = (await Promise.all([
         api.get(
           `/users/class/${currentUser.classGrade}/${currentUser.classStream}`,
@@ -177,113 +234,219 @@ export default function ClassTeacherDashboard() {
             examType: currentUser.examType,
           },
         ),
-        api.get(`/class/subject/${encodeURIComponent(getClassId()!)}`),
-        api.get(`/get/students?classId=${encodeURIComponent(getClassId()!)}`).then((r: any) => r?.content || []), // Get assignments and staff names
-      ])) as [{content:[]}, any[], any];
-      setStudents(studentsData?.content);
-      const mappedSubjects = subjectsData.map((subject: any) => ({
+
+        api.get(`/class/subject/${encodeURIComponent(classId)}`),
+
+        api
+          .get(`/get/students?classId=${encodeURIComponent(classId)}`)
+          .then((response: any) => response || {}),
+      ])) as [{ content?: any[] }, any[], any];
+
+      /**
+       * Students
+       */
+      setStudents(studentsData?.content || []);
+
+      /**
+       * Normalize subject IDs.
+       */
+      const mappedSubjects = (subjectsData || []).map((subject: any) => ({
         ...subject,
         id: subject.id || subject._id,
       }));
+
+      /**
+       * Keep the complete subject catalog.
+       * This is used for:
+       * - Subject registration
+       * - Elective detection
+       * - Elective enrollment
+       */
       setClassSubjectCatalog(mappedSubjects);
+
+      /**
+       * Only active/offered subjects for marks,
+       * reports, student details, etc.
+       */
       setSubjects(
         mappedSubjects.filter((subject: any) => subject.isOffered !== false),
       );
 
-      // Filter assignments for THIS class
-      const classAssignments = (staffData.assignments || [])
+      /**
+       * Support both possible API response shapes.
+       *
+       * Either:
+       * {
+       *   assignments: [],
+       *   staff: []
+       * }
+       *
+       * or an empty response.
+       */
+      const assignmentsList = staffData?.assignments || [];
+      const staffList = staffData?.staff || [];
+
+      /**
+       * Filter assignments for THIS class.
+       */
+      const classAssignments = assignmentsList
         .filter(
-          (a: any) =>
-            a.classGrade === currentUser.classGrade &&
-            a.classStream === currentUser.classStream,
+          (assignment: any) =>
+            assignment.classGrade === currentUser.classGrade &&
+            assignment.classStream === currentUser.classStream,
         )
-        .map((a: any) => {
-          const teacher = staffData.staff.find(
-            (s: any) => s.id === a.teacherId,
+        .map((assignment: any) => {
+          const teacher = staffList.find(
+            (staff: any) => staff.id === assignment.teacherId,
           );
+
           return {
-            ...a,
+            ...assignment,
             teacherName: teacher ? teacher.name : "Unknown",
           };
         });
+
       setAssignments(classAssignments);
     } catch (err: any) {
-      setError(err.message || "Failed to load records.");
+      console.error("Failed to load class teacher dashboard.", err);
+
+      setError(err?.message || "Failed to load records.");
     } finally {
       setLoading(false);
     }
   }, [currentUser]);
 
-  const toggleSubjectOffering = useCallback(
-    async (
-      subjectId: string,
-      isOffered: boolean,
-      enrollmentMode: SubjectEnrollmentMode = "compulsory",
-      sharedSlotId: string | null = null,
-    ) => {
-      if (!currentUser?.classGrade) {
-        throw new Error("No class is assigned to your profile.");
-      }
-      let payload: any = {
-        subjectId,
-        classGrade: currentUser.classGrade,
-        classStream: currentUser.classStream || "",
-        isOffered,
-        enrollmentMode,
-      };
-      if (enrollmentMode !== "compulsory") {
-        payload.sharedSlotId = sharedSlotId;
-      }
+  const loadSubjects = useCallback(async () => {
+  const classId = getClassId();
 
-      await api.put("/school/class-subjects", payload);
-      await loadData();
-    },
-    [currentUser, loadData],
-  );
+  if (!classId) {
+    console.error("No class ID is assigned to this profile.");
+    return;
+  }
+
+  try {
+    const subjectsData: any[] = await api.get(
+      `/class/subject/${encodeURIComponent(classId)}`
+    );
+
+    const mappedSubjects = (subjectsData || []).map((subject: any) => ({
+      ...subject,
+      id: subject.id || subject._id,
+    }));
+
+    // Full catalog including dropped subjects
+    setClassSubjectCatalog(mappedSubjects);
+
+    // Only currently offered subjects
+    setSubjects(
+      mappedSubjects.filter(
+        (subject: any) => subject.isOffered !== false
+      )
+    );
+  } catch (err) {
+    console.error("Failed to refresh class subjects.", err);
+  }
+}, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  /**
+   * If electives disappear while the user is currently
+   * on the Elective Enrollment page, safely redirect
+   * them back to Overview.
+   *
+   * This also updates localStorage so the hidden tab
+   * is not restored after refresh.
+   */
+  useEffect(() => {
+    if (!hasElectives && tab === "elective-enrollment") {
+      setTab("overview");
+
+      localStorage.setItem(CLASS_TEACHER_TAB_KEY, "overview");
+
+      setSelectedStudent(null);
+    }
+  }, [hasElectives, tab]);
+
+  /**
+   * Keep mobile state responsive.
+   */
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 900;
+
+      setIsMobile(mobile);
+
+      if (!mobile) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
+
     try {
       const freshUser: any = await api.get(`/users/${currentUser.id}`);
-      if (freshUser) {
-        // Ensure roles is always an array (backend may return object from DB)
-        let rolesArr = freshUser.roles;
-        if (rolesArr && !Array.isArray(rolesArr)) {
-          rolesArr = [rolesArr.role1, rolesArr.role2, rolesArr.role3].filter(
-            Boolean,
-          );
-        }
-        const updated = {
-          ...currentUser,
-          ...freshUser,
-          id: freshUser._id || freshUser.id,
-          roles: rolesArr || currentUser.roles || [],
-        };
-        const savedItem = localStorage.getItem("user");
-        if (savedItem) {
-          const parsed = JSON.parse(savedItem);
-          parsed.user = updated;
-          localStorage.setItem("user", JSON.stringify(parsed));
-        }
-        setCurrentUser(updated);
-      }
-    } catch (e) {}
-  }, [currentUser?.id]);
 
-  const handleManualRefresh = async () => {
-    setLoading(true);
-    await refreshUser();
-    await loadData();
-    setLoading(false);
-  };
+      if (!freshUser) return;
+
+      /**
+       * Ensure roles is always an array.
+       */
+      let rolesArr = freshUser.roles;
+
+      if (rolesArr && !Array.isArray(rolesArr)) {
+        rolesArr = [rolesArr.role1, rolesArr.role2, rolesArr.role3].filter(
+          Boolean,
+        );
+      }
+
+      const updated = {
+        ...currentUser,
+        ...freshUser,
+        id: freshUser._id || freshUser.id,
+        roles: rolesArr || currentUser.roles || [],
+      };
+
+      const savedItem = localStorage.getItem("user");
+
+      if (savedItem) {
+        const parsed = JSON.parse(savedItem);
+
+        parsed.user = updated;
+
+        localStorage.setItem("user", JSON.stringify(parsed));
+      }
+
+      setCurrentUser(updated);
+    } catch (e) {
+      console.error("Failed to refresh user.", e);
+    }
+  }, [currentUser?.id]);
 
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  const handleManualRefresh = async () => {
+    setLoading(true);
+
+    try {
+      await refreshUser();
+      await loadData();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -294,10 +457,15 @@ export default function ClassTeacherDashboard() {
     navigate("/change-password");
   };
 
-  // Roles check — guard against roles being a non-array
+  /**
+   * Roles check.
+   */
   const rolesArray = normalizeRoles(currentUser?.roles);
+
   const isSubjectTeacher = rolesArray.includes("SUBJECTTEACHER");
+
   const hasSubjectAssignments = currentUser?.subjects?.length > 0;
+
   const canSwitchToSubjectDashboard = isSubjectTeacher && hasSubjectAssignments;
 
   useEffect(() => {
@@ -306,28 +474,57 @@ export default function ClassTeacherDashboard() {
     }
   }, [currentUser, navigate, rolesArray]);
 
-  const handleSelectTab = (t: string) => {
-    setTab(t);
-    localStorage.setItem(CLASS_TEACHER_TAB_KEY, t);
+  const handleSelectTab = (selectedTab: string) => {
+    /**
+     * Extra protection:
+     * Don't allow navigation to Elective Enrollment
+     * when there are no electives.
+     */
+    if (selectedTab === "elective-enrollment" && !hasElectives) {
+      selectedTab = "overview";
+    }
+
+    setTab(selectedTab);
+
+    localStorage.setItem(CLASS_TEACHER_TAB_KEY, selectedTab);
+
     setSelectedStudent(null);
     setMobileMenuOpen(false);
   };
 
-  const activeNav = NAV.find((n) => n.id === tab) || NAV[0];
+  /**
+   * Use the filtered navigation list.
+   */
+  const activeNav =
+    navItems.find((item) => item.id === tab) || navItems[0] || NAV[0];
 
   const renderContent = () => {
-    if (loading)
+    if (loading) {
       return (
-        <div style={{ padding: 40, textAlign: "center" }}>
+        <div
+          style={{
+            padding: 40,
+            textAlign: "center",
+          }}
+        >
           Loading records...
         </div>
       );
-    if (error)
+    }
+
+    if (error) {
       return (
-        <div style={{ padding: 40, textAlign: "center", color: C.dangerText }}>
+        <div
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: C.dangerText,
+          }}
+        >
           {error}
         </div>
       );
+    }
 
     if (selectedStudent && tab === "students") {
       return (
@@ -338,6 +535,7 @@ export default function ClassTeacherDashboard() {
         />
       );
     }
+
     switch (tab) {
       case "overview":
         return (
@@ -349,6 +547,7 @@ export default function ClassTeacherDashboard() {
             onNavigate={handleSelectTab}
           />
         );
+
       case "students":
         return (
           <StudentRecords
@@ -358,91 +557,105 @@ export default function ClassTeacherDashboard() {
             classInfo={`Grade ${currentUser?.classGrade}${currentUser?.classStream}`}
           />
         );
+
       case "attendance-history":
         return <ClassTeacherAttendanceHistory />;
+
       case "marks":
         return (
           <MarksManagement
             students={students}
             subjects={subjects}
-            // onRefresh={loadData}
             user={currentUser}
           />
         );
-      // case "assignments":
-      //   return (
-      //     <SubjectAssignments
-      //       subjects={classSubjectCatalog}
-      //       assignments={assignments}
-      //       classGrade={currentUser.classGrade}
-      //       classStream={currentUser.classStream}
-      //       classTeacherName={currentUser.name}
-      //       canSwitchToSubjectDashboard={canSwitchToSubjectDashboard}
-      //       onSwitchToSubjectDashboard={() => navigate("/subjectTeacher")}
-      //       onToggleSubjectOffering={toggleSubjectOffering}
-      //       onRefresh={loadData}
-      //     />
-      //   );
+
       case "subject-joint":
         return (
-          <SubjectJointTab
-            subjects={classSubjectCatalog}
-            user={currentUser}
-            // onRefresh={loadData}
-          />
+          <SubjectJointTab subjects={classSubjectCatalog} user={currentUser} onRefresh={loadSubjects} />
         );
+
       case "elective-enrollment":
+        /**
+         * Final protection against manually restored
+         * or invalid localStorage state.
+         */
+        if (!hasElectives) {
+          return (
+            <ClassOverview
+              students={students}
+              subjects={subjects}
+              assignments={assignments}
+              user={currentUser}
+              onNavigate={handleSelectTab}
+            />
+          );
+        }
+
         return (
           <ElectiveEnrollmentTab
             students={students}
             subjects={classSubjectCatalog}
             user={currentUser}
-            // onRefresh={loadData}
           />
         );
+
       case "attendance":
         return <AttendanceTab user={currentUser} />;
+
       case "timetable":
         return (
           <TimetableLibrary
             fetchPath="/timetables/my"
             fetchParams={{ view: "class" }}
             title="Class Timetable"
-            description="Review the published timetable for your class and open the uploaded PDF when needed."
+            description="Review the published class timetable and open the uploaded PDF when needed."
             emptyMessage="No class timetable has been published for your current academic cycle yet."
           />
         );
+
       case "results":
         return (
           <ResultsReports
             students={students}
-            subjects={subjects.filter((s) => s.enrollmentMode !== "DROPPED")}
-            classGrade={currentUser.classGrade}
-            classStream={currentUser.classStream}
-            term={currentUser.term}
-            year={currentUser.year}
-            examType={currentUser.examType}
+            subjects={subjects.filter(
+              (subject) =>
+                String(subject.enrollmentMode || "").toUpperCase() !==
+                "DROPPED",
+            )}
+            classGrade={currentUser?.classGrade}
+            classStream={currentUser?.classStream}
+            term={currentUser?.term}
+            year={currentUser?.year}
+            examType={currentUser?.examType}
           />
         );
+
       case "analytics":
         return (
           <Analytics
             students={students}
-            subjects={subjects.filter((s) => s.enrollmentMode !== "DROPPED")}
-            classGrade={currentUser.classGrade}
-            classStream={currentUser.classStream}
-            term={currentUser.term}
-            year={currentUser.year}
+            subjects={subjects.filter(
+              (subject) =>
+                String(subject.enrollmentMode || "").toUpperCase() !==
+                "DROPPED",
+            )}
+            classGrade={currentUser?.classGrade}
+            classStream={currentUser?.classStream}
+            term={currentUser?.term}
+            year={currentUser?.year}
           />
         );
+
       case "archives":
         return (
           <ArchivesView
-            classGrade={currentUser.classGrade}
-            classStream={currentUser.classStream}
+            classGrade={currentUser?.classGrade}
+            classStream={currentUser?.classStream}
             title="Class Performance Archives"
           />
         );
+
       case "settings":
         return (
           <Settings
@@ -453,6 +666,7 @@ export default function ClassTeacherDashboard() {
             }}
           />
         );
+
       default:
         return null;
     }
@@ -461,12 +675,14 @@ export default function ClassTeacherDashboard() {
   return (
     <>
       <GlobalStyles />
+
       {mobileMenuOpen && (
         <div
           className="ct-mobileOverlay"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
+
       <div
         className="ct-dashboardShell"
         data-theme={theme}
@@ -479,7 +695,7 @@ export default function ClassTeacherDashboard() {
         }}
       >
         <Sidebar
-          navItems={NAV}
+          navItems={navItems}
           activeTab={tab}
           collapsed={isMobile ? false : collapsed}
           mobileOpen={mobileMenuOpen}
@@ -489,6 +705,7 @@ export default function ClassTeacherDashboard() {
               setMobileMenuOpen(false);
               return;
             }
+
             setCollapsed(!collapsed);
           }}
           onSelectTab={handleSelectTab}
@@ -518,13 +735,12 @@ export default function ClassTeacherDashboard() {
             onRefresh={handleManualRefresh}
           />
 
-          {/* Subject teacher switch banner */}
           {canSwitchToSubjectDashboard && tab !== "overview" && (
             <div
               style={{
                 padding: "8px 24px",
                 background: "rgba(201,150,61,0.08)",
-                borderBottom: `1px solid rgba(201,150,61,0.2)`,
+                borderBottom: "1px solid rgba(201,150,61,0.2)",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
@@ -542,6 +758,7 @@ export default function ClassTeacherDashboard() {
               >
                 You also have subject teacher assignments.
               </p>
+
               <button
                 onClick={() => navigate("/subjectTeacher")}
                 style={{
@@ -562,10 +779,13 @@ export default function ClassTeacherDashboard() {
             </div>
           )}
 
-          {/* Content area */}
           <div
             className="ct-contentArea"
-            style={{ flex: 1, overflowY: "auto", padding: "24px" }}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "24px",
+            }}
           >
             {renderContent()}
           </div>

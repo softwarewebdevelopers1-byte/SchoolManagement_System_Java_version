@@ -7,7 +7,7 @@ import { api, getClassId, getSchoolId, request } from "../../lib/api";
 interface SubjectJointTabProps {
   subjects: any[]; // classSubjectCatalog — already loaded by parent
   user: any;
-  // onRefresh: () => void;
+  onRefresh: () => void;
 }
 
 const pill = (text: string, color: string) => {
@@ -41,7 +41,7 @@ const pill = (text: string, color: string) => {
 export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   subjects,
   user,
-  // onRefresh,
+  onRefresh,
 }) => {
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -107,7 +107,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
           : "Subject restored for this class.",
         "success",
       );
-      // onRefresh();
+      onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Failed to update subject.", "error");
     }
@@ -130,7 +130,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
           : "Subject restored for this class.",
         "success",
       );
-      // onRefresh();
+      onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Failed to update subject.", "error");
     }
@@ -151,7 +151,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         sharedSlotId: sharedSlotId || null,
       });
       showMsg("Subject type updated.", "success");
-      // onRefresh();
+      onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Failed to update subject type.", "error");
     }
@@ -207,7 +207,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       setSelectedSubjectId("");
       setSubjectType("COMPULSORY");
       setElectiveCode("");
-      // onRefresh();
+      onRefresh();
     } catch (err: any) {
       showMsg(err.message || "Failed to register subject.", "error");
     } finally {
