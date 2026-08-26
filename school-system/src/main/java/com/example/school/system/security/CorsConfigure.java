@@ -12,7 +12,7 @@ public class CorsConfigure {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("http://localhost:5173").allowedHeaders("*")
+                registry.addMapping("/**").allowedOrigins("http://localhost:5173","https://edunex-org.vercel.app").allowedHeaders("*")
                         .allowedMethods("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")
                         .allowCredentials(true);
             }
