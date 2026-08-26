@@ -173,8 +173,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const response: any = await api.post(
         isSuperAdminLogin ? "/superadmin/login" : "/login",
         {
-        email: loginIdentifier.trim(),
-        password,
+          email: loginIdentifier.trim(),
+          password,
         },
       );
 
@@ -394,6 +394,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          className={styles.homeLink}
+          onClick={() => navigate("/")}
+          aria-label="Back to home"
+        >
+          <Home size={16} />
+          <span>Home</span>
+        </button>
 
         {/* Right Panel - Form Section */}
         <div className={styles.rightPanel}>

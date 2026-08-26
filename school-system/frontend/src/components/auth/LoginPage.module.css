@@ -704,4 +704,28 @@
   line-height: 1.5;
   color: var(--text-light);
 }
+.homeLink {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+  z-index: 10;
+}
 
+.homeLink:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
