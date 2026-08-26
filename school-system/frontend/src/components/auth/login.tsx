@@ -188,11 +188,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const session = { ...response, user };
       localStorage.setItem("user", JSON.stringify(session));
 
-      if (isSuperAdminLogin) {
-        window.location.href = "/edunex-org/superAdmin";
-        return;
-      }
-
       const roles = normalizeRoles(user.roles);
       const isTeacher =
         roles.includes("SUBJECTTEACHER") ||
@@ -404,49 +399,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <div className={styles.rightPanel}>
           <div className={styles.formContainer}>
             {/* Header */}
-            <div className={styles.formHeader}>
-              <p className={styles.formSubtitle}>
-                {isSuperAdminLogin ? "Super Admin Portal" : "Portal Access"}
-              </p>
-              <button
-                type="button"
-                className={styles.authModeButton}
-                onClick={() => {
-                  navigate("/");
-                }}
-              >
-                <Home size={18} /> Home
-              </button>
-              <h2 className={styles.formTitle}>
-                {profileSession
-                  ? "Complete teacher profile"
-                  : isSuperAdminLogin
-                    ? "Super Admin Sign In"
-                    : authMode === "login"
-                      ? "Sign in to your account"
-                      : "Create teacher account"}
-              </h2>
-              {!profileSession && (
-                <button
-                  type="button"
-                  className={styles.authModeButton}
-                  onClick={() => {
-                    setIsSuperAdminLogin(!isSuperAdminLogin);
-                    setError("");
-                    setNotice(null);
-                  }}
-                  style={{
-                    marginTop: 8,
-                    background: isSuperAdminLogin ? "var(--edu-green)" : "transparent",
-                    color: isSuperAdminLogin ? "#fff" : "var(--edu-green)",
-                    border: "1px solid var(--edu-green)",
-                  }}
-                >
-                  {isSuperAdminLogin ? "Switch to School Login" : "Switch to Super Admin Login"}
-                </button>
-              )}
-            </div>
-
             {/* Form */}
             {profileSession && (
               <div className={styles.profileModalBackdrop}>
