@@ -38,6 +38,7 @@ import {
   buildClassId,
   getClassSubjectSetting,
 } from "../../lib/subjectEnrollment";
+import { students } from "../classteacher/shared/data";
 const navItems: NavItem[] = [
   {
     id: "overview",
@@ -168,6 +169,7 @@ const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
       schoolClass: member.schoolClass,
     };
   });
+console.log("checked students *** ", students);
 
 const mapStudentsFromApi = (students: any): Student[] =>
   students.map((student: any) => ({

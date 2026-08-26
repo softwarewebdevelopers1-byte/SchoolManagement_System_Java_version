@@ -6,7 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://schoolmanagement-system-java-version-1.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
@@ -587,6 +587,7 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       classGrade: student.grade || "",
       classStream: student.stream || "",
       status: student.status || "Active",
+      guardianName: student.guardianName,
     })),
     staff: (teachers || []).map((teacher: any) => {
       const roles = normalizeRoles(teacher.roles);

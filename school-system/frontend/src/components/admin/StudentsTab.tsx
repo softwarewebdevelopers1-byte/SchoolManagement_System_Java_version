@@ -251,6 +251,8 @@ const StudentFormModal: React.FC<{
   onSave,
   onBulkSave,
 }) => {
+  console.log(student);
+  
   const [isCompact, setIsCompact] = useState(
     () =>
       typeof window !== "undefined" && window.innerWidth <= 640,
@@ -2205,7 +2207,7 @@ export const StudentsTab: React.FC<
                       }
                     >
                       {
-                        student.phoneNumber
+                        student.guardianName
                       }
                     </p>
                   </td>
