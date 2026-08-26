@@ -535,7 +535,7 @@ const StudentFormModal: React.FC<{
           schoolId,
 
           gender:
-            row.gender || "",
+            row.gender || "NOT_SET",
         }));
 
       /*
