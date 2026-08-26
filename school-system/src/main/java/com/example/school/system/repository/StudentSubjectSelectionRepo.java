@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.StudentSubjectSelection;
 
 public interface StudentSubjectSelectionRepo extends JpaRepository<StudentSubjectSelection, UUID> {
+    @Modifying
     int deleteBySubjectJointId(UUID subjectJointId);
 
     boolean existsByElectiveCodeAndStudentProfileId(String electiveCode, UUID studentProfileId);
@@ -46,4 +47,3 @@ public interface StudentSubjectSelectionRepo extends JpaRepository<StudentSubjec
     """)
     List<Object[]> findEnrollmentPairsByClassId(@Param("classId") UUID classId);
 }
-

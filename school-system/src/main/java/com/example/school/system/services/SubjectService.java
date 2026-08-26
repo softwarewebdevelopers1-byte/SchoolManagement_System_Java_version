@@ -259,6 +259,7 @@ public class SubjectService {
         studentSubjectSelectionRepo.saveAll(selections);
     }
 
+    @Transactional
     public void updateSubjectJointStatus(UUID subjectJointId, SubjectType subjectType, String electiveCode) {
         SubjectJoint subjectJoint = subjectJointRepo.findById(subjectJointId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject not found"));
@@ -279,9 +280,6 @@ public class SubjectService {
     
     @Transactional
     public void deleteSingleSubjectSelection(String electiveCode, UUID studentId) {
-        if (!studentSubjectSelectionRepo.existsByElectiveCodeAndStudentProfileId(electiveCode, studentId)) {
-            throw new SchoolResourceNotFoundExceptionHandler("student not registered");
-        }
         studentSubjectSelectionRepo.deleteByElectiveCodeAndStudentProfileId(electiveCode, studentId);
     }
 
