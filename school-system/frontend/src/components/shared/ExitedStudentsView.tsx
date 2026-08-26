@@ -47,14 +47,12 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
 
   useEffect(() => {
     (async () => {
-      async function getStudents(): Promise<ExitedStudent[]> {
+      async function getStudents(): Promise<{content:any[]}> {
         return await request(
           `/get/exited/students?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
         );
       }
-      console.log("exited students ", await getStudents());
-
-      setExitedStudents(await getStudents());
+      setExitedStudents((await getStudents()).content);
     })();
   }, []);
 
