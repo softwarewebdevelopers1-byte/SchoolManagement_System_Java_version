@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class Login {
     private final LoginService loginUserService;
-    
+
     @PostMapping
     public ResponseEntity<?> LoginTeacher(@Valid @RequestBody LoginUserDTO userLogin) {
+        System.out.println("logged in");
         LoginResponse loginRes = loginUserService.LoginUser(userLogin);
+        System.out.println("logging finished");
         return ResponseEntity.status(200).body(SchoolApiResponse.success(loginRes, "User logged in"));
     }
 
