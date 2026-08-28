@@ -213,9 +213,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         }
       }
     } catch (err: any) {
-      setError(err.message || "Invalid login details. Please try again.");
-    } finally {
       setLoading(false);
+      setError(err.message || "Invalid login details. Please try again.");
     }
   };
 
@@ -276,7 +275,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       });
     } catch (err: any) {
       setError(err.message || "Unable to create account.");
-    } finally {
       setLoading(false);
     }
   };
