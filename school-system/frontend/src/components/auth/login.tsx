@@ -423,6 +423,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <div className={styles.inputGroup}>
                     <label className={styles.inputLabel}>First name</label>
                     <input
+                      disabled={loading ? true : false}
                       value={profileFirstName}
                       onChange={(event) =>
                         setProfileFirstName(event.target.value)
@@ -434,6 +435,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <div className={styles.inputGroup}>
                     <label className={styles.inputLabel}>Last name</label>
                     <input
+                      disabled={loading ? true : false}
                       value={profileLastName}
                       onChange={(event) =>
                         setProfileLastName(event.target.value)
@@ -481,6 +483,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       <MailIcon />
                     </span>
                     <input
+                      disabled={loading ? true : false}
                       id="loginIdentifier"
                       type="text"
                       inputMode="email"
@@ -508,6 +511,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       <LockIcon />
                     </span>
                     <input
+                      disabled={loading ? true : false}
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
@@ -532,7 +536,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 {/* Options */}
                 <div className={styles.formOptions}>
                   <label className={styles.checkboxLabel}>
-                    <input type="checkbox" className={styles.checkbox} />
+                    <input
+                      disabled={loading ? true : false}
+                      type="checkbox"
+                      className={styles.checkbox}
+                    />
                     <span>Remember me</span>
                   </label>
                   <a href="#" className={styles.forgotLink}>
@@ -587,6 +595,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <label className={styles.inputLabel}>School code</label>
                   <div className={styles.codeRow}>
                     <input
+                      disabled={loading ? true : false}
                       value={schoolCode}
                       onChange={(event) => {
                         setSchoolCode(event.target.value);
@@ -611,6 +620,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Email</label>
                   <input
+                    disabled={loading ? true : false}
                     type="email"
                     value={signupEmail}
                     onChange={(event) => setSignupEmail(event.target.value)}
@@ -621,6 +631,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Password</label>
                   <input
+                    disabled={loading ? true : false}
                     type="password"
                     value={signupPassword}
                     onChange={(event) => setSignupPassword(event.target.value)}
