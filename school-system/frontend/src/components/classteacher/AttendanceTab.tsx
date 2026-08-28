@@ -6,6 +6,7 @@ import {
   request,
 } from "../../lib/api";
 import { C, FONT } from "./shared/constants";
+import AttendanceSheetSkeleton from "../skeletons/AttendanceSheetSkeleton";
 
 interface AttendanceRecord {
   recordId: string;
@@ -124,9 +125,10 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
 
   if (loading && !sheet) {
     return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        Loading attendance records...
-      </div>
+      <>
+        {" "}
+        <AttendanceSheetSkeleton />{" "}
+      </>
     );
   }
 
