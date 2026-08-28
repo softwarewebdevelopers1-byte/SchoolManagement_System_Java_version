@@ -40,7 +40,7 @@ public class RequestFilter {
                         .requestMatchers("/api/reset/password/request").permitAll()
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
                         .requestMatchers("/api/complex/login")
-                        .permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require
+                        .permitAll().requestMatchers("/api/health").permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require
                                                                                        // authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
