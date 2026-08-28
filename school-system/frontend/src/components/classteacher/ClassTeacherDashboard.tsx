@@ -36,6 +36,7 @@ import {
   History,
 } from "lucide-react";
 import ClassTeacherAttendanceHistory from "./ClassTeacherAttendanceHistory";
+import OverviewSkeleton from "../skeletons/OverviewSkeletons";
 
 // Wrapper icons for lucide components to match existing Icon interface
 const OverviewIcon = () => <LayoutDashboard size={16} />;
@@ -317,36 +318,34 @@ export default function ClassTeacherDashboard() {
   }, [currentUser]);
 
   const loadSubjects = useCallback(async () => {
-  const classId = getClassId();
+    const classId = getClassId();
 
-  if (!classId) {
-    console.error("No class ID is assigned to this profile.");
-    return;
-  }
+    if (!classId) {
+      console.error("No class ID is assigned to this profile.");
+      return;
+    }
 
-  try {
-    const subjectsData: any[] = await api.get(
-      `/class/subject/${encodeURIComponent(classId)}`
-    );
+    try {
+      const subjectsData: any[] = await api.get(
+        `/class/subject/${encodeURIComponent(classId)}`,
+      );
 
-    const mappedSubjects = (subjectsData || []).map((subject: any) => ({
-      ...subject,
-      id: subject.id || subject._id,
-    }));
+      const mappedSubjects = (subjectsData || []).map((subject: any) => ({
+        ...subject,
+        id: subject.id || subject._id,
+      }));
 
-    // Full catalog including dropped subjects
-    setClassSubjectCatalog(mappedSubjects);
+      // Full catalog including dropped subjects
+      setClassSubjectCatalog(mappedSubjects);
 
-    // Only currently offered subjects
-    setSubjects(
-      mappedSubjects.filter(
-        (subject: any) => subject.isOffered !== false
-      )
-    );
-  } catch (err) {
-    console.error("Failed to refresh class subjects.", err);
-  }
-}, []);
+      // Only currently offered subjects
+      setSubjects(
+        mappedSubjects.filter((subject: any) => subject.isOffered !== false),
+      );
+    } catch (err) {
+      console.error("Failed to refresh class subjects.", err);
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -501,14 +500,9 @@ export default function ClassTeacherDashboard() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div
-          style={{
-            padding: 40,
-            textAlign: "center",
-          }}
-        >
-          Loading records...
-        </div>
+        <>
+          <OverviewSkeleton />
+        </>
       );
     }
 
@@ -572,7 +566,11 @@ export default function ClassTeacherDashboard() {
 
       case "subject-joint":
         return (
-          <SubjectJointTab subjects={classSubjectCatalog} user={currentUser} onRefresh={loadSubjects} />
+          <SubjectJointTab
+            subjects={classSubjectCatalog}
+            user={currentUser}
+            onRefresh={loadSubjects}
+          />
         );
 
       case "elective-enrollment":

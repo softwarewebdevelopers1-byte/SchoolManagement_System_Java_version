@@ -15,6 +15,7 @@ import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 
 import { initials, avatarColor, avatar, gc } from "../../lib/dashboardHelpers";
+import OverviewSkeleton from "../skeletons/OverviewSkeletons";
 
 type SubjectMarksMap = MarksData[string];
 type StudentMarksRow = SubjectMarksMap[string];
@@ -145,38 +146,40 @@ const SubjectTeacherDashboard: React.FC = () => {
       ]);
       console.log("new data ", data, "Current user ", currentUser);
 
-      const mapped: Subject[] = (data || []).map((a: any) => {
-        const subjectJointId =
-          a.subjectJointId || a._id || a.id || a.subjectId;
-        const assignedSubject =
-          a.subject && typeof a.subject === "object" ? a.subject : {};
-        const enrollmentMode = String(
-          a.enrollmentMode || a.subjectType || "compulsory",
-        ).toUpperCase();
-        const subjectEnrollmentMode: Subject["enrollmentMode"] =
-          enrollmentMode === "ELECTIVE" ? "elective" : "compulsory";
-        return {
-          id: String(subjectJointId || ""),
-          subjectId:
-            assignedSubject._id ||
-            assignedSubject.id ||
-            a.rawSubjectId ||
-            a.subjectId ||
-            subjectJointId,
-          name: a.subjectName || "Subject",
-          grade: `Grade ${a.classGrade} ${a.classStream}`.trim(),
-          classGrade: a.classGrade,
-          classStream: a.classStream,
-          students: a.studentCount || 0,
-          avg: averages[subjectJointId] ?? 0,
-          pushed: false,
-          term: currentUser.term || 1,
-          year: currentUser.year || 2024,
-          lastAssess: "N/A",
-          enrollmentMode: subjectEnrollmentMode,
-          sharedSlotId: a.sharedSlotId || a.electiveCode || null,
-        };
-      }).filter((subject) => subject.id);
+      const mapped: Subject[] = (data || [])
+        .map((a: any) => {
+          const subjectJointId =
+            a.subjectJointId || a._id || a.id || a.subjectId;
+          const assignedSubject =
+            a.subject && typeof a.subject === "object" ? a.subject : {};
+          const enrollmentMode = String(
+            a.enrollmentMode || a.subjectType || "compulsory",
+          ).toUpperCase();
+          const subjectEnrollmentMode: Subject["enrollmentMode"] =
+            enrollmentMode === "ELECTIVE" ? "elective" : "compulsory";
+          return {
+            id: String(subjectJointId || ""),
+            subjectId:
+              assignedSubject._id ||
+              assignedSubject.id ||
+              a.rawSubjectId ||
+              a.subjectId ||
+              subjectJointId,
+            name: a.subjectName || "Subject",
+            grade: `Grade ${a.classGrade} ${a.classStream}`.trim(),
+            classGrade: a.classGrade,
+            classStream: a.classStream,
+            students: a.studentCount || 0,
+            avg: averages[subjectJointId] ?? 0,
+            pushed: false,
+            term: currentUser.term || 1,
+            year: currentUser.year || 2024,
+            lastAssess: "N/A",
+            enrollmentMode: subjectEnrollmentMode,
+            sharedSlotId: a.sharedSlotId || a.electiveCode || null,
+          };
+        })
+        .filter((subject) => subject.id);
       setSubjects(mapped);
       if (mapped.length > 0) {
         const savedSubjectId = localStorage.getItem(subjectStorageKey);
@@ -452,7 +455,10 @@ const SubjectTeacherDashboard: React.FC = () => {
           ),
         },
       }));
-      setMsg({ text: "Excel marks loaded. Review and save the subject marks.", type: "success" });
+      setMsg({
+        text: "Excel marks loaded. Review and save the subject marks.",
+        type: "success",
+      });
     },
     [],
   );
@@ -590,9 +596,9 @@ const SubjectTeacherDashboard: React.FC = () => {
   const renderContent = () => {
     if (loading)
       return (
-        <div style={{ padding: 40, textAlign: "center" }}>
-          Loading dashboard...
-        </div>
+        <>
+          <OverviewSkeleton />
+        </>
       );
     if (subjects.length === 0)
       return (
@@ -719,7 +725,8 @@ const SubjectTeacherDashboard: React.FC = () => {
                 padding: "10px 20px",
                 marginBottom: 15,
                 borderRadius: 8,
-                background: msg.type === "success" ? "var(--sBg)" : "var(--dBg)",
+                background:
+                  msg.type === "success" ? "var(--sBg)" : "var(--dBg)",
                 color: msg.type === "success" ? "var(--sText)" : "var(--dText)",
                 fontSize: 13,
                 fontWeight: 600,

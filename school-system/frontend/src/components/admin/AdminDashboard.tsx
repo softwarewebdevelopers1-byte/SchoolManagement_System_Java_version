@@ -39,6 +39,7 @@ import {
   getClassSubjectSetting,
 } from "../../lib/subjectEnrollment";
 import { students } from "../classteacher/shared/data";
+import OverviewSkeleton from "../skeletons/OverviewSkeletons";
 const navItems: NavItem[] = [
   {
     id: "overview",
@@ -361,7 +362,10 @@ const mergeClassLists = (apiClasses: any[], derivedClasses: Class[]) => {
   const derivedByKey = new Map<string, Class>();
 
   derivedClasses.forEach((currentClass) => {
-    derivedById.set(String(currentClass.classId || currentClass.id), currentClass);
+    derivedById.set(
+      String(currentClass.classId || currentClass.id),
+      currentClass,
+    );
     derivedByKey.set(
       buildClassId(currentClass.grade, currentClass.stream || ""),
       currentClass,
@@ -380,7 +384,9 @@ const mergeClassLists = (apiClasses: any[], derivedClasses: Class[]) => {
     const classId = String(item.classId || item.id || fallbackId);
     const derived =
       derivedById.get(classId) || derivedByKey.get(buildClassId(grade, stream));
-    const students = Number(item.totalStudents ?? item.students ?? derived?.students ?? 0);
+    const students = Number(
+      item.totalStudents ?? item.students ?? derived?.students ?? 0,
+    );
     const name =
       item.name ||
       item.className ||
@@ -508,8 +514,9 @@ const AdminDashboard: React.FC = () => {
       const mappedTeachers = mapStaffToTeachers(response.staff);
       const nextSubjects = response.subjects || [];
       const nextAssignments = response.assignments || [];
-      const nextClassSubjectSettings =
-        (response.subjectJoints || response.assignments || []) as unknown as ClassSubjectSetting[];
+      const nextClassSubjectSettings = (response.subjectJoints ||
+        response.assignments ||
+        []) as unknown as ClassSubjectSetting[];
       const nextClasses = deriveClasses(
         mappedStudents,
         mappedTeachers,
@@ -526,7 +533,9 @@ const AdminDashboard: React.FC = () => {
       setSubjects(nextSubjects);
       setAssignments(nextAssignments);
       setClassSubjectSettings(nextClassSubjectSettings);
-      setSubjectJointsData((response.subjectJoints || []) as unknown as subjectJoints[]);
+      setSubjectJointsData(
+        (response.subjectJoints || []) as unknown as subjectJoints[],
+      );
       setClasses(mergedClasses);
       setClassesFound(mergedClasses);
     } catch (err) {
@@ -627,7 +636,6 @@ const AdminDashboard: React.FC = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
-
       await api.delete(`/users/${studentId}`);
       await loadDashboardUsers();
       showSuccess("Student record deleted.");
@@ -1329,7 +1337,9 @@ const AdminDashboard: React.FC = () => {
           }}
         >
           {loading ? (
-            <div style={emptyStateStyle}>Loading live dashboard data...</div>
+            <>
+              <OverviewSkeleton />
+            </>
           ) : error ? (
             <div style={emptyStateStyle}>
               <p style={{ margin: 0 }}>{error}</p>
