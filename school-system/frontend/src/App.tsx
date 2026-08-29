@@ -15,9 +15,7 @@ import {
   ROLE_PATHS,
 } from "./lib/api";
 import SchoolRegistration from "./components/auth/SchoolRegistration";
-import SuperAdminDashboard from "./components/superAdmin/SuperAdmin";
-import SuperAdminLoginPage from "./components/superAdmin/SuperAdminLogin";
-
+import SuperAdminDashboard from "./components/super-admin/SuperAdminDashboard";
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
   if (!saved) return <Navigate to="/login" replace />;
@@ -156,9 +154,7 @@ function App() {
         <Route
           path="/edunex-org/superAdmin"
           element={
-            <SuperAdminRoute>
               <SuperAdminDashboard />
-            </SuperAdminRoute>
           }
         />
         <Route path="/" element={<LandingPage />} />
