@@ -1,0 +1,4 @@
+studentFullName,studentAdm,email,guardianName,phoneNumber,gender,className
+Jane Doe,ADM-001,jane.doe@example.com,John Doe,0712345678,FEMALE,3 south
+Mark Smith,,,Mary Smith,0722222222,MALE,3 south
+Amina Ali,ADM-003,amina.ali@example.com,Ali Hassan,0733333333,FEMALE,1 south

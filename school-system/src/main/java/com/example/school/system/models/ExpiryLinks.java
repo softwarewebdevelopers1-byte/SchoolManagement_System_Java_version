@@ -29,16 +29,34 @@ public class ExpiryLinks {
     @Column(name = "used")
     boolean used = false;
 
+    @Column(name = "revoked")
+    boolean revoked = false;
+
+    @Column(name = "created_at")
+    LocalDateTime createdAt;
+
+    @Column(name = "used_at")
+    LocalDateTime usedAt;
+
     @Column(name = "expiration")
     LocalDateTime expirationTime;
 
     @Column(name = "users_id")
     UUID users;
 
+    @Column(name = "school_id")
+    UUID schoolId;
+
+    @Column(name = "role_name")
+    String roleName;
+
     @PrePersist
     private void generateId() {
         if (id == null) {
             id = UuidCreator.getTimeOrdered();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
         }
     }
 }

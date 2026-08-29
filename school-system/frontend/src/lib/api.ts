@@ -996,8 +996,14 @@ export const api = {
 };
 
 export const superAdminApi = {
+  getPlatformStatistics: async (): Promise<any> => {
+    return request<any>("/superadmin/platform/statistics");
+  },
   getSchools: async (): Promise<any> => {
     return request<any>("/superadmin/schools");
+  },
+  getSchoolById: async (schoolId: string): Promise<any> => {
+    return request<any>(`/superadmin/schools/${encodeURIComponent(schoolId)}`);
   },
   updateSchoolStatus: async (
     schoolId: string,
@@ -1013,8 +1019,20 @@ export const superAdminApi = {
   getUsers: async (): Promise<any> => {
     return request<any>("/superadmin/users");
   },
+  getPlatformStaff: async (): Promise<any> => {
+    return request<any>("/superadmin/staff");
+  },
   getTeachers: async (): Promise<any> => {
     return request<any>("/superadmin/users/teachers");
+  },
+  getInvitations: async (): Promise<any> => {
+    return request<any>("/superadmin/invitations");
+  },
+  createInvite: async (email: string, schoolId: string): Promise<any> => {
+    return request<any>("/superadmin/invites", {
+      method: "POST",
+      body: JSON.stringify({ email, schoolId }),
+    });
   },
   updateUserStatus: async (userId: string, status: string): Promise<any> => {
     return request<any>(

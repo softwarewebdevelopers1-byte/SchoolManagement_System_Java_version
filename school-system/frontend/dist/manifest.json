@@ -1,0 +1,20 @@
+{
+  "short_name": "EN",
+  "name": "Edunex",
+  "icons": [
+    {
+      "src": "/EdunexImage.png",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/EdunexImage.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#c9963d",
+  "background_color": "#ffffff"
+}

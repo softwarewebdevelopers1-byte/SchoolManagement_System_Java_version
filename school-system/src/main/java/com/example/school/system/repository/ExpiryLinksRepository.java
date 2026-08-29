@@ -1,6 +1,7 @@
 package com.example.school.system.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,8 +16,12 @@ public interface ExpiryLinksRepository extends JpaRepository<ExpiryLinks, UUID> 
 
     Optional<ExpiryLinks> findByTokenAndUsed(String token, boolean value);
 
-        Optional<ExpiryLinks> findByTokenAndUsedAndExpirationTimeAfter(String token, boolean used,
+    Optional<ExpiryLinks> findByTokenAndUsedAndExpirationTimeAfter(String token, boolean used,
             LocalDateTime now);
+
+    List<ExpiryLinks> findAllByOrderByCreatedAtDesc();
+
+    List<ExpiryLinks> findAllBySchoolIdOrderByCreatedAtDesc(UUID schoolId);
 
     int deleteByUsers(LoginView user);
 

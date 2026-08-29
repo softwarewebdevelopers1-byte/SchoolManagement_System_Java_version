@@ -26,10 +26,22 @@ public class SuperAdminController {
 
     private final SuperAdminService superAdminService;
 
+    @GetMapping("/platform/statistics")
+    public ResponseEntity<?> getPlatformStatistics() {
+        return ResponseEntity.ok(SchoolApiResponse.success(superAdminService.getPlatformStatistics(),
+                "Platform statistics loaded"));
+    }
+
     @GetMapping("/schools")
     public ResponseEntity<?> getAllSchools() {
         var res = superAdminService.getAllSchools();
         return ResponseEntity.ok(SchoolApiResponse.success(res, "Schools loaded"));
+    }
+
+    @GetMapping("/schools/{schoolId}")
+    public ResponseEntity<?> getSchoolDetails(@PathVariable UUID schoolId) {
+        var res = superAdminService.getSchoolDetails(schoolId);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "School loaded"));
     }
 
     @PatchMapping("/schools/{schoolId}/status")
@@ -45,10 +57,39 @@ public class SuperAdminController {
         return ResponseEntity.ok(SchoolApiResponse.success(res, "Users loaded"));
     }
 
+    @GetMapping("/staff")
+    public ResponseEntity<?> getStaff() {
+        var res = superAdminService.getPlatformStaff();
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Staff loaded"));
+    }
+
     @GetMapping("/users/teachers")
     public ResponseEntity<?> getAllTeachersAndAdmins() {
         var res = superAdminService.getAllTeachersAndAdmins();
         return ResponseEntity.ok(SchoolApiResponse.success(res, "Teachers and admins loaded"));
+    }
+
+    @GetMapping("/invitations")
+    public ResponseEntity<?> getInvitations() {
+        var res = superAdminService.getInvitations();
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Invitations loaded"));
+    }
+
+    @GetMapping("/schools/search")
+    public ResponseEntity<?> searchSchools(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+        var res = superAdminService.searchSchools(status, search);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Schools search completed"));
+    }
+
+    @GetMapping("/staff/search")
+    public ResponseEntity<?> searchStaff(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String search) {
+        var res = superAdminService.searchStaff(status, role, search);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Staff search completed"));
     }
 
     @PostMapping("/invites")
