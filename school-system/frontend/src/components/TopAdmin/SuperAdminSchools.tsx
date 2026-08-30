@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight, Filter, MoreVertical, Search } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 
@@ -30,6 +31,7 @@ const getStatusBadgeStyle = (status: string) => ({
 });
 
 export default function SuperAdminSchools() {
+  const navigate = useNavigate();
   const [schools, setSchools] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +180,12 @@ export default function SuperAdminSchools() {
                       <div style={styles.schoolCell}>
                         <div style={styles.schoolBadge}>{(school.schoolName || "S").slice(0, 1).toUpperCase()}</div>
                         <div>
-                          <div style={styles.schoolName}>{school.schoolName}</div>
+                          <button
+                            onClick={() => navigate(`/edunex-org/superAdmin/schools/${school.schoolId}`)}
+                            style={styles.schoolNameLink}
+                          >
+                            {school.schoolName}
+                          </button>
                           <div style={styles.metaText}>{school.address || "No address"}</div>
                         </div>
                       </div>
@@ -393,6 +400,16 @@ const styles: Record<string, React.CSSProperties> = {
   schoolName: {
     fontWeight: 700,
     color: "#0f2e22",
+  },
+  schoolNameLink: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    fontWeight: 700,
+    color: "#0366d6",
+    cursor: "pointer",
+    textDecoration: "none",
+    fontSize: 14,
   },
   metaText: {
     color: "#5d6d66",

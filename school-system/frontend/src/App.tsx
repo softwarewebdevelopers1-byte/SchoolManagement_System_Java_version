@@ -18,10 +18,13 @@ import SchoolRegistration from "./components/auth/SchoolRegistration";
 import SuperAdminLayout from "./components/TopAdmin/SuperAdminLayout";
 import SuperAdminOverview from "./components/TopAdmin/SuperAdminOverview";
 import SuperAdminSchools from "./components/TopAdmin/SuperAdminSchools";
+import SuperAdminSchoolDetail from "./components/TopAdmin/SuperAdminSchoolDetail";
 import SuperAdminStaff from "./components/TopAdmin/SuperAdminStaff";
 import SuperAdminInvitations from "./components/TopAdmin/SuperAdminInvitations";
 import SuperAdminAnalytics from "./components/TopAdmin/SuperAdminAnalytics";
-import "./App.css"
+import SuperAdminLoginPage from "./components/auth/SuperAdminLoginPage";
+import "./App.css";
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
   if (!saved) return <Navigate to="/login" replace />;
@@ -165,6 +168,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<SuperAdminOverview />} />
                   <Route path="/schools" element={<SuperAdminSchools />} />
+                  <Route path="/schools/:schoolId" element={<SuperAdminSchoolDetail />} />
                   <Route path="/staff" element={<SuperAdminStaff />} />
                   <Route path="/invitations" element={<SuperAdminInvitations />} />
                   <Route path="/analytics" element={<SuperAdminAnalytics />} />
@@ -176,6 +180,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
         <Route
           path="/edunex-org/dashboard"
           element={

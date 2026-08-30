@@ -7,12 +7,26 @@
 
 body {
   font-family:
+    "Nunito",
     "Inter",
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  background: #f5f7fa;
-  color: #1a3a2f;
+  background: linear-gradient(180deg, #f5f0e7 0%, #edf1ec 100%);
+  color: #1a1208;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: "Nunito", "Inter", sans-serif;
+}
+
+@media (max-width: 900px) {
+  body {
+    background: linear-gradient(180deg, #f5f0e7 0%, #edf1ec 100%);
+  }
 }
 
 /* LoginPage.css */

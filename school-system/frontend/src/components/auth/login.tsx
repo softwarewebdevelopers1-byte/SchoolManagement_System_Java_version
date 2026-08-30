@@ -132,9 +132,10 @@ const hasTeacherProfile = (user: any) =>
 
 interface LoginPageProps {
   onLogin?: (user: any) => void;
+  defaultSuperAdminMode?: boolean;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = false }) => {
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -156,12 +157,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [profileSession, setProfileSession] = useState<any | null>(null);
   const [profileFirstName, setProfileFirstName] = useState("");
   const [profileLastName, setProfileLastName] = useState("");
-  const [isSuperAdminLogin, setIsSuperAdminLogin] = useState(false);
+  const [isSuperAdminLogin, setIsSuperAdminLogin] = useState(defaultSuperAdminMode);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    setIsSuperAdminLogin(defaultSuperAdminMode);
+  }, [defaultSuperAdminMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
