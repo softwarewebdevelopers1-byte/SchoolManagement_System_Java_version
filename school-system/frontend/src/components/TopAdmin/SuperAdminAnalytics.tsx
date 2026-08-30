@@ -67,7 +67,7 @@ export default function SuperAdminAnalytics() {
     { label: "Pending Approvals", value: stats?.pendingApprovals ?? 0, color: "#c084fc" },
     { label: "Active Users", value: stats?.activeUsers ?? 0, color: "#16a34a" },
     { label: "Suspended Accounts", value: stats?.suspendedAccounts ?? 0, color: "#ef4444" },
-    { label: "Recent Invitations", value: stats?.recentInvitations ?? 0, color: "#ec4899" },
+    { label: "Recent Invitations", value: stats?.recentInvitations.length ?? 0, color: "#ec4899" },
   ];
 
   return (

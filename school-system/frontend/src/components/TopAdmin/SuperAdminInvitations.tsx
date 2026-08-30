@@ -28,7 +28,12 @@ export default function SuperAdminInvitations() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedInvite, setSelectedInvite] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [schoolOptions, setSchoolOptions] = useState<any[]>([]);
+  const [schoolId, setSchoolId] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
 
   const loadInvitations = async () => {
     try {
@@ -43,8 +48,22 @@ export default function SuperAdminInvitations() {
     }
   };
 
+  const loadSchools = async () => {
+    try {
+      const response = await superAdminApi.getSchools();
+      const schools = Array.isArray(response) ? response : response?.data || [];
+      setSchoolOptions(schools);
+      if (schools.length > 0 && !schoolId) {
+        setSchoolId(schools[0].schoolId || schools[0].id || "");
+      }
+    } catch {
+      setSchoolOptions([]);
+    }
+  };
+
   useEffect(() => {
     void loadInvitations();
+    void loadSchools();
   }, []);
 
   const filteredInvitations = useMemo(() => {
@@ -80,6 +99,26 @@ export default function SuperAdminInvitations() {
       setShowModal(false);
     } catch (err: any) {
       setError(err.message || "Failed to revoke invitation");
+    }
+  };
+
+  const generateInvitation = async () => {
+    if (!schoolId || !inviteEmail.trim()) {
+      setError("Please select a school and enter an admin email");
+      return;
+    }
+
+    try {
+      setCreatingInvite(true);
+      setError(null);
+      await superAdminApi.createInvite(inviteEmail.trim(), schoolId);
+      setInviteEmail("");
+      setShowCreateModal(false);
+      await loadInvitations();
+    } catch (err: any) {
+      setError(err.message || "Failed to generate invitation link");
+    } finally {
+      setCreatingInvite(false);
     }
   };
 
@@ -125,6 +164,14 @@ export default function SuperAdminInvitations() {
               <option value="REVOKED">Revoked</option>
             </select>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            style={styles.primaryButton}
+          >
+            Generate Expiry Link
+          </button>
         </div>
       </div>
 
@@ -192,6 +239,63 @@ export default function SuperAdminInvitations() {
           </table>
         )}
       </div>
+
+      {showCreateModal && (
+        <div style={styles.modal} onClick={() => setShowCreateModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>Generate admin invitation</h2>
+              <button onClick={() => setShowCreateModal(false)} style={styles.closeButton}>✕</button>
+            </div>
+
+            <div style={styles.modalBody}>
+              <div style={styles.detailRow}>
+                <div style={styles.detailLabel}>School</div>
+                <select
+                  value={schoolId}
+                  onChange={(e) => setSchoolId(e.target.value)}
+                  style={styles.formInput}
+                >
+                  <option value="">Select a school</option>
+                  {schoolOptions.map((school) => (
+                    <option key={school.schoolId || school.id} value={school.schoolId || school.id}>
+                      {school.schoolName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={styles.detailRow}>
+                <div style={styles.detailLabel}>Admin email</div>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="admin@school.com"
+                  style={styles.formInput}
+                />
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button
+                onClick={generateInvitation}
+                disabled={creatingInvite}
+                style={{
+                  ...styles.actionBtnPrimary,
+                  opacity: creatingInvite ? 0.7 : 1,
+                  cursor: creatingInvite ? "not-allowed" : "pointer",
+                }}
+              >
+                {creatingInvite ? "Generating..." : "Generate Link"}
+              </button>
+              <button onClick={() => setShowCreateModal(false)} style={styles.actionBtnSecondary}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && selectedInvite && (
         <div style={styles.modal} onClick={() => setShowModal(false)}>
@@ -340,6 +444,7 @@ const styles: Record<string, React.CSSProperties> = {
   filters: {
     display: "flex",
     gap: 12,
+    alignItems: "center",
   },
   filterGroup: {
     display: "flex",
@@ -359,6 +464,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     color: "#0f2e22",
     fontWeight: 600,
+  },
+  primaryButton: {
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    background: "linear-gradient(135deg, #c9963d 0%, #a86f24 100%)",
+    color: "#fff",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 10px 22px rgba(201,150,61,0.2)",
   },
   tableContainer: {
     background: "rgba(255,255,255,0.8)",
@@ -496,6 +611,17 @@ const styles: Record<string, React.CSSProperties> = {
   },
   detailRow: {
     marginBottom: 16,
+  },
+  formInput: {
+    width: "100%",
+    border: "1px solid rgba(15,46,34,0.12)",
+    borderRadius: 10,
+    padding: "10px 12px",
+    background: "#fff",
+    fontSize: 14,
+    color: "#0f2e22",
+    outline: "none",
+    boxSizing: "border-box",
   },
   detailLabel: {
     fontSize: 12,

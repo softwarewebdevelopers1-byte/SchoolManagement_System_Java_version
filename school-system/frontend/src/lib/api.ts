@@ -1062,4 +1062,18 @@ export const superAdminApi = {
       },
     );
   },
+   createSchool: async (data: {
+    schoolName: string;
+    schoolEmail: string;
+    schoolAddress: string;
+    phoneNumber: string;
+    motto: string;
+  }): Promise<any> => {
+    const response:any = await api.post(
+      "/schools/create-school",
+      data
+    );
+
+    return response.data;
+  }
 };
