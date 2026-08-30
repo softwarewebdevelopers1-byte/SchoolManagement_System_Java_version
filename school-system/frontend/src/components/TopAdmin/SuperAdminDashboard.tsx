@@ -284,8 +284,8 @@ export default function SuperAdminDashboard() {
                           </span>
                         </td>
                         <td style={styles.td}>{school.email || "N/A"}</td>
-                        <td style={styles.td}>{school.totalUsers ?? 0}</td>
-                        <td style={styles.td}>{school.activeUsers ?? 0}</td>
+                        <td style={styles.td}>{school.totalStaff ?? 0}</td>
+                        <td style={styles.td}>{school.totalStudents ?? 0}</td>
                         <td style={styles.td}>
                           <div style={styles.actionGroup}>
                             <button

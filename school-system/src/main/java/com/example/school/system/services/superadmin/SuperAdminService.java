@@ -207,11 +207,47 @@ public class SuperAdminService {
                         "role", UserRoles.ADMIN.name())).toList());
     }
 
+    private boolean isStaffRole(UserRoles role) {
+        return role == UserRoles.ADMIN
+                || role == UserRoles.HEADTEACHER
+                || role == UserRoles.DEPUTYTEACHER
+                || role == UserRoles.CLASSTEACHER
+                || role == UserRoles.SUBJECTTEACHER;
+    }
+
+    private boolean isStudentRole(UserRoles role) {
+        return role == UserRoles.STUDENT;
+    }
+
+    private Map<UUID, long[]> buildSchoolRoleCounts(List<Users> users) {
+        Map<UUID, long[]> counts = new java.util.HashMap<>();
+        for (Users user : users) {
+            if (user == null || user.getSchool() == null || user.getSchool().getId() == null) {
+                continue;
+            }
+            UUID schoolId = user.getSchool().getId();
+            long[] schoolCounts = counts.computeIfAbsent(schoolId, ignored -> new long[] {0L, 0L});
+            if (user.getRoles() != null) {
+                for (UserRoles role : user.getRoles()) {
+                    if (isStaffRole(role)) {
+                        schoolCounts[0]++;
+                    }
+                    if (isStudentRole(role)) {
+                        schoolCounts[1]++;
+                    }
+                }
+            }
+        }
+        return counts;
+    }
+
     @Transactional(readOnly = true)
     public List<SuperAdminUserRes> getPlatformStaff() {
         List<Users> users = userRepository.findAll();
         return users.stream()
-                .filter(u -> u.getRoles() != null && !u.getRoles().contains(UserRoles.SUPERADMIN))
+                .filter(u -> u.getRoles() != null
+                        && !u.getRoles().contains(UserRoles.SUPERADMIN)
+                        && u.getRoles().stream().anyMatch(this::isStaffRole))
                 .map(u -> {
                     String schoolName = u.getSchool() != null ? u.getSchool().getSchoolName() : "N/A";
                     String schoolCode = u.getSchool() != null ? u.getSchool().getSchoolCode() : "N/A";
@@ -313,28 +349,28 @@ public class SuperAdminService {
     @Transactional(readOnly = true)
     public List<SuperAdminSchoolRes> getAllSchools() {
         List<School> schools = schoolRepository.findAll();
-
-        List<Object[]> userCounts = userRepository.countActiveUsersGroupedBySchool();
-
-        Map<UUID, Long> totalBySchool = userCounts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[1]));
-
-        Map<UUID, Long> activeBySchool = userCounts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[2]));
+        Map<UUID, long[]> schoolRoleCounts = buildSchoolRoleCounts(userRepository.findAll());
 
         return schools.stream()
-                .map(school -> SuperAdminSchoolRes.builder()
-                        .schoolId(school.getId())
-                        .schoolName(school.getSchoolName())
-                        .schoolCode(school.getSchoolCode())
-                        .address(school.getAddress())
-                        .email(school.getEmail())
-                        .phoneNumber(school.getPhoneNumber())
-                        .status(school.getStatus() != null ? school.getStatus().name() : "PENDING_APPROVAL")
-                        .totalUsers(totalBySchool.getOrDefault(school.getId(), 0L))
-                        .activeUsers(activeBySchool.getOrDefault(school.getId(), 0L))
-                        .registeredDate(school.getDate() != null ? school.getDate().toString() : null)
-                        .build())
+                .map(school -> {
+                    long[] counts = schoolRoleCounts.getOrDefault(school.getId(), new long[] {0L, 0L});
+                    long totalStaff = counts[0];
+                    long totalStudents = counts[1];
+                    return SuperAdminSchoolRes.builder()
+                            .schoolId(school.getId())
+                            .schoolName(school.getSchoolName())
+                            .schoolCode(school.getSchoolCode())
+                            .address(school.getAddress())
+                            .email(school.getEmail())
+                            .phoneNumber(school.getPhoneNumber())
+                            .status(school.getStatus() != null ? school.getStatus().name() : "PENDING_APPROVAL")
+                            .totalStaff(totalStaff)
+                            .totalStudents(totalStudents)
+                            .totalUsers(totalStaff)
+                            .activeUsers(totalStudents)
+                            .registeredDate(school.getDate() != null ? school.getDate().toString() : null)
+                            .build();
+                })
                 .toList();
     }
 
@@ -345,11 +381,10 @@ public class SuperAdminService {
         school.setStatus(newStatus);
         schoolRepository.save(school);
 
-        List<Object[]> counts = userRepository.countActiveUsersGroupedBySchool();
-        Map<UUID, Long> totalBySchool = counts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[1]));
-        Map<UUID, Long> activeBySchool = counts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[2]));
+        Map<UUID, long[]> schoolRoleCounts = buildSchoolRoleCounts(userRepository.findAll());
+        long[] counts = schoolRoleCounts.getOrDefault(school.getId(), new long[] {0L, 0L});
+        long totalStaff = counts[0];
+        long totalStudents = counts[1];
 
         return SuperAdminSchoolRes.builder()
                 .schoolId(school.getId())
@@ -359,8 +394,10 @@ public class SuperAdminService {
                 .email(school.getEmail())
                 .phoneNumber(school.getPhoneNumber())
                 .status(school.getStatus().name())
-                .totalUsers(totalBySchool.getOrDefault(school.getId(), 0L))
-                .activeUsers(activeBySchool.getOrDefault(school.getId(), 0L))
+                .totalStaff(totalStaff)
+                .totalStudents(totalStudents)
+                .totalUsers(totalStaff)
+                .activeUsers(totalStudents)
                 .registeredDate(school.getDate() != null ? school.getDate().toString() : null)
                 .build();
     }
@@ -441,52 +478,49 @@ public class SuperAdminService {
     @Transactional(readOnly = true)
     public List<SuperAdminSchoolRes> searchSchools(String status, String search) {
         List<School> schools = schoolRepository.findAll();
-
-        List<Object[]> userCounts = userRepository.countActiveUsersGroupedBySchool();
-
-        Map<UUID, Long> totalBySchool = userCounts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[1]));
-
-        Map<UUID, Long> activeBySchool = userCounts.stream()
-                .collect(Collectors.toMap(arr -> (UUID) arr[0], arr -> (Long) arr[2]));
-
+        Map<UUID, long[]> schoolRoleCounts = buildSchoolRoleCounts(userRepository.findAll());
         String searchLower = search != null ? search.toLowerCase().trim() : "";
-        
+
         return schools.stream()
                 .filter(school -> {
-                    // Filter by status if provided
                     if (status != null && !status.isEmpty() && !status.equals("ALL")) {
                         String schoolStatus = school.getStatus() != null ? school.getStatus().name() : "PENDING_APPROVAL";
                         if (!schoolStatus.equalsIgnoreCase(status)) {
                             return false;
                         }
                     }
-                    
-                    // Filter by search term if provided
+
                     if (!searchLower.isEmpty()) {
                         String name = school.getSchoolName() != null ? school.getSchoolName().toLowerCase() : "";
                         String code = school.getSchoolCode() != null ? school.getSchoolCode().toLowerCase() : "";
                         String email = school.getEmail() != null ? school.getEmail().toLowerCase() : "";
                         String address = school.getAddress() != null ? school.getAddress().toLowerCase() : "";
-                        
-                        return name.contains(searchLower) || code.contains(searchLower) || 
-                               email.contains(searchLower) || address.contains(searchLower);
+
+                        return name.contains(searchLower) || code.contains(searchLower)
+                                || email.contains(searchLower) || address.contains(searchLower);
                     }
-                    
+
                     return true;
                 })
-                .map(school -> SuperAdminSchoolRes.builder()
-                        .schoolId(school.getId())
-                        .schoolName(school.getSchoolName())
-                        .schoolCode(school.getSchoolCode())
-                        .address(school.getAddress())
-                        .email(school.getEmail())
-                        .phoneNumber(school.getPhoneNumber())
-                        .status(school.getStatus() != null ? school.getStatus().name() : "PENDING_APPROVAL")
-                        .totalUsers(totalBySchool.getOrDefault(school.getId(), 0L))
-                        .activeUsers(activeBySchool.getOrDefault(school.getId(), 0L))
-                        .registeredDate(school.getDate() != null ? school.getDate().toString() : null)
-                        .build())
+                .map(school -> {
+                    long[] counts = schoolRoleCounts.getOrDefault(school.getId(), new long[] {0L, 0L});
+                    long totalStaff = counts[0];
+                    long totalStudents = counts[1];
+                    return SuperAdminSchoolRes.builder()
+                            .schoolId(school.getId())
+                            .schoolName(school.getSchoolName())
+                            .schoolCode(school.getSchoolCode())
+                            .address(school.getAddress())
+                            .email(school.getEmail())
+                            .phoneNumber(school.getPhoneNumber())
+                            .status(school.getStatus() != null ? school.getStatus().name() : "PENDING_APPROVAL")
+                            .totalStaff(totalStaff)
+                            .totalStudents(totalStudents)
+                            .totalUsers(totalStaff)
+                            .activeUsers(totalStudents)
+                            .registeredDate(school.getDate() != null ? school.getDate().toString() : null)
+                            .build();
+                })
                 .toList();
     }
 
@@ -515,37 +549,36 @@ public class SuperAdminService {
         final UserRoles finalRoleEnum = roleEnum;
         
         return users.stream()
-                .filter(u -> u.getRoles() != null && !u.getRoles().contains(UserRoles.SUPERADMIN))
+                .filter(u -> u.getRoles() != null
+                        && !u.getRoles().contains(UserRoles.SUPERADMIN)
+                        && u.getRoles().stream().anyMatch(this::isStaffRole))
                 .filter(user -> {
-                    // Filter by status if provided
                     if (status != null && !status.isEmpty() && !status.equals("ALL")) {
                         String userStatus = user.getStatus() != null ? user.getStatus().name() : "ACTIVE";
                         if (!userStatus.equalsIgnoreCase(status)) {
                             return false;
                         }
                     }
-                    
-                    // Filter by role if provided
+
                     if (finalRoleEnum != null) {
                         if (user.getRoles() == null || !user.getRoles().contains(finalRoleEnum)) {
                             return false;
                         }
                     }
-                    
-                    // Filter by search term if provided
+
                     if (!searchLower.isEmpty()) {
                         String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
-                        String schoolName = user.getSchool() != null && user.getSchool().getSchoolName() != null ? 
+                        String schoolName = user.getSchool() != null && user.getSchool().getSchoolName() != null ?
                                            user.getSchool().getSchoolName().toLowerCase() : "";
-                        String firstName = user.getTeacherProfile() != null && user.getTeacherProfile().getFirstName() != null ? 
+                        String firstName = user.getTeacherProfile() != null && user.getTeacherProfile().getFirstName() != null ?
                                           user.getTeacherProfile().getFirstName().toLowerCase() : "";
-                        String lastName = user.getTeacherProfile() != null && user.getTeacherProfile().getLastName() != null ? 
+                        String lastName = user.getTeacherProfile() != null && user.getTeacherProfile().getLastName() != null ?
                                          user.getTeacherProfile().getLastName().toLowerCase() : "";
-                        
-                        return email.contains(searchLower) || schoolName.contains(searchLower) || 
-                               firstName.contains(searchLower) || lastName.contains(searchLower);
+
+                        return email.contains(searchLower) || schoolName.contains(searchLower)
+                               || firstName.contains(searchLower) || lastName.contains(searchLower);
                     }
-                    
+
                     return true;
                 })
                 .map(u -> {

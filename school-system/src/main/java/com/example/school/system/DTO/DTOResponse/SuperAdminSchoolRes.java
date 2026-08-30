@@ -18,6 +18,8 @@ public class SuperAdminSchoolRes {
     private String email;
     private String phoneNumber;
     private String status;
+    private Long totalStaff;
+    private Long totalStudents;
     private Long totalUsers;
     private Long activeUsers;
     private String registeredDate;

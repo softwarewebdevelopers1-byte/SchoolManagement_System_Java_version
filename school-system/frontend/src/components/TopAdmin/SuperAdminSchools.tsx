@@ -199,8 +199,8 @@ export default function SuperAdminSchools() {
                     <td style={styles.td}>
                       <span style={{ ...styles.badge, ...getStatusBadgeStyle(status) }}>{status}</span>
                     </td>
-                    <td style={styles.td}>{school.totalUsers ?? 0}</td>
-                    <td style={styles.td}>{school.activeUsers ?? 0}</td>
+                    <td style={styles.td}>{school.totalStaff ?? 0}</td>
+                    <td style={styles.td}>{school.totalStudents ?? 0}</td>
                     <td style={styles.td}>{joinDate}</td>
                     <td style={styles.td}>
                       <button

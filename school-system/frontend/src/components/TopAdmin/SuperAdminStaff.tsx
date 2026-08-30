@@ -142,7 +142,7 @@ export default function SuperAdminStaff() {
         </div>
       </div>
 
-      <div style={styles.cardsGrid}>
+      <div style={styles.tableContainer}>
         {filteredStaff.length === 0 ? (
           <div style={styles.emptyState}>
             <div style={styles.emptyIcon}>👥</div>
@@ -150,52 +150,65 @@ export default function SuperAdminStaff() {
             <div style={styles.emptySubtext}>Try adjusting your filters</div>
           </div>
         ) : (
-          filteredStaff.map((member) => {
-            const status = formatStatus(member.status);
-            const joinDate = new Date(member.createdAt || new Date()).toLocaleDateString();
-            const roles = Array.isArray(member.roles) ? member.roles : [member.roles];
-            return (
-              <div key={member.userId || member.id} style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <div style={styles.userBadge}>{(member.firstName || member.email || "U").slice(0, 1).toUpperCase()}</div>
-                  <button
-                    onClick={() => {
-                      setSelectedMember(member);
-                      setShowModal(true);
-                    }}
-                    style={styles.actionButton}
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                </div>
-
-                <div style={styles.cardBody}>
-                  <div style={styles.userName}>
-                    {member.firstName} {member.lastName}
-                  </div>
-                  <div style={styles.metaText}>{member.email}</div>
-
-                  <div style={styles.schoolTag}>{member.schoolName || "No school"}</div>
-
-                  <div style={styles.rolesSection}>
-                    {roles.map((role: string) => (
-                      <span key={role} style={styles.roleTag}>
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div style={styles.cardFooter}>
-                    <div>
-                      <div style={styles.joinedLabel}>Joined</div>
-                      <div style={styles.joinedValue}>{joinDate}</div>
-                    </div>
-                    <span style={{ ...styles.badge, ...getStatusBadgeStyle(status) }}>{status}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Staff</th>
+                <th style={styles.th}>School</th>
+                <th style={styles.th}>Role</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Joined</th>
+                <th style={styles.th}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStaff.map((member) => {
+                const status = formatStatus(member.status);
+                const joinDate = new Date(member.registeredDate || member.createdAt || Date.now()).toLocaleDateString();
+                const roles = Array.isArray(member.roles) ? member.roles : [member.roles];
+                return (
+                  <tr key={member.userId || member.id} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={styles.userCell}>
+                        <div style={styles.userBadge}>{(member.firstName || member.email || "U").slice(0, 1).toUpperCase()}</div>
+                        <div>
+                          <div style={styles.userName}>
+                            {member.firstName || ""} {member.lastName || ""}
+                          </div>
+                          <div style={styles.metaText}>{member.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={styles.td}>{member.schoolName || "No school"}</td>
+                    <td style={styles.td}>
+                      <div style={styles.rolesSection}>
+                        {roles.map((role: string) => (
+                          <span key={role} style={styles.roleTag}>
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={{ ...styles.badge, ...getStatusBadgeStyle(status) }}>{status}</span>
+                    </td>
+                    <td style={styles.td}>{joinDate}</td>
+                    <td style={styles.td}>
+                      <button
+                        onClick={() => {
+                          setSelectedMember(member);
+                          setShowModal(true);
+                        }}
+                        style={styles.actionButton}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -345,23 +358,40 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#0f2e22",
     fontWeight: 600,
   },
-  cardsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: 16,
-  },
-  card: {
-    background: "rgba(255,255,255,0.8)",
+  tableContainer: {
+    overflowX: "auto",
+    background: "rgba(255,255,255,0.7)",
     border: "1px solid rgba(15,46,34,0.08)",
     borderRadius: 16,
-    overflow: "hidden",
   },
-  cardHeader: {
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: 760,
+  },
+  th: {
+    textAlign: "left",
+    padding: "14px 16px",
+    borderBottom: "1px solid rgba(15,46,34,0.08)",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.08,
+    color: "#5d6d66",
+    background: "rgba(15,46,34,0.02)",
+  },
+  tr: {
+    borderBottom: "1px solid rgba(15,46,34,0.06)",
+  },
+  td: {
+    padding: "14px 16px",
+    fontSize: 14,
+    color: "#0f2e22",
+    verticalAlign: "top",
+  },
+  userCell: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottom: "1px solid rgba(15,46,34,0.04)",
+    gap: 10,
   },
   userBadge: {
     width: 36,
