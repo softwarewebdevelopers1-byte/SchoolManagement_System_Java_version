@@ -6,7 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "https://schoolmanagement-system-java-version-1.onrender.com/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
