@@ -6,7 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://schoolmanagement-system-java-version-1.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
@@ -1027,6 +1027,26 @@ export const superAdminApi = {
   },
   getInvitations: async (): Promise<any> => {
     return request<any>("/superadmin/invitations");
+  },
+  revokeInvitation: async (inviteId: string): Promise<any> => {
+    return request<any>(`/superadmin/invites/${encodeURIComponent(inviteId)}/revoke`, {
+      method: "PATCH",
+    });
+  },
+  searchSchools: async (status?: string, search?: string): Promise<any> => {
+    const query = new URLSearchParams();
+    if (status) query.set("status", status);
+    if (search) query.set("search", search);
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return request<any>(`/superadmin/schools/search${suffix}`);
+  },
+  searchStaff: async (status?: string, role?: string, search?: string): Promise<any> => {
+    const query = new URLSearchParams();
+    if (status) query.set("status", status);
+    if (role) query.set("role", role);
+    if (search) query.set("search", search);
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return request<any>(`/superadmin/staff/search${suffix}`);
   },
   createInvite: async (email: string, schoolId: string): Promise<any> => {
     return request<any>("/superadmin/invites", {

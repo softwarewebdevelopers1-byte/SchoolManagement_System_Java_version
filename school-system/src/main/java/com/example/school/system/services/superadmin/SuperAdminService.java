@@ -284,7 +284,30 @@ public class SuperAdminService {
         user.setStatus(AccountStatus.ACTIVE);
         userRepository.save(user);
         link.setUsed(true);
+        link.setUsedAt(LocalDateTime.now());
         expiryLinksRepository.save(link);
+    }
+
+    @Transactional
+    public SuperAdminInvitationDto revokeInvitation(UUID inviteId) {
+        ExpiryLinks link = expiryLinksRepository.findById(inviteId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("Invite not found"));
+        if (link.isUsed() || link.isRevoked()) {
+            return getInvitations().stream()
+                    .filter(inv -> inv.id().equals(inviteId))
+                    .findFirst()
+                    .orElse(new SuperAdminInvitationDto(link.getId(), null, link.getSchoolId(), null, link.getRoleName(),
+                            link.isUsed() ? "USED" : "REVOKED", null, link.getCreatedAt(), link.getExpirationTime(),
+                            link.getUsedAt(), link.isUsed(), link.isRevoked(), false));
+        }
+        link.setRevoked(true);
+        expiryLinksRepository.save(link);
+        return getInvitations().stream()
+                .filter(inv -> inv.id().equals(inviteId))
+                .findFirst()
+                .orElse(new SuperAdminInvitationDto(link.getId(), null, link.getSchoolId(), null, link.getRoleName(),
+                        "REVOKED", null, link.getCreatedAt(), link.getExpirationTime(), link.getUsedAt(),
+                        link.isUsed(), link.isRevoked(), false));
     }
 
     @Transactional(readOnly = true)

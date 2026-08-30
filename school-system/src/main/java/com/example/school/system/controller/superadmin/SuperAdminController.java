@@ -75,6 +75,12 @@ public class SuperAdminController {
         return ResponseEntity.ok(SchoolApiResponse.success(res, "Invitations loaded"));
     }
 
+    @PatchMapping("/invites/{inviteId}/revoke")
+    public ResponseEntity<?> revokeInvitation(@PathVariable UUID inviteId) {
+        var res = superAdminService.revokeInvitation(inviteId);
+        return ResponseEntity.ok(SchoolApiResponse.success(res, "Invitation revoked"));
+    }
+
     @GetMapping("/schools/search")
     public ResponseEntity<?> searchSchools(
             @RequestParam(required = false) String status,

@@ -75,13 +75,8 @@ export default function SuperAdminInvitations() {
 
   const revokeInvitation = async (inviteId: string) => {
     try {
-      // Call backend to revoke invitation
-      // For now, we'll just update the local state
-      setInvitations((prev) =>
-        prev.map((inv) =>
-          inv.id === inviteId ? { ...inv, invitationStatus: "REVOKED" } : inv
-        )
-      );
+      await superAdminApi.revokeInvitation(inviteId);
+      await loadInvitations();
       setShowModal(false);
     } catch (err: any) {
       setError(err.message || "Failed to revoke invitation");

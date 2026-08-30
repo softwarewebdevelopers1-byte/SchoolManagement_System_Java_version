@@ -216,6 +216,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       setLoading(false);
       setError(err.message || "Invalid login details. Please try again.");
     }
+    finally{
+      setLoading(false);
+    }
   };
 
   const handleVerifySchoolCode = async () => {
@@ -275,6 +278,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       });
     } catch (err: any) {
       setError(err.message || "Unable to create account.");
+      setLoading(false);
+    } finally {
       setLoading(false);
     }
   };
