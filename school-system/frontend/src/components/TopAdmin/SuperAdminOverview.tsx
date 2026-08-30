@@ -50,8 +50,6 @@ export default function SuperAdminOverview() {
 
       const response = await superAdminApi.getPlatformStatistics();
 
-      console.log("Platform statistics:", response);
-
       setStats(response || null);
     } catch (err: any) {
       setError(

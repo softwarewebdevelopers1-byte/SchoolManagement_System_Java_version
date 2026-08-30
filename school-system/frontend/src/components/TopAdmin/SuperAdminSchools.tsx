@@ -258,7 +258,7 @@ export default function SuperAdminSchools() {
                   onClick={() => updateSchoolStatus(selectedSchool.schoolId, "ACTIVE")}
                   style={{ ...styles.actionBtnPrimary }}
                 >
-                  Approve
+                  Activate
                 </button>
               )}
               {formatStatus(selectedSchool.status) !== "REJECTED" && (
