@@ -74,9 +74,9 @@ public class TeachersService {
             byte[] teacherIdBytes = (byte[]) row[7];
             dto.setTeacherProfileId(convertBytesToUUID(teacherIdBytes));
 
-            String classStream = (String) row[8];
-            String classGrade = (String) row[9];
-            if (classGrade != null && classStream != null) {
+            String classStream = String.valueOf(row[8]);
+            String classGrade = String.valueOf(row[9]);
+            if (classGrade != null && classStream != null && !classGrade.isEmpty() && !classStream.isEmpty()) {
                 dto.setSchoolClass(classGrade + " " + classStream);
             }
 
