@@ -170,8 +170,7 @@ const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
       schoolClass: member.schoolClass,
     };
   });
-console.log("checked students *** ", students);
-
+  
 const mapStudentsFromApi = (students: any): Student[] =>
   students.map((student: any) => ({
     id: student.id || student.userId || "",

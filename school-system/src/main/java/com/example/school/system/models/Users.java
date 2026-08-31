@@ -50,7 +50,7 @@ public class Users {
   @Column(name = "email", unique = true)
   @NotBlank(message = "Email is missing")
   String email;
-
+  
   @Column(name = "roles")
   @Enumerated(EnumType.STRING)
   @ElementCollection

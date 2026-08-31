@@ -1,13 +1,12 @@
 package com.example.school.system.services;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.RegisterTeacherDTO;
 import com.example.school.system.DTO.TeacherAddProfile;
 import com.example.school.system.DTO.TeacherCreateDTO;
@@ -20,7 +19,6 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
-import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
@@ -28,7 +26,6 @@ import com.example.school.system.security.PasswordHashing;
 import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.UserRoles;
 import com.example.school.system.types.AccountStatus;
-
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,33 +40,62 @@ public class TeachersService {
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
     private String schoolNotFound = "school not found";
-
-    public List<?> getTeachers(UUID id, String authHeader) {
+    
+    public List<GetTeachersDTO> getTeachers(UUID id, String authHeader) {
         tokenIssuedValidator(id, authHeader);
-        List<TeachersLoaded> users = userRepository.findUsersBySchoolWithoutRole(id, UserRoles.STUDENT);
-        return users.stream().map(user -> {
-            GetTeachersDTO teachersDTO = new GetTeachersDTO();
-            teachersDTO.setEmail(user.getEmail());
-            teachersDTO.setStatus(user.getStatus());
-            teachersDTO.setRoles(user.getRoles());
-            teachersDTO.setUsersId(user.getUserId());
-            if (user.getTeacherId() != null) {
-                StringBuilder userClass = new StringBuilder();
-                if (user.getClassGrade() != null) {
-                    userClass.append(user.getClassGrade());
-                    userClass.append(" ");
-                    userClass.append(user.getClassStream());
+        List<Object[]> results = userRepository.findUsersBySchoolWithoutRoleNative(
+                id, UserRoles.STUDENT.name());
 
-                    teachersDTO.setSchoolClass(userClass.toString());
+        return results.stream().map(row -> {
+            GetTeachersDTO dto = new GetTeachersDTO();
+
+            // Handle UUID conversion from byte[]
+            byte[] userIdBytes = (byte[]) row[0];
+            dto.setUsersId(convertBytesToUUID(userIdBytes));
+
+            dto.setEmail((String) row[1]);
+            dto.setStatus(AccountStatus.valueOf((String) row[2]));
+
+            // Parse roles
+            String rolesStr = (String) row[3];
+            Set<UserRoles> roles = new HashSet<>();
+            if (rolesStr != null && !rolesStr.isEmpty()) {
+                for (String role : rolesStr.split(",")) {
+                    roles.add(UserRoles.valueOf(role.trim()));
                 }
-                teachersDTO.setTeacherProfileId(user.getTeacherId());
-                teachersDTO.setFirstName(user.getFirstName());
-                teachersDTO.setLastName(user.getLastName());
-                teachersDTO.setPhoneNumber(user.getPhoneNumber());
             }
-            return teachersDTO;
+            dto.setRoles(roles);
 
+            dto.setFirstName((String) row[4]);
+            dto.setLastName((String) row[5]);
+            dto.setPhoneNumber((String) row[6]);
+
+            // Handle teacherId UUID conversion
+            byte[] teacherIdBytes = (byte[]) row[7];
+            dto.setTeacherProfileId(convertBytesToUUID(teacherIdBytes));
+
+            String classStream = (String) row[8];
+            String classGrade = (String) row[9];
+            if (classGrade != null && classStream != null) {
+                dto.setSchoolClass(classGrade + " " + classStream);
+            }
+
+            return dto;
         }).toList();
+    }
+
+    // Helper method to convert byte[] to UUID
+    private UUID convertBytesToUUID(byte[] bytes) {
+        if (bytes == null)
+            return null;
+        try {
+            java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(bytes);
+            long mostSigBits = bb.getLong();
+            long leastSigBits = bb.getLong();
+            return new UUID(mostSigBits, leastSigBits);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void tokenIssuedValidator(UUID id, String authHeader) {
