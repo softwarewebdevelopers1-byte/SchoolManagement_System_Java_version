@@ -194,7 +194,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
         method: "POST",
         body: JSON.stringify({
           subjectId: selectedSubjectId,
-          classId: getClassId(),
+          classId: user.classId,
           enrollmentMode: subjectType,
           sharedSlotId:
             subjectType === "ELECTIVE" && electiveCode
