@@ -6,5 +6,6 @@ import lombok.Builder;
 @Builder
 public record SubjectListDTO(
         UUID subjectId,
-        String subjectName
+        String subjectName,
+        UUID mainTeacherId
 ) {}

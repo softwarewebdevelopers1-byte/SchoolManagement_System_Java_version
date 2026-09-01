@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Class, Subject } from "./types";
+import React, { useMemo, useState } from "react";
+import { Class, Subject, Teacher } from "./types";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -126,13 +126,12 @@ const tableCellStyle: React.CSSProperties = {
 
 const SubjectFormModal: React.FC<{
   subject?: Subject;
+  teachers: any[];
   onClose: () => void;
-  onSave: (name: string, department: string) => Promise<void>;
-}> = ({ subject, onClose, onSave }) => {
+  onSave: (name: string, mainTeacherId?: string) => Promise<void>;
+}> = ({ subject, teachers, onClose, onSave }) => {
   const [name, setName] = useState(subject?.name || "");
-  const [department, setDepartment] = useState(
-    subject?.department || "General",
-  );
+  const [mainTeacherId, setMainTeacherId] = useState<string>(subject?.mainTeacherId || "");
   const [saving, setSaving] = useState(false);
 
   return (
@@ -159,19 +158,18 @@ const SubjectFormModal: React.FC<{
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label style={labelStyle}>Department</label>
+          <label style={labelStyle}>Main subject teacher</label>
           <select
-            value={department}
-            onChange={(event) => setDepartment(event.target.value)}
+            value={mainTeacherId}
+            onChange={(event) => setMainTeacherId(event.target.value)}
             style={inputStyle}
           >
-            <option value="General">General</option>
-            <option value="Sciences">Sciences</option>
-            <option value="Languages">Languages</option>
-            <option value="Humanities">Humanities</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Arts">Arts</option>
-            <option value="Sports">Sports</option>
+            <option value="">No main teacher</option>
+            {teachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.name || teacher.email}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -191,7 +189,7 @@ const SubjectFormModal: React.FC<{
               if (!name.trim()) return;
               setSaving(true);
               try {
-                await onSave(name.trim(), department);
+                await onSave(name.trim(), mainTeacherId || undefined);
               } finally {
                 setSaving(false);
               }
@@ -210,10 +208,11 @@ const SubjectFormModal: React.FC<{
 interface SubjectsTabProps {
   subjects: Subject[];
   classes: Class[];
+  teachers: Teacher[];
   onSaveSubject: (
     name: string,
-    department: string,
     subjectId?: string,
+    mainTeacherId?: string,
   ) => Promise<void>;
   onDeleteSubject: (subjectId: string) => Promise<void>;
   showModal: (content: React.ReactNode) => void;
@@ -224,6 +223,7 @@ interface SubjectsTabProps {
 export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   subjects,
   classes,
+  teachers,
   onSaveSubject,
   onDeleteSubject,
   showModal,
@@ -233,14 +233,16 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
+  const teacherChoices = useMemo(() => teachers || [], [teachers]);
 
   const openSubjectModal = (subject?: Subject) => {
     showModal(
       <SubjectFormModal
         subject={subject}
+        teachers={teacherChoices}
         onClose={closeModal}
-        onSave={async (name, department) => {
-          await onSaveSubject(name, department, subject?.id);
+        onSave={async (name, mainTeacherId) => {
+          await onSaveSubject(name, subject?.id, mainTeacherId);
         }}
       />,
     );

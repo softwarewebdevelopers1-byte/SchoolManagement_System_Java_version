@@ -11,6 +11,7 @@ import { ProgressTab } from "./ProgressTab";
 import { ResourcesTab } from "./ResourcesTab";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Subject, Student, MarksData } from "./types";
+import { TeacherRemarkTab } from "./TeacherRemarkTab";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
 
@@ -56,7 +57,13 @@ const subjectTeacherTabs = new Set([
   "resources",
 ]);
 
-const SubjectTeacherDashboard: React.FC = () => {
+interface SubjectTeacherDashboardProps {
+  remarksOnly?: boolean;
+}
+
+const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
+  remarksOnly = false,
+}) => {
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("user");
     if (saved) {
@@ -88,6 +95,8 @@ const SubjectTeacherDashboard: React.FC = () => {
   const [pushedSubjects, setPushedSubjects] = useState<Set<string>>(new Set());
   const [pushedStudents, setPushedStudents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [isRemarksTeacher, setIsRemarksTeacher] = useState(!!remarksOnly);
+  const [selectedRemarkSubjectId, setSelectedRemarkSubjectId] = useState<string>("");
   const [msg, setMsg] = useState<{
     text: string;
     type: "success" | "error";
@@ -126,8 +135,9 @@ const SubjectTeacherDashboard: React.FC = () => {
     [],
   );
   const loadAssignments = useCallback(async () => {
-    const teacherProfileId =
-      currentUser?.teacherProfileId || currentUser?.teacherId;
+    const teacherProfileId = String(
+      currentUser?.teacherProfileId || currentUser?.teacherId || currentUser?.id || "",
+    );
     if (!currentUser?.id || !teacherProfileId) {
       setLoading(false);
       return;
@@ -165,6 +175,11 @@ const SubjectTeacherDashboard: React.FC = () => {
               a.rawSubjectId ||
               a.subjectId ||
               subjectJointId,
+            mainTeacherId:
+              assignedSubject.mainTeacherId ||
+              assignedSubject.mainTeacher ||
+              a.mainTeacherId ||
+              null,
             name: a.subjectName || "Subject",
             grade: `Grade ${a.classGrade} ${a.classStream}`.trim(),
             classGrade: a.classGrade,
@@ -186,6 +201,22 @@ const SubjectTeacherDashboard: React.FC = () => {
         const nextSubject =
           mapped.find((subject) => subject.id === savedSubjectId) || mapped[0];
         setActiveSubjectId(nextSubject.id);
+      }
+
+      const isMainTeacher = mapped.some((subject) => {
+        const current = String(subject.mainTeacherId || "");
+        return current && current === teacherProfileId;
+      });
+      setIsRemarksTeacher(Boolean(remarksOnly || isMainTeacher));
+      if (Boolean(remarksOnly || isMainTeacher)) {
+        const remarkSubject = mapped.find((subject) =>
+          String(subject.mainTeacherId || "") === teacherProfileId,
+        );
+        if (remarkSubject) {
+          setSelectedRemarkSubjectId(
+            String(remarkSubject.subjectId || remarkSubject.id),
+          );
+        }
       }
     } catch (err: any) {
       setMsg({
@@ -341,6 +372,12 @@ const SubjectTeacherDashboard: React.FC = () => {
   const teacherName = currentUser?.name || "Teacher";
   const teacherInitials = initials(teacherName);
   const teacherAvatarColor = avatarColor(teacherName);
+  const mainTeacherSubjects = subjects.filter((subject) => {
+    const teacherProfileId = String(
+      currentUser?.teacherProfileId || currentUser?.teacherId || currentUser?.id || "",
+    );
+    return String(subject.mainTeacherId || "") === teacherProfileId;
+  });
 
   const handleMarkUpdate = (
     subjectId: string,
@@ -606,6 +643,50 @@ const SubjectTeacherDashboard: React.FC = () => {
           No subjects assigned yet.
         </div>
       );
+
+    if (remarksOnly) {
+      const remarkSubjects = mainTeacherSubjects.length > 0 ? mainTeacherSubjects : subjects;
+      const chosenSubjectId =
+        selectedRemarkSubjectId ||
+        String(remarkSubjects[0]?.subjectId || remarkSubjects[0]?.id || "");
+      const chosenSubject = remarkSubjects.find(
+        (subject) => String(subject.subjectId || subject.id) === chosenSubjectId,
+      ) || remarkSubjects[0];
+
+      return (
+        <div style={{ display: "grid", gap: 16 }}>
+          {remarkSubjects.length > 1 && (
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <select
+                value={chosenSubjectId}
+                onChange={(event) => setSelectedRemarkSubjectId(event.target.value)}
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  background: "var(--white)",
+                  color: "var(--text)",
+                  fontSize: 13,
+                }}
+              >
+                {remarkSubjects.map((subject) => (
+                  <option key={String(subject.subjectId || subject.id)} value={String(subject.subjectId || subject.id)}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <TeacherRemarkTab
+            subjectId={String(chosenSubject?.subjectId || chosenSubject?.id || "")}
+            subjectName={chosenSubject?.name || "Subject"}
+            teacherId={String(
+              currentUser?.teacherProfileId || currentUser?.teacherId || currentUser?.id || "",
+            )}
+          />
+        </div>
+      );
+    }
 
     switch (activeTab) {
       case "subjects":

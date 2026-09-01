@@ -49,7 +49,8 @@ public class SubjectController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/school/subjects/{id}")
     public ResponseEntity<?> updateSubject(@PathVariable UUID id, @Valid @RequestBody SubjectDTO subjectDTO) {
-        SubjectUpdateDTO updateDTO = new SubjectUpdateDTO(subjectDTO.subjectName(), subjectDTO.schoolId(), id);
+        SubjectUpdateDTO updateDTO = new SubjectUpdateDTO(subjectDTO.subjectName(), subjectDTO.schoolId(), id,
+                subjectDTO.mainTeacherId());
         var updateSubjectRes = subjectService.updateSubject(updateDTO);
         return ResponseEntity.ok(updateSubjectRes);
     }

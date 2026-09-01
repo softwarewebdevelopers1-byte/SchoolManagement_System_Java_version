@@ -43,6 +43,10 @@ public class Subject {
     @JoinColumn(name = "school_id")
     private School school;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "main_teacher_id")
+    private TeacherProfile mainTeacher;
+
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     private List<SubjectJoint> subjectJoints;
 

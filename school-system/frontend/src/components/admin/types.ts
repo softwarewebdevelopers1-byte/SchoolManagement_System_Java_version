@@ -32,6 +32,7 @@ export interface Subject {
   id: string;
   name: string;
   department: string;
+  mainTeacherId?: string | null;
   isOffered?: boolean;
   enrollmentMode?: SubjectEnrollmentMode;
   sharedSlotId?: string | null;

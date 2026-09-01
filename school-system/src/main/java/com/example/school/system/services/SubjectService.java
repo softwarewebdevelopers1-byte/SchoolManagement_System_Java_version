@@ -69,6 +69,11 @@ public class SubjectService {
         Subject subject = new Subject();
         subject.setSubjectName(subjectCreationDTO.subjectName());
         subject.setSchool(school);
+        if (subjectCreationDTO.mainTeacherId() != null) {
+            TeacherProfile teacher = teacherProfileRepository.findById(subjectCreationDTO.mainTeacherId())
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("main teacher not found"));
+            subject.setMainTeacher(teacher);
+        }
         return subject;
     }
 
@@ -91,6 +96,13 @@ public class SubjectService {
             throw new SchoolResourceExistsExceptionHandler("subject already exists");
         }
         subjectToUpdate.setSubjectName(subjectName);
+        if (subjectDTO.mainTeacherId() != null) {
+            TeacherProfile teacher = teacherProfileRepository.findById(subjectDTO.mainTeacherId())
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("main teacher not found"));
+            subjectToUpdate.setMainTeacher(teacher);
+        } else {
+            subjectToUpdate.setMainTeacher(null);
+        }
         subjectRepository.save(subjectToUpdate);
         return SchoolApiResponse.success("subject updated");
     }

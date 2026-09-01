@@ -483,6 +483,7 @@ const createLegacySubject = async <T>(body: any): Promise<T> => {
     body: JSON.stringify({
       subjectName: body.name || body.subjectName,
       schoolId: getSchoolId(),
+      mainTeacherId: body.mainTeacherId || body.mainTeacher || null,
     }),
   });
 };
@@ -495,6 +496,7 @@ const updateLegacySubject = async <T>(path: string, body: any): Promise<T> => {
       subjectId,
       subjectName: body.name || body.subjectName,
       schoolId: getSchoolId(),
+      mainTeacherId: body.mainTeacherId || body.mainTeacher || null,
     }),
   });
 };
@@ -623,6 +625,7 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       id: subject.subjectId || subject.id,
       name: subject.subjectName || subject.name,
       department: subject.department || "General",
+      mainTeacherId: subject.mainTeacherId || subject.mainTeacher || null,
     })),
     assignments: normalizedSubjectJoints,
     subjectJoints: normalizedSubjectJoints,
@@ -666,6 +669,7 @@ const fetchSubjectsData = async <T>(): Promise<T> => {
     id: subject.subjectId || subject.id,
     name: subject.subjectName || subject.name,
     department: subject.department || "General",
+    mainTeacherId: subject.mainTeacherId || subject.mainTeacher || null,
   })) as T;
 };
 

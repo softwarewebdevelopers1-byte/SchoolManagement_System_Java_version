@@ -759,14 +759,14 @@ const AdminDashboard: React.FC = () => {
 
   const saveSubject = async (
     name: string,
-    department: string,
     subjectId?: string,
+    mainTeacherId?: string,
   ) => {
     try {
       if (subjectId) {
-        await api.put(`/school/subjects/${subjectId}`, { name, department });
+        await api.put(`/school/subjects/${subjectId}`, { name, mainTeacherId });
       } else {
-        await api.post("/school/subjects", { name, department });
+        await api.post("/school/subjects", { name, mainTeacherId });
       }
       await loadDashboardUsers();
       showSuccess(`Subject ${subjectId ? "updated" : "created"} successfully.`);
@@ -1143,6 +1143,7 @@ const AdminDashboard: React.FC = () => {
         <SubjectsTab
           subjects={subjects}
           classes={classes}
+          teachers={teachers}
           onSaveSubject={saveSubject}
           onDeleteSubject={deleteSubject}
           showModal={showModal}

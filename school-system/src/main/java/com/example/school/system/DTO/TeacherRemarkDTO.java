@@ -5,10 +5,10 @@ import java.util.UUID;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record SubjectUpdateDTO(
-        @NotBlank(message = "Subject should not be blank") String subjectName,
+public record TeacherRemarkDTO(
         @NotNull(message = "school id is required") UUID schoolId,
         @NotNull(message = "subject id is required") UUID subjectId,
-        UUID mainTeacherId) {
-
+        @NotNull(message = "teacher id is required") UUID teacherId,
+        @NotBlank(message = "grade band is required") String gradeBand,
+        @NotBlank(message = "remark is required") String remark) {
 }

@@ -9,6 +9,7 @@ export interface Subject {
   id: string;
   name: string;
   displayName?: string;
+  mainTeacherId?: string | null;
   grade: string;
   students: number;
   avg: number;

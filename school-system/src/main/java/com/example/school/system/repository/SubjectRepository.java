@@ -24,7 +24,11 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
         List<Subject> findAllBySchoolIdWithSchool(@Param("schoolId") UUID schoolId);
 
     @Query("""
-        SELECT new com.example.school.system.DTO.DTOResponse.SubjectListDTO(s.id, s.subjectName)
+        SELECT new com.example.school.system.DTO.DTOResponse.SubjectListDTO(
+            s.id,
+            s.subjectName,
+            s.mainTeacher.id
+        )
         FROM Subject s
         WHERE s.school.id = :schoolId
     """)

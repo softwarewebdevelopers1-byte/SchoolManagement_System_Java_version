@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import StudentDashboard from "./components/students/StudentDashboard";
 import LoginPage from "./components/auth/login";
@@ -5,6 +6,7 @@ import ErrorPage from "./components/error";
 import ClassTeacherDashboard from "./components/classteacher/ClassTeacherDashboard";
 import DeputyHeadDashboard from "./components/deputyhead/DeputyHeadDashboard";
 import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherDashboard";
+import TeacherRemarksPage from "./components/subjectteacher/TeacherRemarksPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
@@ -15,6 +17,7 @@ import {
   normalizeUser,
   normalizeRoles,
   ROLE_PATHS,
+  api,
 } from "./lib/api";
 import SchoolRegistration from "./components/auth/SchoolRegistration";
 import SuperAdminLayout from "./components/TopAdmin/SuperAdminLayout";
@@ -46,19 +49,69 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const DashboardSelector = () => {
+  const [remarksTeacher, setRemarksTeacher] = useState(false);
+  const [checkingRemarks, setCheckingRemarks] = useState(true);
   const saved = localStorage.getItem("user");
-  if (!saved) return <Navigate to="/login" replace />;
+  let user: any = null;
   try {
-    const session = JSON.parse(saved);
-    const user = normalizeUser(session.user || session);
+    if (saved) {
+      const session = JSON.parse(saved);
+      user = normalizeUser(session.user || session);
+    }
+  } catch {
+    user = null;
+  }
+
+  useEffect(() => {
+    if (!user?.id || !user?.teacherId) {
+      setCheckingRemarks(false);
+      return;
+    }
+      let cancelled = false;
+      api
+        .get<any[]>("/school/subjects")
+        .then((subjects) => {
+          const teacherId = String(user.teacherId);
+          const assigned = (subjects || []).some(
+            (subject) =>
+              String(
+                subject.mainTeacherId || subject.mainTeacher?.id || "",
+              ) === teacherId,
+          );
+          if (!cancelled) setRemarksTeacher(assigned);
+        })
+        .catch(() => {
+          if (!cancelled) setRemarksTeacher(false);
+        })
+        .finally(() => {
+          if (!cancelled) setCheckingRemarks(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+  }, [user?.id, user?.teacherId]);
+
+  if (!saved || !user) return <Navigate to="/login" replace />;
+  if (checkingRemarks) return null;
+  try {
     const roles = normalizeRoles(user?.roles || user?.role);
     const validRoles = roles.filter((r) => ROLE_PATHS[r]);
 
-    if (validRoles.length === 0) {
+    const selectorRoles = [
+      ...validRoles,
+      ...(remarksTeacher && !validRoles.includes("SUBJECTTEACHER_REMARKS")
+        ? ["SUBJECTTEACHER_REMARKS"]
+        : []),
+    ];
+
+    if (selectorRoles.length === 0) {
       return <Navigate to="/edunex-org/unassigned" replace />;
     }
 
-    if (validRoles.length <= 1) {
+    if (selectorRoles.length <= 1) {
+      if (selectorRoles[0] === "SUBJECTTEACHER_REMARKS") {
+        return <Navigate to="/edunex-org/subject-teacher-remarks" replace />;
+      }
       return <Navigate to={getDefaultDashboardPath(user)} replace />;
     }
 
@@ -69,6 +122,7 @@ const DashboardSelector = () => {
       DEPUTYTEACHER: "Deputy Head",
       CLASSTEACHER: "Class Teacher",
       SUBJECTTEACHER: "Subject Teacher",
+      SUBJECTTEACHER_REMARKS: "Subject Remarks",
       STUDENT: "Student",
     };
 
@@ -120,8 +174,11 @@ const DashboardSelector = () => {
               gap: 12,
             }}
           >
-            {validRoles.map((role) => {
-              const path = `/edunex-org${ROLE_PATHS[role]}`;
+            {selectorRoles.map((role) => {
+              const path =
+                role === "SUBJECTTEACHER_REMARKS"
+                  ? "/edunex-org/subject-teacher-remarks"
+                  : `/edunex-org${ROLE_PATHS[role]}`;
               return (
                 <a
                   key={role}
@@ -242,6 +299,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SubjectTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/subject-teacher-remarks"
+          element={
+            <ProtectedRoute>
+              <TeacherRemarksPage />
             </ProtectedRoute>
           }
         />
