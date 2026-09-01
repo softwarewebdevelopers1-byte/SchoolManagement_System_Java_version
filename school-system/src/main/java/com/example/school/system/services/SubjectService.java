@@ -6,15 +6,10 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.example.school.system.DTO.GetSubjectJointsForSubjectTeacher;
 import com.example.school.system.DTO.RegisterSubjectJoint;
 import com.example.school.system.DTO.SubjectDTO;
-import com.example.school.system.DTO.SubjectJointRes;
 import com.example.school.system.DTO.SubjectUpdateDTO;
 import com.example.school.system.DTO.UnenrollMultipleStudents;
-import com.example.school.system.DTO.DTOResponse.GetAllSubjectJointsDTO;
-import com.example.school.system.DTO.DTOResponse.GetSubjectsDTORes;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.DTO.DTOResponse.SubjectJointClassDTO;
 import com.example.school.system.DTO.DTOResponse.SubjectJointForTeacherDTO;
@@ -138,8 +133,12 @@ public class SubjectService {
         if (teacherProfile.getSubjectJoints().isEmpty()) {
             Users userProfile = teacherProfile.getTeacher();
             userProfile.getRoles().remove(UserRoles.SUBJECTTEACHER);
+            if (userProfile.getRoles().isEmpty()) {
+                userProfile.getRoles().add(UserRoles.UNASSIGNED);
+            }
             userRepository.save(userProfile);
         }
+        
         subjectJoint.setTeacherProfile(null);
         subjectJointRepo.save(subjectJoint);
     }

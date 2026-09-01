@@ -418,6 +418,7 @@ interface ClassesTabProps {
   showModal: (content: React.ReactNode) => void;
   closeModal: () => void;
   showConfirm: (msg: string, onOk: () => void, danger?: boolean) => void;
+  showSuccess: (msg: string) => void;
   onBulkTermUpdate?: (
     term: number,
     year: number,
@@ -434,6 +435,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   showModal,
   closeModal,
   showConfirm,
+  showSuccess,
 }) => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -480,16 +482,20 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
     showConfirm(
       `Unassign <strong>${currentClass.classTeacher}</strong> from this class?`,
       async () => {
-        await request(`/unassign/classteacher`, {
+        const response: any = await request(`/unassign/classteacher`, {
           method: "PATCH",
           body: JSON.stringify({
             classId: classId,
             schoolId: getSchoolId(),
           }),
-        }).then(() => {
-          closeModal();
-          refresh();
         });
+        closeModal();
+        refresh();
+        if (response?.unassigned) {
+          showSuccess(
+            "Class teacher unassigned. The teacher now has no roles and will be redirected to the unassigned page on next login.",
+          );
+        }
       },
       true,
     );

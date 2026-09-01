@@ -123,7 +123,11 @@ export const normalizeUser = (user: any) => {
 
 export const getDefaultDashboardPath = (user: any) => {
   const roles = normalizeRoles(user?.roles || user?.role);
-  return roles[0] ? `/edunex-org${ROLE_PATHS[roles[0]]}` : "/";
+  const validRoles = roles.filter((r) => r in ROLE_PATHS);
+  if (validRoles.length === 0) {
+    return "/edunex-org/unassigned";
+  }
+  return `/edunex-org${ROLE_PATHS[validRoles[0]]}`;
 };
 
 export const getRoleFromPath = (path: string): string => {

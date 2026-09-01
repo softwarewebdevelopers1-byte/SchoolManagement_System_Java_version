@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -248,11 +249,19 @@ public class SchoolClassService {
         if (user.getRoles().contains(UserRoles.CLASSTEACHER)) {
             user.getRoles().remove(UserRoles.CLASSTEACHER);
         }
+        if (user.getRoles().isEmpty()) {
+            user.getRoles().add(UserRoles.UNASSIGNED);
+        }
         userRepository.save(user);
         currenTeacher.setSchoolClass(null);
         classFound.setTeacher(null);
         schoolClassRepository.save(classFound);
         teacherProfileRepository.save(currenTeacher);
+
+        boolean hasRemainingRoles = !user.getRoles().isEmpty();
+        if (!hasRemainingRoles) {
+            return SchoolApiResponse.success(Map.of("unassigned", true), "class teacher unassigned - no remaining roles");
+        }
         return SchoolApiResponse.success("class teacher unassigned");
     }
 }

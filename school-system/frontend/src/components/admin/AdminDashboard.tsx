@@ -900,7 +900,6 @@ const AdminDashboard: React.FC = () => {
       if (teacher) {
         const existingRoles = teacher.roles || [];
         const newRoles = existingRoles.filter((r) => r !== "classteacher");
-        if (newRoles.length === 0) newRoles.push("subjectteacher");
 
         await api.put(`/users/${teacherId}`, {
           name: teacher.name,
@@ -915,7 +914,13 @@ const AdminDashboard: React.FC = () => {
         });
         await loadDashboardUsers();
         await refreshUser();
-        showSuccess("Class teacher unassigned successfully.");
+        if (newRoles.length === 0) {
+          showSuccess(
+            "Class teacher unassigned. The teacher now has no roles and will be redirected to the unassigned page on next login.",
+          );
+        } else {
+          showSuccess("Class teacher unassigned successfully.");
+        }
       }
     } catch (err) {
       showError("Failed to unassign class teacher.");
@@ -1111,6 +1116,7 @@ const AdminDashboard: React.FC = () => {
           showModal={showModal}
           closeModal={closeModal}
           showConfirm={showConfirm}
+          showSuccess={showSuccess}
         />
       );
     }

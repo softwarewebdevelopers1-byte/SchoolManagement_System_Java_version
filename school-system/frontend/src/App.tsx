@@ -8,6 +8,7 @@ import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherD
 import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
+import UnassignedPage from "./components/shared/UnassignedPage";
 import {
   getDefaultDashboardPath,
   normalizeUser,
@@ -51,6 +52,10 @@ const DashboardSelector = () => {
     const user = normalizeUser(session.user || session);
     const roles = normalizeRoles(user?.roles || user?.role);
     const validRoles = roles.filter((r) => ROLE_PATHS[r]);
+
+    if (validRoles.length === 0) {
+      return <Navigate to="/edunex-org/unassigned" replace />;
+    }
 
     if (validRoles.length <= 1) {
       return <Navigate to={getDefaultDashboardPath(user)} replace />;
@@ -235,6 +240,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SubjectTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/unassigned"
+          element={
+            <ProtectedRoute>
+              <UnassignedPage />
             </ProtectedRoute>
           }
         />
