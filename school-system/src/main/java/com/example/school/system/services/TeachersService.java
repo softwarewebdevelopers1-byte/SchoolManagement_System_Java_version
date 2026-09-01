@@ -76,7 +76,7 @@ public class TeachersService {
 
             String classStream = String.valueOf(row[8]);
             String classGrade = String.valueOf(row[9]);
-            if (classGrade != null && classStream != null && !classGrade.isEmpty() && !classStream.isEmpty()) {
+            if (classGrade != null && classStream != null && !"null".equals(classGrade) && !"null".equals(classStream)) {
                 dto.setSchoolClass(classGrade + " " + classStream);
             }
 

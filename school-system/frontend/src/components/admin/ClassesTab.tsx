@@ -163,8 +163,11 @@ const ClassTeacherModal: React.FC<{
   );
   const isBusy =
     selectedTeacher &&
-    selectedTeacher?.schoolClass != "" &&
-    selectedTeacher?.schoolClass != null;
+    Boolean(
+      (selectedTeacher?.classGrade && selectedTeacher.classGrade !== "null") ||
+        (selectedTeacher?.classStream &&
+          selectedTeacher.classStream !== "null"),
+    );
 
   return (
     <div>
@@ -206,13 +209,26 @@ const ClassTeacherModal: React.FC<{
           >
             <option value="">-- Choose a teacher --</option>
             {teachers.map((teacher: any) => {
-              const alreadyAssigned = teacher?.schoolClass;
+              const alreadyAssigned =
+                (teacher?.classGrade && teacher.classGrade !== "null") ||
+                (teacher?.classStream && teacher.classStream !== "null");
+              const assignedLabel = alreadyAssigned
+                ? `Grade ${
+                    teacher.classGrade && teacher.classGrade !== "null"
+                      ? teacher.classGrade
+                      : ""
+                  }${
+                    teacher.classStream && teacher.classStream !== "null"
+                      ? ` ${teacher.classStream}`
+                      : ""
+                  }`.trim()
+                : "";
               return (
                 <option key={teacher.usersId} value={teacher.usersId}>
                   {`${teacher?.firstName ? teacher.firstName : teacher?.email} ${teacher?.lastName ? teacher.lastName : " "}`}{" "}
                   {alreadyAssigned
-                    ? `(Already assigned to ${teacher.schoolClass})`
-                    : ``}
+                    ? `(Already assigned to ${assignedLabel})`
+                    : ""}
                 </option>
               );
             })}
@@ -234,8 +250,17 @@ const ClassTeacherModal: React.FC<{
             onClick={async () => {
               if (!selectedTeacherId) return;
               if (isBusy) {
+                const assignedLabel = `Grade ${
+                  selectedTeacher?.classGrade && selectedTeacher.classGrade !== "null"
+                    ? selectedTeacher.classGrade
+                    : ""
+                }${
+                  selectedTeacher?.classStream && selectedTeacher.classStream !== "null"
+                    ? ` ${selectedTeacher.classStream}`
+                    : ""
+                }`.trim();
                 setError(
-                  `${selectedTeacher?.firstName} is already assigned to Grade ${selectedTeacher?.schoolClass}. Please unassign them first.`,
+                  `${selectedTeacher?.firstName} is already assigned to ${assignedLabel}. Please unassign them first.`,
                 );
                 return;
               }
