@@ -18,6 +18,8 @@ import com.example.school.system.DTO.timetable.SchoolBreakRequest;
 import com.example.school.system.DTO.timetable.TimetableGenerateRequest;
 import com.example.school.system.types.SubjectTimePreference;
 import com.example.school.system.types.SubjectType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 class TimetableGenerateRequestTest {
 
@@ -41,6 +43,29 @@ class TimetableGenerateRequestTest {
         assertEquals(40, request.minutesPerLesson());
         assertNotNull(request.breaks());
         assertEquals("Morning Break", request.breaks().get(0).name());
+    }
+
+    @Test
+    void legacyFrontendPayloadStillMapsToSchoolSettings() throws Exception {
+        var payload = """
+                {
+                  "schoolId": "00000000-0000-0000-0000-000000000001",
+                  "schoolStartTime": "08:00",
+                  "subjectsPerDay": 7,
+                  "subjectDurationMinutes": 40,
+                  "breaks": [
+                    { "name": "Morning Break", "startTime": "10:00", "endTime": "10:20" }
+                  ]
+                }
+                """;
+
+        var mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var request = mapper.readValue(payload, TimetableGenerateRequest.class);
+
+        assertEquals(LocalTime.of(8, 0), request.schoolStartTime());
+        assertEquals(7, request.lessonsPerDay());
+        assertEquals(40, request.minutesPerLesson());
+        assertNotNull(request.breaks());
     }
 
     @Test

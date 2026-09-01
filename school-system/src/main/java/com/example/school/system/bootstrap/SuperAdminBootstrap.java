@@ -20,15 +20,15 @@ public class SuperAdminBootstrap implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        String email = "superadmin@edunex.com";
+        String email = "superadmin@edunex.com".trim().toLowerCase();
         String password = "SuperAdmin@123";
 
-        if (userRepository.findUsersByEmail(email.trim().toLowerCase()).isPresent()) {
+        if (userRepository.existsByEmail(email)) {
             return;
         }
 
         Users superAdmin = new Users();
-        superAdmin.setEmail(email.trim().toLowerCase());
+        superAdmin.setEmail(email);
         superAdmin.setPassword(passwordEncoder.encode(password));
         superAdmin.setStatus(AccountStatus.ACTIVE);
         superAdmin.setRoles(java.util.Set.of(UserRoles.SUPERADMIN));

@@ -176,8 +176,8 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
         body: JSON.stringify({
           schoolId: getSchoolId(),
           schoolStartTime,
-          subjectsPerDay,
-          subjectDurationMinutes,
+          lessonsPerDay: subjectsPerDay,
+          minutesPerLesson: subjectDurationMinutes,
           breaks: breaks.map((item) => ({
             label: item.label,
             startTime: item.startTime,

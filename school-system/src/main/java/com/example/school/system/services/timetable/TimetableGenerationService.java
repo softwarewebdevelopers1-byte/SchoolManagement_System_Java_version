@@ -23,6 +23,8 @@ import com.example.school.system.DTO.timetable.TimetableResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.SchoolBreak;
+import com.example.school.system.models.SchoolClass;
+import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.models.SubjectRequirement;
 import com.example.school.system.models.TeachingPeriod;
 import com.example.school.system.models.Timetable;
@@ -123,6 +125,7 @@ public class TimetableGenerationService {
 
     @Transactional
     public TimetableResponse generate(TimetableGenerateRequest request) {
+        ensureDefaultSchoolSettings(request.schoolId());
         if (hasRequestDaySettings(request)) {
             configureSettings(new SchoolTimetableSettingsRequest(
                     request.schoolId(),
@@ -240,13 +243,21 @@ public class TimetableGenerationService {
         var school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         var settings = schoolSettingsRepository.findBySchoolId(schoolId)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school timetable settings not found"));
+                .orElseGet(() -> {
+                    var created = new SchoolSettings();
+                    created.setSchool(school);
+                    created.setSchoolStartTime(java.time.LocalTime.of(8, 0));
+                    created.setLessonsPerDay(7);
+                    created.setMinutesPerLesson(40);
+                    created.setBreaks(new ArrayList<>());
+                    return schoolSettingsRepository.save(created);
+                });
         if (settings.getBreaks() != null) {
             settings.getBreaks().size();
         }
         var requirements = subjectRequirementRepository.findAllBySchoolId(schoolId);
         if (requirements.isEmpty()) {
-            throw new SchoolResourceBadInputExceptionHandler("no subject weekly requirements configured");
+            requirements = ensureDefaultRequirements(schoolId, school);
         }
         var joints = subjectJointRepo.findAllBySchoolClass_schoolId(schoolId).stream()
                 .collect(Collectors.toMap(joint -> joint.getId(), Function.identity()));
@@ -256,6 +267,67 @@ public class TimetableGenerationService {
             throw new SchoolResourceBadInputExceptionHandler("no teaching periods generated from school settings");
         }
         return new TimetableGenerationContext(school, settings, requirements, slots, joints);
+    }
+
+    private void ensureDefaultSchoolSettings(UUID schoolId) {
+        var school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        var settings = schoolSettingsRepository.findBySchoolId(schoolId).orElseGet(() -> {
+            var created = new SchoolSettings();
+            created.setSchool(school);
+            return created;
+        });
+        boolean changed = false;
+        if (settings.getSchoolStartTime() == null) {
+            settings.setSchoolStartTime(java.time.LocalTime.of(8, 0));
+            changed = true;
+        }
+        if (settings.getLessonsPerDay() == null) {
+            settings.setLessonsPerDay(7);
+            changed = true;
+        }
+        if (settings.getMinutesPerLesson() == null) {
+            settings.setMinutesPerLesson(40);
+            changed = true;
+        }
+        if (settings.getBreaks() == null) {
+            settings.setBreaks(new ArrayList<>());
+            changed = true;
+        }
+        if (changed) {
+            schoolSettingsRepository.save(settings);
+            persistTeachingPeriods(settings);
+        }
+    }
+
+    private List<SubjectRequirement> ensureDefaultRequirements(UUID schoolId, com.example.school.system.models.School school) {
+        var existing = subjectRequirementRepository.findAllBySchoolId(schoolId);
+        if (!existing.isEmpty()) {
+            return existing;
+        }
+        var joints = subjectJointRepo.findAllBySchoolClass_schoolId(schoolId);
+        if (joints.isEmpty()) {
+            return List.of();
+        }
+        var defaults = new ArrayList<SubjectRequirement>();
+        for (var joint : joints) {
+            var schoolClass = joint.getSchoolClass();
+            if (schoolClass == null) {
+                continue;
+            }
+            var requirement = new SubjectRequirement();
+            requirement.setSchool(school);
+            requirement.setSchoolClass(schoolClass);
+            requirement.setSubjectJoint(joint);
+            requirement.setWeeklyLessons(1);
+            requirement.setRequiresDoubleLesson(false);
+            requirement.setTimePreference(SubjectTimePreference.NEUTRAL);
+            defaults.add(requirement);
+        }
+        if (!defaults.isEmpty()) {
+            subjectRequirementRepository.saveAll(defaults);
+        }
+        return subjectRequirementRepository.findAllBySchoolId(schoolId);
     }
 
     private void validateRequirements(List<SubjectRequirement> requirements) {
