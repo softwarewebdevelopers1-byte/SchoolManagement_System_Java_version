@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
 import { DlIcon } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import {
@@ -113,6 +113,33 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   const [marksLoading, setMarksLoading] = React.useState(true);
   const [studentsWithMarks, setStudentsWithMarks] =
     React.useState<any[]>(students);
+  const [schoolProfile, setSchoolProfile] = useState<{
+    schoolName?: string;
+    schoolAddress?: string;
+    motto?: string;
+  }>({});
+
+  useEffect(() => {
+    const loadSchoolProfile = async () => {
+      const schoolId = getSchoolId();
+      if (!schoolId) return;
+
+      try {
+        const data: any = await request(
+          `/schools/settings?schoolId=${encodeURIComponent(schoolId)}`,
+        );
+        setSchoolProfile({
+          schoolName: data?.schoolName,
+          schoolAddress: data?.schoolAddress,
+          motto: data?.motto,
+        });
+      } catch {
+        setSchoolProfile({});
+      }
+    };
+
+    void loadSchoolProfile();
+  }, []);
 
   // Load marks from backend for each subject and attach to students
   const loadMarks = useCallback(async () => {
@@ -281,17 +308,28 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         type === "Subject summary"
       ) {
         const doc = new jsPDF("landscape");
-        doc.setFontSize(16);
+        doc.setTextColor(201, 150, 61);
+        doc.setFontSize(18);
+        doc.text(schoolProfile.schoolName || "School Report", 14, 16);
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(9);
+        if (schoolProfile.schoolAddress) {
+          doc.text(schoolProfile.schoolAddress, 14, 23);
+        }
+        if (schoolProfile.motto) {
+          doc.text(`Motto: ${schoolProfile.motto}`, 14, schoolProfile.schoolAddress ? 30 : 23);
+        }
+        doc.setFontSize(12);
         doc.text(
           `CBC Class Merit List - Term ${term}, ${year} (${examType.toUpperCase()})`,
           14,
-          15,
+          schoolProfile.schoolAddress || schoolProfile.motto ? 40 : 30,
         );
         doc.setFontSize(10);
         doc.text(
           `Ranked by: ${rankingMode === "total_marks" ? "Total Marks" : "Total Points"} | Generated on ${new Date().toLocaleDateString()}`,
           14,
-          22,
+          schoolProfile.schoolAddress || schoolProfile.motto ? 47 : 37,
         );
 
         autoTable(doc, {
@@ -322,7 +360,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             student.metrics.totalPoints,
             student.metrics.totalMarks,
           ]),
-          startY: 28,
+          startY: schoolProfile.schoolAddress || schoolProfile.motto ? 54 : 43,
           theme: "grid",
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: {
@@ -391,6 +429,15 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           rank: slip.rank,
           rankingLabel:
             rankingMode === "total_marks" ? "Total Marks" : "Total Points",
+          schoolName: schoolProfile.schoolName,
+          schoolAddress: schoolProfile.schoolAddress,
+          motto: schoolProfile.motto,
+          gradingScale: cbcBands.map((band) => ({
+            grade: band.grade,
+            minScore: band.minScore,
+            maxScore: band.maxScore,
+            points: band.points,
+          })),
           subjects: slipSubjects.map((subject) => {
             const mark = slip.metrics.marks[getSubId(subject.id)];
             const resolved =
