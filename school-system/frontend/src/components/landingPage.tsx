@@ -251,6 +251,9 @@ const LandingPage: React.FC = () => {
           <a href="#pricing" className={styles.navLink}>
             Pricing
           </a>
+          <a href="/schools" className={styles.navLink}>
+            Schools
+          </a>
         </div>
         <a href="/login" className={styles.navCta}>
           Sign in →

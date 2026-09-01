@@ -8,6 +8,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.example.school.system.types.SchoolStatus;
+import com.example.school.system.types.SchoolVisibility;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 import jakarta.persistence.CascadeType;
@@ -63,6 +64,10 @@ public class School {
     @NotBlank(message = "school code must be provided")
     private String schoolCode;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility")
+    private SchoolVisibility visibility = SchoolVisibility.PRIVATE;
+
     @Column(name = "registered_date")
     @CreationTimestamp
     private LocalDate date;
@@ -114,6 +119,9 @@ public class School {
         }
         if (schoolMotto != null) {
             schoolMotto = schoolMotto.trim().toLowerCase();
+        }
+        if (visibility == null) {
+            visibility = SchoolVisibility.PRIVATE;
         }
     }
 

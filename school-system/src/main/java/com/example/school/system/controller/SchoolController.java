@@ -6,8 +6,10 @@ import com.example.school.system.DTO.GetSchoolDTO;
 import com.example.school.system.DTO.OtpValidationDTO;
 import com.example.school.system.DTO.UpdateSchoolDTO;
 import com.example.school.system.DTO.UpdateTermAndExam;
+import com.example.school.system.DTO.DTOResponse.PublicSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.SchoolService;
+import com.example.school.system.types.SchoolVisibility;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -83,5 +85,20 @@ public class SchoolController {
     public ResponseEntity<?> schoolSettings(@RequestParam UUID schoolId) {
         var res = schoolService.schoolSettings(schoolId);
         return ResponseEntity.status(200).body(res);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/visibility")
+    public ResponseEntity<?> updateVisibility(@RequestHeader("Authorization") String authHeader,
+            @RequestParam UUID schoolId,
+            @RequestParam SchoolVisibility visibility) {
+        var res = schoolService.updateSchoolVisibility(schoolId, visibility, authHeader);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @GetMapping("/public/schools")
+    public ResponseEntity<?> listPublicSchools(@RequestParam(required = false) String search) {
+        java.util.List<PublicSchoolDTO> schools = schoolService.listPublicSchools(search);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(schools, "public schools loaded"));
     }
 }

@@ -33,6 +33,7 @@ public class RequestFilter {
                         .requestMatchers("/api/superadmin/invites/**").permitAll()
                         .requestMatchers("/api/auth/teacher/create-account").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/schools/public/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/debug/**").permitAll()
                         .requestMatchers("/api/schools/get/school/for/user").permitAll()

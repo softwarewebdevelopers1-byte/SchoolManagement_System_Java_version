@@ -1,5 +1,6 @@
 package com.example.school.system.DTO.DTOResponse;
 
+import com.example.school.system.types.SchoolVisibility;
 import lombok.Builder;
 
 @Builder
@@ -9,5 +10,6 @@ public record SchoolSettingsDTO(
         String schoolEmail,
         String motto,
         String schoolAddress,
-        String phoneNumber
+        String phoneNumber,
+        SchoolVisibility visibility
 ) {}

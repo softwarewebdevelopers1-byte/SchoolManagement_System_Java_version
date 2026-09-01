@@ -37,6 +37,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     phoneNumber: "",
     schoolCode: "",
   });
+  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PRIVATE");
   const [saving, setSaving] = useState(false);
   const [schoolCodeCopied, setSchoolCodeCopied] = useState(false);
   const [message, setMessage] = useState<{
@@ -72,6 +73,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
       update("schoolAddress", data?.schoolAddress);
       update("phoneNumber", data?.phoneNumber);
       update("schoolCode", data?.schoolCode);
+      if (data?.visibility) setVisibility(data.visibility);
     })();
   }, []);
   const handleSubmit = async (event: React.FormEvent) => {
@@ -90,7 +92,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     try {
       await request(`/schools/update/school`, {
         method: "PATCH",
-        body: JSON.stringify({ ...form, schoolId }),
+        body: JSON.stringify({ ...form, visibility, schoolId }),
       });
       setMessage({ text: "School settings updated.", type: "success" });
       onSaved?.();
@@ -239,6 +241,65 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
             style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
           />
         </label>
+
+        <label style={{ gridColumn: "1 / -1" }}>
+          <span style={labelStyle}>School visibility</span>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setVisibility("PRIVATE")}
+              style={{
+                padding: "10px 18px",
+                border: "1.5px solid var(--border)",
+                background:
+                  visibility === "PRIVATE" ? "var(--cream)" : "var(--white)",
+                color: "var(--text)",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 700,
+                outline:
+                  visibility === "PRIVATE"
+                    ? "2px solid var(--gold)"
+                    : "none",
+              }}
+            >
+              Private
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibility("PUBLIC")}
+              style={{
+                padding: "10px 18px",
+                border: "1.5px solid var(--border)",
+                background:
+                  visibility === "PUBLIC" ? "var(--cream)" : "var(--white)",
+                color: "var(--text)",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 700,
+                outline:
+                  visibility === "PUBLIC" ? "2px solid var(--gold)" : "none",
+              }}
+            >
+              Public
+            </button>
+            <span style={{ fontSize: 12, color: "var(--textMut)" }}>
+              {visibility === "PUBLIC"
+                ? "Public — outsiders can see this school on the public listing."
+                : "Private — only your school team can see this school."}
+            </span>
+          </div>
+        </label>
+
         <button
           type="submit"
           disabled={saving}

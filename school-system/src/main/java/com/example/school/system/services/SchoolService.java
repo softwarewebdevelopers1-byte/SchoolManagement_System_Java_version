@@ -14,6 +14,7 @@ import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.SchoolResourceRestrictedException;
+import com.example.school.system.DTO.DTOResponse.PublicSchoolDTO;
 import com.example.school.system.models.ExamSettings;
 import com.example.school.system.models.School;
 import com.example.school.system.models.SchoolSettings;
@@ -24,6 +25,7 @@ import com.example.school.system.security.jwt.JwtValidator;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.types.OtpPurpose;
 import com.example.school.system.types.SchoolStatus;
+import com.example.school.system.types.SchoolVisibility;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +86,7 @@ public class SchoolService {
         if (dto.motto() != null) {
             school.setSchoolMotto(dto.motto());
         }
+        school.setVisibility(SchoolVisibility.PRIVATE);
         return school;
     }
 
@@ -136,11 +139,33 @@ public class SchoolService {
             }
         }
 
-        // String previousSchoolName = schoolToUpdate.getSchoolName();
+        SchoolVisibility visibility = schoolData.visibility();
+        if (visibility != null) {
+            schoolToUpdate.setVisibility(visibility);
+        }
+
         schoolRepository.save(schoolToUpdate);
 
         return SchoolApiResponse
                 .success("Saved");
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> updateSchoolVisibility(UUID schoolId, SchoolVisibility visibility,
+            String authHeader) {
+        tokenValidator(schoolId, authHeader);
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        school.setVisibility(visibility);
+        schoolRepository.save(school);
+        return SchoolApiResponse.success(
+                "school is now " + visibility.name().toLowerCase());
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<PublicSchoolDTO> listPublicSchools(String search) {
+        String normalized = search == null ? "" : search.trim();
+        return schoolRepository.findPublicSchools(normalized);
     }
 
     private void tokenValidator(UUID id, String authHeader) {

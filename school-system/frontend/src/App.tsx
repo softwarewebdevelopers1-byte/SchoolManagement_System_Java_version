@@ -9,6 +9,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import LandingPage from "./components/landingPage";
 import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
 import UnassignedPage from "./components/shared/UnassignedPage";
+import PublicSchoolsPage from "./components/public/PublicSchoolsPage";
 import {
   getDefaultDashboardPath,
   normalizeUser,
@@ -183,6 +184,7 @@ function App() {
           }
         />
         <Route path="/" element={<LandingPage />} />
+        <Route path="/schools" element={<PublicSchoolsPage />} />
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />

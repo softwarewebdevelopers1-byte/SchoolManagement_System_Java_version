@@ -40,6 +40,19 @@ export default function SuperAdminSchools() {
   const [sortBy, setSortBy] = useState("name");
   const [selectedSchool, setSelectedSchool] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const [copiedSchoolId, setCopiedSchoolId] = useState<string | null>(null);
+
+  const copySchoolCode = async (school: any) => {
+    if (!school?.schoolCode) return;
+
+    try {
+      await navigator.clipboard.writeText(String(school.schoolCode));
+      setCopiedSchoolId(school.schoolId || school.id || null);
+      setTimeout(() => setCopiedSchoolId(null), 1800);
+    } catch {
+      setError("Failed to copy school code.");
+    }
+  };
 
   const loadSchools = async () => {
     try {
@@ -191,7 +204,22 @@ export default function SuperAdminSchools() {
                       </div>
                     </td>
                     <td style={styles.td}>
-                      <div style={styles.code}>{school.schoolCode}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={styles.code}>{school.schoolCode}</div>
+                        <button
+                          type="button"
+                          onClick={() => void copySchoolCode(school)}
+                          style={
+                            copiedSchoolId === (school.schoolId || school.id)
+                              ? styles.copyButtonSuccess
+                              : styles.copyButton
+                          }
+                        >
+                          {copiedSchoolId === (school.schoolId || school.id)
+                            ? "Copied"
+                            : "Copy"}
+                        </button>
+                      </div>
                     </td>
                     <td style={styles.td}>
                       <div style={styles.metaText}>{school.email || "N/A"}</div>
@@ -234,7 +262,29 @@ export default function SuperAdminSchools() {
             <div style={styles.modalBody}>
               <div style={styles.detailRow}>
                 <div style={styles.detailLabel}>School Code</div>
-                <div style={styles.detailValue}>{selectedSchool.schoolCode}</div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div style={styles.detailValue}>{selectedSchool.schoolCode}</div>
+                  <button
+                    type="button"
+                    onClick={() => void copySchoolCode(selectedSchool)}
+                    style={
+                      copiedSchoolId === (selectedSchool.schoolId || selectedSchool.id)
+                        ? styles.copyButtonSuccess
+                        : styles.copyButton
+                    }
+                  >
+                    {copiedSchoolId === (selectedSchool.schoolId || selectedSchool.id)
+                      ? "Copied"
+                      : "Copy"}
+                  </button>
+                </div>
               </div>
               <div style={styles.detailRow}>
                 <div style={styles.detailLabel}>Admin Email</div>
@@ -420,6 +470,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     fontWeight: 700,
     color: "#0f2e22",
+  },
+  copyButton: {
+    border: "1px solid rgba(15,46,34,0.12)",
+    background: "#f8fafb",
+    color: "#0f2e22",
+    borderRadius: 8,
+    padding: "6px 10px",
+    fontSize: 11,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  copyButtonSuccess: {
+    border: "1px solid rgba(22,163,74,0.3)",
+    background: "#eaf7ee",
+    color: "#166534",
+    borderRadius: 8,
+    padding: "6px 10px",
+    fontSize: 11,
+    fontWeight: 700,
+    cursor: "pointer",
   },
   badge: {
     display: "inline-flex",
