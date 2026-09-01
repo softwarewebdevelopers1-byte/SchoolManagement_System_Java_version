@@ -27,6 +27,7 @@ interface ResultsReportsProps {
   term?: number;
   year?: number;
   examType?: string;
+  onViewStudent?: (student: any, rank?: number) => void;
 }
 
 const thStyle: React.CSSProperties = {
@@ -100,6 +101,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   term = 1,
   year = 2024,
   examType = "opener",
+  onViewStudent,
 }) => {
   const { bands: cbcBands } = useCbcGradingBands();
   const [msg, setMsg] = React.useState<{
@@ -797,6 +799,12 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               <strong>
                 {rankingMode === "total_marks" ? "Total Marks" : "Total Points"}
               </strong>
+              {onViewStudent && (
+                <>
+                  {" "}
+                  | <em>Click any student row to view detailed performance</em>
+                </>
+              )}
             </p>
           </div>
           <button
@@ -868,15 +876,32 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                 >
                   T.Marks
                 </th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankedStudents.map((student) => (
-                <tr
-                  key={student.studentId}
-                  style={{ borderBottom: `1px solid ${C.border}` }}
-                >
+                  <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankedStudents.map((student) => (
+                  <tr
+                    key={student.studentId}
+                    style={{
+                      borderBottom: `1px solid ${C.border}`,
+                      cursor: onViewStudent ? "pointer" : "default",
+                      transition: "background 0.15s",
+                    }}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).tagName !== "BUTTON") {
+                        onViewStudent?.(student, student.rank);
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      if (onViewStudent) {
+                        e.currentTarget.style.background = "#f8f9fa";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "";
+                    }}
+                  >
                   <td
                     style={{ ...tdStyle, fontWeight: 700, textAlign: "center" }}
                   >
@@ -952,24 +977,53 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                     {student.metrics.totalMarks}
                   </td>
                   <td style={{ ...tdStyle, textAlign: "right" }}>
-                    <button
-                      onClick={() =>
-                        handleDownload("Report Slip", student.fullName)
-                      }
-                      className="ct-pill"
+                    <div
                       style={{
-                        padding: "6px 12px",
-                        background: gradeBg(""),
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: C.textMuted,
-                        cursor: "pointer",
+                        display: "flex",
+                        gap: 6,
+                        justifyContent: "flex-end",
                       }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      Print Slip
-                    </button>
+                      <button
+                        onClick={() =>
+                          handleDownload("Report Slip", student.fullName)
+                        }
+                        className="ct-pill"
+                        style={{
+                          padding: "6px 12px",
+                          background: gradeBg(""),
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: C.textMuted,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Print Slip
+                      </button>
+                      {onViewStudent && (
+                        <button
+                          onClick={() =>
+                            onViewStudent(student, student.rank)
+                          }
+                          className="ct-pill"
+                          style={{
+                            padding: "6px 12px",
+                            background: C.gold,
+                            border: "none",
+                            borderRadius: 20,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#fff",
+                            cursor: "pointer",
+                          }}
+                        >
+                          View Performance
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

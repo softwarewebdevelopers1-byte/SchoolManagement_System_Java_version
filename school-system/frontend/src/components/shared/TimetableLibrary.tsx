@@ -33,6 +33,20 @@ const orderDays = (days: TimetableDay[]) => {
   ) as TimetableDay[];
 };
 
+const isTimetableRecord = (value: unknown): value is TimetableRecord => {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    (Array.isArray(record.days) ||
+      typeof record.classGrade === "string" ||
+      typeof record.classStream === "string" ||
+      typeof record.schoolStartTime === "string" ||
+      typeof record.subjectsPerDay === "number" ||
+      Array.isArray(record.breaks))
+  );
+};
+
 const buildLessonMeta = (entry: TimetableEntry | null) => {
   if (!entry || entry.type !== "lesson") {
     return "No lesson scheduled";
@@ -97,7 +111,21 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
         setError("");
         setActionMessage(null);
         const data: any = await request(fetchPath);
-        setTimetables(data || []);
+        const source = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.timetables)
+            ? data.timetables
+            : Array.isArray(data?.items)
+              ? data.items
+              : Array.isArray(data?.data)
+                ? data.data
+                : data && typeof data === "object" && ("id" in data || "days" in data)
+                  ? [data]
+                  : [];
+        const normalized = (Array.isArray(source) ? source : []).filter(
+          (item): item is TimetableRecord => isTimetableRecord(item),
+        );
+        setTimetables(normalized);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Unable to load timetables.",
@@ -265,7 +293,7 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
               <p style={metricValueStyle}>
                 {highlightTeacherId
                   ? teacherLessonCount
-                  : selected.breaks.length}
+                  : (selected.breaks?.length ?? 0)}
               </p>
             </div>
           </div>

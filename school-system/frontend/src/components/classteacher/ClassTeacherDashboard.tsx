@@ -8,6 +8,7 @@ import { StudentRecords } from "./StudentRecords";
 import { StudentDetails } from "./StudentDetails";
 import { MarksManagement } from "./MarksManagement";
 import { ResultsReports } from "./ResultsReports";
+import { StudentPerformance } from "./StudentPerformance";
 import { Analytics } from "./Analytics";
 import { Settings } from "./Settings";
 import { ArchivesView } from "../shared/ArchivesView";
@@ -200,6 +201,12 @@ export default function ClassTeacherDashboard() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [selectedStudentForPerformance, setSelectedStudentForPerformance] =
+    useState<{
+      student: any;
+      rank?: number;
+      totalStudents?: number;
+    } | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classSubjectCatalog, setClassSubjectCatalog] = useState<any[]>([]);
@@ -530,6 +537,7 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
     localStorage.setItem(CLASS_TEACHER_TAB_KEY, selectedTab);
 
     setSelectedStudent(null);
+    setSelectedStudentForPerformance(null);
     setMobileMenuOpen(false);
   };
 
@@ -568,6 +576,26 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
           student={selectedStudent}
           subjects={subjects}
           onBack={() => setSelectedStudent(null)}
+        />
+      );
+    }
+
+    if (selectedStudentForPerformance && tab === "results") {
+      return (
+        <StudentPerformance
+          student={selectedStudentForPerformance.student}
+          subjects={subjects.filter(
+            (subject) =>
+              String(subject.enrollmentMode || "").toUpperCase() !== "DROPPED",
+          )}
+          classGrade={effectiveGrade}
+          classStream={effectiveStream}
+          term={currentUser?.term}
+          year={currentUser?.year}
+          examType={currentUser?.examType}
+          rank={selectedStudentForPerformance.rank}
+          totalStudents={selectedStudentForPerformance.totalStudents}
+          onBack={() => setSelectedStudentForPerformance(null)}
         />
       );
     }
@@ -683,6 +711,13 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
             term={currentUser?.term}
             year={currentUser?.year}
             examType={currentUser?.examType}
+            onViewStudent={(student: any, rank?: number) =>
+              setSelectedStudentForPerformance({
+                student,
+                rank,
+                totalStudents: students.length,
+              })
+            }
           />
         );
 
