@@ -245,9 +245,17 @@ public class SuperAdminService {
     public List<SuperAdminUserRes> getPlatformStaff() {
         List<Users> users = userRepository.findAll();
         return users.stream()
-                .filter(u -> u.getRoles() != null
-                        && !u.getRoles().contains(UserRoles.SUPERADMIN)
-                        && u.getRoles().stream().anyMatch(this::isStaffRole))
+                .filter(u -> {
+                    if (u == null) {
+                        return false;
+                    }
+                    if (u.getRoles() != null && u.getRoles().contains(UserRoles.SUPERADMIN)) {
+                        return false;
+                    }
+                    Set<UserRoles> roles = u.getRoles() != null ? u.getRoles() : Set.of();
+                    return u.getTeacherProfile() != null
+                            || roles.stream().anyMatch(this::isStaffRole);
+                })
                 .map(u -> {
                     String schoolName = u.getSchool() != null ? u.getSchool().getSchoolName() : "N/A";
                     String schoolCode = u.getSchool() != null ? u.getSchool().getSchoolCode() : "N/A";
@@ -260,7 +268,7 @@ public class SuperAdminService {
                     return SuperAdminUserRes.builder()
                             .userId(u.getId())
                             .email(u.getEmail())
-                            .roles(u.getRoles())
+                            .roles(u.getRoles() != null ? u.getRoles() : Set.of())
                             .schoolName(schoolName)
                             .schoolCode(schoolCode)
                             .firstName(firstName)

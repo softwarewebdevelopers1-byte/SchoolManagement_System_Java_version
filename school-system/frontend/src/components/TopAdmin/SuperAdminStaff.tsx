@@ -71,7 +71,11 @@ export default function SuperAdminStaff() {
       const status = formatStatus(member.status);
       const matchesStatus = statusFilter === "ALL" || status === statusFilter;
 
-      const memberRoles = Array.isArray(member.roles) ? member.roles : [member.roles];
+      const memberRoles = Array.isArray(member.roles)
+        ? member.roles.filter(Boolean)
+        : member.roles
+          ? [member.roles]
+          : [];
       const matchesRole = roleFilter === "ALL" || memberRoles.includes(roleFilter);
 
       return matchesSearch && matchesStatus && matchesRole;
@@ -165,7 +169,11 @@ export default function SuperAdminStaff() {
               {filteredStaff.map((member) => {
                 const status = formatStatus(member.status);
                 const joinDate = new Date(member.registeredDate || member.createdAt || Date.now()).toLocaleDateString();
-                const roles = Array.isArray(member.roles) ? member.roles : [member.roles];
+                const roles = Array.isArray(member.roles)
+                  ? member.roles.filter(Boolean)
+                  : member.roles
+                    ? [member.roles]
+                    : [];
                 return (
                   <tr key={member.userId || member.id} style={styles.tr}>
                     <td style={styles.td}>
@@ -182,11 +190,15 @@ export default function SuperAdminStaff() {
                     <td style={styles.td}>{member.schoolName || "No school"}</td>
                     <td style={styles.td}>
                       <div style={styles.rolesSection}>
-                        {roles.map((role: string) => (
-                          <span key={role} style={styles.roleTag}>
-                            {role}
-                          </span>
-                        ))}
+                        {roles.length > 0 ? (
+                          roles.map((role: string) => (
+                            <span key={role} style={styles.roleTag}>
+                              {role}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ ...styles.roleTag, opacity: 0.7 }}>No role</span>
+                        )}
                       </div>
                     </td>
                     <td style={styles.td}>
@@ -236,12 +248,22 @@ export default function SuperAdminStaff() {
               <div style={styles.detailRow}>
                 <div style={styles.detailLabel}>Roles</div>
                 <div style={styles.rolesSection}>
-                  {(Array.isArray(selectedMember.roles) ? selectedMember.roles : [selectedMember.roles]).map(
-                    (role: string) => (
-                      <span key={role} style={styles.roleTag}>
-                        {role}
-                      </span>
-                    )
+                  {(Array.isArray(selectedMember.roles)
+                    ? selectedMember.roles.filter(Boolean)
+                    : selectedMember.roles
+                      ? [selectedMember.roles]
+                      : []).length > 0 ? (
+                    (Array.isArray(selectedMember.roles)
+                      ? selectedMember.roles.filter(Boolean)
+                      : selectedMember.roles
+                        ? [selectedMember.roles]
+                        : []).map((role: string) => (
+                        <span key={role} style={styles.roleTag}>
+                          {role}
+                        </span>
+                      ))
+                  ) : (
+                    <span style={{ ...styles.roleTag, opacity: 0.7 }}>No role</span>
                   )}
                 </div>
               </div>

@@ -48,7 +48,7 @@ class SuperAdminServiceTest {
     private SuperAdminService superAdminService;
 
     @Test
-    void getPlatformStaff_shouldExcludeStudentsAndOnlyReturnStaffRoles() {
+    void getPlatformStaff_shouldExcludeStudentsAndIncludeTeacherWithoutRoles() {
         Users admin = new Users();
         admin.setId(UUID.randomUUID());
         admin.setEmail("admin@demo.com");
@@ -61,20 +61,30 @@ class SuperAdminServiceTest {
         teacher.setRoles(Set.of(UserRoles.CLASSTEACHER));
         teacher.setStatus(AccountStatus.ACTIVE);
 
+        Users teacherWithoutRole = new Users();
+        teacherWithoutRole.setId(UUID.randomUUID());
+        teacherWithoutRole.setEmail("no-role-teacher@demo.com");
+        teacherWithoutRole.setRoles(Set.of());
+        teacherWithoutRole.setStatus(AccountStatus.ACTIVE);
+        teacherWithoutRole.setTeacherProfile(new com.example.school.system.models.TeacherProfile());
+        teacherWithoutRole.getTeacherProfile().setFirstName("No");
+        teacherWithoutRole.getTeacherProfile().setLastName("Role");
+
         Users student = new Users();
         student.setId(UUID.randomUUID());
         student.setEmail("student@demo.com");
         student.setRoles(Set.of(UserRoles.STUDENT));
         student.setStatus(AccountStatus.ACTIVE);
 
-        when(userRepository.findAll()).thenReturn(List.of(admin, teacher, student));
+        when(userRepository.findAll()).thenReturn(List.of(admin, teacher, teacherWithoutRole, student));
 
         List<SuperAdminUserRes> result = superAdminService.getPlatformStaff();
 
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(3);
         assertThat(result).allSatisfy(member ->
             assertThat(member.getRoles()).doesNotContain(UserRoles.STUDENT));
-        assertThat(result.stream().map(SuperAdminUserRes::getEmail)).containsExactlyInAnyOrder("admin@demo.com", "teacher@demo.com");
+        assertThat(result.stream().map(SuperAdminUserRes::getEmail)).containsExactlyInAnyOrder(
+                "admin@demo.com", "teacher@demo.com", "no-role-teacher@demo.com");
     }
 
     @Test
