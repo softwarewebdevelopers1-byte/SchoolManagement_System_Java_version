@@ -17,6 +17,7 @@ import com.example.school.system.DTO.timetable.SchoolTimetableSettingsRequest;
 import com.example.school.system.DTO.timetable.SubjectRequirementRequest;
 import com.example.school.system.DTO.timetable.TimetableConflictResponse;
 import com.example.school.system.DTO.timetable.TimetableEntryResponse;
+import com.example.school.system.DTO.timetable.TimetableGenerateRequest;
 import com.example.school.system.DTO.timetable.TimetableReportResponse;
 import com.example.school.system.DTO.timetable.TimetableResponse;
 import com.example.school.system.error.SchoolResourceBadInputExceptionHandler;
@@ -121,6 +122,19 @@ public class TimetableGenerationService {
     }
 
     @Transactional
+    public TimetableResponse generate(TimetableGenerateRequest request) {
+        if (hasRequestDaySettings(request)) {
+            configureSettings(new SchoolTimetableSettingsRequest(
+                    request.schoolId(),
+                    request.schoolStartTime(),
+                    request.lessonsPerDay(),
+                    request.minutesPerLesson(),
+                    request.breaks()));
+        }
+        return generate(request.schoolId(), Boolean.TRUE.equals(request.replaceExisting()));
+    }
+
+    @Transactional
     public TimetableResponse generate(UUID schoolId, boolean replaceExisting) {
         var context = loadContext(schoolId);
         if (replaceExisting) {
@@ -142,6 +156,13 @@ public class TimetableGenerationService {
         generationHistoryRepository.save(history);
         var report = report(result, conflicts, repaired);
         return mapper.toResponse(savedTimetable == null ? timetable : savedTimetable, report);
+    }
+
+    private boolean hasRequestDaySettings(TimetableGenerateRequest request) {
+        return request.schoolStartTime() != null
+                || request.lessonsPerDay() != null
+                || request.minutesPerLesson() != null
+                || request.breaks() != null;
     }
 
     @Transactional(readOnly = true)

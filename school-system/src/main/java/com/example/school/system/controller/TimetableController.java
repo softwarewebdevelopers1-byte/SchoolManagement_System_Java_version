@@ -59,7 +59,7 @@ public class TimetableController {
 
     @PostMapping("/generate")
     public ResponseEntity<?> generate(@Valid @RequestBody TimetableGenerateRequest request) {
-        var response = timetableGenerationService.generate(request.schoolId(), Boolean.TRUE.equals(request.replaceExisting()));
+        var response = timetableGenerationService.generate(request);
         return ResponseEntity.status(201).body(SchoolApiResponse.success(response, "timetable generated"));
     }
 
