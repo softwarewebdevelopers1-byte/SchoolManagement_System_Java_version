@@ -10,6 +10,8 @@ interface ClassOverviewProps {
   assignments: any[];
   user: any;
   onNavigate: (tab: string) => void;
+  classId?: string;
+  teacherId?: string;
 }
 
 const card: React.CSSProperties = {
@@ -50,6 +52,8 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
   assignments,
   user,
   onNavigate,
+  classId,
+  teacherId,
 }) => {
   const [attendanceSummary, setAttendanceSummary] = useState<{
     present: number;
@@ -75,13 +79,11 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
 
   const loadAttendance = useCallback(async () => {
     try {
-      const { getClassId, getCurrentTeacherProfileId, request } =
-        await import("../../lib/api");
-      const classId = getClassId();
-      const teacherId = getCurrentTeacherProfileId();
-      if (!classId || !teacherId) return;
+      const { request } = await import("../../lib/api");
+      const resolvedClassId = classId || user?.classId;
+      if (!resolvedClassId) return;
       const data: any = await request(
-        `/attendance/sheet?classId=${encodeURIComponent(classId)}&teacherId=${encodeURIComponent(teacherId)}`,
+        `/attendance/sheet?classId=${encodeURIComponent(resolvedClassId)}${teacherId ? `&teacherId=${encodeURIComponent(teacherId)}` : ""}`,
         { method: "GET" },
       );
       const sheet = data?.status === "Success" ? data.data : data;
@@ -101,7 +103,7 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
     } catch (_) {
       // attendance optional
     }
-  }, []);
+  }, [classId, teacherId, user?.classId, user?.teacherId]);
 
   useEffect(() => {
     loadAttendance();

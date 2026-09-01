@@ -134,7 +134,7 @@ export default function ClassTeacherAttendanceHistory({
             body: JSON.stringify({
               classId: classId || getClassId() || "",
               date,
-              teacherId: teacherId || getCurrentTeacherProfileId() || undefined,
+              teacherId: teacherId || undefined,
             }),
           },
         );

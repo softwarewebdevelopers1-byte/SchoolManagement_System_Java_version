@@ -41,7 +41,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
   );
 
   const fetchClassId = classId || getClassId();
-  const currentTeacherId = teacherId || getCurrentTeacherProfileId();
+  const currentTeacherId = teacherId;
   const today = new Date().toISOString().split("T")[0];
   const selectedDate = new Date(`${dateFilter}T00:00:00`);
   const selectedDay = selectedDate.toLocaleDateString(undefined, {

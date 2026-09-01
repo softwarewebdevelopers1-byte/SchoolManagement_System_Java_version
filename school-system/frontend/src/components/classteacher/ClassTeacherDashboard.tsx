@@ -26,7 +26,7 @@ import {
 } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
-import { api, getClassId, normalizeRoles, normalizeUser } from "../../lib/api";
+import { api, getClassId, getCurrentTeacherProfileId, normalizeRoles, normalizeUser } from "../../lib/api";
 import { AttendanceTab } from "./AttendanceTab";
 import {
   Calendar1Icon,
@@ -171,6 +171,22 @@ export default function ClassTeacherDashboard() {
   const effectiveClassName =
     adminModeClass?.className ||
     `Grade ${effectiveGrade}${effectiveStream ? ` ${effectiveStream}` : ""}`;
+
+  const resolvedTeacherId = useMemo(() => {
+    if (adminModeClass) return undefined;
+    return currentUser?.teacherId || getCurrentTeacherProfileId();
+  }, [adminModeClass, currentUser]);
+
+  const effectiveUser = useMemo(() => {
+    if (!currentUser) return null;
+    return {
+      ...currentUser,
+      classGrade: effectiveGrade,
+      classStream: effectiveStream,
+      classId: effectiveClassId,
+      teacherId: resolvedTeacherId,
+    };
+  }, [currentUser, effectiveGrade, effectiveStream, effectiveClassId, resolvedTeacherId]);
 
   const [tab, setTab] = useState(() => {
     const saved = localStorage.getItem(CLASS_TEACHER_TAB_KEY);
@@ -561,8 +577,10 @@ export default function ClassTeacherDashboard() {
             students={students}
             subjects={subjects}
             assignments={assignments}
-            user={currentUser}
+            user={effectiveUser}
             onNavigate={handleSelectTab}
+            classId={effectiveClassId}
+            teacherId={adminModeClass ? undefined : currentUser?.teacherId}
           />
         );
 
@@ -589,7 +607,7 @@ export default function ClassTeacherDashboard() {
           <MarksManagement
             students={students}
             subjects={subjects}
-            user={currentUser}
+            user={effectiveUser}
           />
         );
 
@@ -597,7 +615,7 @@ export default function ClassTeacherDashboard() {
         return (
           <SubjectJointTab
             subjects={classSubjectCatalog}
-            user={currentUser}
+            user={effectiveUser}
             onRefresh={loadSubjects}
           />
         );
@@ -613,8 +631,10 @@ export default function ClassTeacherDashboard() {
               students={students}
               subjects={subjects}
               assignments={assignments}
-              user={currentUser}
+              user={effectiveUser}
               onNavigate={handleSelectTab}
+              classId={effectiveClassId}
+              teacherId={adminModeClass ? undefined : currentUser?.teacherId}
             />
           );
         }
@@ -623,14 +643,14 @@ export default function ClassTeacherDashboard() {
           <ElectiveEnrollmentTab
             students={students}
             subjects={classSubjectCatalog}
-            user={currentUser}
+            user={effectiveUser}
           />
         );
 
       case "attendance":
         return (
           <AttendanceTab
-            user={currentUser}
+            user={effectiveUser}
             classId={effectiveClassId}
             teacherId={adminModeClass ? undefined : currentUser?.teacherId}
           />
@@ -692,7 +712,7 @@ export default function ClassTeacherDashboard() {
       case "settings":
         return (
           <Settings
-            user={currentUser}
+            user={effectiveUser}
             studentsCount={students.length}
             onUserUpdate={() => {
               window.location.reload();
@@ -742,8 +762,8 @@ export default function ClassTeacherDashboard() {
             setCollapsed(!collapsed);
           }}
           onSelectTab={handleSelectTab}
-          user={currentUser}
-          onChangePassword={handleChangePassword}
+          user={effectiveUser}
+          {...(adminModeClass ? {} : { onChangePassword: handleChangePassword })}
           onLogout={handleLogout}
         />
 
@@ -764,7 +784,7 @@ export default function ClassTeacherDashboard() {
             theme={theme}
             onToggleTheme={toggleTheme}
             onLogout={handleLogout}
-            user={currentUser}
+            user={effectiveUser}
             onRefresh={handleManualRefresh}
           />
 
