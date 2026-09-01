@@ -1,6 +1,6 @@
 // components/classteacher/ClassTeacherDashboard.tsx
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { GlobalStyles } from "./shared/GlobalStyles";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -138,6 +138,7 @@ const validClassTeacherTabs = new Set(NAV.map((item) => item.id));
 
 export default function ClassTeacherDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("user");
@@ -153,6 +154,23 @@ export default function ClassTeacherDashboard() {
 
     return null;
   });
+
+  const adminModeClass = useMemo(() => {
+    const fromState = (location.state as any)?.adminModeClass;
+    if (fromState) return fromState;
+    try {
+      const stored = localStorage.getItem("edunex.admin.classTeacherMode");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return null;
+  }, [location.state]);
+
+  const effectiveGrade = adminModeClass?.grade || currentUser?.classGrade;
+  const effectiveStream = adminModeClass?.stream || currentUser?.classStream;
+  const effectiveClassId = adminModeClass?.classId || getClassId();
+  const effectiveClassName =
+    adminModeClass?.className ||
+    `Grade ${effectiveGrade}${effectiveStream ? ` ${effectiveStream}` : ""}`;
 
   const [tab, setTab] = useState(() => {
     const saved = localStorage.getItem(CLASS_TEACHER_TAB_KEY);
@@ -208,13 +226,13 @@ export default function ClassTeacherDashboard() {
   }, [hasElectives]);
 
   const loadData = useCallback(async () => {
-    if (!currentUser?.classGrade || !currentUser?.classStream) {
+    if (!effectiveGrade || !effectiveStream) {
       setError("No class assigned to your profile.");
       setLoading(false);
       return;
     }
 
-    const classId = getClassId();
+    const classId = effectiveClassId;
 
     if (!classId) {
       setError("No class ID is assigned to your profile.");
@@ -228,7 +246,7 @@ export default function ClassTeacherDashboard() {
 
       const [studentsData, subjectsData, staffData] = (await Promise.all([
         api.get(
-          `/users/class/${currentUser.classGrade}/${currentUser.classStream}`,
+          `/users/class/${effectiveGrade}/${effectiveStream}`,
           {
             term: currentUser.term,
             year: currentUser.year,
@@ -293,8 +311,8 @@ export default function ClassTeacherDashboard() {
       const classAssignments = assignmentsList
         .filter(
           (assignment: any) =>
-            assignment.classGrade === currentUser.classGrade &&
-            assignment.classStream === currentUser.classStream,
+            assignment.classGrade === effectiveGrade &&
+            assignment.classStream === effectiveStream,
         )
         .map((assignment: any) => {
           const teacher = staffList.find(
@@ -315,10 +333,10 @@ export default function ClassTeacherDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, adminModeClass, effectiveGrade, effectiveStream, effectiveClassId]);
 
   const loadSubjects = useCallback(async () => {
-    const classId = getClassId();
+    const classId = effectiveClassId;
 
     if (!classId) {
       console.error("No class ID is assigned to this profile.");
@@ -345,7 +363,7 @@ export default function ClassTeacherDashboard() {
     } catch (err) {
       console.error("Failed to refresh class subjects.", err);
     }
-  }, []);
+  }, [effectiveClassId]);
 
   useEffect(() => {
     loadData();
@@ -456,6 +474,11 @@ export default function ClassTeacherDashboard() {
     navigate("/change-password");
   };
 
+  const handleBackToAdmin = () => {
+    localStorage.removeItem("edunex.admin.classTeacherMode");
+    navigate("/edunex-org/admin");
+  };
+
   /**
    * Roles check.
    */
@@ -468,7 +491,8 @@ export default function ClassTeacherDashboard() {
   const canSwitchToSubjectDashboard = isSubjectTeacher && hasSubjectAssignments;
 
   useEffect(() => {
-    if (!currentUser || !rolesArray.includes("CLASSTEACHER")) {
+    const allowed = rolesArray.includes("CLASSTEACHER") || rolesArray.includes("ADMIN");
+    if (!currentUser || !allowed) {
       navigate("/login");
     }
   }, [currentUser, navigate, rolesArray]);
@@ -548,7 +572,7 @@ export default function ClassTeacherDashboard() {
             students={students}
             subjects={subjects}
             onViewStudent={setSelectedStudent}
-            classInfo={`Grade ${currentUser?.classGrade}${currentUser?.classStream}`}
+            classInfo={effectiveClassName}
           />
         );
 
@@ -621,8 +645,8 @@ export default function ClassTeacherDashboard() {
                 String(subject.enrollmentMode || "").toUpperCase() !==
                 "DROPPED",
             )}
-            classGrade={currentUser?.classGrade}
-            classStream={currentUser?.classStream}
+            classGrade={effectiveGrade}
+            classStream={effectiveStream}
             term={currentUser?.term}
             year={currentUser?.year}
             examType={currentUser?.examType}
@@ -638,8 +662,8 @@ export default function ClassTeacherDashboard() {
                 String(subject.enrollmentMode || "").toUpperCase() !==
                 "DROPPED",
             )}
-            classGrade={currentUser?.classGrade}
-            classStream={currentUser?.classStream}
+            classGrade={effectiveGrade}
+            classStream={effectiveStream}
             term={currentUser?.term}
             year={currentUser?.year}
           />
@@ -648,8 +672,8 @@ export default function ClassTeacherDashboard() {
       case "archives":
         return (
           <ArchivesView
-            classGrade={currentUser?.classGrade}
-            classStream={currentUser?.classStream}
+            classGrade={effectiveGrade}
+            classStream={effectiveStream}
             title="Class Performance Archives"
           />
         );
@@ -773,6 +797,50 @@ export default function ClassTeacherDashboard() {
                 }}
               >
                 Switch to Subject Dashboard
+              </button>
+            </div>
+          )}
+
+          {adminModeClass && (
+            <div
+              style={{
+                padding: "8px 24px",
+                background: "rgba(11, 32, 24, 0.08)",
+                borderBottom: "1px solid rgba(11, 32, 24, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexShrink: 0,
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: FONT.sans,
+                  fontSize: 12.5,
+                  color: C.textMuted,
+                  margin: 0,
+                  flex: 1,
+                }}
+              >
+                Admin mode: viewing <strong>{effectiveClassName}</strong>
+              </p>
+
+              <button
+                onClick={handleBackToAdmin}
+                style={{
+                  padding: "6px 14px",
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  fontFamily: FONT.sans,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: C.text,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Back to Admin Dashboard
               </button>
             </div>
           )}

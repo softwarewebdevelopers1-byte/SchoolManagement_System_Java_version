@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./AdminDashboard.module.css";
 import { Class } from "./types";
 import { getSchoolId, request } from "../../lib/api";
@@ -437,6 +438,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   showConfirm,
   showSuccess,
 }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
@@ -475,6 +477,26 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
         onClose={closeModal}
         onSaved={refresh}
       />,
+    );
+  };
+
+  const handleRowClick = (currentClass: any) => {
+    const parsed = splitClassName(currentClass.className);
+    showConfirm(
+      `Open <strong>${currentClass.className}</strong> in class teacher mode?`,
+      () => {
+        const adminModeClass = {
+          classId: currentClass.classId,
+          grade: currentClass.grade || parsed.grade,
+          stream: currentClass.stream || parsed.classStream,
+          className: currentClass.className,
+        };
+        localStorage.setItem(
+          "edunex.admin.classTeacherMode",
+          JSON.stringify(adminModeClass),
+        );
+        navigate("/edunex-org/classTeacher", { state: { adminModeClass } });
+      },
     );
   };
 
@@ -604,6 +626,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   style={{
                     borderTop: "1px solid var(--borderL)",
                     transition: "background 0.2s",
+                    cursor: "pointer",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background =
@@ -612,6 +635,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
                   }
+                  onClick={() => handleRowClick(currentClass)}
                 >
                   <td style={{ padding: "10px 13px" }}>
                     <p style={rowPrimaryTextStyle}>{currentClass.className}</p>
@@ -678,9 +702,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                         </div>
                         <div style={{ display: "flex", gap: 5 }}>
                           <button
-                            onClick={() =>
-                              handleUnassign(currentClass.classId, currentClass)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnassign(currentClass.classId, currentClass);
+                            }}
                             style={{
                               ...miniButtonStyle,
                               background: "var(--dBg)",
@@ -694,7 +719,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                       </div>
                     ) : (
                       <button
-                        onClick={() => openAssignModal(currentClass)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAssignModal(currentClass);
+                        }}
                         style={miniButtonStyle}
                       >
                         Assign teacher
@@ -708,7 +736,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
                   </td>
                   <td style={bodyTextStyle}>
                     <button
-                      onClick={() => openRenameModal(currentClass, "save")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openRenameModal(currentClass, "save");
+                      }}
                       style={miniButtonStyle}
                     >
                       Rename
