@@ -809,16 +809,7 @@ export const api = {
       return request<T>("/users/student-dashboard");
     }
     if (path.startsWith("/users/class/")) {
-      const parts = path.split("/");
-      const grade = parts[3];
-      const stream = parts[4] || "";
-      return findClassId(grade, stream).then((classId) =>
-        classId
-          ? request<T>(
-              `/get/students?classId=${encodeURIComponent(classId)}&size=500`,
-            )
-          : ([] as T),
-      );
+      return request<T>(path);
     }
     if (path === "/school/class-subjects") {
       return loadSubjectJoints() as Promise<T>;

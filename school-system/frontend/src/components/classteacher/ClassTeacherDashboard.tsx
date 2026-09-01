@@ -259,6 +259,7 @@ export default function ClassTeacherDashboard() {
     try {
       setLoading(true);
       setError(null);
+      console.log("Loading class teacher dashboard data...",effectiveGrade,effectiveStream,classId);
 
       const [studentsData, subjectsData, staffData] = (await Promise.all([
         api.get(
@@ -276,6 +277,7 @@ export default function ClassTeacherDashboard() {
           .get(`/get/students?classId=${encodeURIComponent(classId)}`)
           .then((response: any) => response || {}),
       ])) as [{ content?: any[] }, any[], any];
+console.log("Data loaded ", studentsData, subjectsData, staffData);
 
       /**
        * Students
@@ -352,7 +354,7 @@ export default function ClassTeacherDashboard() {
   }, [currentUser, adminModeClass, effectiveGrade, effectiveStream, effectiveClassId]);
 
   const loadSubjects = useCallback(async () => {
-    const classId = effectiveClassId;
+    const classId =getClassId()?getClassId() :effectiveClassId;
 
     if (!classId) {
       console.error("No class ID is assigned to this profile.");
