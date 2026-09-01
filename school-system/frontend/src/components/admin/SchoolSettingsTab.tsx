@@ -38,6 +38,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     schoolCode: "",
   });
   const [saving, setSaving] = useState(false);
+  const [schoolCodeCopied, setSchoolCodeCopied] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -45,6 +46,21 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
 
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+
+  const copySchoolCode = async () => {
+    if (!form.schoolCode.trim()) return;
+
+    try {
+      await navigator.clipboard.writeText(form.schoolCode.trim());
+      setSchoolCodeCopied(true);
+      setTimeout(() => setSchoolCodeCopied(false), 2000);
+    } catch {
+      setMessage({
+        text: "Failed to copy school code.",
+        type: "error",
+      });
+    }
+  };
   useEffect(() => {
     (async () => {
       const data: any = await request(
@@ -181,7 +197,34 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
           />
         </label>
         <label>
-          <span style={labelStyle}>School Code</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 6,
+            }}
+          >
+            <span style={labelStyle}>School Code</span>
+            <button
+              type="button"
+              onClick={copySchoolCode}
+              disabled={!form.schoolCode.trim()}
+              style={{
+                border: "1px solid var(--border)",
+                background: "var(--cream)",
+                color: "var(--text)",
+                borderRadius: 8,
+                padding: "6px 10px",
+                fontSize: 11,
+                fontWeight: 800,
+                cursor: form.schoolCode.trim() ? "pointer" : "not-allowed",
+                opacity: form.schoolCode.trim() ? 1 : 0.6,
+              }}
+            >
+              {schoolCodeCopied ? "Copied" : "Copy"}
+            </button>
+          </div>
           <input
             value={form.schoolCode}
             style={inputStyle}
