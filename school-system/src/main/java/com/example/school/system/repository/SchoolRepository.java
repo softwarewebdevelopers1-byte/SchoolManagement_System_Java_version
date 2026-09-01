@@ -40,7 +40,7 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
 
     @Query("""
         SELECT new com.example.school.system.DTO.DTOResponse.SchoolSettingsDTO(
-            s.schoolName, s.schoolCode, s.email, s.schoolMotto, s.address, s.phoneNumber, s.visibility
+            s.schoolName, s.schoolCode, s.email, s.schoolMotto, s.address, s.phoneNumber, s.visibility, s.latitude, s.longitude
         )
         FROM School s WHERE s.id = :id
     """)
@@ -48,7 +48,7 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
 
     @Query("""
         SELECT new com.example.school.system.DTO.DTOResponse.PublicSchoolDTO(
-            s.id, s.schoolName, s.schoolMotto, s.address, s.email, s.phoneNumber
+            s.id, s.schoolName, s.schoolMotto, s.address, s.email, s.phoneNumber, s.latitude, s.longitude
         )
         FROM School s
         WHERE s.status = com.example.school.system.types.SchoolStatus.ACTIVE

@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const API_BASE_URL =
   (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000/api";
@@ -11,6 +13,8 @@ interface PublicSchool {
   schoolAddress?: string;
   schoolEmail?: string;
   phoneNumber?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const eyebrowStyle: React.CSSProperties = {
@@ -48,6 +52,10 @@ const PublicSchoolsPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,6 +85,73 @@ const PublicSchoolsPage: React.FC = () => {
       controller.abort();
     };
   }, [search]);
+
+  useEffect(() => {
+    const selectedSchool = schools.find((school) => school.id === selectedSchoolId);
+
+    if (!selectedSchool || !mapRef.current) {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    if (
+      typeof selectedSchool.latitude !== "number" ||
+      typeof selectedSchool.longitude !== "number" ||
+      !Number.isFinite(selectedSchool.latitude) ||
+      !Number.isFinite(selectedSchool.longitude)
+    ) {
+      return;
+    }
+
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapRef.current, {
+        scrollWheelZoom: false,
+      }).setView([selectedSchool.latitude, selectedSchool.longitude], 14);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(mapInstance.current);
+    }
+
+    if (markerRef.current) {
+      markerRef.current.remove();
+    }
+
+    markerRef.current = L.marker([
+      selectedSchool.latitude,
+      selectedSchool.longitude,
+    ]).addTo(mapInstance.current);
+
+    markerRef.current.bindPopup(
+      `<strong>${selectedSchool.schoolName}</strong><br/>${
+        selectedSchool.schoolAddress || "School location"
+      }`,
+    );
+
+    mapInstance.current.setView(
+      [selectedSchool.latitude, selectedSchool.longitude],
+      14,
+    );
+    markerRef.current.openPopup();
+  }, [selectedSchoolId, schools]);
+
+  const selectedSchool = schools.find((school) => school.id === selectedSchoolId);
+
+  const hasSchoolCoordinates = schools.some(
+    (school) =>
+      typeof school.latitude === "number" &&
+      typeof school.longitude === "number" &&
+      Number.isFinite(school.latitude) &&
+      Number.isFinite(school.longitude),
+  );
 
   return (
     <main
@@ -188,6 +263,71 @@ const PublicSchoolsPage: React.FC = () => {
           </div>
         )}
 
+        {selectedSchool && (
+          <div
+            style={{
+              background: "var(--white, #fffaf1)",
+              border: "1px solid var(--border, #e4d8c4)",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 20,
+              boxShadow: "0 8px 24px rgba(11, 32, 24, 0.06)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <p style={eyebStyle}>School location</p>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--serif, system-ui)",
+                    fontSize: "1.2rem",
+                    color: "var(--text, #0f2e22)",
+                  }}
+                >
+                  {selectedSchool.schoolName}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSchoolId(null)}
+                style={{
+                  border: "1px solid var(--border, #e4d8c4)",
+                  background: "var(--cream, #f8f3ea)",
+                  color: "var(--text, #0f2e22)",
+                  borderRadius: 999,
+                  padding: "9px 14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Close map
+              </button>
+            </div>
+            <div
+              ref={mapRef}
+              style={{
+                width: "100%",
+                height: 360,
+                minHeight: 360,
+                borderRadius: 12,
+                overflow: "hidden",
+                border: "1px solid var(--border, #e4d8c4)",
+                background: "#e7f0ee",
+              }}
+            />
+          </div>
+        )}
+
         {loading ? (
           <p
             style={{
@@ -288,6 +428,49 @@ const PublicSchoolsPage: React.FC = () => {
                       ☎ {school.phoneNumber}
                     </a>
                   )}
+                  {typeof school.latitude === "number" &&
+                    typeof school.longitude === "number" &&
+                    Number.isFinite(school.latitude) &&
+                    Number.isFinite(school.longitude) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedSchoolId((current) =>
+                              current === school.id ? null : school.id,
+                            )
+                          }
+                          style={{
+                            marginTop: 8,
+                            border: "none",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            background: "var(--gold, #c9963d)",
+                            color: "#fff",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          {selectedSchoolId === school.id
+                            ? "Hide location"
+                            : "View location"}
+                        </button>
+                        <a
+                          href={`https://www.openstreetmap.org/?mlat=${school.latitude}&mlon=${school.longitude}#map=16/${school.latitude}/${school.longitude}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            color: "var(--gold, #c9963d)",
+                            fontWeight: 700,
+                            textDecoration: "none",
+                            marginTop: 4,
+                          }}
+                        >
+                          📍 Open in OpenStreetMap
+                        </a>
+                      </>
+                    )}
                 </div>
               </article>
             ))}

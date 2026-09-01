@@ -11,5 +11,7 @@ public record PublicSchoolDTO(
         String schoolMotto,
         String schoolAddress,
         String schoolEmail,
-        String phoneNumber
+        String phoneNumber,
+        Double latitude,
+        Double longitude
 ) {}

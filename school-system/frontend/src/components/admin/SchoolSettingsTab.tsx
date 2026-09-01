@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { getSchoolId, request } from "../../lib/api";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 interface SchoolSettingsTabProps {
   onSaved?: () => void;
@@ -38,6 +40,11 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     schoolCode: "",
   });
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PRIVATE");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [saving, setSaving] = useState(false);
   const [schoolCodeCopied, setSchoolCodeCopied] = useState(false);
   const [message, setMessage] = useState<{
@@ -74,8 +81,42 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
       update("phoneNumber", data?.phoneNumber);
       update("schoolCode", data?.schoolCode);
       if (data?.visibility) setVisibility(data.visibility);
+      if (data?.latitude && data?.longitude) {
+        setLatitude(Number(data.latitude));
+        setLongitude(Number(data.longitude));
+      }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (!leafletMap.current) {
+      leafletMap.current = L.map(mapRef.current).setView(
+        latitude && longitude ? [latitude, longitude] : [-1.2921, 36.8219],
+        13,
+      );
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(leafletMap.current);
+      leafletMap.current.on("click", (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        setLatitude(lat);
+        setLongitude(lng);
+      });
+    } else {
+      const center = latitude && longitude ? [latitude, longitude] : [-1.2921, 36.8219];
+      leafletMap.current.setView(center, 13);
+    }
+  }, [latitude, longitude]);
+
+  useEffect(() => {
+    if (!leafletMap.current) return;
+    if (markerRef.current) {
+      markerRef.current.setLatLng([latitude || -1.2921, longitude || 36.8219]);
+    } else if (latitude && longitude) {
+      markerRef.current = L.marker([latitude, longitude]).addTo(leafletMap.current);
+    }
+  }, [latitude, longitude]);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const schoolId = getSchoolId();
@@ -92,7 +133,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     try {
       await request(`/schools/update/school`, {
         method: "PATCH",
-        body: JSON.stringify({ ...form, visibility, schoolId }),
+        body: JSON.stringify({ ...form, visibility, latitude, longitude, schoolId }),
       });
       setMessage({ text: "School settings updated.", type: "success" });
       onSaved?.();
@@ -240,6 +281,25 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
             onChange={(event) => update("schoolAddress", event.target.value)}
             style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
           />
+        </label>
+
+        <label style={{ gridColumn: "1 / -1" }}>
+          <span style={labelStyle}>Location</span>
+          <div
+            ref={mapRef}
+            style={{
+              height: 260,
+              borderRadius: 12,
+              border: "1.5px solid var(--border)",
+              overflow: "hidden",
+            }}
+          />
+          <p style={{ fontSize: 12, color: "var(--textMut)", marginTop: 6 }}>
+            Click the map to set the exact school location.
+            {latitude && longitude
+              ? ` Selected: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+              : " No location selected yet."}
+          </p>
         </label>
 
         <label style={{ gridColumn: "1 / -1" }}>

@@ -11,5 +11,7 @@ public record SchoolSettingsDTO(
         String motto,
         String schoolAddress,
         String phoneNumber,
-        SchoolVisibility visibility
+        SchoolVisibility visibility,
+        Double latitude,
+        Double longitude
 ) {}

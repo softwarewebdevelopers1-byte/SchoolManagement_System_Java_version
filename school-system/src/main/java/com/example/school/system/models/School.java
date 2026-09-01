@@ -60,6 +60,12 @@ public class School {
     @Column(name = "phone")
     String phoneNumber;
 
+    @Column(name = "latitude")
+    Double latitude;
+
+    @Column(name = "longitude")
+    Double longitude;
+
     @Column(name = "code", unique = true)
     @NotBlank(message = "school code must be provided")
     private String schoolCode;

@@ -144,6 +144,13 @@ public class SchoolService {
             schoolToUpdate.setVisibility(visibility);
         }
 
+        if (schoolData.latitude() != null) {
+            schoolToUpdate.setLatitude(schoolData.latitude());
+        }
+        if (schoolData.longitude() != null) {
+            schoolToUpdate.setLongitude(schoolData.longitude());
+        }
+
         schoolRepository.save(schoolToUpdate);
 
         return SchoolApiResponse

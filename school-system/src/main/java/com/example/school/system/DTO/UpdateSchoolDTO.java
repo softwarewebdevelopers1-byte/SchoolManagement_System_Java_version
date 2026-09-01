@@ -11,5 +11,6 @@ public record UpdateSchoolDTO(String schoolName,
         @Email String schoolEmail,
         String schoolAddress,
         String phoneNumber, String motto, SchoolVisibility visibility,
+        Double latitude, Double longitude,
         @NotNull(message = "school id must be provided") UUID schoolId) {
 }
