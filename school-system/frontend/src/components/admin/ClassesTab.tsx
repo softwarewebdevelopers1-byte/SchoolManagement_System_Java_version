@@ -446,6 +446,8 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   const refresh = () => {
     void onRefresh();
   };
+  console.log("classes sss ",classes);
+  
   const openAssignModal = (currentClass: any) => {
     showModal(
       <ClassTeacherModal

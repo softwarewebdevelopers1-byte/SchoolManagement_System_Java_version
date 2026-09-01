@@ -150,12 +150,10 @@ public class TeachersService {
         }
 
         if (editTeacher.roles() != null && !editTeacher.roles().isEmpty()) {
-            Set<UserRoles> currentRoles = user.getRoles();
-            Set<UserRoles> newRoles = editTeacher.roles();
-            if (!currentRoles.equals(newRoles)) {
-                user.getRoles().clear();
-                user.setRoles(editTeacher.roles());
-            }
+            Set<UserRoles> newRoles = new HashSet<>(editTeacher.roles());
+            newRoles.remove(UserRoles.UNASSIGNED);
+            user.getRoles().clear();
+            user.getRoles().addAll(newRoles);
         }
 
         if (!user.getStatus().equals(editTeacher.status()) && editTeacher.status() != null) {

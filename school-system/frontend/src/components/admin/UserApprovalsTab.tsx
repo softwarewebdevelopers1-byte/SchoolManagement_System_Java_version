@@ -2,9 +2,16 @@ import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { getSchoolId, request } from "../../lib/api";
 
+const roleOptions = [
+  { value: "SUBJECTTEACHER", label: "Subject Teacher" },
+  { value: "CLASSTEACHER", label: "Class Teacher" },
+  { value: "HEADTEACHER", label: "Head Teacher" },
+  { value: "DEPUTYTEACHER", label: "Deputy Teacher" },
+  { value: "ADMIN", label: "Admin" },
+];
+
 interface PendingInvite {
-  usersId?: string;
-  id?: string;
+  userId?: string;
   email: string;
   status?: string;
 }
@@ -15,6 +22,8 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>(roleOptions[0].value);
+  const [pendingAcceptId, setPendingAcceptId] = useState<string | null>(null);
 
   const loadInvites = async () => {
     const schoolId = getSchoolId();
@@ -38,23 +47,27 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
   }, []);
 
   const updateInvite = async (invite: PendingInvite, status: "ACTIVE" | "REJECTED_INVITE") => {
-    const teacherId = invite.usersId || invite.id;
-    if (!teacherId) return;
+    const userId = invite.userId;
+    if (!userId) return;
     setMessage(null);
     try {
+      const body: any = {
+        teacherId: userId,
+        email: invite.email,
+        status,
+      };
+      if (status === "ACTIVE") {
+        body.roles = [selectedRole];
+      }
       await request("/users/update", {
         method: "PATCH",
-        body: JSON.stringify({
-          teacherId,
-          email: invite.email,
-          status,
-          roles: status === "ACTIVE" ? ["SUBJECTTEACHER"] : undefined,
-        }),
+        body: JSON.stringify(body),
       });
       setMessage({
-        text: status === "ACTIVE" ? "User accepted." : "User rejected.",
+        text: status === "ACTIVE" ? `User accepted as ${roleOptions.find(r => r.value === selectedRole)?.label || selectedRole}.` : "User rejected.",
         type: "success",
       });
+      setPendingAcceptId(null);
       await loadInvites();
       onUpdated?.();
     } catch (error) {
@@ -63,6 +76,15 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
         type: "error",
       });
     }
+  };
+
+  const handleAcceptClick = (userId: string) => {
+    setPendingAcceptId(userId);
+    setMessage(null);
+  };
+
+  const handleCancelAccept = () => {
+    setPendingAcceptId(null);
   };
 
   return (
@@ -86,7 +108,7 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
             <tr style={{ background: "var(--sand)" }}>
-              {["Email", "Status", "Actions"].map((heading) => (
+              {["Email", "Status", "Role", "Actions"].map((heading) => (
                 <th key={heading} style={{ padding: "10px 13px", textAlign: "left", fontSize: 11, color: "var(--textMut)", textTransform: "uppercase", letterSpacing: ".05em" }}>
                   {heading}
                 </th>
@@ -95,17 +117,41 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={3} style={{ padding: 28, textAlign: "center", color: "var(--textMut)" }}>Loading pending users...</td></tr>
+              <tr><td colSpan={4} style={{ padding: 28, textAlign: "center", color: "var(--textMut)" }}>Loading pending users...</td></tr>
             ) : invites.length === 0 ? (
-              <tr><td colSpan={3} style={{ padding: 28, textAlign: "center", color: "var(--textMut)" }}>No pending teacher signups.</td></tr>
+              <tr><td colSpan={4} style={{ padding: 28, textAlign: "center", color: "var(--textMut)" }}>No pending teacher signups.</td></tr>
             ) : invites.map((invite) => (
-              <tr key={invite.usersId || invite.id || invite.email} style={{ borderTop: "1px solid var(--borderL)" }}>
+              <tr key={invite.userId || invite.email} style={{ borderTop: "1px solid var(--borderL)" }}>
                 <td style={{ padding: "11px 13px", color: "var(--text)", fontWeight: 700 }}>{invite.email}</td>
                 <td style={{ padding: "11px 13px", color: "var(--textMut)" }}>{invite.status || "PENDING_APPROVAL"}</td>
                 <td style={{ padding: "11px 13px" }}>
+                  {pendingAcceptId === invite.userId ? (
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--cream)", fontSize: 12 }}
+                    >
+                      {roleOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span style={{ fontSize: 12, color: "var(--textMut)" }}>—</span>
+                  )}
+                </td>
+                <td style={{ padding: "11px 13px" }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button onClick={() => updateInvite(invite, "ACTIVE")} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--sBg)", color: "var(--sText)", fontWeight: 800, cursor: "pointer" }}>Accept</button>
-                    <button onClick={() => updateInvite(invite, "REJECTED_INVITE")} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--dBg)", color: "var(--dText)", fontWeight: 800, cursor: "pointer" }}>Reject</button>
+                    {pendingAcceptId === invite.userId ? (
+                      <>
+                        <button onClick={() => updateInvite(invite, "ACTIVE")} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--sBg)", color: "var(--sText)", fontWeight: 800, cursor: "pointer" }}>Confirm</button>
+                        <button onClick={handleCancelAccept} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--dBg)", color: "var(--dText)", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => handleAcceptClick(invite.userId!)} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--sBg)", color: "var(--sText)", fontWeight: 800, cursor: "pointer" }}>Accept</button>
+                        <button onClick={() => updateInvite(invite, "REJECTED_INVITE")} style={{ border: "none", borderRadius: 8, padding: "8px 12px", background: "var(--dBg)", color: "var(--dText)", fontWeight: 800, cursor: "pointer" }}>Reject</button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
