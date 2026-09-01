@@ -24,9 +24,11 @@ interface AttendanceSheet {
 
 interface AttendanceTabProps {
   user: any;
+  classId?: string;
+  teacherId?: string;
 }
 
-export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
+export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, teacherId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<AttendanceSheet | null>(null);
@@ -38,9 +40,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
     new Date().toISOString().split("T")[0],
   );
 
-  const fetchClassId = getClassId();
-
-  const teacherId = getCurrentTeacherProfileId();
+  const fetchClassId = classId || getClassId();
+  const currentTeacherId = teacherId || getCurrentTeacherProfileId();
   const today = new Date().toISOString().split("T")[0];
   const selectedDate = new Date(`${dateFilter}T00:00:00`);
   const selectedDay = selectedDate.toLocaleDateString(undefined, {
@@ -55,23 +56,31 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
         : { label: "Not saved", bg: "var(--wBg)", color: "var(--wText)" };
 
   const loadSheet = useCallback(async () => {
-    if (!fetchClassId || !teacherId) return;
+    if (!fetchClassId) return;
     setLoading(true);
     setError(null);
     try {
       let data: any;
       if (dateFilter === today) {
-        data = await request(
-          `/attendance/sheet?classId=${encodeURIComponent(fetchClassId!)}&teacherId=${encodeURIComponent(teacherId!)}`,
-          { method: "GET" },
-        );
+        const params = new URLSearchParams({
+          classId: encodeURIComponent(fetchClassId),
+        });
+        if (currentTeacherId) {
+          params.set("teacherId", encodeURIComponent(currentTeacherId));
+        }
+        data = await request(`/attendance/sheet?${params.toString()}`, {
+          method: "GET",
+        });
       } else {
-        data = await request(
-          `/attendance/get/attendance-sheet?classId=${encodeURIComponent(fetchClassId!)}&teacherId=${encodeURIComponent(teacherId!)}&date=${encodeURIComponent(dateFilter)}`,
-          { method: "GET" },
-        );
+        data = await request(`/attendance/get/attendance-sheet`, {
+          method: "POST",
+          body: JSON.stringify({
+            classId: fetchClassId,
+            date: dateFilter,
+            teacherId: currentTeacherId || undefined,
+          }),
+        });
       }
-      // Ensure we extract the nested payload correctly since backend returns SchoolApiResponse
       const unwrappedData = data?.status === "Success" ? data.data : data;
       setSheet(unwrappedData || null);
     } catch (err: any) {
@@ -80,7 +89,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, [dateFilter, fetchClassId, teacherId, today]);
+  }, [dateFilter, fetchClassId, currentTeacherId, today]);
 
   useEffect(() => {
     loadSheet();

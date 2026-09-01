@@ -54,6 +54,13 @@ interface AttendanceHistoryProps {
   token?: string;
 
   /**
+   * Optional teacher profile ID. When provided, the backend will
+   * verify that this teacher belongs to the class. Pass undefined
+   * in admin mode to skip teacher ownership validation.
+   */
+  teacherId?: string;
+
+  /**
    * Optional callback when a sheet is successfully loaded.
    */
   onSheetLoaded?: (sheet: AttendanceHistoryResponse) => void;
@@ -100,6 +107,7 @@ const getStatus = (record: AttendanceRecord): AttendanceStatus => {
 export default function ClassTeacherAttendanceHistory({
   endpoint = DEFAULT_ENDPOINT,
   classId,
+  teacherId,
   token,
   onSheetLoaded,
 }: AttendanceHistoryProps) {
@@ -119,20 +127,14 @@ export default function ClassTeacherAttendanceHistory({
       setSheet(null);
 
       try {
-        const params = new URLSearchParams({ date });
-
-        if (classId) {
-          params.set("classId", classId);
-        }
-
         const response: any = await request(
           `/attendance/get/attendance-sheet`,
           {
             method: "POST",
             body: JSON.stringify({
-              classId: getClassId() || "",
+              classId: classId || getClassId() || "",
               date,
-              teacherId: getCurrentTeacherProfileId() || "",
+              teacherId: teacherId || getCurrentTeacherProfileId() || undefined,
             }),
           },
         );
@@ -141,13 +143,6 @@ export default function ClassTeacherAttendanceHistory({
           setError(`No attendance sheet was found for ${formatDate(date)}.`);
           return;
         }
-
-        // if (!response.ok) {
-        //   const message = await response.text();
-        //   throw new Error(
-        //     message || `Unable to load attendance sheet (${response.status}).`,
-        //   );
-        // }
 
         const data: AttendanceHistoryResponse = await response;
 
@@ -163,7 +158,7 @@ export default function ClassTeacherAttendanceHistory({
         setLoading(false);
       }
     },
-    [classId, endpoint, onSheetLoaded, token],
+    [classId, teacherId, endpoint, onSheetLoaded, token],
   );
 
   useEffect(() => {

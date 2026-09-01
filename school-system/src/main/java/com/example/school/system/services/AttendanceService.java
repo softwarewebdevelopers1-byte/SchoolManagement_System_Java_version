@@ -45,10 +45,9 @@ public class AttendanceService {
                 SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
                 studentsExistence(schoolClass);
-                if (schoolClass.getTeacher() == null) {
-                        throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
-                }
-                if (!schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId())) {
+                if (classAttendanceDTO.teacherId() != null
+                                && schoolClass.getTeacher() != null
+                                && !schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId())) {
                         throw new SchoolResourceLockedExceptionHandler("You're not the class teacher");
                 }
                 LocalDate timeNow = LocalDate.now();
@@ -143,8 +142,9 @@ public class AttendanceService {
                 if (student.getSchoolClass().getTeacher() == null) {
                         throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
                 }
-                if (!student.getSchoolClass().getTeacher().getId()
-                                .equals(fetchSingleDayStudentAttendance.teacherId())) {
+                if (fetchSingleDayStudentAttendance.teacherId() != null
+                                && !student.getSchoolClass().getTeacher().getId()
+                                                .equals(fetchSingleDayStudentAttendance.teacherId())) {
                         throw new SchoolResourceLockedExceptionHandler("Not your student");
                 }
                 AttendanceRecords recordFound = attendanceRecordRepository.findByStudentAndDate(student,
@@ -164,6 +164,7 @@ public class AttendanceService {
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
 
                 if (attendaceSheetSpecificDate.teacherId() != null
+                                && classFound.getTeacher() != null
                                 && !classFound.getTeacher().getId().equals(attendaceSheetSpecificDate.teacherId())) {
                         throw new SchoolResourceLockedExceptionHandler("Not your class");
                 }

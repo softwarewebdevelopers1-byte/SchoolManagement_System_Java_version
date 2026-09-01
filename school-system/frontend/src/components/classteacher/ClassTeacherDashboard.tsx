@@ -577,7 +577,12 @@ export default function ClassTeacherDashboard() {
         );
 
       case "attendance-history":
-        return <ClassTeacherAttendanceHistory />;
+        return (
+          <ClassTeacherAttendanceHistory
+            classId={effectiveClassId}
+            teacherId={adminModeClass ? undefined : currentUser?.teacherId}
+          />
+        );
 
       case "marks":
         return (
@@ -623,7 +628,13 @@ export default function ClassTeacherDashboard() {
         );
 
       case "attendance":
-        return <AttendanceTab user={currentUser} />;
+        return (
+          <AttendanceTab
+            user={currentUser}
+            classId={effectiveClassId}
+            teacherId={adminModeClass ? undefined : currentUser?.teacherId}
+          />
+        );
 
       case "timetable":
         return (

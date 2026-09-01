@@ -29,7 +29,7 @@ public class AttendanceController {
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @GetMapping("/sheet")
     public ResponseEntity<?> loadAttendanceSheet(@RequestParam(required = true) UUID classId,
-            @RequestParam(required = true) UUID teacherId) {
+            @RequestParam(required = false) UUID teacherId) {
         AttendanceSheetDTO sheet = attendanceService
                 .getOrCreateSheet(ClassAttendanceDTO.builder().teacherId(teacherId).classId(classId).build());
         return ResponseEntity.status(200).body(SchoolApiResponse.success(sheet, "sheet loaded"));

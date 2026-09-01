@@ -7,5 +7,5 @@ import lombok.Builder;
 
 @Builder
 public record ClassAttendanceDTO(@NotNull(message = "class id is required") UUID classId,
-        @NotNull(message = "teacher id is required") UUID teacherId) {
+        UUID teacherId) {
 }
