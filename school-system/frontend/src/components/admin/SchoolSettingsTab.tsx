@@ -104,7 +104,10 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
         setLongitude(lng);
       });
     } else {
-      const center = latitude && longitude ? [latitude, longitude] : [-1.2921, 36.8219];
+      const center: [number, number] =
+        latitude !== null && longitude !== null
+          ? [latitude, longitude]
+          : [-1.2921, 36.8219];
       leafletMap.current.setView(center, 13);
     }
   }, [latitude, longitude]);
