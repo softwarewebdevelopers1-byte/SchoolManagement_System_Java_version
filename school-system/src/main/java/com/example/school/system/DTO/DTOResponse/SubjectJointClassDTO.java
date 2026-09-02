@@ -7,6 +7,7 @@ import lombok.Builder;
 @Builder
 public record SubjectJointClassDTO(
         UUID id,
+        UUID subjectId,
         String name,
         SubjectType enrollmentMode,
         String sharedSlotId

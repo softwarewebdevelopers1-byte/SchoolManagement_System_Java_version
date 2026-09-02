@@ -89,6 +89,7 @@ public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
         @Query("""
             SELECT new com.example.school.system.DTO.DTOResponse.SubjectJointClassDTO(
                 sj.id,
+                s.id,
                 s.subjectName,
                 sj.subjectType,
                 sj.electiveCode

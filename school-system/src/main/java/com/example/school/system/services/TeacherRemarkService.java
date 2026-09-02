@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.school.system.DTO.TeacherRemarkDTO;
+import com.example.school.system.DTO.TeacherRemarkResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
 import com.example.school.system.models.Subject;
@@ -31,6 +32,13 @@ public class TeacherRemarkService {
     public List<TeacherRemark> getRemarks(UUID schoolId, UUID subjectId, UUID teacherId) {
         return teacherRemarkRepository.findAllBySchoolIdAndSubjectIdAndTeacherId(schoolId, subjectId, teacherId);
     }
+
+        @Transactional(readOnly = true)
+        public List<TeacherRemarkResponse> getSubjectRemarks(UUID schoolId, UUID subjectId) {
+                return teacherRemarkRepository.findAllBySchoolIdAndSubjectId(schoolId, subjectId).stream()
+                                .map(remark -> new TeacherRemarkResponse(remark.getGradeBand(), remark.getRemark()))
+                                .toList();
+        }
 
     @Transactional
     public TeacherRemark upsertRemark(TeacherRemarkDTO dto) {

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +29,7 @@ import {
 } from "./shared/helpers";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 import { ArrowLeft, TrendingUp, Award, Target } from "lucide-react";
+import { api, getSchoolId } from "../../lib/api";
 
 ChartJS.register(
   CategoryScale,
@@ -122,6 +123,40 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
   onBack,
 }) => {
   const { bands: cbcBands } = useCbcGradingBands();
+  const [remarksBySubject, setRemarksBySubject] = useState<
+    Record<string, Record<string, string>>
+  >({});
+
+  useEffect(() => {
+    const loadRemarks = async () => {
+      const schoolId = getSchoolId();
+      if (!schoolId || !subjects.length) return;
+      const entries = await Promise.all(
+        subjects.map(async (subject: any) => {
+          const subjectId = getSubId(
+            subject?.subjectId || subject?.id || subject?._id,
+          );
+          if (!subjectId) return null;
+          try {
+            const data = await api.get<any[]>("/teacher-remarks", {
+              schoolId,
+              subjectId,
+            });
+            return [
+              subjectId,
+              Object.fromEntries(
+                (data || []).map((item) => [item.gradeBand, item.remark]),
+              ),
+            ] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      setRemarksBySubject(Object.fromEntries(entries.filter(Boolean) as any));
+    };
+    void loadRemarks();
+  }, [subjects]);
 
   const studentSubjects = useMemo(
     () => subjects.filter((s) => isStudentSubject(student, s)),
@@ -140,11 +175,18 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
       const resolved = mark != null ? resolveCbcBand(mark, cbcBands) : null;
       return {
         id: sid,
+        subjectId: getSubId(subject.subjectId || subject.id),
         name: subject.name,
         mark: mark ?? null,
         cbcBand: resolved?.cbcBand || "-",
         points: resolved?.points ?? 0,
-        remark: mark != null ? getSubjectRemark(mark, cbcBands) : "-",
+        remark:
+          mark != null
+            ? remarksBySubject[
+                getSubId(subject.subjectId || subject.id)
+              ]?.[resolved?.cbcBand || ""] ||
+              getSubjectRemark(mark, cbcBands)
+            : "-",
       };
     });
   }, [studentSubjects, marks, cbcBands]);

@@ -120,6 +120,40 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     schoolAddress?: string;
     motto?: string;
   }>({});
+  const [remarksBySubject, setRemarksBySubject] = useState<
+    Record<string, Record<string, string>>
+  >({});
+
+  useEffect(() => {
+    const loadRemarks = async () => {
+      const schoolId = getSchoolId();
+      if (!schoolId || !subjects.length) return;
+      const entries = await Promise.all(
+        subjects.map(async (subject: any) => {
+          const subjectId = getSubId(
+            subject?.subjectId || subject?.id || subject?._id,
+          );
+          if (!subjectId) return null;
+          try {
+            const data = await api.get<any[]>("/teacher-remarks", {
+              schoolId,
+              subjectId,
+            });
+            return [
+              subjectId,
+              Object.fromEntries(
+                (data || []).map((item) => [item.gradeBand, item.remark]),
+              ),
+            ] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      setRemarksBySubject(Object.fromEntries(entries.filter(Boolean) as any));
+    };
+    void loadRemarks();
+  }, [subjects]);
 
   useEffect(() => {
     const loadSchoolProfile = async () => {
@@ -449,7 +483,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               marks: mark != null ? `${mark}%` : "-",
               cbcBand: resolved?.cbcBand || "-",
               points: resolved?.points ?? "-",
-              remark: mark != null ? getSubjectRemark(mark, cbcBands) : "-",
+              remark:
+                mark != null
+                  ? remarksBySubject[
+                      getSubId(subject.subjectId || subject.id)
+                    ]?.[
+                      resolved?.cbcBand || ""
+                    ] || getSubjectRemark(mark, cbcBands)
+                  : "-",
             };
           }),
           totalMarks: slip.metrics.totalMarks,

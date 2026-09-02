@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.TeacherRemarkDTO;
+import com.example.school.system.DTO.TeacherRemarkResponse;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.models.TeacherRemark;
 import com.example.school.system.services.TeacherRemarkService;
@@ -27,13 +28,17 @@ import lombok.RequiredArgsConstructor;
 public class TeacherRemarkController {
     private final TeacherRemarkService teacherRemarkService;
 
-    @PreAuthorize("hasAnyRole('ADMIN','SUBJECTTEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUBJECTTEACHER','CLASSTEACHER','HEADTEACHER','DEPUTYTEACHER')")
     @GetMapping("/teacher-remarks")
     public ResponseEntity<?> getTeacherRemarks(
             @RequestParam UUID schoolId,
             @RequestParam UUID subjectId,
-            @RequestParam UUID teacherId) {
-        List<TeacherRemark> remarks = teacherRemarkService.getRemarks(schoolId, subjectId, teacherId);
+            @RequestParam(required = false) UUID teacherId) {
+        List<?> remarks = teacherId == null
+                ? teacherRemarkService.getSubjectRemarks(schoolId, subjectId)
+                : teacherRemarkService.getRemarks(schoolId, subjectId, teacherId).stream()
+                        .map(remark -> new TeacherRemarkResponse(remark.getGradeBand(), remark.getRemark()))
+                        .toList();
         return ResponseEntity.ok(SchoolApiResponse.success(remarks, "remarks loaded"));
     }
 
