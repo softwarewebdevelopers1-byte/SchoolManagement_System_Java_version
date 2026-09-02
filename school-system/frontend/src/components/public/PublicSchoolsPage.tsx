@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000/api";
+import { API_BASE_URL } from "../../lib/api";
 
 interface PublicSchool {
   id: string;
