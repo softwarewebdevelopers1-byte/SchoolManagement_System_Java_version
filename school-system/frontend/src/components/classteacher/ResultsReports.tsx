@@ -193,6 +193,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     try {
       // Build a map of studentId -> { subjectId -> mark }
       const marksByStudent: Record<string, Record<string, number>> = {};
+      const studentIdByAdmission = new Map(
+        students
+          .map((student: any) => [
+            String(student.adm || student.admissionNo || student.admissionNumber || "").trim(),
+            String(student.studentId || student.userId || ""),
+          ] as const)
+          .filter(([admissionNo, studentId]) => admissionNo && studentId),
+      );
 
       // Normalize examType to match backend expectations
       const normalizedExamType = String(examType || "OPENER")
@@ -227,7 +235,10 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           return;
         }
         (data as any[]).forEach((row: any) => {
-          const studentId = String(row.studentId || "");
+          const profileId = String(row.studentId || "");
+          const studentId = studentIdByAdmission.get(
+            String(row.admissionNo || row.studentAdm || "").trim(),
+          ) || profileId;
           if (!studentId) {
             console.debug("Row missing studentId:", row);
             return;
@@ -538,8 +549,12 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                 console.log(`[ReportSlip] Fetching ${period.label} marks:`, url);
                 const rows = await request<any[]>(url);
                 console.log(`[ReportSlip] ${period.label} response:`, rows?.length || 0, "rows");
-                const row = (Array.isArray(rows) ? rows : []).find(
-                  (item) => String(item.studentId) === String(slip.studentId || slip.userId),
+                const admissionNo = String(
+                  slip.adm || slip.admissionNo || slip.admissionNumber || "",
+                ).trim();
+                const row = (Array.isArray(rows) ? rows : []).find((item) =>
+                  String(item.studentId) === String(slip.studentId || slip.userId) ||
+                  (admissionNo && String(item.studentAdm || item.admissionNo || "").trim() === admissionNo),
                 );
                 const raw = row?.avgPercentage ?? row?.finalScore ?? row?.totalMarks;
                 const score = raw == null ? null : Number(String(raw).replace("%", ""));

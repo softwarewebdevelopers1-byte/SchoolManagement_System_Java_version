@@ -156,7 +156,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
 
   const targetStudents = useMemo(() => {
     if (isGradeSelected) return students.filter(s => s.classGrade === currentGrade && s.status === "Active");
-    return currentClass ? students.filter(s => s.classId === currentClass.id && s.status === "Active") : [];
+    return currentClass ? students.filter(s =>
+      s.status === "Active" && (
+        s.classId === currentClass.id ||
+        (String(s.classGrade || "").trim() === String(currentClass.grade || "").trim() &&
+          String(s.classStream || "").trim() === String(currentClass.stream || "").trim())
+      )
+    ) : [];
   }, [isGradeSelected, currentGrade, currentClass, students]);
 
   const loadPerformance = async () => {
@@ -167,8 +173,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     setIsLoading(true);
     try {
       const rowsByStudent = new Map<string, ClassPerformanceRow>();
+      const rowsByAdmission = new Map<string, ClassPerformanceRow>();
       targetStudents.forEach(s => {
-        rowsByStudent.set(s.id, {
+        const row = {
           id: s.id,
           name: s.studentFullName,
           admissionNo: s.studentAdm || "-",
@@ -179,7 +186,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
           scoredSubjects: 0,
           average: 0,
           rank: 0
-        });
+        };
+        rowsByStudent.set(s.id, row);
+        if (s.studentAdm) rowsByAdmission.set(String(s.studentAdm).trim(), row);
       });
 
       const joints = await api.get<any[]>("/school/class-subjects");
@@ -210,7 +219,12 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
           const data: any[] = await api.get("/marks", { subjectJointId });
           data.forEach(item => {
             const sid = item.studentId?.toString();
-            const row = rowsByStudent.get(sid);
+            // Marks rows identify the StudentProfile, while the admin roster
+            // may identify the linked user. Admission number is present in both
+            // payloads and provides a stable match across those two records.
+            const row = rowsByStudent.get(sid) || rowsByAdmission.get(
+              String(item.admissionNo || item.studentAdm || "").trim(),
+            );
             if (row) row.marks[subjectJointId] = computeMarkPercentage(item.marks);
           });
         }

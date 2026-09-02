@@ -577,23 +577,27 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
   );
   console.log("mapped students ", students);
   return {
-    students: (students || []).map((student: any) => ({
-      id: student.studentId || student.id,
-      userId: student.studentId || student.id,
-      studentFullName:
-        student.studentFullName || student.fullName || student.name,
-      studentAdm: student.studentAdm || student.adm || student.admissionNo,
-      email: student.email,
-      phoneNumber: student.phoneNumber || "",
-      classId:
-        student.classId ||
-        buildClassId(student.classGrade, student.classStream),
-      schoolId: schoolId,
-      gender: student.gender || "",
-      classGrade: student.grade || "",
-      classStream: student.stream || "",
-      status: student.status || "Active",
-    })),
+    students: (students || []).map((student: any) => {
+      // `/get/all/students` returns `grade` and `stream`. Preserve those
+      // values before deriving the fallback class key used by admin views.
+      const classGrade = String(student.grade ?? student.classGrade ?? "");
+      const classStream = String(student.stream ?? student.classStream ?? "");
+      return {
+        id: student.studentId || student.id,
+        userId: student.studentId || student.id,
+        studentFullName:
+          student.studentFullName || student.fullName || student.name,
+        studentAdm: student.studentAdm || student.adm || student.admissionNo,
+        email: student.email,
+        phoneNumber: student.phoneNumber || "",
+        classId: student.classId || buildClassId(classGrade, classStream),
+        schoolId: schoolId,
+        gender: student.gender || "",
+        classGrade,
+        classStream,
+        status: student.status || "Active",
+      };
+    }),
     staff: (teachers || []).map((teacher: any) => {
       const roles = normalizeRoles(teacher.roles);
       const parsedClass = splitClassName(teacher.schoolClass);

@@ -39,10 +39,9 @@ export interface ElectiveSubjectGroup<
   isLinkedGroup: boolean;
 }
 
-export const normalizeClassValue = (value: string | null | undefined) =>
-  (value || "").trim();
+export const normalizeClassValue = (value: unknown) => String(value ?? "").trim();
 
-export const buildClassId = (grade: string, stream?: string) =>
+export const buildClassId = (grade: string | number, stream?: string | number) =>
   `${normalizeClassValue(grade)}::${normalizeClassValue(stream)}`;
 
 export const getClassSubjectSetting = <T extends ClassSubjectSettingLike>(
