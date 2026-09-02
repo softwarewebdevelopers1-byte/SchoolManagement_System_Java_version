@@ -194,17 +194,27 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       // Build a map of studentId -> { subjectId -> mark }
       const marksByStudent: Record<string, Record<string, number>> = {};
 
+      // Normalize examType to match backend expectations
+      const normalizedExamType = String(examType || "OPENER")
+        .replace(/[^a-z]/gi, "")
+        .toUpperCase();
+
       // Fetch marks for each subject
       const subjectResults = await Promise.allSettled(
         subjects.map(async (subject: any) => {
           const subjectId = getSubId(subject?.id || subject?._id);
           if (!subjectId) return null;
           try {
-            // The normal page always reflects the active marks sheet. Historical
-            // period lookups are reserved for the PDF-only assessment columns.
-            const data: any = await api.get("/marks", { subjectId });
+            // Fetch marks for the specific term, year, and exam type
+            const data: any = await api.get("/marks", { 
+              subjectId,
+              term: String(term),
+              year: String(year),
+              examType: normalizedExamType
+            });
             return { subjectId, data: Array.isArray(data) ? data : [] };
-          } catch {
+          } catch (err) {
+            console.warn(`Failed to load marks for subject ${subjectId}:`, err);
             return { subjectId, data: [] };
           }
         }),
@@ -212,9 +222,16 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       subjectResults.forEach((result) => {
         if (result.status !== "fulfilled" || !result.value) return;
         const { subjectId, data } = result.value;
+        if (!data.length) {
+          console.warn(`No marks data returned for subject ${subjectId} - term ${term}, year ${year}, examType ${normalizedExamType}`);
+          return;
+        }
         (data as any[]).forEach((row: any) => {
           const studentId = String(row.studentId || "");
-          if (!studentId) return;
+          if (!studentId) {
+            console.debug("Row missing studentId:", row);
+            return;
+          }
           const finalScore = row.marks?.finalScore;
           const totalMarks = row.marks?.totalMarks;
           const avgPercentage = row.marks?.avgPercentage;
@@ -251,8 +268,17 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         };
       });
 
+      // Debug: Check if marks were actually loaded
+      const studentsWithLoadedMarks = enrichedStudents.filter(
+        (s) => Object.keys(s.marks).length > 0
+      ).length;
+      console.log(
+        `Loaded marks for term=${term}, year=${year}, examType=${normalizedExamType}: ${studentsWithLoadedMarks}/${enrichedStudents.length} students have marks`
+      );
+
       setStudentsWithMarks(enrichedStudents);
     } catch (err) {
+      console.error("Error loading marks:", err);
       // Fall back to students without marks
       setStudentsWithMarks(students);
     } finally {
@@ -445,6 +471,25 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           setTimeout(() => setMsg(null), 3500);
           return;
         }
+        // The login payload can contain the assessment cycle from when the
+        // teacher signed in. Always use the school setting that was active when
+        // the marks were entered, so a Mid Term download can find its Opener.
+        let reportTerm = term;
+        let reportYear = year;
+        let reportExamType = examType;
+        const schoolId = getSchoolId();
+        if (schoolId) {
+          try {
+            const cycle: any = await request(
+              `/schools/get/term/exam/${encodeURIComponent(schoolId)}`,
+            );
+            reportTerm = cycle?.term ?? reportTerm;
+            reportYear = cycle?.year ?? reportYear;
+            reportExamType = cycle?.examType ?? reportExamType;
+          } catch {
+            // The values supplied by the dashboard remain a safe fallback.
+          }
+        }
         const slipSubjects = subjects.filter(
           (s) =>
             (s?.enrollmentMode === "ELECTIVE" &&
@@ -454,11 +499,27 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         // A report slip must show the actual marks from each assessment in the
         // term. Fetching these at download time also keeps older reports intact
         // when the school moves to a new assessment cycle.
-        const assessmentPeriods = [
+        const allAssessmentPeriods = [
           { apiValue: "OPENER", label: "OPENER" },
           { apiValue: "MIDTERM", label: "MID TERM" },
           { apiValue: "ENDTERM", label: "END OF TERM" },
         ];
+        const normalizedExamType = String(reportExamType || "OPENER")
+          .replace(/[^a-z]/gi, "")
+          .toUpperCase();
+        const activePeriodIndex = allAssessmentPeriods.findIndex(
+          (period) => period.apiValue === normalizedExamType,
+        );
+        // Only completed assessments can contribute to a development trend.
+        // The active assessment remains the only score used in totals, points
+        // and class ranking elsewhere in this report.
+        const assessmentPeriods = allAssessmentPeriods.slice(
+          0,
+          activePeriodIndex >= 0 ? activePeriodIndex + 1 : 1,
+        );
+        console.log("[ReportSlip] Downloading for:", slip.fullName, "term:", term, "year:", year, "examType:", examType, "classGrade:", classGrade, "classStream:", classStream, "studentId:", slip.studentId || slip.userId);
+        console.log("[ReportSlip] Assessment periods to fetch:", assessmentPeriods.map(p => p.label));
+        console.log("[ReportSlip] Subjects:", slipSubjects.map(s => ({ id: getSubId(s.id || s._id), name: s.name })));
         const historyResponses = await Promise.all(
           slipSubjects.flatMap((subject) =>
             assessmentPeriods.map(async (period) => {
@@ -467,18 +528,25 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               try {
                 const query = new URLSearchParams({
                   subjectId,
-                  term: String(term),
-                  year: String(year),
+                  classGrade,
+                  classStream,
+                  term: String(reportTerm),
+                  year: String(reportYear),
                   examType: period.apiValue,
                 });
-                const rows = await request<any[]>(`/marks?${query.toString()}`);
+                const url = `/marks?${query.toString()}`;
+                console.log(`[ReportSlip] Fetching ${period.label} marks:`, url);
+                const rows = await request<any[]>(url);
+                console.log(`[ReportSlip] ${period.label} response:`, rows?.length || 0, "rows");
                 const row = (Array.isArray(rows) ? rows : []).find(
                   (item) => String(item.studentId) === String(slip.studentId || slip.userId),
                 );
                 const raw = row?.avgPercentage ?? row?.finalScore ?? row?.totalMarks;
                 const score = raw == null ? null : Number(String(raw).replace("%", ""));
+                console.log(`[ReportSlip] ${period.label} score for ${slip.fullName}:`, score);
                 return { subjectId, label: period.label, score: Number.isFinite(score) ? score : null };
-              } catch {
+              } catch (err) {
+                console.error(`[ReportSlip] Error fetching ${period.label}:`, err);
                 return null;
               }
             }),
@@ -497,9 +565,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           classLabel: [`Grade ${slip.grade || ""}`.trim(), slip.stream]
             .filter(Boolean)
             .join(" "),
-          term,
-          year,
-          examType,
+          term: reportTerm,
+          year: reportYear,
+          examType: reportExamType,
           rank: slip.rank,
           rankingLabel:
             rankingMode === "total_marks" ? "Total Marks" : "Total Points",
