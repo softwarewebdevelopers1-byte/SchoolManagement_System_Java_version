@@ -314,6 +314,7 @@ const composeTeacherAssignments = async <T>(teacherId: string): Promise<T> => {
 const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
+
   let sheet: any;
 
   sheet = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}`);

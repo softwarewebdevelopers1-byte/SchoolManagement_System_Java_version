@@ -200,14 +200,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           const subjectId = getSubId(subject?.id || subject?._id);
           if (!subjectId) return null;
           try {
-            const data: any = await api.get("/marks", {
-              subjectId,
-              classGrade,
-              classStream,
-              term,
-              year,
-              examType,
-            });
+            // The normal page always reflects the active marks sheet. Historical
+            // period lookups are reserved for the PDF-only assessment columns.
+            const data: any = await api.get("/marks", { subjectId });
             return { subjectId, data: Array.isArray(data) ? data : [] };
           } catch {
             return { subjectId, data: [] };
@@ -470,14 +465,13 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               const subjectId = getSubId(subject.id || subject._id);
               if (!subjectId) return null;
               try {
-                const rows = await api.get<any[]>("/marks", {
+                const query = new URLSearchParams({
                   subjectId,
-                  classGrade,
-                  classStream,
-                  term,
-                  year,
+                  term: String(term),
+                  year: String(year),
                   examType: period.apiValue,
                 });
+                const rows = await request<any[]>(`/marks?${query.toString()}`);
                 const row = (Array.isArray(rows) ? rows : []).find(
                   (item) => String(item.studentId) === String(slip.studentId || slip.userId),
                 );

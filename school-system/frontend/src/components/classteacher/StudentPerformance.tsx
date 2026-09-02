@@ -189,7 +189,7 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
             : "-",
       };
     });
-  }, [studentSubjects, marks, cbcBands]);
+  }, [studentSubjects, marks, cbcBands, remarksBySubject]);
 
   const totalMarks = useMemo(() => sum(marks), [marks]);
   const totalPoints = useMemo(() => sumPoints(marks, cbcBands), [marks, cbcBands]);
