@@ -118,6 +118,8 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   const [schoolProfile, setSchoolProfile] = useState<{
     schoolName?: string;
     schoolAddress?: string;
+    schoolEmail?: string;
+    phoneNumber?: string;
     motto?: string;
   }>({});
   const [remarksBySubject, setRemarksBySubject] = useState<
@@ -167,6 +169,8 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         setSchoolProfile({
           schoolName: data?.schoolName,
           schoolAddress: data?.schoolAddress,
+          schoolEmail: data?.schoolEmail,
+          phoneNumber: data?.phoneNumber,
           motto: data?.motto,
         });
       } catch {
@@ -336,7 +340,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     }
   };
 
-  const handleDownload = (type: string, studentName?: string) => {
+  const handleDownload = async (type: string, studentName?: string) => {
     try {
       if (
         type === "Full Merit List" ||
@@ -452,6 +456,46 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               slip?.enrolledSubjects?.includes(s.id)) ||
             s?.enrollmentMode === "COMPULSORY",
         );
+        // A report slip must show the actual marks from each assessment in the
+        // term. Fetching these at download time also keeps older reports intact
+        // when the school moves to a new assessment cycle.
+        const assessmentPeriods = [
+          { apiValue: "OPENER", label: "OPENER" },
+          { apiValue: "MIDTERM", label: "MID TERM" },
+          { apiValue: "ENDTERM", label: "END OF TERM" },
+        ];
+        const historyResponses = await Promise.all(
+          slipSubjects.flatMap((subject) =>
+            assessmentPeriods.map(async (period) => {
+              const subjectId = getSubId(subject.id || subject._id);
+              if (!subjectId) return null;
+              try {
+                const rows = await api.get<any[]>("/marks", {
+                  subjectId,
+                  classGrade,
+                  classStream,
+                  term,
+                  year,
+                  examType: period.apiValue,
+                });
+                const row = (Array.isArray(rows) ? rows : []).find(
+                  (item) => String(item.studentId) === String(slip.studentId || slip.userId),
+                );
+                const raw = row?.avgPercentage ?? row?.finalScore ?? row?.totalMarks;
+                const score = raw == null ? null : Number(String(raw).replace("%", ""));
+                return { subjectId, label: period.label, score: Number.isFinite(score) ? score : null };
+              } catch {
+                return null;
+              }
+            }),
+          ),
+        );
+        const historicalMarks = new Map<string, Map<string, number | null>>();
+        historyResponses.filter(Boolean).forEach((item: any) => {
+          const periods = historicalMarks.get(item.subjectId) || new Map<string, number | null>();
+          periods.set(item.label, item.score);
+          historicalMarks.set(item.subjectId, periods);
+        });
         const doc = buildStudentReportSlipPdf({
           studentName: slip.fullName,
           admissionNo:
@@ -467,6 +511,8 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             rankingMode === "total_marks" ? "Total Marks" : "Total Points",
           schoolName: schoolProfile.schoolName,
           schoolAddress: schoolProfile.schoolAddress,
+          schoolEmail: schoolProfile.schoolEmail,
+          phoneNumber: schoolProfile.phoneNumber,
           motto: schoolProfile.motto,
           gradingScale: cbcBands.map((band) => ({
             grade: band.grade,
@@ -475,14 +521,33 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             points: band.points,
           })),
           subjects: slipSubjects.map((subject) => {
-            const mark = slip.metrics.marks[getSubId(subject.id)];
+            const subjectId = getSubId(subject.id || subject._id);
+            const mark = slip.metrics.marks[subjectId];
             const resolved =
               mark != null ? resolveCbcBand(mark, cbcBands) : null;
+            const currentSubjectMarks = rankedStudents
+              .map((student) => ({
+                student,
+                mark: student.metrics.marks[subjectId],
+              }))
+              .filter((item) => typeof item.mark === "number")
+              .sort((left, right) => right.mark - left.mark);
+            const subjectPosition = currentSubjectMarks.findIndex(
+              (item) => String(item.student.studentId || item.student.userId) === String(slip.studentId || slip.userId),
+            );
+            const assessments = assessmentPeriods.map((period) => ({
+              label: period.label,
+              marks: historicalMarks.get(subjectId)?.get(period.label),
+            }));
             return {
               subject: subject.name,
               marks: mark != null ? `${mark}%` : "-",
               cbcBand: resolved?.cbcBand || "-",
               points: resolved?.points ?? "-",
+              assessments,
+              rank: subjectPosition >= 0 ? subjectPosition + 1 : "-",
+              rankTotal: currentSubjectMarks.length,
+              teacher: subject.teacherName || subject.teacher || subject.assignedTeacherName || "-",
               remark:
                 mark != null
                   ? remarksBySubject[

@@ -1,10 +1,11 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
 import { normalizeRoles } from "../../lib/api";
 import { RoleSwitcher } from "../shared/RoleSwitcher";
 import styles from "./StudentDashboard.module.css";
 import { buildStudentReportSlipPdf } from "../shared/studentReportSlip";
+import { useCbcGradingBands } from "../../lib/cbcGrading";
 
 type PerformanceMark = {
   id: string;
@@ -105,6 +106,8 @@ function StudentDashboard() {
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageNotice, setMessageNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [schoolProfile, setSchoolProfile] = useState<{ schoolName?: string; schoolAddress?: string; schoolEmail?: string; phoneNumber?: string; motto?: string }>({});
+  const { bands: cbcBands } = useCbcGradingBands();
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem("user");
     if (saved) {
@@ -148,6 +151,17 @@ function StudentDashboard() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const schoolId = getSchoolId();
+    if (!schoolId) return;
+    void request(`/schools/settings?schoolId=${encodeURIComponent(schoolId)}`)
+      .then((data: any) => setSchoolProfile({
+        schoolName: data?.schoolName, schoolAddress: data?.schoolAddress,
+        schoolEmail: data?.schoolEmail, phoneNumber: data?.phoneNumber, motto: data?.motto,
+      }))
+      .catch(() => setSchoolProfile({}));
   }, []);
 
   const selectedStudent = useMemo(() => {
@@ -276,6 +290,14 @@ function StudentDashboard() {
       term: reportTerm,
       year: reportYear,
       examType: reportExamType,
+      schoolName: schoolProfile.schoolName,
+      schoolAddress: schoolProfile.schoolAddress,
+      schoolEmail: schoolProfile.schoolEmail,
+      phoneNumber: schoolProfile.phoneNumber,
+      motto: schoolProfile.motto,
+      gradingScale: cbcBands.map((band) => ({
+        grade: band.grade, minScore: band.minScore, maxScore: band.maxScore, points: band.points,
+      })),
       subjects: currentSubjectMarks.map((mark) => {
         const score = getScore(mark);
         return {

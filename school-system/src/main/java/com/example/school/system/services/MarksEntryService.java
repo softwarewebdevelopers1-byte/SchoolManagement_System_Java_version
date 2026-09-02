@@ -32,6 +32,7 @@ import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.types.MarksSheetStatus;
+import com.example.school.system.types.ExamType;
 import com.example.school.system.types.SubjectType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,6 +96,42 @@ public class MarksEntryService {
                 .cat3Entry(existingMarkSheet.isCat3Entry())
                 .examEntry(existingMarkSheet.isExamEntry())
                 .build();
+    }
+
+    /**
+     * Loads marks that were already recorded for a particular reporting period.
+     * Unlike the entry-sheet method above, this deliberately never creates a new
+     * marks sheet: downloading a report must not change school data.
+     */
+    @Transactional(readOnly = true)
+    public List<MarksRowDTO> loadMarksForPeriod(UUID subjectJointId, String academicYear,
+            Integer term, String examType) {
+        if (academicYear == null || term == null || examType == null) {
+            return List.of();
+        }
+
+        final ExamType period;
+        try {
+            period = ExamType.valueOf(examType.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            return List.of();
+        }
+
+        return marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                subjectJointId, academicYear, term, period)
+                .map(sheet -> marksRepo.findAllByMarksSheetId(sheet.getId()).stream()
+                        .map(marks -> MarksRowDTO.builder()
+                                .studentId(marks.getStudentProfile().getId())
+                                .studentName(marks.getStudentProfile().getStudentFullName())
+                                .studentAdm(marks.getStudentProfile().getStudentAdm())
+                                .cat1(marks.getCat1()).cat2(marks.getCat2()).cat3(marks.getCat3())
+                                .exam(marks.getExam()).marksGrade(marks.getGrade()).points(marks.getPoints())
+                                .totalMarks(marks.getTotalMarks())
+                                .avgPercentage(marks.getAverageMarksPercentage() == null ? null
+                                        : marks.getAverageMarksPercentage() + "%")
+                                .build())
+                        .toList())
+                .orElseGet(List::of);
     }
 
     private MarksSheet createMarksSheet(SubjectJoint subjectJoint,

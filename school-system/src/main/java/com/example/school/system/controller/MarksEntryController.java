@@ -41,7 +41,8 @@ public class MarksEntryController {
         if (subjectId == null) {
             return ResponseEntity.ok(List.of());
         }
-        var res = marksEntryService.loadMarksEntrySheet(subjectId);
+        var res = marksEntryService.loadMarksForPeriod(subjectId,
+                year == null ? null : String.valueOf(year), term, examType);
         return ResponseEntity.ok(res);
     }
     @PostMapping("/marks/entry")
