@@ -73,7 +73,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> HttpMessageNotReadableException(
             HttpMessageNotReadableException httpMessageNotReadableException) {
-        return ResponseEntity.status(500).body(SchoolApiResponse.error("Unreadable JSON format"));
+        return ResponseEntity.status(400).body(SchoolApiResponse.error("Unreadable JSON format"));
     }
 
     @ExceptionHandler(InvalidTokenExceptionHandler.class)

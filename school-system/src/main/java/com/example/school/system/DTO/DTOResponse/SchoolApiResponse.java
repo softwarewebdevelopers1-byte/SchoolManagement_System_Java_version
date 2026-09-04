@@ -3,10 +3,14 @@ package com.example.school.system.DTO.DTOResponse;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
-public class SchoolApiResponse<T> {
+@NoArgsConstructor
+@AllArgsConstructor
+public class SchoolApiResponse<T> implements java.io.Serializable {
     private String status;
     private T data;
     private String message;

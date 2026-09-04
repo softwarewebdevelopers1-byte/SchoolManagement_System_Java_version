@@ -1,6 +1,8 @@
 package com.example.school.system.services;
 
 import java.util.UUID;
+
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +43,8 @@ public class SchoolService {
     private final JwtValidator jwtValidator;
     private final ExamSettingsRepo examSettingsRepo;
 
+    // cache the school code for 24 hours to reduce database hits
+    @Cacheable(value = "schoolCodeCache", key = "#code")
     public SchoolApiResponse<?> getSchool(String code) {
         if (code == null || code.isBlank()) {
             throw new SchoolResourceNotFoundExceptionHandler("School code is required");
@@ -96,7 +100,6 @@ public class SchoolService {
         if (!userToken.get("school").equals(schoolData.schoolId().toString())) {
             throw new SchoolResourceRestrictedException("Forbidden");
         }
-        System.out.println(userToken.get("school"));
         School schoolToUpdate = schoolRepository.findById(schoolData.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school with that Id does not exists"));
         if (!schoolToUpdate.getStatus().equals(SchoolStatus.ACTIVE)) {
