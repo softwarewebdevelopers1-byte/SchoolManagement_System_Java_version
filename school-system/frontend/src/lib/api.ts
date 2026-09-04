@@ -315,13 +315,14 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const subjectJointId = params?.subjectJointId || params?.subjectId;
   if (!subjectJointId) return [] as T;
 
-  let sheet: any;
+  const page = Number(params?.page || 0);
+  const size = Number(params?.size || params?.limit || 50);
 
-  sheet = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}`);
+  const sheet: any = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}?page=${page}&size=${size}`);
   const cat1Enabled = sheet?.cat1Entry === true;
   const cat2Enabled = sheet?.cat2Entry === true;
   const cat3Enabled = sheet?.cat3Entry === true;
-  return (sheet?.marksRow || []).map((row: any) => ({
+  const data = (sheet?.marksRow || []).map((row: any) => ({
     studentId: row.studentId,
     admissionNo: row.studentAdm,
     name: row.studentName,
@@ -343,7 +344,14 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
       points: row.points,
       cbcBand: row.marksGrade,
     },
-  })) as T;
+  }));
+  const pagination = {
+    page: sheet?.page || page + 1,
+    limit: sheet?.pageSize || size,
+    total: sheet?.totalStudents || data.length,
+    totalPages: sheet?.totalPages || 1,
+  };
+  return { data, pagination } as T;
 };
 
 const buildMarksEntryBody = (body: any) => {

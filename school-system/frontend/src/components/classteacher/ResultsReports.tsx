@@ -125,6 +125,8 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   const [remarksBySubject, setRemarksBySubject] = useState<
     Record<string, Record<string, string>>
   >({});
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
 
   useEffect(() => {
     const loadRemarks = async () => {
@@ -213,14 +215,14 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           const subjectId = getSubId(subject?.id || subject?._id);
           if (!subjectId) return null;
           try {
-            // Fetch marks for the specific term, year, and exam type
-            const data: any = await api.get("/marks", { 
+            const response: any = await api.get("/marks", { 
               subjectId,
               term: String(term),
               year: String(year),
               examType: normalizedExamType
             });
-            return { subjectId, data: Array.isArray(data) ? data : [] };
+            const marksData = Array.isArray(response) ? response : (response.data || []);
+            return { subjectId, data: marksData };
           } catch (err) {
             console.warn(`Failed to load marks for subject ${subjectId}:`, err);
             return { subjectId, data: [] };
@@ -340,6 +342,11 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     }
     return { ...student, rank, metrics };
   });
+
+  const totalPages = Math.max(1, Math.ceil(rankedStudents.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedStudents = rankedStudents.slice(startIndex, startIndex + pageSize);
 
   const topStudent = rankedStudents[0] || null;
   const leastStudent = rankedStudents[rankedStudents.length - 1] || null;
@@ -1063,7 +1070,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {rankedStudents.map((student) => (
+                {paginatedStudents.map((student) => (
                   <tr
                     key={student.studentId}
                     style={{
@@ -1213,6 +1220,62 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginTop: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--textMut)",
+              }}
+            >
+              Page {safePage} of {totalPages} | {rankedStudents.length} students
+            </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--sand)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--textM)",
+                  cursor: "pointer",
+                }}
+                disabled={safePage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--sand)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--textM)",
+                  cursor: "pointer",
+                }}
+                disabled={safePage >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

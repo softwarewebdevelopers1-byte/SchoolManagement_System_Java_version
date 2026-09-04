@@ -200,7 +200,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
           term: currentClass.term,
           year: currentClass.year,
           examType: currentClass.examType,
-          page: marksPage,
+          page: marksPage - 1,
           limit: MARKS_PAGE_SIZE,
         });
         const data = Array.isArray(response) ? response : response.data;

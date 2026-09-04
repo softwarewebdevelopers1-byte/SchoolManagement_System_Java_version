@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.MarkInputDTO;
@@ -78,7 +81,7 @@ public class MarksEntryService {
                     .exam(marks != null ? marks.getExam() : null).marksGrade(marks != null ? marks.getGrade() : null)
                     .points(marks != null && marks.getPoints() != null ? marks.getPoints() : null)
                     .totalMarks(marks != null ? marks.getTotalMarks() : null)
-                    .avgPercentage(marks != null ? String.valueOf(marks.getAverageMarksPercentage()) + "%" : null)
+                    .avgPercentage(marks != null && marks.getAverageMarksPercentage() != null ? String.valueOf(marks.getAverageMarksPercentage()) + "%" : null)
                     .build();
         }).toList();
 
@@ -95,6 +98,66 @@ public class MarksEntryService {
                 .cat2Entry(existingMarkSheet.isCat2Entry())
                 .cat3Entry(existingMarkSheet.isCat3Entry())
                 .examEntry(existingMarkSheet.isExamEntry())
+                .build();
+    }
+
+    @Transactional
+    public MarksSheetDTO loadMarksEntrySheet(UUID subjectJointId, int page, int size) {
+        SubjectJoint subjectJoint = subjectJointRepo.findByIdWithoutSubjectType(subjectJointId, SubjectType.DROPPED)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
+        SchoolClass schoolClass = subjectJoint.getSchoolClass();
+        if (schoolClass == null) {
+            throw new SchoolResourceNotFoundExceptionHandler("class not found");
+        }
+        List<StudentProfile> students = getStudentsForSubject(subjectJointId, subjectJoint);
+        SchoolSettings schoolSettings = schoolClass.getSchool().getSchoolSettings();
+        MarksSheet existingMarkSheet = marksSheetRepo
+                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(subjectJointId,
+                        schoolSettings.getAcademicYear(), schoolSettings.getCurrentSchoolTerm(),
+                        schoolSettings.getExamSettings().getExamType())
+                .orElseGet(() -> createMarksSheet(subjectJoint, schoolSettings, students));
+        Map<UUID, MarksRow> existingMarks = new HashMap<>();
+        if (existingMarkSheet.getId() != null) {
+            Map<UUID, MarksRow> dbMarks = marksRepo.findAllByMarksSheetId(existingMarkSheet.getId()).stream()
+                    .collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
+            existingMarks.putAll(dbMarks);
+        }
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, size);
+        int fromIndex = Math.min(safePage * safeSize, students.size());
+        int toIndex = Math.min(fromIndex + safeSize, students.size());
+        List<StudentProfile> pagedStudents = students.subList(fromIndex, toIndex);
+
+        List<MarksRowDTO> marksRow = pagedStudents.stream().map(s -> {
+            MarksRow marks = existingMarks.get(s.getId());
+            return MarksRowDTO.builder().studentId(s.getId()).studentName(s.getStudentFullName())
+                    .studentAdm(s.getStudentAdm()).cat1(marks != null ? marks.getCat1() : null)
+                    .cat2(marks != null ? marks.getCat2() : null).cat3(marks != null ? marks.getCat3() : null)
+                    .exam(marks != null ? marks.getExam() : null).marksGrade(marks != null ? marks.getGrade() : null)
+                    .points(marks != null && marks.getPoints() != null ? marks.getPoints() : null)
+                    .totalMarks(marks != null ? marks.getTotalMarks() : null)
+                    .avgPercentage(marks != null && marks.getAverageMarksPercentage() != null ? String.valueOf(marks.getAverageMarksPercentage()) + "%" : null)
+                    .build();
+        }).toList();
+
+        return MarksSheetDTO.builder().subjectJointId(subjectJointId)
+                .subjectName(subjectJoint.getSubject().getSubjectName()).subjectType(subjectJoint.getSubjectType())
+                .classId(schoolClass.getClassId())
+                .className(schoolClass.getClassGrade() + " " + schoolClass.getClassStream())
+                .electiveCode(subjectJoint.getElectiveCode()).marksRow(marksRow)
+                .maxCat1(existingMarkSheet.isCat1Entry() ? existingMarkSheet.getMaxCat1() : null)
+                .maxCat2(existingMarkSheet.isCat2Entry() ? existingMarkSheet.getMaxCat2() : null)
+                .maxCat3(existingMarkSheet.isCat3Entry() ? existingMarkSheet.getMaxCat3() : null)
+                .maxExam(existingMarkSheet.getMaxExam())
+                .cat1Entry(existingMarkSheet.isCat1Entry())
+                 .cat2Entry(existingMarkSheet.isCat2Entry())
+                .cat3Entry(existingMarkSheet.isCat3Entry())
+                .examEntry(existingMarkSheet.isExamEntry())
+                .totalStudents(students.size())
+                .page(safePage + 1)
+                .pageSize(safeSize)
+                .totalPages((int) Math.ceil((double) students.size() / safeSize))
                 .build();
     }
 
@@ -132,6 +195,61 @@ public class MarksEntryService {
                                 .build())
                         .toList())
                 .orElseGet(List::of);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> loadMarksForPeriod(UUID subjectJointId, String academicYear,
+            Integer term, String examType, int page, int size) {
+        if (academicYear == null || term == null || examType == null) {
+            return Map.of("data", List.of(), "pagination", Map.of(
+                    "page", page + 1,
+                    "limit", size,
+                    "total", 0,
+                    "totalPages", 0
+            ));
+        }
+
+        final ExamType period;
+        try {
+            period = ExamType.valueOf(examType.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            return Map.of("data", List.of(), "pagination", Map.of(
+                    "page", page + 1,
+                    "limit", size,
+                    "total", 0,
+                    "totalPages", 0
+            ));
+        }
+
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        Page<MarksRow> marksPage = marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                subjectJointId, academicYear, term, period)
+                .map(sheet -> marksRepo.findAllByMarksSheetId(sheet.getId(), pageable))
+                .orElseGet(() -> new org.springframework.data.domain.PageImpl<>(List.of(), pageable, 0));
+
+        List<MarksRowDTO> marksRows = marksPage.getContent().stream().map(marks -> {
+            StudentProfile student = marks.getStudentProfile();
+            return MarksRowDTO.builder()
+                    .studentId(marks.getStudentProfile().getId())
+                    .studentName(student != null ? student.getStudentFullName() : null)
+                    .studentAdm(student != null ? student.getStudentAdm() : null)
+                    .cat1(marks.getCat1()).cat2(marks.getCat2()).cat3(marks.getCat3())
+                    .exam(marks.getExam()).marksGrade(marks.getGrade()).points(marks.getPoints())
+                    .totalMarks(marks.getTotalMarks())
+                    .avgPercentage(marks.getAverageMarksPercentage() == null ? null
+                            : marks.getAverageMarksPercentage() + "%")
+                    .build();
+        }).toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", marksRows);
+        response.put("pagination", Map.of(
+                "page", page + 1,
+                "limit", size,
+                "total", marksPage.getTotalElements(),
+                "totalPages", marksPage.getTotalPages()
+        ));
+        return response;
     }
 
     private MarksSheet createMarksSheet(SubjectJoint subjectJoint,

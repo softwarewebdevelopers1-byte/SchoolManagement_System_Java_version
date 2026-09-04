@@ -28,4 +28,8 @@ public class MarksSheetDTO {
     private boolean cat2Entry;
     private boolean cat3Entry;
     private boolean examEntry;
+    private Integer totalStudents;
+    private Integer page;
+    private Integer pageSize;
+    private Integer totalPages;
 }

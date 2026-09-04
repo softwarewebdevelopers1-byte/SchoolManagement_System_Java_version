@@ -147,6 +147,14 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   const [term, setTerm] = useState<number>(user?.term || 1);
   const [year, setYear] = useState<number>(user?.year || 2024);
   const [examType, setExamType] = useState<string>(user?.examType || "opener");
+  const [marksPage, setMarksPage] = useState(1);
+  const [marksPageSize] = useState(50);
+  const [marksPagination, setMarksPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 1,
+  });
 
   const displaySubjects = useMemo<DisplaySubjectOption[]>(() => {
     const activeSubjects = subjects
@@ -276,10 +284,27 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     if (!currentSubject) return;
 
     try {
-      const data = await api.get<any[]>("/marks", {
+      const response: any = await api.get("/marks", {
         subjectJointId: activeSubjectId,
+        page: marksPage - 1,
+        size: marksPageSize,
       });
-      const relevantStudents: Student[] = data.map((item) => ({
+      const data = Array.isArray(response) ? response : response.data || [];
+      const pagination = Array.isArray(response)
+        ? {
+            page: 1,
+            limit: data.length || marksPageSize,
+            total: data.length,
+            totalPages: 1,
+          }
+        : response.pagination || {
+            page: marksPage,
+            limit: marksPageSize,
+            total: data.length,
+            totalPages: 1,
+          };
+
+      const relevantStudents: Student[] = (data as any[]).map((item) => ({
         id: String(item.studentId),
         name: item.name,
         adm: item.admissionNo || "",
@@ -306,27 +331,43 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         ...prev,
         [activeSubjectId]: relevantStudents,
       }));
+      setMarksPagination(pagination);
     } catch (err) {
       setSubjectStudents((prev) => ({
         ...prev,
         [activeSubjectId]: [],
       }));
+      setMarksPagination({
+        page: marksPage,
+        limit: marksPageSize,
+        total: 0,
+        totalPages: 1,
+      });
     }
   }, [
     activeSubjectId,
     displaySubjects,
+    marksPage,
+    marksPageSize,
   ]);
 
   useEffect(() => {
     setMarksData({});
     setSubjectStudents({});
-  }, [term, year, examType]);
+    setMarksPage(1);
+    setMarksPagination({
+      page: 1,
+      limit: marksPageSize,
+      total: 0,
+      totalPages: 1,
+    });
+  }, [term, year, examType, marksPageSize]);
 
   useEffect(() => {
     if (activeSubjectId) {
       void loadDetailedMarks();
     }
-  }, [activeSubjectId, loadDetailedMarks, term, year, examType]);
+  }, [activeSubjectId, loadDetailedMarks, term, year, examType, marksPage]);
 
   const handleMarkUpdate = (
     subjectId: string,
@@ -587,6 +628,13 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         examType={examType}
         onTermChange={setTerm}
         onExamTypeChange={setExamType}
+        pagination={{
+          page: marksPagination.page,
+          limit: marksPagination.limit,
+          total: marksPagination.total,
+          totalPages: marksPagination.totalPages,
+          onPageChange: setMarksPage,
+        }}
       />
     </div>
   );

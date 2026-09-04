@@ -3,6 +3,8 @@ package com.example.school.system.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +23,9 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
 
         @EntityGraph(attributePaths = { "StudentProfile", "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
         List<MarksRow> findAllByMarksSheetId(UUID sheetId);
+
+        @EntityGraph(attributePaths = { "StudentProfile", "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
+        Page<MarksRow> findAllByMarksSheetId(UUID sheetId, Pageable pageable);
 
         @EntityGraph(attributePaths = { "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
         List<MarksRow> findByStudentProfileId(UUID studentProfileId);

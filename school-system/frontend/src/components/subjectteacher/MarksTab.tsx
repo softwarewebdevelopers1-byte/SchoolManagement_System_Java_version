@@ -8,6 +8,7 @@ export const MarksTab: React.FC<MarksTabProps> = ({
   onRemoveCat, 
   onSaveMarks, 
   onImportMarks,
+  pagination,
   ...props 
 }) => {
   return (
@@ -17,6 +18,7 @@ export const MarksTab: React.FC<MarksTabProps> = ({
       onRemoveCat={onRemoveCat}
       onSaveMarks={onSaveMarks}
       onImportMarks={onImportMarks}
+      pagination={pagination}
       mode="subject"
     />
   );

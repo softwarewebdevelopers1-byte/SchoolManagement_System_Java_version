@@ -216,12 +216,10 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
         );
         for (const sub of clsSubjects) {
           const subjectJointId = sub.id || sub.subjectJointId || sub.subjectId;
-          const data: any[] = await api.get("/marks", { subjectJointId });
-          data.forEach(item => {
+          const response: any = await api.get("/marks", { subjectJointId });
+          const data = Array.isArray(response) ? response : response.data || [];
+          data.forEach((item: any) => {
             const sid = item.studentId?.toString();
-            // Marks rows identify the StudentProfile, while the admin roster
-            // may identify the linked user. Admission number is present in both
-            // payloads and provides a stable match across those two records.
             const row = rowsByStudent.get(sid) || rowsByAdmission.get(
               String(item.admissionNo || item.studentAdm || "").trim(),
             );

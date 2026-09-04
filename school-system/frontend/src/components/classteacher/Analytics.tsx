@@ -202,7 +202,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
       subjects.map(async (subject: any) => {
         const subjectId = getSubId(subject?.id || subject?._id);
         if (!subjectId) return;
-        const rows: any[] = await api.get("/marks", {
+        const response: any = await api.get("/marks", {
           subjectId,
           classGrade,
           classStream,
@@ -210,7 +210,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           year,
           examType,
         });
-        rows.forEach((row) => {
+        const rows = Array.isArray(response) ? response : response.data || [];
+        rows.forEach((row: any) => {
           const studentId = String(row.studentId || "");
           const raw =
             row.marks?.avgPercentage ??

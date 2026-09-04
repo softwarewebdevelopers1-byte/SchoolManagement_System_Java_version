@@ -106,6 +106,14 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
   const [examType, setExamType] = useState<string>(
     currentUser?.examType || "opener",
   );
+  const [marksPage, setMarksPage] = useState(1);
+  const [marksPageSize] = useState(50);
+  const [marksPagination, setMarksPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 1,
+  });
   const { theme, toggleTheme } = useDashboardTheme();
 
   const handleLogout = () => {
@@ -299,11 +307,27 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     }
 
     try {
-      const data = await api.get<any[]>("/marks", {
+      const response: any = await api.get("/marks", {
         subjectJointId: currentSubject.id,
+        page: marksPage - 1,
+        size: marksPageSize,
       });
+      const data = Array.isArray(response) ? response : response.data || [];
+      const pagination = Array.isArray(response)
+        ? {
+            page: 1,
+            limit: data.length || marksPageSize,
+            total: data.length,
+            totalPages: 1,
+          }
+        : response.pagination || {
+            page: marksPage,
+            limit: marksPageSize,
+            total: data.length,
+            totalPages: 1,
+          };
 
-      const mappedStudents = data.map((item) => ({
+      const mappedStudents = (data as any[]).map((item: any) => ({
         id: item.studentId.toString(),
         adm: item.admissionNo,
         name: item.name,
@@ -312,7 +336,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         pushed: false,
       }));
 
-      const subjectMarks = data.reduce((acc, item) => {
+      const subjectMarks = (data as any[]).reduce((acc: any, item: any) => {
         const sid = item.studentId.toString();
         acc[sid] = item.marks;
         return acc;
@@ -326,6 +350,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         ...prev,
         [activeSubjectId]: subjectMarks,
       }));
+      setMarksPagination(pagination);
     } catch (err: any) {
       setStudents([]);
       setPushedStudents(new Set());
@@ -334,20 +359,33 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           err?.message || "Unable to load students and marks for this subject.",
         type: "error",
       });
+      setMarksPagination({
+        page: marksPage,
+        limit: marksPageSize,
+        total: 0,
+        totalPages: 1,
+      });
     }
-  }, [activeSubjectId, subjects, term, year, examType, syncPushState]);
+  }, [activeSubjectId, subjects, marksPage, marksPageSize, syncPushState]);
 
   // Clear state when switching period
   useEffect(() => {
     setStudents([]);
     setMarksData({});
-  }, [term, year, examType]);
+    setMarksPage(1);
+    setMarksPagination({
+      page: 1,
+      limit: marksPageSize,
+      total: 0,
+      totalPages: 1,
+    });
+  }, [term, year, examType, marksPageSize]);
 
   useEffect(() => {
     if (!activeSubjectId) return;
     setPushedStudents(new Set());
     loadStudentsAndMarks();
-  }, [activeSubjectId, loadStudentsAndMarks, term, year, examType]);
+  }, [activeSubjectId, loadStudentsAndMarks, term, year, examType, marksPage]);
 
   // Clear pushed status when period changes
   useEffect(() => {
@@ -726,6 +764,13 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
             examType={examType}
             onTermChange={setTerm}
             onExamTypeChange={setExamType}
+            pagination={{
+              page: marksPagination.page,
+              limit: marksPagination.limit,
+              total: marksPagination.total,
+              totalPages: marksPagination.totalPages,
+              onPageChange: setMarksPage,
+            }}
           />
         );
       case "timetable":

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.example.school.system.DTO.MarksheetSaveRequest;
 import com.example.school.system.services.MarksEntryService;
 
@@ -24,8 +25,11 @@ public class MarksEntryController {
     private final MarksEntryService marksEntryService;
 
     @GetMapping("/marks/{subjectJointId}")
-    public ResponseEntity<?> loadMarksSheet(@PathVariable UUID subjectJointId) {
-        var res = marksEntryService.loadMarksEntrySheet(subjectJointId);
+    public ResponseEntity<?> loadMarksSheet(
+            @PathVariable UUID subjectJointId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        var res = marksEntryService.loadMarksEntrySheet(subjectJointId, page, size);
         return ResponseEntity.ok(res);
     }
 
@@ -37,12 +41,14 @@ public class MarksEntryController {
             @RequestParam(required = false) String classStream,
             @RequestParam(required = false) Integer term,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) String examType) {
+            @RequestParam(required = false) String examType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         if (subjectId == null) {
             return ResponseEntity.ok(List.of());
         }
         var res = marksEntryService.loadMarksForPeriod(subjectId,
-                year == null ? null : String.valueOf(year), term, examType);
+                year == null ? null : String.valueOf(year), term, examType, page, size);
         return ResponseEntity.ok(res);
     }
     @PostMapping("/marks/entry")
