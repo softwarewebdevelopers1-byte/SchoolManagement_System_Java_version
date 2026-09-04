@@ -36,6 +36,17 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "8px 16px",
+  background: "var(--sand)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--textM)",
+  cursor: "pointer",
+};
+
 export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
   onRefresh,
   allowDelete = false,
@@ -43,18 +54,41 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ExitedStudent | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [size] = useState(20);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [exitedStudents, setExitedStudents] = useState<ExitedStudent[]>([]);
+
+  const isFirstPage = page === 0;
+  const isLastPage = totalPages <= 1 || page >= totalPages - 1;
 
   useEffect(() => {
     (async () => {
-      async function getStudents(): Promise<{content:any[]}> {
-        return await request(
-          `/get/exited/students?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await request<{
+          content: ExitedStudent[];
+          number: number;
+          size: number;
+          totalElements: number;
+          totalPages: number;
+        }>(
+          `/get/exited/students?schoolId=${encodeURIComponent(getSchoolId() || "")}&page=${page}&size=${size}`,
         );
+        setExitedStudents(response?.content || []);
+        setTotalPages(response?.totalPages || 1);
+        setTotalElements(response?.totalElements || 0);
+      } catch (err: any) {
+        setError(err?.message || "Failed to load exited students.");
+      } finally {
+        setLoading(false);
       }
-      setExitedStudents((await getStudents()).content);
     })();
-  }, []);
+  }, [page, size]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -140,9 +174,21 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
           style={inputStyle}
         />
         <strong style={{ color: "var(--text, var(--dh-text))" }}>
-          {filtered.length} records
+          {totalElements} records
         </strong>
       </div>
+
+      {error && (
+        <div
+          style={{
+            ...panelStyle,
+            color: "var(--dText, var(--dh-danger-text))",
+            background: "var(--dBg, var(--dh-danger-bg))",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {message ? (
         <div
@@ -197,7 +243,7 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
                     color: "var(--textMut, var(--dh-text-muted))",
                   }}
                 >
-                  No exited learners found.
+                  {loading ? "Loading..." : "No exited learners found."}
                 </td>
               </tr>
             ) : (
@@ -256,6 +302,40 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
+          >
+            Page {page + 1} of {totalPages} | {totalElements} records
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={secondaryButtonStyle}
+              disabled={isFirstPage || page === 0 || loading}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Previous
+            </button>
+            <button
+              style={secondaryButtonStyle}
+              disabled={isLastPage || page >= totalPages - 1 || loading}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {selected ? (
         <div

@@ -617,9 +617,7 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
       case "students":
         return (
           <StudentRecords
-            students={students}
-            subjects={subjects}
-            onViewStudent={setSelectedStudent}
+            classId={effectiveClassId}
             classInfo={effectiveClassName}
           />
         );

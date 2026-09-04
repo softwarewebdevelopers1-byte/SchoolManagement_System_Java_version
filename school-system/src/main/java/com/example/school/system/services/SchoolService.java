@@ -1,8 +1,6 @@
 package com.example.school.system.services;
 
 import java.util.UUID;
-
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +42,6 @@ public class SchoolService {
     private final ExamSettingsRepo examSettingsRepo;
 
     // cache the school code for 24 hours to reduce database hits
-    @Cacheable(value = "schoolCodeCache", key = "#code")
     public SchoolApiResponse<?> getSchool(String code) {
         if (code == null || code.isBlank()) {
             throw new SchoolResourceNotFoundExceptionHandler("School code is required");

@@ -1,12 +1,11 @@
 // components/classteacher/StudentRecords.tsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
+import { request, getSchoolId } from "../../lib/api";
 
 interface StudentRecordsProps {
-  students: any[];
-  subjects: any[];
-  onViewStudent: (student: any) => void;
+  classId: string;
   classInfo: string;
 }
 
@@ -91,25 +90,79 @@ const SectionHeader: React.FC<{
   </div>
 );
 
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "8px 16px",
+  background: "var(--sand)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--textM)",
+  cursor: "pointer",
+};
+
 export const StudentRecords: React.FC<StudentRecordsProps> = ({
-  students,
+  classId,
   classInfo,
 }) => {
   const [search, setSearch] = useState("");
-  const filtered = students.filter(
-    (s) =>
-      String(s.fullName)
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      String(s.admissionNo || s.adm || s.studentAdm || "").includes(search),
-  );
+  const [page, setPage] = useState(0);
+  const [size] = useState(20);
+  const [students, setStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const isFirstPage = page === 0;
+  const isLastPage = totalPages <= 1 || page >= totalPages - 1;
+
+  const fetchStudents = async () => {
+    if (!classId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await request<{
+        content: any[];
+        number: number;
+        size: number;
+        totalElements: number;
+        totalPages: number;
+      }>(`/get/students?classId=${encodeURIComponent(classId)}&page=${page}&size=${size}`);
+      setStudents(response?.content || []);
+      setTotalPages(response?.totalPages || 1);
+      setTotalElements(response?.totalElements || 0);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load students.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, [classId, page, size]);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return students;
+    return students.filter(
+      (s) =>
+        String(s.fullName || s.studentFullName || "")
+          .toLowerCase()
+          .includes(query) ||
+        String(s.admissionNo || s.adm || s.studentAdm || "")
+          .toLowerCase()
+          .includes(query),
+    );
+  }, [students, search]);
 
   return (
     <div className="ct-anim">
       <SectionHeader
         eyebrow="Roster"
         title="Student records"
-        sub={`${classInfo} · ${students.length} learners enrolled`}
+        sub={`${classInfo} · ${totalElements} learners enrolled`}
         action={
           <div style={{ display: "flex", gap: 10 }}>
             <input
@@ -132,6 +185,21 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
           </div>
         }
       />
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            background: "#fdeaea",
+            color: "#a32d2d",
+            borderRadius: 8,
+            marginBottom: 12,
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
       <div
         style={{
           background: C.white,
@@ -183,8 +251,23 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
             </tr>
           </thead>
           <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  style={{
+                    padding: "2.5rem",
+                    textAlign: "center",
+                    fontSize: "1.1rem",
+                    color: C.textMuted,
+                  }}
+                >
+                  {loading ? "Loading..." : "No students found."}
+                </td>
+              </tr>
+            )}
             {filtered.map((s) => {
-              const studentName = s.fullName || "-";
+              const studentName = s.fullName || s.studentFullName || "-";
               return (
                 <tr
                   key={s.studentId}
@@ -201,7 +284,6 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
                   }
-                  // onClick={() => onViewStudent(s)}
                 >
                   <td style={{ padding: "12px 14px" }}>
                     <div
@@ -263,35 +345,47 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
                   <td style={{ padding: "12px 14px" }}>
                     <StatusPill status={s.status?.toLowerCase() || "Active"} />
                   </td>
-                  {/* <td style={{ padding: "12px 14px" }}>
-                    <button
-                      className="ct-pill"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewStudent(s);
-                      }}
-                      style={{
-                        padding: "5px 13px",
-                        background: "transparent",
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 20,
-                        fontFamily: FONT.sans,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: C.textMuted,
-                        cursor: "pointer",
-                        transition: "all 0.18s",
-                      }}
-                    >
-                      View
-                    </button>
-                  </td> */}
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
+          >
+            Page {page + 1} of {totalPages} | {totalElements} learners
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={secondaryButtonStyle}
+              disabled={isFirstPage || page === 0 || loading}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Previous
+            </button>
+            <button
+              style={secondaryButtonStyle}
+              disabled={isLastPage || page >= totalPages - 1 || loading}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

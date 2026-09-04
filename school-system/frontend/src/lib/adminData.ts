@@ -43,23 +43,31 @@ export const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
   }));
 
 export const mapStudentsFromApi = (students: ApiStudent[]): Student[] =>
-  students.map((student) => {
+  students.map((student: any) => {
+    const classGrade = String(student.classGrade ?? student.grade ?? "");
+    const classStream = String(student.classStream ?? student.stream ?? "");
     return {
-      id: student.id || student.userId || "",
-      userId: student.userId || student.id,
+      id: student.id || student.studentId || student.userId || "",
+      userId: student.userId || student.id || student.studentId,
       studentFullName:
-        student.studentFullName || (student as any).name || (student as any).fullName || "",
+        student.studentFullName ||
+        student.name ||
+        student.fullName ||
+        "",
       studentAdm:
-        student.studentAdm || (student as any).admissionNo || (student as any).adm || "",
+        student.studentAdm ||
+        student.admissionNo ||
+        student.adm ||
+        "",
       email: student.email,
       phoneNumber: student.phoneNumber,
       guardianName: student.guardianName || "",
       classId:
-        student.classId || buildClassId(student.classGrade, student.classStream),
-      schoolId: student.schoolId,
+        student.classId || buildClassId(classGrade, classStream),
+      schoolId: student.schoolId || "",
       gender: student.gender,
-      classGrade: student.classGrade,
-      classStream: student.classStream,
+      classGrade,
+      classStream,
       status: normalizeStatus(student.status),
     };
   });
@@ -298,12 +306,12 @@ export interface DashboardStats {
   assignedSubjectsCount: number;
 }
 
-export const fetchStudents = async (): Promise<Student[]> => {
-  const page = await api.get<PageResponse<any>>(
-    `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}&size=500`,
+export const fetchStudents = async (page = 0, size = 20): Promise<Student[]> => {
+  const pageResponse = await api.get<PageResponse<any>>(
+    `/get/all/students?schoolId=${encodeURIComponent(getSchoolId()!)}&page=${page}&size=${size}`,
   );
 
-  return mapStudentsFromApi(page?.content || []).filter(
+  return mapStudentsFromApi(pageResponse?.content || []).filter(
     (student) => student.status !== "Completed",
   );
 };

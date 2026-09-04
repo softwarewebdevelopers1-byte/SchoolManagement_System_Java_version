@@ -646,14 +646,14 @@ export interface PageResponse<T> {
   totalPages: number;
 }
 
-const fetchStudentsData = async <T>(): Promise<T> => {
+const fetchStudentsData = async <T>(page = 0, size = 20): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
-  const page = await request<PageResponse<any>>(
-    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+  const pageResponse = await request<PageResponse<any>>(
+    `/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=${page}&size=${size}`,
   );
-  return (page?.content || []) as T;
+  return (pageResponse?.content || []) as T;
 };
 
 const fetchTeachersData = async <T>(): Promise<T> => {
@@ -678,14 +678,14 @@ const fetchSubjectsData = async <T>(): Promise<T> => {
   })) as T;
 };
 
-const fetchExitedStudentsData = async <T>(): Promise<T> => {
+const fetchExitedStudentsData = async <T>(page = 0, size = 20): Promise<T> => {
   const schoolId = getSchoolId();
   if (!schoolId)
     throw new ApiError("No school is linked to this account.", 400, null);
-  const page = await request<PageResponse<any>>(
-    `/get/exited/students?schoolId=${encodeURIComponent(schoolId)}&size=500`,
+  const pageResponse = await request<PageResponse<any>>(
+    `/get/exited/students?schoolId=${encodeURIComponent(schoolId)}&page=${page}&size=${size}`,
   );
-  return (page?.content || []) as T;
+  return (pageResponse?.content || []) as T;
 };
 
 const fetchDashboardStatsData = async <T>(): Promise<T> => {

@@ -36,7 +36,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @BatchSize(size = 50)
-public class School implements java.io.Serializable{
+public class School{
     @Id
     @Column(columnDefinition = "BINARY(16)", name = "id", updatable = false, nullable = false)
     private UUID id;

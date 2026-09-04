@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
 import { useClassesData } from "../../lib/adminData";
-import { getSchoolId, request } from "../../lib/api";
+import { api, getSchoolId, request } from "../../lib/api";
+import { mapStudentsFromApi } from "../../lib/adminData";
 import PhoneInput from "../shared/PhoneInput";
 
 /* =========================================================
@@ -1442,15 +1443,23 @@ export const StudentsTab: React.FC<
   const [classFilter, setClassFilter] =
     useState("all");
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [pageResponse, setPageResponse] = useState<{
+    content: any[];
+    number: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [uploading, setUploading] =
     useState(false);
 
   const [uploadMessage, setUploadMessage] =
     useState("");
-
-  const pageSize = 50;
 
   /* =====================================================
      EXISTING EXCEL / CSV IMPORT
@@ -1660,59 +1669,73 @@ export const StudentsTab: React.FC<
   );
 
   /* =====================================================
-     FILTERING
-     ===================================================== */
+      SERVER-SIDE PAGINATION
+      ===================================================== */
 
-  const filteredStudents =
-    students.filter((student) => {
-      const query =
-        search.toLowerCase();
+  const schoolId = getSchoolId();
 
-      const matchesSearch =
-        student.studentFullName
-          ?.toLowerCase()
-          .includes(query) ||
-        student.studentAdm
-          ?.toLowerCase()
-          .includes(query);
-
-      const matchesClass =
-        classFilter === "all" ||
-        student.classId === classFilter;
-
-      return (
-        matchesSearch &&
-        matchesClass
-      );
-    });
-
-  /* =====================================================
-     PAGINATION
-     ===================================================== */
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      filteredStudents.length /
-        pageSize,
-    ),
-  );
-
-  const currentPage = Math.min(
-    page,
-    totalPages,
-  );
-
-  const pagedStudents =
-    filteredStudents.slice(
-      (currentPage - 1) *
-        pageSize,
-      currentPage * pageSize,
-    );
+  const fetchPage = async () => {
+    if (!schoolId) return;
+    setLoading(true);
+    try {
+      const response = await api.get<{
+        content: any[];
+        number: number;
+        size: number;
+        totalElements: number;
+        totalPages: number;
+      }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=${page}&size=${pageSize}`);
+      const mapped = mapStudentsFromApi(response?.content || []);
+      setPageResponse({
+        ...response,
+        content: mapped,
+      });
+    } catch (err: any) {
+      setError(err?.message || "Failed to load students.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setPage(1);
+    fetchPage();
+  }, [schoolId, page, pageSize]);
+
+  /* =====================================================
+      FILTERING
+      ===================================================== */
+
+  const baseContent = pageResponse?.content || [];
+
+  const filteredStudents = baseContent.filter((student) => {
+    const query = search.toLowerCase();
+
+    const matchesSearch =
+      (student.studentFullName || "")
+        .toLowerCase()
+        .includes(query) ||
+      (student.studentAdm || "")
+        .toLowerCase()
+        .includes(query);
+
+    const matchesClass =
+      classFilter === "all" ||
+      student.classId === classFilter;
+
+    return (
+      matchesSearch &&
+      matchesClass
+    );
+  });
+
+  /* =====================================================
+      PAGINATION STATE RESET
+      ===================================================== */
+
+  useEffect(() => {
+    setPage(0);
   }, [search, classFilter]);
+
 
   /* =====================================================
      OPEN STUDENT MODAL
@@ -1820,16 +1843,19 @@ export const StudentsTab: React.FC<
   };
 
   /* =====================================================
-     STATS
-     ===================================================== */
+      STATS
+      ===================================================== */
 
   const totalActive =
-    students.filter(
+    (pageResponse?.content || []).filter(
       (student) =>
-        student.status
-          .toLowerCase() ===
+        (student.status || "").toLowerCase() ===
         "active",
     ).length;
+
+  const serverTotal =
+    pageResponse?.totalElements || 0;
+
 
   /* =====================================================
      RENDER
@@ -1995,7 +2021,7 @@ export const StudentsTab: React.FC<
       >
         <StatCard
           label="Enrolled students"
-          value={students.length}
+          value={serverTotal}
         />
 
         <StatCard
@@ -2010,6 +2036,22 @@ export const StudentsTab: React.FC<
           accent="#1a4a99"
         />
       </div>
+
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            background: "#fdeaea",
+            color: "#a32d2d",
+            borderRadius: 8,
+            marginBottom: 12,
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {/* =================================================
           STUDENT TABLE
@@ -2101,7 +2143,7 @@ export const StudentsTab: React.FC<
               </tr>
             )}
 
-            {pagedStudents.map(
+            {filteredStudents.map(
               (student) => (
                 <tr
                   key={
@@ -2296,13 +2338,11 @@ export const StudentsTab: React.FC<
           PAGINATION
       ================================================= */}
 
-      {filteredStudents.length >
-        pageSize && (
+      {pageResponse && pageResponse.totalPages > 1 && (
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
             gap: 12,
             marginTop: 12,
@@ -2313,14 +2353,10 @@ export const StudentsTab: React.FC<
             style={{
               fontSize: 12,
               fontWeight: 700,
-              color:
-                "var(--textMut)",
+              color: "var(--textMut)",
             }}
           >
-            Page {currentPage} of{" "}
-            {totalPages} |{" "}
-            {filteredStudents.length}{" "}
-            students
+            Page {page + 1} of {pageResponse.totalPages} | {pageResponse.totalElements} students
           </span>
 
           <div
@@ -2330,41 +2366,20 @@ export const StudentsTab: React.FC<
             }}
           >
             <button
-              style={
-                secondaryButtonStyle
-              }
-              disabled={
-                currentPage <= 1
-              }
+              style={secondaryButtonStyle}
+              disabled={page === 0 || loading}
               onClick={() =>
-                setPage(
-                  (previous) =>
-                    Math.max(
-                      1,
-                      previous - 1,
-                    ),
-                )
+                setPage((previous) => Math.max(0, previous - 1))
               }
             >
               Previous
             </button>
 
             <button
-              style={
-                secondaryButtonStyle
-              }
-              disabled={
-                currentPage >=
-                totalPages
-              }
+              style={secondaryButtonStyle}
+              disabled={page >= pageResponse.totalPages - 1 || loading}
               onClick={() =>
-                setPage(
-                  (previous) =>
-                    Math.min(
-                      totalPages,
-                      previous + 1,
-                    ),
-                )
+                setPage((previous) => Math.min(pageResponse.totalPages - 1, previous + 1))
               }
             >
               Next
