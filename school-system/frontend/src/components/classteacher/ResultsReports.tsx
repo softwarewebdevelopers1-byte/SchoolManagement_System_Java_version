@@ -18,6 +18,7 @@ import {
 import { Avatar } from "./shared/Avatar";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 import { buildStudentReportSlipPdf } from "../shared/studentReportSlip";
+import OverviewSkeleton from "../skeletons/OverviewSkeletons";
 
 interface ResultsReportsProps {
   students: any[];
@@ -197,10 +198,18 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       const marksByStudent: Record<string, Record<string, number>> = {};
       const studentIdByAdmission = new Map(
         students
-          .map((student: any) => [
-            String(student.adm || student.admissionNo || student.admissionNumber || "").trim(),
-            String(student.studentId || student.userId || ""),
-          ] as const)
+          .map(
+            (student: any) =>
+              [
+                String(
+                  student.adm ||
+                    student.admissionNo ||
+                    student.admissionNumber ||
+                    "",
+                ).trim(),
+                String(student.studentId || student.userId || ""),
+              ] as const,
+          )
           .filter(([admissionNo, studentId]) => admissionNo && studentId),
       );
 
@@ -215,13 +224,15 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           const subjectId = getSubId(subject?.id || subject?._id);
           if (!subjectId) return null;
           try {
-            const response: any = await api.get("/marks", { 
+            const response: any = await api.get("/marks", {
               subjectId,
               term: String(term),
               year: String(year),
-              examType: normalizedExamType
+              examType: normalizedExamType,
             });
-            const marksData = Array.isArray(response) ? response : (response.data || []);
+            const marksData = Array.isArray(response)
+              ? response
+              : response.data || [];
             return { subjectId, data: marksData };
           } catch (err) {
             console.warn(`Failed to load marks for subject ${subjectId}:`, err);
@@ -233,14 +244,17 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         if (result.status !== "fulfilled" || !result.value) return;
         const { subjectId, data } = result.value;
         if (!data.length) {
-          console.warn(`No marks data returned for subject ${subjectId} - term ${term}, year ${year}, examType ${normalizedExamType}`);
+          console.warn(
+            `No marks data returned for subject ${subjectId} - term ${term}, year ${year}, examType ${normalizedExamType}`,
+          );
           return;
         }
         (data as any[]).forEach((row: any) => {
           const profileId = String(row.studentId || "");
-          const studentId = studentIdByAdmission.get(
-            String(row.admissionNo || row.studentAdm || "").trim(),
-          ) || profileId;
+          const studentId =
+            studentIdByAdmission.get(
+              String(row.admissionNo || row.studentAdm || "").trim(),
+            ) || profileId;
           if (!studentId) {
             console.debug("Row missing studentId:", row);
             return;
@@ -283,10 +297,10 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
 
       // Debug: Check if marks were actually loaded
       const studentsWithLoadedMarks = enrichedStudents.filter(
-        (s) => Object.keys(s.marks).length > 0
+        (s) => Object.keys(s.marks).length > 0,
       ).length;
       console.log(
-        `Loaded marks for term=${term}, year=${year}, examType=${normalizedExamType}: ${studentsWithLoadedMarks}/${enrichedStudents.length} students have marks`
+        `Loaded marks for term=${term}, year=${year}, examType=${normalizedExamType}: ${studentsWithLoadedMarks}/${enrichedStudents.length} students have marks`,
       );
 
       setStudentsWithMarks(enrichedStudents);
@@ -346,7 +360,10 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   const totalPages = Math.max(1, Math.ceil(rankedStudents.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const paginatedStudents = rankedStudents.slice(startIndex, startIndex + pageSize);
+  const paginatedStudents = rankedStudents.slice(
+    startIndex,
+    startIndex + pageSize,
+  );
 
   const topStudent = rankedStudents[0] || null;
   const leastStudent = rankedStudents[rankedStudents.length - 1] || null;
@@ -396,7 +413,11 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           doc.text(schoolProfile.schoolAddress, 14, 23);
         }
         if (schoolProfile.motto) {
-          doc.text(`Motto: ${schoolProfile.motto}`, 14, schoolProfile.schoolAddress ? 30 : 23);
+          doc.text(
+            `Motto: ${schoolProfile.motto}`,
+            14,
+            schoolProfile.schoolAddress ? 30 : 23,
+          );
         }
         doc.setFontSize(12);
         doc.text(
@@ -535,9 +556,33 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
           0,
           activePeriodIndex >= 0 ? activePeriodIndex + 1 : 1,
         );
-        console.log("[ReportSlip] Downloading for:", slip.fullName, "term:", term, "year:", year, "examType:", examType, "classGrade:", classGrade, "classStream:", classStream, "studentId:", slip.studentId || slip.userId);
-        console.log("[ReportSlip] Assessment periods to fetch:", assessmentPeriods.map(p => p.label));
-        console.log("[ReportSlip] Subjects:", slipSubjects.map(s => ({ id: getSubId(s.id || s._id), name: s.name })));
+        console.log(
+          "[ReportSlip] Downloading for:",
+          slip.fullName,
+          "term:",
+          term,
+          "year:",
+          year,
+          "examType:",
+          examType,
+          "classGrade:",
+          classGrade,
+          "classStream:",
+          classStream,
+          "studentId:",
+          slip.studentId || slip.userId,
+        );
+        console.log(
+          "[ReportSlip] Assessment periods to fetch:",
+          assessmentPeriods.map((p) => p.label),
+        );
+        console.log(
+          "[ReportSlip] Subjects:",
+          slipSubjects.map((s) => ({
+            id: getSubId(s.id || s._id),
+            name: s.name,
+          })),
+        );
         const historyResponses = await Promise.all(
           slipSubjects.flatMap((subject) =>
             assessmentPeriods.map(async (period) => {
@@ -553,22 +598,46 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                   examType: period.apiValue,
                 });
                 const url = `/marks?${query.toString()}`;
-                console.log(`[ReportSlip] Fetching ${period.label} marks:`, url);
+                console.log(
+                  `[ReportSlip] Fetching ${period.label} marks:`,
+                  url,
+                );
                 const rows = await request<any[]>(url);
-                console.log(`[ReportSlip] ${period.label} response:`, rows?.length || 0, "rows");
+                console.log(
+                  `[ReportSlip] ${period.label} response:`,
+                  rows?.length || 0,
+                  "rows",
+                );
                 const admissionNo = String(
                   slip.adm || slip.admissionNo || slip.admissionNumber || "",
                 ).trim();
-                const row = (Array.isArray(rows) ? rows : []).find((item) =>
-                  String(item.studentId) === String(slip.studentId || slip.userId) ||
-                  (admissionNo && String(item.studentAdm || item.admissionNo || "").trim() === admissionNo),
+                const row = (Array.isArray(rows) ? rows : []).find(
+                  (item) =>
+                    String(item.studentId) ===
+                      String(slip.studentId || slip.userId) ||
+                    (admissionNo &&
+                      String(
+                        item.studentAdm || item.admissionNo || "",
+                      ).trim() === admissionNo),
                 );
-                const raw = row?.avgPercentage ?? row?.finalScore ?? row?.totalMarks;
-                const score = raw == null ? null : Number(String(raw).replace("%", ""));
-                console.log(`[ReportSlip] ${period.label} score for ${slip.fullName}:`, score);
-                return { subjectId, label: period.label, score: Number.isFinite(score) ? score : null };
+                const raw =
+                  row?.avgPercentage ?? row?.finalScore ?? row?.totalMarks;
+                const score =
+                  raw == null ? null : Number(String(raw).replace("%", ""));
+                console.log(
+                  `[ReportSlip] ${period.label} score for ${slip.fullName}:`,
+                  score,
+                );
+                return {
+                  subjectId,
+                  label: period.label,
+                  score: Number.isFinite(score) ? score : null,
+                };
               } catch (err) {
-                console.error(`[ReportSlip] Error fetching ${period.label}:`, err);
+                console.error(
+                  `[ReportSlip] Error fetching ${period.label}:`,
+                  err,
+                );
                 return null;
               }
             }),
@@ -576,7 +645,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         );
         const historicalMarks = new Map<string, Map<string, number | null>>();
         historyResponses.filter(Boolean).forEach((item: any) => {
-          const periods = historicalMarks.get(item.subjectId) || new Map<string, number | null>();
+          const periods =
+            historicalMarks.get(item.subjectId) ||
+            new Map<string, number | null>();
           periods.set(item.label, item.score);
           historicalMarks.set(item.subjectId, periods);
         });
@@ -617,7 +688,9 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               .filter((item) => typeof item.mark === "number")
               .sort((left, right) => right.mark - left.mark);
             const subjectPosition = currentSubjectMarks.findIndex(
-              (item) => String(item.student.studentId || item.student.userId) === String(slip.studentId || slip.userId),
+              (item) =>
+                String(item.student.studentId || item.student.userId) ===
+                String(slip.studentId || slip.userId),
             );
             const assessments = assessmentPeriods.map((period) => ({
               label: period.label,
@@ -631,14 +704,17 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
               assessments,
               rank: subjectPosition >= 0 ? subjectPosition + 1 : "-",
               rankTotal: currentSubjectMarks.length,
-              teacher: subject.teacherName || subject.teacher || subject.assignedTeacherName || "-",
+              teacher:
+                subject.teacherName ||
+                subject.teacher ||
+                subject.assignedTeacherName ||
+                "-",
               remark:
                 mark != null
                   ? remarksBySubject[
                       getSubId(subject.subjectId || subject.id)
-                    ]?.[
-                      resolved?.cbcBand || ""
-                    ] || getSubjectRemark(mark, cbcBands)
+                    ]?.[resolved?.cbcBand || ""] ||
+                    getSubjectRemark(mark, cbcBands)
                   : "-",
             };
           }),
@@ -654,7 +730,6 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
     } catch (_err) {
       setMsg({ text: `Failed to download ${type}`, type: "error" });
       console.log(_err);
-      
     }
     setTimeout(() => setMsg(null), 3500);
   };
@@ -677,7 +752,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             fontSize: 13,
           }}
         >
-          Loading marks data...
+          <OverviewSkeleton />
         </div>
       )}
 
@@ -1066,32 +1141,32 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                 >
                   T.Marks
                 </th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedStudents.map((student) => (
-                  <tr
-                    key={student.studentId}
-                    style={{
-                      borderBottom: `1px solid ${C.border}`,
-                      cursor: onViewStudent ? "pointer" : "default",
-                      transition: "background 0.15s",
-                    }}
-                    onClick={(e) => {
-                      if ((e.target as HTMLElement).tagName !== "BUTTON") {
-                        onViewStudent?.(student, student.rank);
-                      }
-                    }}
-                    onMouseEnter={(e) => {
-                      if (onViewStudent) {
-                        e.currentTarget.style.background = "#f8f9fa";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "";
-                    }}
-                  >
+                <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedStudents.map((student) => (
+                <tr
+                  key={student.studentId}
+                  style={{
+                    borderBottom: `1px solid ${C.border}`,
+                    cursor: onViewStudent ? "pointer" : "default",
+                    transition: "background 0.15s",
+                  }}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).tagName !== "BUTTON") {
+                      onViewStudent?.(student, student.rank);
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    if (onViewStudent) {
+                      e.currentTarget.style.background = "#f8f9fa";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "";
+                  }}
+                >
                   <td
                     style={{ ...tdStyle, fontWeight: 700, textAlign: "center" }}
                   >
@@ -1195,9 +1270,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                       </button>
                       {onViewStudent && (
                         <button
-                          onClick={() =>
-                            onViewStudent(student, student.rank)
-                          }
+                          onClick={() => onViewStudent(student, student.rank)}
                           className="ct-pill"
                           style={{
                             padding: "6px 12px",
