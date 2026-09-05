@@ -1462,9 +1462,40 @@ export const StudentsTab: React.FC<
   const [uploadMessage, setUploadMessage] =
     useState("");
 
+  const schoolId = getSchoolId();
+
+  const isClassFiltered = classFilter !== "all";
+
   /* =====================================================
-     EXISTING EXCEL / CSV IMPORT
-     ===================================================== */
+       FETCH ALL STUDENTS FOR CLASS FILTER
+       ===================================================== */
+
+  useEffect(() => {
+    if (!isClassFiltered || !schoolId) return;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const response = await api.get<{
+          content: any[];
+          number: number;
+          size: number;
+          totalElements: number;
+          totalPages: number;
+        }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=0&size=500`);
+        const mapped = mapStudentsFromApi(response?.content || []);
+        setAllStudents(mapped);
+      } catch (err: any) {
+        setError(err?.message || "Failed to load students.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isClassFiltered, schoolId]);
+
+  /* =====================================================
+       SERVER-SIDE PAGINATION
+       ===================================================== */
 
   const handleBulkFile = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -1670,10 +1701,8 @@ export const StudentsTab: React.FC<
   );
 
   /* =====================================================
-      SERVER-SIDE PAGINATION
-      ===================================================== */
-
-  const schoolId = getSchoolId();
+       SERVER-SIDE PAGINATION
+       ===================================================== */
 
   const fetchPage = async () => {
     if (!schoolId || isClassFiltered) return;
@@ -1730,6 +1759,14 @@ export const StudentsTab: React.FC<
       matchesClass
     );
   });
+
+  const clientTotalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const totalPages = isClassFiltered ? clientTotalPages : (pageResponse?.totalPages || 1);
+  const totalElements = isClassFiltered ? filteredStudents.length : (pageResponse?.totalElements || 0);
+  const currentPage = Math.min(page, totalPages - 1);
+  const pagedStudents = isClassFiltered
+    ? filteredStudents.slice(page * pageSize, (page + 1) * pageSize)
+    : filteredStudents;
 
   /* =====================================================
       PAGINATION STATE RESET
@@ -2146,7 +2183,7 @@ export const StudentsTab: React.FC<
               </tr>
             )}
 
-            {filteredStudents.map(
+            {pagedStudents.map(
               (student) => (
                 <tr
                   key={
@@ -2341,7 +2378,7 @@ export const StudentsTab: React.FC<
           PAGINATION
       ================================================= */}
 
-      {pageResponse && pageResponse.totalPages > 1 && (
+      {(isClassFiltered ? filteredStudents.length > pageSize : pageResponse && pageResponse.totalPages > 1) && (
         <div
           style={{
             display: "flex",
@@ -2359,7 +2396,7 @@ export const StudentsTab: React.FC<
               color: "var(--textMut)",
             }}
           >
-            Page {page + 1} of {pageResponse.totalPages} | {pageResponse.totalElements} students
+            Page {page + 1} of {totalPages} | {totalElements} students
           </span>
 
           <div
@@ -2380,9 +2417,11 @@ export const StudentsTab: React.FC<
 
             <button
               style={secondaryButtonStyle}
-              disabled={page >= pageResponse.totalPages - 1 || loading}
+              disabled={page >= totalPages - 1 || loading}
               onClick={() =>
-                setPage((previous) => Math.min(pageResponse.totalPages - 1, previous + 1))
+                setPage((previous) =>
+                  Math.min(totalPages - 1, previous + 1),
+                )
               }
             >
               Next

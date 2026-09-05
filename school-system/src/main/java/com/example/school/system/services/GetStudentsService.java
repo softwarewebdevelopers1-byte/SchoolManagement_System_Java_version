@@ -89,7 +89,7 @@ public class GetStudentsService {
                                                 s.getGuardianName(),
                                                 s.getGender(),
                                                 s.getStatus(),
-                                                null,
+                                                s.getClassId(),
                                                 s.getClassGrade(),
                                                 s.getClassStream()))
                                 .toList();
@@ -121,7 +121,7 @@ public class GetStudentsService {
                                                 s.getGuardianName(),
                                                 s.getGender(),
                                                 s.getStatus(),
-                                                null,
+                                                s.getClassId(),
                                                 s.getClassGrade(),
                                                 s.getClassStream()))
                                 .toList();

@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     boolean existsByEmailAndStatus(String email, AccountStatus status);
 
     @Query("""
-             SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.classGrade as classGrade, c.classStream as classStream
+             SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.id as classId, c.classGrade as classGrade, c.classStream as classStream
             FROM Users u
             LEFT JOIN u.studentProfile sp
             LEFT JOIN sp.schoolClass c
@@ -41,7 +41,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.classGrade as classGrade, c.classStream as classStream
+            SELECT u.id as userId, u.email as email,u.status as status,sp.studentFullName as fullName, sp.studentAdm as adm, sp.gender as gender,sp.phoneNumber as phoneNumber,sp.guardianName as guardianName, c.id as classId, c.classGrade as classGrade, c.classStream as classStream
             FROM Users u
             LEFT JOIN u.studentProfile sp
             LEFT JOIN sp.schoolClass c
