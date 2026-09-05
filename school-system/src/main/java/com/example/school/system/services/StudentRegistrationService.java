@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ public class StudentRegistrationService {
     private final SchoolRepository schoolRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
         School schoolFound = schoolRepository.findById(registerStudentDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
@@ -100,6 +102,7 @@ public class StudentRegistrationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public SchoolApiResponse<?> registerStudents(List<RegisterStudentDTO> students) {
         if (students == null || students.isEmpty()) {
             throw new IllegalArgumentException("At least one student is required");

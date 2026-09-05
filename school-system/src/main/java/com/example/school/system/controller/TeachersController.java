@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.TeacherAddProfile;
@@ -53,6 +54,18 @@ public class TeachersController {
     public ResponseEntity<?> getTeachers(@RequestHeader("Authorization") String authHeader, @PathVariable UUID id) {
         var teachers = teachersService.getTeachers(id, authHeader);
         return ResponseEntity.status(200).body(SchoolApiResponse.success(teachers, "teachers loaded"));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/teachers/paginated")
+    public ResponseEntity<?> getTeachersPaginated(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String search) {
+        var res = teachersService.getTeachersPaginated(id, page, size, search);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(res, "teachers loaded"));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

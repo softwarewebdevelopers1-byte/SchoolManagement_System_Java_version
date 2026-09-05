@@ -1,10 +1,15 @@
 package com.example.school.system.services;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.RegisterTeacherDTO;
@@ -19,6 +24,7 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.TeacherSummaryProjection;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
@@ -40,7 +46,7 @@ public class TeachersService {
     private final PasswordHashing passwordHashing;
     private final JwtValidator jwtValidator;
     private String schoolNotFound = "school not found";
-    
+
     public List<GetTeachersDTO> getTeachers(UUID id, String authHeader) {
         tokenIssuedValidator(id, authHeader);
         List<Object[]> results = userRepository.findUsersBySchoolWithoutRoleNative(
@@ -49,14 +55,12 @@ public class TeachersService {
         return results.stream().map(row -> {
             GetTeachersDTO dto = new GetTeachersDTO();
 
-            // Handle UUID conversion from byte[]
             byte[] userIdBytes = (byte[]) row[0];
             dto.setUsersId(convertBytesToUUID(userIdBytes));
 
             dto.setEmail((String) row[1]);
             dto.setStatus(AccountStatus.valueOf((String) row[2]));
 
-            // Parse roles
             String rolesStr = (String) row[3];
             Set<UserRoles> roles = new HashSet<>();
             if (rolesStr != null && !rolesStr.isEmpty()) {
@@ -70,7 +74,6 @@ public class TeachersService {
             dto.setLastName((String) row[5]);
             dto.setPhoneNumber((String) row[6]);
 
-            // Handle teacherId UUID conversion
             byte[] teacherIdBytes = (byte[]) row[7];
             dto.setTeacherProfileId(convertBytesToUUID(teacherIdBytes));
 
@@ -82,6 +85,50 @@ public class TeachersService {
 
             return dto;
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTeachersPaginated(UUID schoolId, int page, int size, String search) {
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
+        Page<TeacherSummaryProjection> result = userRepository.findTeacherSummariesBySchool(
+                schoolId, UserRoles.STUDENT, pageable);
+
+        List<GetTeachersDTO> content = result.getContent().stream().map(t -> {
+            GetTeachersDTO dto = new GetTeachersDTO();
+            dto.setUsersId(t.getUserId());
+            dto.setEmail(t.getEmail());
+            dto.setStatus(t.getStatus());
+            dto.setRoles(t.getRoles());
+            dto.setFirstName(t.getFirstName());
+            dto.setLastName(t.getLastName());
+            dto.setPhoneNumber(t.getPhoneNumber());
+            dto.setTeacherProfileId(t.getTeacherId());
+            if (t.getClassGrade() != null && t.getClassStream() != null) {
+                dto.setSchoolClass(t.getClassGrade() + " " + t.getClassStream());
+            }
+            return dto;
+        }).toList();
+
+        List<GetTeachersDTO> filtered = content.stream()
+                .filter(dto -> {
+                    if (search == null || search.isBlank()) return true;
+                    String q = search.toLowerCase();
+                    return (dto.getFirstName() != null && dto.getFirstName().toLowerCase().contains(q))
+                            || (dto.getLastName() != null && dto.getLastName().toLowerCase().contains(q))
+                            || (dto.getEmail() != null && dto.getEmail().toLowerCase().contains(q))
+                            || (dto.getSchoolClass() != null && dto.getSchoolClass().toLowerCase().contains(q));
+                })
+                .toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", filtered);
+        response.put("pagination", Map.of(
+                "page", page + 1,
+                "limit", size,
+                "total", result.getTotalElements(),
+                "totalPages", result.getTotalPages()
+        ));
+        return response;
     }
 
     // Helper method to convert byte[] to UUID

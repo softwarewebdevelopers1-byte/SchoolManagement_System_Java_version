@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserDeleteService {
     private final UserRepository userRepository;
+
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public SchoolApiResponse<?> deleteUser(UUID id, String email) {
 
         var user = userRepository.findByIdAndEmail(id, email)

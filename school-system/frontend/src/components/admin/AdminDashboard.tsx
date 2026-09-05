@@ -1190,7 +1190,6 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "teachers") {
       return (
         <TeachersTab
-          teachers={teachers}
           classes={classes}
           onSaveTeacher={saveTeacher}
           onDeleteTeacher={deleteTeacher}

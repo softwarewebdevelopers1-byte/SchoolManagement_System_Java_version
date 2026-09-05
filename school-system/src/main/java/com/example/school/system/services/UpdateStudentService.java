@@ -2,6 +2,7 @@ package com.example.school.system.services;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class UpdateStudentService {
     private final StudentRepository studentRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void updateStudent(UpdateStudentDTO updateStudentDTO) {
         log.info("Id update trial {}, student details \n name: {} \n email: {} \n status: {} ",
                 updateStudentDTO.studentId(),

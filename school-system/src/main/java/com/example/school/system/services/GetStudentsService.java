@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,7 @@ public class GetStudentsService {
         // BEFORE: 1 query for existence + 1 page query + N+1 for enrollments
         // AFTER:  1 page query + 1 batched enrollment query
         @Transactional(readOnly = true)
+        @Cacheable(cacheNames = "studentRosterPages", key = "#schoolClassDTO.classId() + ':' + #page + ':' + #size")
         public PageResponse<StudentSummaryDTO> getStudentByClass(GetStudentsOfSpecificClass schoolClassDTO, int page, int size) {
                 size = Math.min(size, 100);
                 Pageable pageable = PageRequest.of(page, size, Sort.by("studentFullName").ascending());
@@ -69,6 +71,7 @@ public class GetStudentsService {
         }
 
         @Transactional(readOnly = true)
+        @Cacheable(cacheNames = "studentRosterPages", key = "'all:' + #getAllStudentsDTO.schoolId() + ':' + #page + ':' + #size")
         public PageResponse<StudentSummaryDTO> getAllStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
                 Page<StudentsLoaded> studentPage = userRepository.findLiveStudentsBySchoolIdWithRole(
@@ -100,6 +103,7 @@ public class GetStudentsService {
         }
 
         @Transactional(readOnly = true)
+        @Cacheable(cacheNames = "studentRosterPages", key = "'exited:' + #getAllStudentsDTO.schoolId() + ':' + #page + ':' + #size")
         public PageResponse<StudentSummaryDTO> getAllExitedStudents(GetAllStudentsDTO getAllStudentsDTO, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
                 Page<StudentsLoaded> studentPage = userRepository.findExitedStudentsBySchoolIdWithRole(

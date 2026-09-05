@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.BulkEnrollElectiveDTO;
@@ -93,6 +94,7 @@ public class UserUpdate {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void deleteAccount(UUID id) {
         Users userFound = userRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"));
@@ -103,6 +105,7 @@ public class UserUpdate {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void suspendAccount(UUID id) {
         userRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
@@ -111,6 +114,7 @@ public class UserUpdate {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void deActivateAccount(UUID id) {
         userRepository.findById(id).orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
                 .setStatus(AccountStatus.INACTIVE);
@@ -362,6 +366,7 @@ public class UserUpdate {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void deleteExitedStudent(UUID recordId) {
         studentRepository.findById(recordId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("exited student record not found"));

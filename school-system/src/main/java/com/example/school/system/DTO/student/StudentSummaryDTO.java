@@ -13,7 +13,7 @@ public record StudentSummaryDTO(
         String guardianName,
         Gender gender,
         AccountStatus status,
-        UUID classId,
+        UUID classId,      // <--- Field 9 is classId (UUID), NOT a List<UUID>!
         Integer grade,
         String stream
 ) {}

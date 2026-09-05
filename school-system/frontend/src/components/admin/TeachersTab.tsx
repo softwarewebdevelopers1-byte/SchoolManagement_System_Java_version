@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Class } from "./types";
 import PhoneInput from "../shared/PhoneInput";
+import { request, getSchoolId } from "../../lib/api";
+import { normalizeStatus } from "../../lib/adminData";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -455,7 +457,7 @@ const StaffFormModal: React.FC<{
 };
 
 interface TeachersTabProps {
-  teachers: any;
+  teachers?: any[];
   classes: Class[];
   onSaveTeacher: (
     payload: {
@@ -478,7 +480,7 @@ interface TeachersTabProps {
 }
 
 export const TeachersTab: React.FC<TeachersTabProps> = ({
-  teachers,
+  teachers: propTeachers,
   classes,
   onSaveTeacher,
   onDeleteTeacher,
@@ -491,25 +493,68 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
+  const [serverTeachers, setServerTeachers] = useState<any[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredTeachers = teachers.filter(
-    (teacher: any) =>
-      teacher.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-      teacher.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-      teacher.department?.toLowerCase().includes(search.toLowerCase()) ||
-      teacher.email.toLowerCase().includes(search.toLowerCase()) ||
-      teacher.roleLabel.toLowerCase().includes(search.toLowerCase()),
-  );
-  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pagedTeachers = filteredTeachers.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const useServerPagination = !propTeachers || propTeachers.length === 0;
+
+  const fetchTeachers = async () => {
+    if (!useServerPagination) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const schoolId = getSchoolId();
+      if (!schoolId) return;
+      const response: any = await request(
+        `/users/${encodeURIComponent(schoolId)}/teachers/paginated?page=${page - 1}&size=${pageSize}&search=${encodeURIComponent(search)}`,
+      );
+      const data = response?.data || [];
+      const pagination = response?.pagination || {};
+      setServerTeachers(data);
+      setTotalPages(pagination.totalPages || 1);
+      setTotalElements(pagination.total || 0);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load staff.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (useServerPagination) {
+      fetchTeachers();
+    }
+  }, [useServerPagination, page, search]);
+
+  const teachers = useServerPagination ? serverTeachers : propTeachers;
+  const isFirstPage = page === 1;
+  const isLastPage = page >= totalPages;
+
+  const filteredTeachers = useServerPagination
+    ? teachers
+    : teachers.filter(
+        (teacher: any) =>
+          teacher.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+          teacher.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+          teacher.department?.toLowerCase().includes(search.toLowerCase()) ||
+          teacher.email.toLowerCase().includes(search.toLowerCase()) ||
+          teacher.roleLabel.toLowerCase().includes(search.toLowerCase()),
+      );
+  const clientTotalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize));
+  const currentPage = Math.min(page, useServerPagination ? totalPages : clientTotalPages);
+  const pagedTeachers = useServerPagination
+    ? filteredTeachers
+    : filteredTeachers.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      );
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, useServerPagination]);
 
   const openAddTeacher = (editId?: string) => {
     const teacher = editId
@@ -565,6 +610,22 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           </button>
         </div>
       </div>
+
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            background: "#fdeaea",
+            color: "#a32d2d",
+            borderRadius: 8,
+            marginBottom: 12,
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       <div
         style={{
@@ -704,7 +765,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           </tbody>
         </table>
       </div>
-      {filteredTeachers.length > pageSize && (
+      {(useServerPagination ? totalPages : clientTotalPages) > 1 && (
         <div
           style={{
             display: "flex",
@@ -718,21 +779,23 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           <span
             style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
           >
-            Page {currentPage} of {totalPages} | {filteredTeachers.length} staff
+            Page {currentPage} of {useServerPagination ? totalPages : clientTotalPages} | {totalElements || filteredTeachers.length} staff
           </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
               style={secondaryButtonStyle}
-              disabled={currentPage <= 1}
+              disabled={isFirstPage || loading}
               onClick={() => setPage((previous) => Math.max(1, previous - 1))}
             >
               Previous
             </button>
             <button
               style={secondaryButtonStyle}
-              disabled={currentPage >= totalPages}
+              disabled={isLastPage || loading}
               onClick={() =>
-                setPage((previous) => Math.min(totalPages, previous + 1))
+                setPage((previous) =>
+                  Math.min(useServerPagination ? totalPages : clientTotalPages, previous + 1),
+                )
               }
             >
               Next
