@@ -1452,6 +1452,7 @@ export const StudentsTab: React.FC<
     totalElements: number;
     totalPages: number;
   } | null>(null);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1675,7 +1676,7 @@ export const StudentsTab: React.FC<
   const schoolId = getSchoolId();
 
   const fetchPage = async () => {
-    if (!schoolId) return;
+    if (!schoolId || isClassFiltered) return;
     setLoading(true);
     try {
       const response = await api.get<{
@@ -1698,14 +1699,16 @@ export const StudentsTab: React.FC<
   };
 
   useEffect(() => {
-    fetchPage();
-  }, [schoolId, page, pageSize]);
+    if (!isClassFiltered) {
+      fetchPage();
+    }
+  }, [schoolId, page, pageSize, isClassFiltered]);
 
   /* =====================================================
       FILTERING
       ===================================================== */
 
-  const baseContent = pageResponse?.content || [];
+  const baseContent = isClassFiltered ? allStudents : (pageResponse?.content || []);
 
   const filteredStudents = baseContent.filter((student) => {
     const query = search.toLowerCase();
