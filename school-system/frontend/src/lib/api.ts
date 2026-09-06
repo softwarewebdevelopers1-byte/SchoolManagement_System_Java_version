@@ -1110,6 +1110,25 @@ export const superAdminApi = {
       const query = new URLSearchParams({ term: String(term), academicYear, examType });
       return request<any>(`/stats/marks/class/${encodeURIComponent(classId)}/analytics?${query.toString()}`);
     },
+    getGradeAnalytics: async (grade: string, term: number, academicYear: string, examType: string): Promise<any> => {
+      const query = new URLSearchParams({ term: String(term), academicYear, examType });
+      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/analytics?${query.toString()}`);
+    },
+    getGradeDistribution: async (grade: string, term: number, academicYear: string, examType: string): Promise<any> => {
+      const query = new URLSearchParams({ term: String(term), academicYear, examType });
+      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/distribution?${query.toString()}`);
+    },
+    getClassDistribution: async (classId: string, term: number, academicYear: string, examType: string): Promise<any> => {
+      const query = new URLSearchParams({ term: String(term), academicYear, examType });
+      return request<any>(`/stats/marks/class/${encodeURIComponent(classId)}/distribution?${query.toString()}`);
+    },
+    getTermlyTrend: async (grade: string, academicYear: string): Promise<any> => {
+      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/termly-trend?academicYear=${encodeURIComponent(academicYear)}`);
+    },
+    getAtRiskStudents: async (grade: string, academicYear: string, threshold: number): Promise<any> => {
+      const query = new URLSearchParams({ grade, academicYear, threshold: String(threshold) });
+      return request<any>(`/stats/students/at-risk?${query.toString()}`);
+    },
     getTeacherSummary: async (): Promise<any> => {
       return request<any>("/stats/teachers/summary");
     }

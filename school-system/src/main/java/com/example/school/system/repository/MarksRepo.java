@@ -10,8 +10,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.MarksRow;
+import com.example.school.system.projection.AtRiskStudentProjection;
+import com.example.school.system.projection.GradeBandCountProjection;
+import com.example.school.system.projection.SubjectAnalyticsGradeProjection;
 import com.example.school.system.projection.SubjectAnalyticsProjection;
 import com.example.school.system.projection.SubjectGradeDistributionProjection;
+import com.example.school.system.projection.TermlyTrendProjection;
 
 public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
         @Query("""
@@ -36,7 +40,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 SELECT
                     s.id AS subjectId,
                     s.subject_name AS subjectName,
-                    AVG(m.average_marks_percentage) AS avgPercentage,
+                    AVG(m.`average_marks%`) AS avgPercentage,
                     AVG(m.points) AS avgPoints,
                     COUNT(m.id) AS studentCount
                 FROM marks m
@@ -83,7 +87,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 SELECT
                     s.id AS subjectId,
                     s.subject_name AS subjectName,
-                    AVG(m.average_marks_percentage) AS avgPercentage,
+                    AVG(m.`average_marks%`) AS avgPercentage,
                     AVG(m.points) AS avgPoints
                 FROM marks m
                 JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
@@ -101,6 +105,219 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 @Param("academicYear") String academicYear,
                 @Param("term") Integer term,
                 @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    s.id AS subjectId,
+                    s.subject_name AS subjectName,
+                    c.stream AS stream,
+                    AVG(m.`average_marks%`) AS avgPercentage,
+                    AVG(m.points) AS avgPoints,
+                    COUNT(m.id) AS studentCount
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN subjects s ON sj.subject_id = s.id
+                JOIN classes c ON sj.class_id = c.class_id
+                WHERE c.grade = :grade
+                  AND c.class_stream IS NOT NULL
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                GROUP BY s.id, s.subject_name, c.stream
+                """, nativeQuery = true)
+        List<SubjectAnalyticsGradeProjection> findSubjectAnalyticsByGrade(
+                @Param("grade") String grade,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    s.id AS subjectId,
+                    s.subject_name AS subjectName,
+                    AVG(m.`average_marks%`) AS avgPercentage,
+                    AVG(m.points) AS avgPoints,
+                    COUNT(m.id) AS studentCount,
+                    m.grade AS grade,
+                    COUNT(m.id) AS count
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN subjects s ON sj.subject_id = s.id
+                JOIN classes c ON sj.class_id = c.class_id
+                WHERE c.grade = :grade
+                  AND c.class_stream IS NOT NULL
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                  AND m.grade IS NOT NULL
+                GROUP BY s.id, s.subject_name, m.grade
+                """, nativeQuery = true)
+        List<SubjectGradeDistributionProjection> findSubjectGradeDistributionByGrade(
+                @Param("grade") String grade,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    s.id AS subjectId,
+                    s.subject_name AS subjectName,
+                    AVG(m.`average_marks%`) AS avgPercentage,
+                    AVG(m.points) AS avgPoints,
+                    COUNT(m.id) AS studentCount,
+                    m.grade AS grade,
+                    COUNT(m.id) AS count
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN subjects s ON sj.subject_id = s.id
+                WHERE sj.class_id = :classId
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                  AND m.grade IS NOT NULL
+                GROUP BY s.id, s.subject_name, m.grade
+                """, nativeQuery = true)
+        List<SubjectGradeDistributionProjection> findSubjectGradeDistributionByClassDetailed(
+                @Param("classId") UUID classId,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    m.grade AS grade,
+                    COUNT(m.id) AS count
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                WHERE sj.class_id = :classId
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                  AND m.grade IS NOT NULL
+                GROUP BY m.grade
+                """, nativeQuery = true)
+        List<GradeBandCountProjection> findGradeBandCountsByClass(
+                @Param("classId") UUID classId,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    m.grade AS grade,
+                    COUNT(m.id) AS count
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN classes c ON sj.class_id = c.class_id
+                WHERE c.grade = :grade
+                  AND c.class_stream IS NOT NULL
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                  AND m.grade IS NOT NULL
+                GROUP BY m.grade
+                """, nativeQuery = true)
+        List<GradeBandCountProjection> findGradeBandCountsByGrade(
+                @Param("grade") String grade,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
+        @Query(value = """
+                SELECT
+                    ms.current_school_term AS term,
+                    AVG(m.`average_marks%`) AS avgPercentage,
+                    AVG(m.points) AS avgPoints,
+                    COUNT(DISTINCT m.student_id) AS studentCount
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                WHERE sj.class_id = :classId
+                  AND ms.academic_year = :academicYear
+                  AND ms.status = 'SUBMITTED'
+                GROUP BY ms.current_school_term
+                ORDER BY ms.current_school_term ASC
+                """, nativeQuery = true)
+        List<TermlyTrendProjection> findTermlyTrendByClass(
+                @Param("classId") UUID classId,
+                @Param("academicYear") String academicYear);
+
+        @Query(value = """
+                SELECT
+                    ms.current_school_term AS term,
+                    AVG(m.`average_marks%`) AS avgPercentage,
+                    AVG(m.points) AS avgPoints,
+                    COUNT(DISTINCT m.student_id) AS studentCount
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN classes c ON sj.class_id = c.class_id
+                WHERE c.grade = :grade
+                  AND ms.academic_year = :academicYear
+                  AND ms.status = 'SUBMITTED'
+                GROUP BY ms.current_school_term
+                ORDER BY ms.current_school_term ASC
+                """, nativeQuery = true)
+        List<TermlyTrendProjection> findTermlyTrendByGrade(
+                @Param("grade") String grade,
+                @Param("academicYear") String academicYear);
+
+        @Query(value = """
+                SELECT
+                    sp.student_id AS studentId,
+                    sp.student_name AS studentName,
+                    sp.student_adm AS admissionNo,
+                    AVG(m.`average_marks%`) AS avgPercentage
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN students_profile sp ON m.student_id = sp.student_id
+                WHERE sp.class_id = :classId
+                  AND ms.academic_year = :academicYear
+                  AND ms.status = 'SUBMITTED'
+                  AND m.`average_marks%` IS NOT NULL
+                GROUP BY sp.student_id, sp.student_name, sp.student_adm
+                HAVING AVG(m.`average_marks%`) < :threshold
+                ORDER BY avgPercentage ASC
+                """, nativeQuery = true)
+        List<AtRiskStudentProjection> findAtRiskStudentsByClass(
+                @Param("classId") UUID classId,
+                @Param("academicYear") String academicYear,
+                @Param("threshold") double threshold);
+
+        @Query(value = """
+                SELECT
+                    sp.student_id AS studentId,
+                    sp.student_name AS studentName,
+                    sp.student_adm AS admissionNo,
+                    AVG(m.`average_marks%`) AS avgPercentage
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN students_profile sp ON m.student_id = sp.student_id
+                WHERE sp.class_id IN (
+                    SELECT c.class_id FROM classes c WHERE c.school = :schoolId AND c.grade = :grade
+                )
+                  AND ms.academic_year = :academicYear
+                  AND ms.status = 'SUBMITTED'
+                  AND m.`average_marks%` IS NOT NULL
+                GROUP BY sp.student_id, sp.student_name, sp.student_adm
+                HAVING AVG(m.`average_marks%`) < :threshold
+                ORDER BY avgPercentage ASC
+                """, nativeQuery = true)
+        List<AtRiskStudentProjection> findAtRiskStudentsByGrade(
+                @Param("schoolId") UUID schoolId,
+                @Param("grade") String grade,
+                @Param("academicYear") String academicYear,
+                @Param("threshold") double threshold);
 }
 
 

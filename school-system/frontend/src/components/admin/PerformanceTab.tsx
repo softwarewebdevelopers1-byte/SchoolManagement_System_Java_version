@@ -5,6 +5,19 @@ import * as XLSX from "xlsx";
 import { api } from "../../lib/api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
 import { Class, Student, Subject } from "./types";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
 
 interface PerformanceTabProps {
   classes: Class[];
@@ -55,6 +68,17 @@ const inputStyle: React.CSSProperties = {
   background: "var(--cream)",
 };
 
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "8px 16px",
+  background: "var(--sand)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--textM)",
+  cursor: "pointer",
+};
+
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
@@ -87,6 +111,11 @@ const toFiniteNumber = (value: unknown): number | null => {
 };
 
 const computeMarkPercentage = (marks: any): number | null => {
+  if (!marks) return null;
+
+  const avgPct = toFiniteNumber(marks.avgPercentage);
+  if (avgPct !== null) return Math.min(100, Math.max(0, Math.round(avgPct)));
+
   const finalScore = toFiniteNumber(marks?.finalScore);
   if (finalScore !== null) return Math.min(100, Math.max(0, Math.round(finalScore)));
 
@@ -94,7 +123,7 @@ const computeMarkPercentage = (marks: any): number | null => {
   const catMaxes = [marks?.cat1Max, marks?.cat2Max, marks?.cat3Max, marks?.cat4Max, marks?.cat5Max];
   const exam = toFiniteNumber(marks?.exam);
   const examMax = toFiniteNumber(marks?.examMax) ?? 100;
-  
+
   let totalScore = 0;
   let totalMax = 0;
 
@@ -133,6 +162,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
   const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [rankingMode, setRankingMode] = useState<"total_points" | "total_marks">("total_points");
   const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [termlyTrend, setTermlyTrend] = useState<any[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [showTable, setShowTable] = useState(false);
+  const [tableLoaded, setTableLoaded] = useState(false);
+  const [tablePage, setTablePage] = useState(0);
 
   const uniqueGrades = useMemo(() => {
     const grades = Array.from(new Set(classes.map(c => c.grade)));
@@ -267,9 +303,66 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
   };
 
+  const loadChartData = async () => {
+    if (targetClasses.length === 0) {
+      setChartData([]);
+      return;
+    }
+    setChartLoading(true);
+    try {
+      const term = targetClasses[0].term;
+      const year = String(targetClasses[0].year || "");
+      const examType = targetClasses[0].examType || "opener";
+      let data: any = null;
+      if (currentGrade) {
+        const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
+        data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/distribution?${query.toString()}`);
+      }
+      const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
+      setChartData(subjects);
+    } catch (err: any) {
+      setMsg({ text: err.message || "Failed to load analytics.", type: "error" });
+      setChartData([]);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const loadTermlyTrend = async () => {
+    if (targetClasses.length === 0) {
+      setTermlyTrend([]);
+      return;
+    }
+    setTrendLoading(true);
+    try {
+      const year = String(targetClasses[0].year || "");
+      let data: any[] = [];
+      if (currentGrade) {
+        data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
+      }
+      setTermlyTrend(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setMsg({ text: err.message || "Failed to load termly trend.", type: "error" });
+      setTermlyTrend([]);
+    } finally {
+      setTrendLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadPerformance();
-  }, [selectedId, targetClasses[0]?.term, targetClasses[0]?.year, targetClasses[0]?.examType, rankingMode, cbcBands.length]);
+    setShowTable(false);
+    setTableLoaded(false);
+    setTablePage(0);
+    loadChartData();
+    loadTermlyTrend();
+  }, [selectedId, targetClasses[0]?.term, targetClasses[0]?.year, targetClasses[0]?.examType]);
+
+  useEffect(() => {
+    if (showTable && !tableLoaded) {
+      loadPerformance();
+      setTableLoaded(true);
+    }
+  }, [showTable, tableLoaded]);
 
   const handleSendWhatsappMarks = async () => {
     if (!currentClass) return;
@@ -299,7 +392,6 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
   };
 
   const rankingLabel = rankingMode === "total_marks" ? "Total Marks" : "Total Points";
-  const tableColumnCount = 6 + availableSubjects.length;
 
   const handleDownloadExcel = () => {
     if (performanceRows.length === 0) return;
@@ -361,6 +453,62 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
 
   const scoredRows = performanceRows.filter(r => r.scoredSubjects > 0);
   const topStudent = performanceRows[0] || null;
+
+  const gradeKeys = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const keys = new Set<string>();
+    chartData.forEach((item) => {
+      Object.keys(item.gradeDistribution || {}).forEach((key) => keys.add(key));
+    });
+    return Array.from(keys);
+  }, [chartData]);
+
+  const gradeColorMap: Record<string, string> = {
+    A: "#163325",
+    "A-": "#1f4d33",
+    "B+": "#2d6a4f",
+    B: "#c9963d",
+    "B-": "#b07d2e",
+    "C+": "#d4a853",
+    C: "#b42318",
+    "C-": "#8b1a12",
+    "D+": "#6d7c74",
+    D: "#5a6b62",
+    "D-": "#485851",
+    E: "#3d4240",
+  };
+
+  const getBandColor = (band: string) => gradeColorMap[band] || `hsl(${band.charCodeAt(0) * 37 % 360}, 55%, 35%)`;
+
+  const subjectAvgData = useMemo(() => {
+    return chartData.map((item) => ({
+      name: (item.subjectName || "Subject").slice(0, 20),
+      avg: item.avgPercentage || 0,
+    }));
+  }, [chartData]);
+
+  const gradeDistData = useMemo(() => {
+    return chartData.map((item) => {
+      const entry: any = { subject: (item.subjectName || "Subject").slice(0, 20) };
+      Object.entries(item.gradeDistribution || {}).forEach(([grade, count]) => {
+        entry[grade] = count;
+      });
+      return entry;
+    });
+  }, [chartData]);
+
+  const termlyData = useMemo(() => {
+    return termlyTrend.map((item) => ({
+      term: `Term ${item.term}`,
+      avg: item.avgPercentage || 0,
+    }));
+  }, [termlyTrend]);
+
+  const totalTablePages = Math.max(1, Math.ceil(performanceRows.length / 20));
+  const tableRows = useMemo(() => {
+    const start = tablePage * 20;
+    return performanceRows.slice(start, start + 20);
+  }, [performanceRows, tablePage]);
 
   return (
     <div className="anim" style={{ display: "grid", gap: 16 }}>
@@ -439,36 +587,125 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
         </div>
       )}
 
-      <div style={{ ...panelStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", color: "var(--text)" }}>
-          <thead>
-            <tr style={{ textAlign: "left", background: "var(--sand)" }}>
-              <th style={{ ...tableHeadStyle, position: "sticky", left: 0, top: 0, zIndex: 15, background: "var(--sand)", boxShadow: "2px 0 5px rgba(0,0,0,0.05), inset 0 -1px 0 var(--borderL)" }}>Rank</th>
-              <th style={{ ...tableHeadStyle, position: "sticky", left: 60, top: 0, zIndex: 15, background: "var(--sand)", boxShadow: "2px 0 5px rgba(0,0,0,0.05), inset 0 -1px 0 var(--borderL)", minWidth: 180 }}>Student</th>
-              <th style={tableHeadStyle}>Adm No</th>
-              <th style={tableHeadStyle}>Stream</th>
-              <th style={{ ...tableHeadStyle, background: rankingMode === "total_points" ? "var(--gold)" : undefined, color: rankingMode === "total_points" ? "#fff" : undefined, borderRadius: rankingMode === "total_points" ? "6px 6px 0 0" : undefined }}>Points</th>
-              <th style={{ ...tableHeadStyle, background: rankingMode === "total_marks" ? "var(--gold)" : undefined, color: rankingMode === "total_marks" ? "#fff" : undefined, borderRadius: rankingMode === "total_marks" ? "6px 6px 0 0" : undefined }}>Total Marks</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr><td colSpan={tableColumnCount} style={{ ...tableCellStyle, padding: "40px", textAlign: "center" }}>Loading performance data...</td></tr>
-            ) : performanceRows.length === 0 ? (
-              <tr><td colSpan={tableColumnCount} style={{ ...tableCellStyle, padding: "40px", textAlign: "center", color: "var(--textMut)" }}>No results found for this scope.</td></tr>
-            ) : performanceRows.map(row => (
-              <tr key={row.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                <td style={{ ...tableCellStyle, position: "sticky", left: 0, zIndex: 5, background: "var(--white)", boxShadow: "2px 0 5px rgba(0,0,0,0.05)" }}>{row.rank}</td>
-                <td style={{ ...tableCellStyle, position: "sticky", left: 60, zIndex: 5, background: "var(--white)", boxShadow: "2px 0 5px rgba(0,0,0,0.05)", fontWeight: 600 }}>{row.name}</td>
-                <td style={{ ...tableCellStyle, color: "var(--textMut)" }}>{row.admissionNo}</td>
-                <td style={{ ...tableCellStyle, fontSize: 12 }}>{row.stream}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 700, color: "var(--gold)", background: rankingMode === "total_points" ? "var(--goldP)" : undefined }}>{row.points}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 700, background: rankingMode === "total_marks" ? "var(--goldP)" : undefined }}>{row.total}</td>
+      {!showTable ? (
+        <div style={{ ...panelStyle, display: "grid", gap: 14 }}>
+          {chartLoading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--textMut)" }}>Loading analytics...</div>
+          ) : chartData.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--textMut)" }}>No analytics data available for this scope.</div>
+          ) : (
+            <>
+              <div>
+                <p style={{ ...labelStyle, marginBottom: 8 }}>Subject Averages</p>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={subjectAvgData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6d7c74" }} interval={0} angle={-25} textAnchor="end" height={60} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
+                    <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
+                    <Bar dataKey="avg" name="Avg %" radius={[6, 6, 0, 0]}>
+                      {subjectAvgData.map((entry, index) => (
+                        <Cell key={index} fill={gradeColorMap[resolveCbcBand(entry.avg, cbcBands).cbcBand] || "#c9963d"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p style={{ ...labelStyle, marginBottom: 8 }}>Grade Distribution</p>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={gradeDistData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                    <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6d7c74" }} interval={0} angle={-25} textAnchor="end" height={60} />
+                    <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
+                    <Legend />
+                    {gradeKeys.map((key) => (
+                      <Bar key={key} dataKey={key} stackId="1" fill={getBandColor(key)} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p style={{ ...labelStyle, marginBottom: 8 }}>Termly Trend</p>
+                {trendLoading ? (
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--textMut)" }}>Loading trend...</div>
+                ) : termlyTrend.length === 0 ? (
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--textMut)" }}>No termly data available.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={termlyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                      <XAxis dataKey="term" tick={{ fontSize: 11, fill: "#6d7c74" }} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
+                      <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="avg" name="Avg %" stroke="#c9963d" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <button type="button" onClick={() => { setShowTable(true); setTableLoaded(false); }} style={{ ...inputStyle, background: "var(--gold)", color: "#fff", cursor: "pointer", fontWeight: 700, width: "auto", padding: "10px 22px" }}>
+                  View Student Records
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div style={{ ...panelStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>Student records</span>
+            <button type="button" onClick={() => setShowTable(false)} style={{ ...secondaryButtonStyle, padding: "6px 14px", fontSize: 12 }}>
+              Hide Records
+            </button>
+          </div>
+          <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", color: "var(--text)" }}>
+            <thead>
+              <tr style={{ textAlign: "left", background: "var(--sand)" }}>
+                <th style={{ ...tableHeadStyle, position: "sticky", left: 0, top: 0, zIndex: 15, background: "var(--sand)", boxShadow: "2px 0 5px rgba(0,0,0,0.05), inset 0 -1px 0 var(--borderL)" }}>Rank</th>
+                <th style={{ ...tableHeadStyle, position: "sticky", left: 60, top: 0, zIndex: 15, background: "var(--sand)", boxShadow: "2px 0 5px rgba(0,0,0,0.05), inset 0 -1px 0 var(--borderL)", minWidth: 180 }}>Student</th>
+                <th style={tableHeadStyle}>Adm No</th>
+                <th style={tableHeadStyle}>Stream</th>
+                <th style={{ ...tableHeadStyle, background: rankingMode === "total_points" ? "var(--gold)" : undefined, color: rankingMode === "total_points" ? "#fff" : undefined, borderRadius: rankingMode === "total_points" ? "6px 6px 0 0" : undefined }}>Points</th>
+                <th style={{ ...tableHeadStyle, background: rankingMode === "total_marks" ? "var(--gold)" : undefined, color: rankingMode === "total_marks" ? "#fff" : undefined, borderRadius: rankingMode === "total_marks" ? "6px 6px 0 0" : undefined }}>Total Marks</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={6} style={{ ...tableCellStyle, padding: "40px", textAlign: "center" }}>Loading performance data...</td></tr>
+              ) : performanceRows.length === 0 ? (
+                <tr><td colSpan={6} style={{ ...tableCellStyle, padding: "40px", textAlign: "center", color: "var(--textMut)" }}>No results found for this scope.</td></tr>
+              ) : tableRows.map((row) => (
+                <tr key={row.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <td style={{ ...tableCellStyle, position: "sticky", left: 0, zIndex: 5, background: "var(--white)", boxShadow: "2px 0 5px rgba(0,0,0,0.05)" }}>{row.rank}</td>
+                  <td style={{ ...tableCellStyle, position: "sticky", left: 60, zIndex: 5, background: "var(--white)", boxShadow: "2px 0 5px rgba(0,0,0,0.05)", fontWeight: 600 }}>{row.name}</td>
+                  <td style={{ ...tableCellStyle, color: "var(--textMut)" }}>{row.admissionNo}</td>
+                  <td style={{ ...tableCellStyle, fontSize: 12 }}>{row.stream}</td>
+                  <td style={{ ...tableCellStyle, fontWeight: 700, color: "var(--gold)", background: rankingMode === "total_points" ? "var(--goldP)" : undefined }}>{row.points}</td>
+                  <td style={{ ...tableCellStyle, fontWeight: 700, background: rankingMode === "total_marks" ? "var(--goldP)" : undefined }}>{row.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {totalTablePages > 1 && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
+                Page {tablePage + 1} of {totalTablePages} | {performanceRows.length} learners
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={secondaryButtonStyle} disabled={tablePage === 0 || isLoading} onClick={() => setTablePage((p) => Math.max(0, p - 1))}>
+                  Previous
+                </button>
+                <button style={secondaryButtonStyle} disabled={tablePage >= totalTablePages - 1 || isLoading} onClick={() => setTablePage((p) => Math.min(totalTablePages - 1, p + 1))}>
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

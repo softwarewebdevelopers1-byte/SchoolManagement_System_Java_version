@@ -39,10 +39,25 @@ const tdStyle: React.CSSProperties = {
   borderTop: "1px solid var(--borderLight)",
 };
 
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "8px 16px",
+  background: "var(--sand)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--textM)",
+  cursor: "pointer",
+};
+
 export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classes }) => {
   const [classId, setClassId] = useState(classes[0]?.classId || "");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [records, setRecords] = useState<any[]>([]);
+  const [page, setPage] = useState(0);
+  const [size] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showTable, setShowTable] = useState(false);
@@ -52,9 +67,11 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
     setLoading(true);
     setError("");
     try {
-      const data: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/daily?date=${date}`);
+      const data: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/daily?date=${date}&page=${page}&size=${size}`);
       const content = Array.isArray(data) ? data : data?.data || [];
       setRecords(content);
+      setTotalPages(data?.totalPages || 1);
+      setTotalElements(data?.totalElements || 0);
     } catch (err: any) {
       setError(err?.message || "Failed to load daily attendance.");
       setRecords([]);
@@ -65,6 +82,7 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
 
   useEffect(() => {
     setShowTable(false);
+    setPage(0);
     fetchData();
   }, [classId, date]);
 
@@ -191,6 +209,28 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
         </div>
       )}
 
+      {!showTable && !loading && records.length > 0 && (
+        <div style={{ textAlign: "center", marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowTable(true)}
+            style={{
+              padding: "10px 22px",
+              background: "var(--green)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontFamily: "var(--sans)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            View Student Records
+          </button>
+        </div>
+      )}
+
       {showTable && (
         <div style={{ overflowX: "auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -232,7 +272,7 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
               )}
               {!loading && records.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Attendance sheet for this class is not recorded yet</td>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
                 </tr>
               )}
               {records.map((r: any) => (
@@ -245,6 +285,21 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
+                Page {page + 1} of {totalPages} | {totalElements} students
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={secondaryButtonStyle} disabled={page === 0 || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                  Previous
+                </button>
+                <button style={secondaryButtonStyle} disabled={page >= totalPages - 1 || loading} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}>
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

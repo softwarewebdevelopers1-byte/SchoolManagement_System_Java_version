@@ -77,6 +77,9 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
 
     long countBySchoolId(UUID schoolId);
 
+    @Query("SELECT c FROM SchoolClass c WHERE c.school.id = :schoolId AND c.classGrade = :grade AND c.completed = false")
+    List<SchoolClass> findBySchoolIdAndGradeAndCompletedFalse(@Param("schoolId") UUID schoolId, @Param("grade") Integer grade);
+
     @Query(value = """
             SELECT
                 c.stream AS stream,

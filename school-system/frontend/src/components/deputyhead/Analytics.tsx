@@ -1,9 +1,10 @@
 // components/deputyhead/Analytics.tsx
-import React from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { SectionHeader } from "./shared/SectionHeader";
 import { MetricCard } from "./shared/MetricCard";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
+import { api } from "../../lib/api";
 import {
   BarChart,
   Bar,
@@ -13,6 +14,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 interface AnalyticsProps {
@@ -34,12 +40,51 @@ interface AnalyticsProps {
 export const Analytics: React.FC<AnalyticsProps> = ({ 
   classes = [], 
   staff = [], 
+  students = [],
   term = 1,
   year = 2024,
   overviewStats,
 }) => {
   const sorted = [...classes].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
   const activeTeachers = staff.filter((t) => t.status === "active" || t.status === "Active").length;
+
+  const [termlyTrend, setTermlyTrend] = useState<any[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [atRiskData, setAtRiskData] = useState<any[]>([]);
+  const [atRiskLoading, setAtRiskLoading] = useState(false);
+
+  const firstGrade = classes[0]?.grade;
+
+  useEffect(() => {
+    if (!firstGrade) return;
+    const yearStr = String(year || "");
+    setTrendLoading(true);
+    api.get(`/stats/marks/grade/${encodeURIComponent(firstGrade)}/termly-trend?academicYear=${encodeURIComponent(yearStr)}`)
+      .then((data: any) => setTermlyTrend(Array.isArray(data) ? data : []))
+      .catch(() => setTermlyTrend([]))
+      .finally(() => setTrendLoading(false));
+  }, [firstGrade, year]);
+
+  useEffect(() => {
+    if (!firstGrade) return;
+    const yearStr = String(year || "");
+    setAtRiskLoading(true);
+    api.get(`/stats/students/at-risk?grade=${encodeURIComponent(firstGrade)}&academicYear=${encodeURIComponent(yearStr)}&threshold=50.0`)
+      .then((data: any) => setAtRiskData(Array.isArray(data?.atRiskStudents) ? data.atRiskStudents : []))
+      .catch(() => setAtRiskData([]))
+      .finally(() => setAtRiskLoading(false));
+  }, [firstGrade, year]);
+
+  const termlyData = useMemo(() => {
+    return termlyTrend.map((item) => ({
+      term: `Term ${item.term}`,
+      avg: item.avgPercentage || 0,
+    }));
+  }, [termlyTrend]);
+
+  const atRiskCount = atRiskData.length;
+  const totalStudents = overviewStats?.totalStudents || students.length || 0;
+  const highPerformingCount = Math.max(0, totalStudents - atRiskCount);
 
   // Mock concerns since not in DB yet
   const openConcerns = 0;
@@ -135,6 +180,110 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           </ResponsiveContainer>
         </div>
       )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 13,
+            padding: "1.3rem",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: F.sans,
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: C.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: ".06em",
+              margin: "0 0 1rem",
+            }}
+          >
+            Termly trend
+          </p>
+          {trendLoading ? (
+            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>Loading trend...</div>
+          ) : termlyData.length === 0 ? (
+            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>No termly data available.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={termlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                <XAxis dataKey="term" tick={{ fontSize: 11, fill: "#6d7c74" }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
+                <Tooltip
+                  contentStyle={{
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    fontSize: 12,
+                  }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="avg" name="Avg %" stroke={C.gold} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 13,
+            padding: "1.3rem",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: F.sans,
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: C.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: ".06em",
+              margin: "0 0 1rem",
+            }}
+          >
+            At-risk vs high-performing
+          </p>
+          {atRiskLoading ? (
+            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>Loading...</div>
+          ) : atRiskData.length === 0 ? (
+            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>No at-risk data available.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "At-risk", value: atRiskCount },
+                    { name: "High-performing", value: highPerformingCount },
+                  ]}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                >
+                  <Cell key="at-risk" fill={C.dangerText} />
+                  <Cell key="high" fill={C.successText} />
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    fontSize: 12,
+                  }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         {/* Stream ranking */}
