@@ -21,6 +21,7 @@ import com.example.school.system.projection.AttendanceTermlyProjection;
 import com.example.school.system.repository.AttendanceRecordRepository;
 import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.types.WholeAttendanceSheetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,7 +60,7 @@ public class AdminAttendanceInsightsService {
         }
 
         AttendanceSheet sheet = attendanceSheetRepository
-                .findBySchoolClassClassIdAndDate(classId, date)
+                .findBySchoolClassClassIdAndDateAndStatusIn(classId, date, List.of(WholeAttendanceSheetStatus.LOCKED, WholeAttendanceSheetStatus.SUBMITTED))
                 .orElse(null);
         if (sheet == null || sheet.getAttendanceRecords() == null) {
             return List.of();

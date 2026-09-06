@@ -174,25 +174,20 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
         );
       })()}
 
-      {!showTable && !loading && records.length > 0 && (
-        <div style={{ textAlign: "center", marginTop: 8 }}>
-          <button
-            type="button"
-            onClick={() => setShowTable(true)}
-            style={{
-              padding: "10px 22px",
-              background: "var(--green)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              fontFamily: "var(--sans)",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            View Student Records
-          </button>
+      {!showTable && !loading && records.length === 0 && (
+        <div
+          style={{
+            padding: 16,
+            background: "#fff8e1",
+            border: "1px solid #e0d4a8",
+            borderRadius: 12,
+            color: "#6b5f1a",
+            fontSize: 13,
+            fontWeight: 600,
+            textAlign: "center",
+          }}
+        >
+          Attendance sheet for this class is not recorded yet
         </div>
       )}
 
@@ -237,7 +232,7 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
               )}
               {!loading && records.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Attendance sheet for this class is not recorded yet</td>
                 </tr>
               )}
               {records.map((r: any) => (

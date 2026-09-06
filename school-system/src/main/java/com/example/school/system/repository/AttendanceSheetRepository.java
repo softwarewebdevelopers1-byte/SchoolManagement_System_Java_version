@@ -20,6 +20,9 @@ public interface AttendanceSheetRepository extends JpaRepository<AttendanceSheet
     Optional<AttendanceSheet> findBySchoolClassClassIdAndDateAndStatus(UUID classId, LocalDate date,
             WholeAttendanceSheetStatus status);
 
+    @EntityGraph(attributePaths = { "attendanceRecords", "schoolClass", "attendanceRecords.student" })
+    Optional<AttendanceSheet> findBySchoolClassClassIdAndDateAndStatusIn(UUID classId, LocalDate date, List<WholeAttendanceSheetStatus> statuses);
+
     @Query("""
             SELECT a FROM AttendanceSheet a WHERE id = :id AND schoolClass.classId= :classId AND a.status !=LOCKED
                 """)
