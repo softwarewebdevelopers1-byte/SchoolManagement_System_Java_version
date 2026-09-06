@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
 import {
@@ -9,6 +9,22 @@ import {
 } from "./shared/helpers";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 import { api } from "../../lib/api";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Cell,
+} from "recharts";
 
 interface AnalyticsProps {
   students: any[];
@@ -125,56 +141,40 @@ const SubjectAverageChart: React.FC<{
   data: Array<{ id: string; name: string; avg: number }>;
   bands: any[];
 }> = ({ data, bands }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = 280;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
-    const pad = { left: 42, right: 16, top: 18, bottom: 58 };
-    const chartW = width - pad.left - pad.right;
-    const chartH = height - pad.top - pad.bottom;
-    ctx.strokeStyle = "#e7ddc8";
-    ctx.lineWidth = 1;
-    ctx.font = "11px system-ui, sans-serif";
-    ctx.fillStyle = "#8b8170";
-    [0, 25, 50, 75, 100].forEach((tick) => {
-      const y = pad.top + chartH - (tick / 100) * chartH;
-      ctx.beginPath();
-      ctx.moveTo(pad.left, y);
-      ctx.lineTo(width - pad.right, y);
-      ctx.stroke();
-      ctx.fillText(String(tick), 8, y + 4);
-    });
-    const barW = Math.max(18, chartW / Math.max(data.length, 1) - 14);
-    data.forEach((item, index) => {
-      const x = pad.left + index * (chartW / Math.max(data.length, 1)) + 7;
-      const h = (Math.max(0, Math.min(100, item.avg)) / 100) * chartH;
-      const y = pad.top + chartH - h;
-      ctx.fillStyle = gradeColor(resolveCbcBand(item.avg, bands).cbcBand);
-      ctx.fillRect(x, y, barW, h);
-      ctx.fillStyle = "#2f2a22";
-      ctx.textAlign = "center";
-      ctx.fillText(`${item.avg}%`, x + barW / 2, y - 6);
-      ctx.save();
-      ctx.translate(x + barW / 2, height - 12);
-      ctx.rotate(-Math.PI / 5);
-      ctx.fillText(item.name.slice(0, 12), 0, 0);
-      ctx.restore();
-    });
-  }, [data, bands]);
+  const chartData = data.map((item) => ({
+    name: item.name.slice(0, 12),
+    avg: Math.max(0, Math.min(100, item.avg)),
+    fill: gradeColor(resolveCbcBand(item.avg, bands).cbcBand),
+  }));
+
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100%", height: 280, display: "block" }}
-    />
+    <ResponsiveContainer width="100%" height={280}>
+      <BarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 11, fill: "#6d7c74" }}
+          interval={0}
+          angle={-25}
+          textAnchor="end"
+          height={60}
+        />
+        <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
+        <Tooltip
+          contentStyle={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            fontSize: 12,
+          }}
+        />
+        <Bar dataKey="avg" name="Avg %" radius={[6, 6, 0, 0]}>
+          {chartData.map((entry, index) => (
+            <Cell key={index} fill={entry.fill} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
@@ -444,67 +444,49 @@ export const Analytics: React.FC<AnalyticsProps> = ({
               margin: "0 0 1.2rem",
             }}
           >
-            Subject band distribution
+            CBC band distribution
           </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-              gap: 12,
-            }}
-          >
-            {cbcBands.map((band) => {
-              const count = subjectAvgs.filter(
-                (subject) =>
-                  resolveCbcBand(subject.avg, cbcBands).cbcBand === band.grade,
-              ).length;
-              const color = gradeColor(band.grade);
-              return (
-                <div
-                  key={band.grade}
-                  style={{
-                    background: `${color}18`,
-                    borderRadius: 11,
-                    padding: "1rem",
-                    textAlign: "center",
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <RadarChart data={cbcBands.map((band) => {
+                const count = subjectAvgs.filter(
+                  (subject) =>
+                    resolveCbcBand(subject.avg, cbcBands).cbcBand === band.grade,
+                ).length;
+                return {
+                  band: band.grade,
+                  count,
+                  fullMark: subjectAvgs.length || 1,
+                };
+              })}>
+                <PolarGrid />
+                <PolarAngleAxis
+                  dataKey="band"
+                  tick={{ fontSize: 12, fill: "#1f2d26" }}
+                />
+                <PolarRadiusAxis
+                  angle={30}
+                  domain={[0, "auto"]}
+                  tick={{ fontSize: 11, fill: "#6d7c74" }}
+                />
+                <Radar
+                  name="Subjects"
+                  dataKey="count"
+                  stroke={C.gold}
+                  fill={C.gold}
+                  fillOpacity={0.35}
+                  strokeWidth={2}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    fontSize: 12,
                   }}
-                >
-                  <p
-                    style={{
-                      fontFamily: FONT.serif,
-                      fontSize: "2rem",
-                      fontWeight: 600,
-                      color,
-                      margin: "0 0 2px",
-                    }}
-                  >
-                    {band.grade}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: FONT.serif,
-                      fontSize: "1.6rem",
-                      fontWeight: 600,
-                      color,
-                      margin: "0 0 4px",
-                    }}
-                  >
-                    {count}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: FONT.sans,
-                      fontSize: 11,
-                      color,
-                      margin: 0,
-                      opacity: 0.8,
-                    }}
-                  >
-                    {band.minScore}-{band.maxScore} marks
-                  </p>
-                </div>
-              );
-            })}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>

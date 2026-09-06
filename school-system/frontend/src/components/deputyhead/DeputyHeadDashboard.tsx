@@ -46,6 +46,7 @@ export default function DeputyHeadDashboard({
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [exitedStudents, setExitedStudents] = useState<any[]>([]);
+  const [overviewStats, setOverviewStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [storedUser, setStoredUser] = useState(() => {
     const saved = localStorage.getItem("user");
@@ -82,7 +83,11 @@ export default function DeputyHeadDashboard({
   const loadData = async () => {
     try {
       setLoading(true);
-      const data: any = await api.get("/users");
+      const [data, stats]: [any, any] = await Promise.all([
+        api.get("/users"),
+        api.get("/stats/school/overview").catch(() => null),
+      ]);
+      setOverviewStats(stats?.data || stats || null);
       const allStudents = data.students || [];
       const activeStudents = allStudents.filter(
         (student: any) => String(student.status || "active").toLowerCase() === "active",
@@ -263,6 +268,7 @@ export default function DeputyHeadDashboard({
             staff={staff}
             term={storedUser?.term || 1}
             year={storedUser?.year || 2024}
+            overviewStats={overviewStats}
           />
         );
       case "teachers":
@@ -295,6 +301,7 @@ export default function DeputyHeadDashboard({
             students={students}
             term={storedUser?.term || 1}
             year={storedUser?.year || 2024}
+            overviewStats={overviewStats}
           />
         );
       case "topStudents":

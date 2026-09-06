@@ -17,6 +17,8 @@ import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginSummaryProjection;
 import com.example.school.system.projection.TeacherSummaryProjection;
 import com.example.school.system.projection.TeachersLoaded;
+import com.example.school.system.projection.TeacherStatusCountProjection;
+import com.example.school.system.projection.SubjectCoverageProjection;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
@@ -268,4 +270,28 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
              WHERE :role NOT MEMBER OF u.roles
             """)
     List<Users> findAllTeachers(@Param("role") UserRoles exceptedRole, Pageable pageable);
+
+    @Query(value = """
+            SELECT u.status AS status, COUNT(u.id) AS count
+            FROM users u
+            WHERE u.school_id = :schoolId
+              AND NOT FIND_IN_SET('STUDENT', (
+                  SELECT GROUP_CONCAT(r2.roles)
+                  FROM users_roles r2
+                  WHERE r2.users_id = u.id
+              ))
+              AND u.status NOT IN ('PENDING_APPROVAL', 'REJECTED_INVITE')
+            GROUP BY u.status
+            """, nativeQuery = true)
+    List<TeacherStatusCountProjection> countTeachersByStatus(@Param("schoolId") UUID schoolId);
+
+    @Query(value = """
+            SELECT s.subject_name AS subjectName, COUNT(DISTINCT tp.teacher_account) AS teacherCount
+            FROM subject_joint sj
+            JOIN subjects s ON sj.subject_id = s.id
+            JOIN teachers_profile tp ON sj.teacher_profile_id = tp.id
+            WHERE s.school_id = :schoolId
+            GROUP BY s.id, s.subject_name
+            """, nativeQuery = true)
+    List<SubjectCoverageProjection> findSubjectCoverageBySchool(@Param("schoolId") UUID schoolId);
 }

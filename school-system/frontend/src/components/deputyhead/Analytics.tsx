@@ -4,19 +4,39 @@ import { SectionHeader } from "./shared/SectionHeader";
 import { MetricCard } from "./shared/MetricCard";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
 interface AnalyticsProps {
   classes?: any[];
   staff?: any[];
   students?: any[];
   term?: number;
   year?: number;
+  overviewStats?: {
+    totalStudents?: number;
+    totalStaff?: number;
+    totalClasses?: number;
+    avgAttendanceRate?: number;
+    streamPerformance?: { stream: string; avgMarks: number; avgAttendance: number; studentCount: number }[];
+    subjectPerformance?: { subjectId: string; subjectName: string; avgPercentage: number; avgPoints: number; gradeDistribution: Record<string, number> }[];
+  };
 }
 
 export const Analytics: React.FC<AnalyticsProps> = ({ 
   classes = [], 
   staff = [], 
   term = 1,
-  year = 2024
+  year = 2024,
+  overviewStats,
 }) => {
   const sorted = [...classes].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
   const activeTeachers = staff.filter((t) => t.status === "active" || t.status === "Active").length;
@@ -65,6 +85,57 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           accent={C.dangerText}
         />
       </div>
+
+      {overviewStats?.subjectPerformance && overviewStats.subjectPerformance.length > 0 && (
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 13,
+            padding: "1.3rem",
+            marginBottom: 14,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: F.sans,
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: C.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: ".06em",
+              margin: "0 0 1rem",
+            }}
+          >
+            Subject performance
+          </p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={overviewStats.subjectPerformance}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+              <XAxis
+                dataKey="subjectName"
+                tick={{ fontSize: 11, fill: "#6d7c74" }}
+                interval={0}
+                angle={-25}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
+              <Tooltip
+                contentStyle={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  fontSize: 12,
+                }}
+              />
+              <Legend />
+              <Bar dataKey="avgPercentage" name="Avg %" fill={C.infoText} radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         {/* Stream ranking */}
         <div

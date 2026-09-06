@@ -536,6 +536,68 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
           </div>
         )}
 
+        {(() => {
+          const totalStudents = students.length;
+          const enteredCount = students.filter((s) => {
+            const marks = subjectMarks[s.id];
+            if (!marks) return false;
+            return [marks.cat1, marks.cat2, marks.cat3, marks.cat4, marks.cat5, marks.exam].some((v) => v !== null && v !== undefined);
+          }).length;
+          const pendingCount = totalStudents - enteredCount;
+          const completePct = totalStudents > 0 ? Math.round((enteredCount / totalStudents) * 100) : 0;
+
+          return (
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  flex: "1 1 160px",
+                  background: "#f2f7f4",
+                  border: "1px solid #dfe8e3",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  textAlign: "center",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#6d7c74", textTransform: "uppercase", letterSpacing: "0.05em" }}>Entered</p>
+                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#163325" }}>{enteredCount}</p>
+              </div>
+              <div
+                style={{
+                  flex: "1 1 160px",
+                  background: "#fff1f0",
+                  border: "1px solid #f3c6c2",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  textAlign: "center",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#b42318", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pending</p>
+                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#b42318" }}>{pendingCount}</p>
+              </div>
+              <div
+                style={{
+                  flex: "1 1 160px",
+                  background: "#fbf6eb",
+                  border: "1px solid #ead7ad",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  textAlign: "center",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#8b661f", textTransform: "uppercase", letterSpacing: "0.05em" }}>Complete</p>
+                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#8b661f" }}>{completePct}%</p>
+              </div>
+            </div>
+          );
+        })()}
+
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>

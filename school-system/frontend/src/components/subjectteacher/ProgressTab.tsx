@@ -1,7 +1,17 @@
 // components/subjectteacher/ProgressTab.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import styles from "./SubjectTeacherDashboard.module.css";
 import { Subject, Student, MarksData } from "./types";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ProgressTabProps {
   subjects: Subject[];
@@ -29,6 +39,26 @@ export const ProgressTab: React.FC<ProgressTabProps> = ({
     const m = subjectMarks[s.id];
     return m && m.cat1 !== null && m.cat2 !== null;
   }).length;
+
+  const distribution = useMemo(() => {
+    const buckets = [
+      { range: "0-20", min: 0, max: 20, count: 0 },
+      { range: "21-40", min: 21, max: 40, count: 0 },
+      { range: "41-60", min: 41, max: 60, count: 0 },
+      { range: "61-80", min: 61, max: 80, count: 0 },
+      { range: "81-100", min: 81, max: 100, count: 0 },
+    ];
+    students.forEach((student) => {
+      const marks = subjectMarks[student.id];
+      if (!marks || marks.cat1 === null || marks.cat2 === null) return;
+      const total = Number(marks.cat1 || 0) + Number(marks.cat2 || 0);
+      const maxTotal = Number(marks.cat1Max || 40) + Number(marks.cat2Max || 40);
+      const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+      const bucket = buckets.find((b) => pct >= b.min && pct <= b.max);
+      if (bucket) bucket.count += 1;
+    });
+    return buckets.filter((b) => b.count > 0);
+  }, [students, subjectMarks]);
 
   return (
     <div className={styles.anim}>
@@ -68,6 +98,43 @@ export const ProgressTab: React.FC<ProgressTabProps> = ({
           <p className={styles.metricNote}>With CAT scores</p>
         </div>
       </div>
+
+      {distribution.length > 0 && (
+        <div className={styles.card} style={{ marginBottom: 14 }}>
+          <p
+            style={{
+              fontFamily: "var(--sans)",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "var(--textMut)",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              margin: "0 0 1rem",
+            }}
+          >
+            Score distribution
+          </p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={distribution}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+              <XAxis
+                dataKey="range"
+                tick={{ fontSize: 11, fill: "#6d7c74" }}
+              />
+              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{
+                  background: "#fff",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  fontSize: 12,
+                }}
+              />
+              <Bar dataKey="count" name="Learners" fill="#c9963d" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       <div className={styles.card}>
         <div className={styles.tableWrapper}>

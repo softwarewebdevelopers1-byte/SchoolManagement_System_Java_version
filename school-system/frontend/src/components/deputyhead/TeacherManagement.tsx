@@ -1,8 +1,10 @@
 // components/deputyhead/TeacherManagement.tsx (continued)
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SectionHeader } from "./shared/SectionHeader";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
+import { api } from "../../lib/api";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface TeacherManagementProps {
   staff?: any[];
@@ -11,12 +13,24 @@ interface TeacherManagementProps {
 export const TeacherManagement: React.FC<TeacherManagementProps> = ({ staff = [] }) => {
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [teacherSummary, setTeacherSummary] = useState<any>(null);
   const filtered = staff.filter(
     (t) =>
       (t.name || t.teachersName || "").toLowerCase().includes(search.toLowerCase()) ||
       (t.department || "").toLowerCase().includes(search.toLowerCase()),
   );
   const activeCount = staff.filter((t) => t.status === "active" || t.status === "Active").length;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data: any = await api.get("/stats/teachers/summary");
+        setTeacherSummary(data?.data || data || null);
+      } catch {
+        setTeacherSummary(null);
+      }
+    })();
+  }, []);
 
   return (
     <div className="dh-anim">
@@ -44,6 +58,114 @@ export const TeacherManagement: React.FC<TeacherManagementProps> = ({ staff = []
           />
         }
       />
+      {teacherSummary && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 13,
+              padding: "1.3rem",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: F.sans,
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: C.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: ".06em",
+                margin: "0 0 1rem",
+              }}
+            >
+              Teacher status breakdown
+            </p>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Active", value: teacherSummary.active || 0 },
+                    { name: "On leave", value: teacherSummary.onLeave || 0 },
+                    { name: "Suspended", value: teacherSummary.suspended || 0 },
+                  ].filter((item) => item.value > 0)}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                >
+                  {[
+                    { name: "Active", value: teacherSummary.active || 0, color: "#163325" },
+                    { name: "On leave", value: teacherSummary.onLeave || 0, color: "#c9963d" },
+                    { name: "Suspended", value: teacherSummary.suspended || 0, color: "#b42318" },
+                  ]
+                    .filter((entry) => entry.value > 0)
+                    .map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    fontSize: 12,
+                  }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 13,
+              padding: "1.3rem",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: F.sans,
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: C.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: ".06em",
+                margin: "0 0 1rem",
+              }}
+            >
+              Subject coverage
+            </p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={(teacherSummary.subjectCoverage || []).slice(0, 10)}
+                layout="vertical"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
+                <YAxis
+                  type="category"
+                  dataKey="subjectName"
+                  tick={{ fontSize: 11, fill: "#6d7c74" }}
+                  width={120}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="teacherCount" name="Teachers" fill={C.gold} radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
       <div
         style={{
           background: C.white,

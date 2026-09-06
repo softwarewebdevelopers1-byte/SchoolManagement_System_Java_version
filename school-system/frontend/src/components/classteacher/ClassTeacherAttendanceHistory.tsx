@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getClassId, getCurrentTeacherProfileId, request } from "../../lib/api";
+import { getClassId, getCurrentTeacherProfileId, request, api } from "../../lib/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { FONT } from "./shared/constants";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | string;
 
@@ -116,6 +127,8 @@ export default function ClassTeacherAttendanceHistory({
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
+  const [trend, setTrend] = useState<{ date: string; present: number; absent: number; rate: number }[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
 
   const loadAttendanceSheet = useCallback(
     async (date: string) => {
@@ -165,6 +178,32 @@ export default function ClassTeacherAttendanceHistory({
     // Intentionally does not fetch automatically.
     // The class teacher chooses a date and clicks Search.
   }, []);
+
+  useEffect(() => {
+    const cId = classId || getClassId() || "";
+    if (!cId) return;
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    const startDate = start.toISOString().split("T")[0];
+    const endDate = new Date().toISOString().split("T")[0];
+    setTrendLoading(true);
+    (async () => {
+      try {
+        const data: any = await api.get(`/stats/attendance/class/${cId}/trend?startDate=${startDate}&endDate=${endDate}`);
+        const items = Array.isArray(data) ? data : data?.data || [];
+        setTrend(items.map((item: any) => ({
+          date: item.date || "",
+          present: Number(item.present || 0),
+          absent: Number(item.absent || 0),
+          rate: Number(item.rate || 0),
+        })));
+      } catch {
+        setTrend([]);
+      } finally {
+        setTrendLoading(false);
+      }
+    })();
+  }, [classId]);
 
   const records = useMemo(() => (sheet ? getRecords(sheet) : []), [sheet]);
 
@@ -577,6 +616,96 @@ export default function ClassTeacherAttendanceHistory({
             </div>
           </div>
         </header>
+
+        {trend.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <div className="attendance-history-stat">
+                <div className="attendance-history-stat-label">Avg Attendance (30d)</div>
+                <div className="attendance-history-stat-value">
+                  {trendLoading ? "..." : `${Math.round(trend.reduce((a, b) => a + b.rate, 0) / trend.length)}%`}
+                </div>
+              </div>
+              <div className="attendance-history-stat">
+                <div className="attendance-history-stat-label">Trend Points</div>
+                <div className="attendance-history-stat-value">{trend.length}</div>
+              </div>
+            </div>
+            <div
+              style={{
+                background: COLORS.white,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 16,
+                padding: "1.2rem",
+                boxShadow: "0 5px 18px rgba(22, 51, 37, 0.05)",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: FONT.sans,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: COLORS.muted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  margin: "0 0 1rem",
+                }}
+              >
+                Attendance trend (last 30 days)
+              </p>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={trend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: "#6d7c74" }}
+                    tickFormatter={(value) => {
+                      const d = new Date(`${value}T00:00:00`);
+                      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
+                  <Tooltip
+                    contentStyle={{
+                      background: COLORS.white,
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: 10,
+                      fontSize: 12,
+                    }}
+                    labelFormatter={(value) => {
+                      const d = new Date(`${value}T00:00:00`);
+                      return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="present"
+                    stroke={COLORS.darkGreen}
+                    strokeWidth={2}
+                    dot={false}
+                    name="Present"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="absent"
+                    stroke={COLORS.danger}
+                    strokeWidth={2}
+                    dot={false}
+                    name="Absent"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         <form
           className="attendance-history-search-card"

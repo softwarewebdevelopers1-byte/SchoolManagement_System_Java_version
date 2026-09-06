@@ -1098,5 +1098,19 @@ export const superAdminApi = {
     getTermlyAttendance: async (classId: string, startDate: string, endDate: string, page = 0, size = 50): Promise<any> => {
       const query = new URLSearchParams({ startDate, endDate, page: String(page), size: String(size) });
       return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/termly?${query.toString()}`);
+    },
+    getSchoolOverview: async (): Promise<any> => {
+      return request<any>("/stats/school/overview");
+    },
+    getAttendanceTrend: async (classId: string, startDate: string, endDate: string): Promise<any> => {
+      const query = new URLSearchParams({ startDate, endDate });
+      return request<any>(`/stats/attendance/class/${encodeURIComponent(classId)}/trend?${query.toString()}`);
+    },
+    getClassAnalytics: async (classId: string, term: number, academicYear: string, examType: string): Promise<any> => {
+      const query = new URLSearchParams({ term: String(term), academicYear, examType });
+      return request<any>(`/stats/marks/class/${encodeURIComponent(classId)}/analytics?${query.toString()}`);
+    },
+    getTeacherSummary: async (): Promise<any> => {
+      return request<any>("/stats/teachers/summary");
     }
   };

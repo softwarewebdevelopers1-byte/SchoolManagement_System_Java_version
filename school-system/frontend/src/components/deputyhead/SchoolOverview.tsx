@@ -5,6 +5,16 @@ import { MetricCard } from "./shared/MetricCard";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
 import { CONCERNS } from "./shared/data";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface SchoolOverviewProps {
   isHT: boolean;
@@ -13,6 +23,14 @@ interface SchoolOverviewProps {
   staff?: any[];
   term?: number;
   year?: number;
+  overviewStats?: {
+    totalStudents?: number;
+    totalStaff?: number;
+    totalClasses?: number;
+    avgAttendanceRate?: number;
+    streamPerformance?: { stream: string; avgMarks: number; avgAttendance: number; studentCount: number }[];
+    subjectPerformance?: { subjectId: string; subjectName: string; avgPercentage: number; avgPoints: number; gradeDistribution: Record<string, number> }[];
+  };
 }
 
 export const SchoolOverview: React.FC<SchoolOverviewProps> = ({ 
@@ -21,11 +39,12 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
   students = [], 
   staff = [],
   term = 1,
-  year = 2024
+  year = 2024,
+  overviewStats,
 }) => {
-  const totalStudents = students.length;
-  const totalTeachers = staff.length;
-  const totalClasses = classes.length;
+  const totalStudents = overviewStats?.totalStudents ?? students.length;
+  const totalTeachers = overviewStats?.totalStaff ?? staff.length;
+  const totalClasses = overviewStats?.totalClasses ?? classes.length;
   const openConcerns = CONCERNS.filter((c) => c.status === "Open").length;
 
   return (
@@ -74,6 +93,50 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
           accent={C.warnText}
         />
       </div>
+
+      {overviewStats?.streamPerformance && overviewStats.streamPerformance.length > 0 && (
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 13,
+            padding: "1.3rem",
+            marginBottom: 14,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: F.sans,
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: C.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: ".06em",
+              margin: "0 0 1rem",
+            }}
+          >
+            Stream performance
+          </p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={overviewStats.streamPerformance}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+              <XAxis dataKey="stream" tick={{ fontSize: 11, fill: "#6d7c74" }} />
+              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
+              <Tooltip
+                contentStyle={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  fontSize: 12,
+                }}
+              />
+              <Legend />
+              <Bar dataKey="avgMarks" name="Avg Marks" fill={C.gold} radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div
           style={{

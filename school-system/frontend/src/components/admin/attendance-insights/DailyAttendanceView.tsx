@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 interface DailyAttendanceViewProps {
   classes: { classId: string; name: string }[];
@@ -88,6 +89,86 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
           {error}
         </div>
       )}
+
+      {!loading && records.length > 0 && (() => {
+        const presentCount = records.filter((r: any) => String(r.status || "").toUpperCase() === "PRESENT").length;
+        const absentCount = records.filter((r: any) => String(r.status || "").toUpperCase() === "ABSENT").length;
+        const lateCount = records.length - presentCount - absentCount;
+        const pieData = [
+          { name: "Present", value: presentCount },
+          { name: "Absent", value: absentCount },
+          ...(lateCount > 0 ? [{ name: "Late", value: lateCount }] : []),
+        ].filter((item) => item.value > 0);
+
+        return (
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid var(--border)",
+              borderRadius: 14,
+              padding: "1.2rem",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--sans)",
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--textMut)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                margin: "0 0 1rem",
+              }}
+            >
+              Daily attendance ratio
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.name === "Present" ? "#163325" : entry.name === "Absent" ? "#b42318" : "#c9963d"} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "#fff",
+                      border: "1px solid var(--border)",
+                      borderRadius: 10,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: "#163325", display: "inline-block" }} />
+                  <span style={{ fontSize: 13, color: "var(--text)" }}>Present: {presentCount}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: "#b42318", display: "inline-block" }} />
+                  <span style={{ fontSize: 13, color: "var(--text)" }}>Absent: {absentCount}</span>
+                </div>
+                {lateCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 3, background: "#c9963d", display: "inline-block" }} />
+                    <span style={{ fontSize: 13, color: "var(--text)" }}>Late: {lateCount}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ overflowX: "auto" }}>
         <table style={tableStyle}>

@@ -11,6 +11,7 @@ import com.example.school.system.models.SchoolClass;
 import com.example.school.system.projection.ClassHeaderProjection;
 import com.example.school.system.projection.ClassTeacherProjection;
 import com.example.school.system.projection.GetAllClasses;
+import com.example.school.system.projection.StreamPerformanceProjection;
 
 public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> {
     boolean existsByClassId(Integer classId);
@@ -75,4 +76,25 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     boolean existsBySchoolId(UUID schoolId);
 
     long countBySchoolId(UUID schoolId);
+
+    @Query(value = """
+            SELECT
+                c.stream AS stream,
+                AVG(ctr.total_marks) AS avgMarks,
+                COUNT(sp.student_id) AS studentCount
+            FROM classes c
+            LEFT JOIN students_profile sp ON sp.class_id = c.class_id
+            LEFT JOIN class_term_results ctr ON ctr.student_id = sp.student_id
+                AND ctr.academic_year = :academicYear
+                AND ctr.current_school_term = :term
+                AND ctr.exam_type = :examType
+            WHERE c.school = :schoolId
+              AND c.completed = false
+            GROUP BY c.stream
+            """, nativeQuery = true)
+    List<StreamPerformanceProjection> findStreamPerformanceBySchool(
+            @Param("schoolId") UUID schoolId,
+            @Param("academicYear") String academicYear,
+            @Param("term") Integer term,
+            @Param("examType") String examType);
 }
