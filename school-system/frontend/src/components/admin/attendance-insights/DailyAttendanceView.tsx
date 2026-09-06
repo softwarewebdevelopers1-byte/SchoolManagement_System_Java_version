@@ -45,23 +45,27 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showTable, setShowTable] = useState(false);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!classId || !date) return;
     setLoading(true);
     setError("");
-    (async () => {
-      try {
-        const data: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/daily?date=${date}`);
-        const content = Array.isArray(data) ? data : data?.data || [];
-        setRecords(content);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load daily attendance.");
-        setRecords([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      const data: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/daily?date=${date}`);
+      const content = Array.isArray(data) ? data : data?.data || [];
+      setRecords(content);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load daily attendance.");
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setShowTable(false);
+    fetchData();
   }, [classId, date]);
 
   return (
@@ -170,38 +174,84 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
         );
       })()}
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Student</th>
-              <th style={thStyle}>Admission No</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
+      {!showTable && !loading && records.length > 0 && (
+        <div style={{ textAlign: "center", marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowTable(true)}
+            style={{
+              padding: "10px 22px",
+              background: "var(--green)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontFamily: "var(--sans)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            View Student Records
+          </button>
+        </div>
+      )}
+
+      {showTable && (
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
+              Student records
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowTable(false)}
+              style={{
+                padding: "6px 14px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                fontFamily: "var(--sans)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--textMut)",
+                cursor: "pointer",
+              }}
+            >
+              Hide Records
+            </button>
+          </div>
+          <table style={tableStyle}>
+            <thead>
               <tr>
-                <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Loading...</td>
+                <th style={thStyle}>Student</th>
+                <th style={thStyle}>Admission No</th>
+                <th style={thStyle}>Status</th>
+                <th style={thStyle}>Date</th>
               </tr>
-            )}
-            {!loading && records.length === 0 && (
-              <tr>
-                <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
-              </tr>
-            )}
-            {records.map((r: any) => (
-              <tr key={r.studentId}>
-                <td style={tdStyle}>{r.studentName}</td>
-                <td style={tdStyle}>{r.admissionNo}</td>
-                <td style={tdStyle}>{r.status}</td>
-                <td style={tdStyle}>{r.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Loading...</td>
+                </tr>
+              )}
+              {!loading && records.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
+                </tr>
+              )}
+              {records.map((r: any) => (
+                <tr key={r.studentId}>
+                  <td style={tdStyle}>{r.studentName}</td>
+                  <td style={tdStyle}>{r.admissionNo}</td>
+                  <td style={tdStyle}>{r.status}</td>
+                  <td style={tdStyle}>{r.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

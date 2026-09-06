@@ -73,25 +73,28 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showTable, setShowTable] = useState(false);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!classId || !startDate || !endDate) return;
     setLoading(true);
     setError("");
-    (async () => {
-      try {
-        const res: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/monthly?startDate=${startDate}&endDate=${endDate}&page=${page}&size=${size}`);
-        const pageRes = Array.isArray(res) ? res : res?.data || res;
-        setData(pageRes?.content || []);
-        setTotalPages(pageRes?.totalPages || 1);
-        setTotalElements(pageRes?.totalElements || 0);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load monthly attendance.");
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      const res: any = await api.get(`/admin/attendance-insights/classes/${classId}/attendance/monthly?startDate=${startDate}&endDate=${endDate}&page=${page}&size=${size}`);
+      const pageRes = Array.isArray(res) ? res : res?.data || res;
+      setData(pageRes?.content || []);
+      setTotalPages(pageRes?.totalPages || 1);
+      setTotalElements(pageRes?.totalElements || 0);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load attendance.");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [classId, startDate, endDate, page, size]);
 
   return (
@@ -136,7 +139,7 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
           </p>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={data.slice(0, 20).map((row: any) => ({
+              data={data.map((row: any) => ({
                 name: row.studentName || "Unknown",
                 rate: Number(row.attendancePercentage || 0),
               }))}
@@ -164,7 +167,7 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
                 formatter={(value: any) => [`${value}%`, "Attendance"]}
               />
               <Bar dataKey="rate" name="Attendance %" radius={[6, 6, 0, 0]}>
-                {data.slice(0, 20).map((entry: any) => {
+                {data.map((entry: any) => {
                   const rate = Number(entry.attendancePercentage || 0);
                   const fill = rate >= 90 ? "#163325" : rate >= 75 ? "#c9963d" : "#b42318";
                   return <Cell key={entry.studentId} fill={fill} />;
@@ -173,47 +176,10 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
             </BarChart>
           </ResponsiveContainer>
           <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--textMut)" }}>
-            Showing first 20 students. Green ≥90%, Amber 75-89%, Red &lt;75%.
+            Showing page {page + 1} of {totalPages}. Green ≥90%, Amber 75-89%, Red &lt;75%.
           </p>
         </div>
       )}
-
-      <div style={{ overflowX: "auto" }}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Student</th>
-              <th style={thStyle}>Admission No</th>
-              <th style={thStyle}>Total Days</th>
-              <th style={thStyle}>Present</th>
-              <th style={thStyle}>Absent</th>
-              <th style={thStyle}>Attendance %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={6} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Loading...</td>
-              </tr>
-            )}
-            {!loading && data.length === 0 && (
-              <tr>
-                <td colSpan={6} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
-              </tr>
-            )}
-            {data.map((row: any) => (
-              <tr key={row.studentId}>
-                <td style={tdStyle}>{row.studentName}</td>
-                <td style={tdStyle}>{row.admissionNo}</td>
-                <td style={tdStyle}>{row.totalDays}</td>
-                <td style={tdStyle}>{row.presentDays}</td>
-                <td style={tdStyle}>{row.absentDays}</td>
-                <td style={tdStyle}>{row.attendancePercentage}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
 
       {totalPages > 1 && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -228,6 +194,89 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
               Next
             </button>
           </div>
+        </div>
+      )}
+
+      {!showTable && !loading && data.length > 0 && (
+        <div style={{ textAlign: "center", marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowTable(true)}
+            style={{
+              padding: "10px 22px",
+              background: "var(--green)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontFamily: "var(--sans)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            View Student Records
+          </button>
+        </div>
+      )}
+
+      {showTable && (
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}>
+              Student records
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowTable(false)}
+              style={{
+                padding: "6px 14px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                fontFamily: "var(--sans)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--textMut)",
+                cursor: "pointer",
+              }}
+            >
+              Hide Records
+            </button>
+          </div>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Student</th>
+                <th style={thStyle}>Admission No</th>
+                <th style={thStyle}>Total Days</th>
+                <th style={thStyle}>Present</th>
+                <th style={thStyle}>Absent</th>
+                <th style={thStyle}>Attendance %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={6} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>Loading...</td>
+                </tr>
+              )}
+              {!loading && data.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ ...tdStyle, textAlign: "center", color: "var(--textMut)" }}>No records found.</td>
+                </tr>
+              )}
+              {data.map((row: any) => (
+                <tr key={row.studentId}>
+                  <td style={tdStyle}>{row.studentName}</td>
+                  <td style={tdStyle}>{row.admissionNo}</td>
+                  <td style={tdStyle}>{row.totalDays}</td>
+                  <td style={tdStyle}>{row.presentDays}</td>
+                  <td style={tdStyle}>{row.absentDays}</td>
+                  <td style={tdStyle}>{row.attendancePercentage}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
