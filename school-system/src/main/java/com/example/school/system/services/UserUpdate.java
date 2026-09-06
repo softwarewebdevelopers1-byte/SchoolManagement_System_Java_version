@@ -110,7 +110,6 @@ public class UserUpdate {
         userRepository.findById(id)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
                 .setStatus(AccountStatus.SUSPENDED);
-        ;
     }
 
     @Transactional
@@ -118,7 +117,6 @@ public class UserUpdate {
     public void deActivateAccount(UUID id) {
         userRepository.findById(id).orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("user not found"))
                 .setStatus(AccountStatus.INACTIVE);
-        ;
     }
 
     private void validateToken(String token, String id) {

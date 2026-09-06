@@ -6,7 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://schoolmanagement-system-java-version-1.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
@@ -1075,17 +1075,28 @@ export const superAdminApi = {
     );
   },
    createSchool: async (data: {
-    schoolName: string;
-    schoolEmail: string;
-    schoolAddress: string;
-    phoneNumber: string;
-    motto: string;
-  }): Promise<any> => {
-    const response:any = await api.post(
-      "/schools/create-school",
-      data
-    );
+     schoolName: string;
+     schoolEmail: string;
+     schoolAddress: string;
+     phoneNumber: string;
+     motto: string;
+   }): Promise<any> => {
+     const response:any = await api.post(
+       "/schools/create-school",
+       data
+     );
 
-    return response.data;
-  }
-};
+     return response.data;
+   },
+   getDailyAttendance: async (classId: string, date: string): Promise<any> => {
+     return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/daily?date=${encodeURIComponent(date)}`);
+   },
+   getMonthlyAttendance: async (classId: string, startDate: string, endDate: string, page = 0, size = 50): Promise<any> => {
+     const query = new URLSearchParams({ startDate, endDate, page: String(page), size: String(size) });
+     return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/monthly?${query.toString()}`);
+   },
+    getTermlyAttendance: async (classId: string, startDate: string, endDate: string, page = 0, size = 50): Promise<any> => {
+      const query = new URLSearchParams({ startDate, endDate, page: String(page), size: String(size) });
+      return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/termly?${query.toString()}`);
+    }
+  };

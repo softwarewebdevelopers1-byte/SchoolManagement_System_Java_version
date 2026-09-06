@@ -11,8 +11,10 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.jwt.JwtNotMatchingExceptionHandler;
@@ -99,19 +101,19 @@ public class GlobalExceptionHandler {
     // catch database timeout error
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<?> handleTimeOut() {
-        return ResponseEntity.status(503).body(SchoolApiResponse.error("something went wrong"));
+        return ResponseEntity.status(503).body(SchoolApiResponse.error("Something went wrong on our side. Try again later."));
     }
 
     // handle invalid db connection string
     @ExceptionHandler(SQLGrammarException.class)
     public ResponseEntity<?> handleDatabaseError() {
-        return ResponseEntity.status(501).body(SchoolApiResponse.error("something went wrong"));
+        return ResponseEntity.status(501).body(SchoolApiResponse.error("Something went wrong on our side. Try again later."));
     }
 
     // getting all uncaught issues
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleServerError() {
-        return ResponseEntity.status(501).body(SchoolApiResponse.error("something went wrong"));
+        return ResponseEntity.status(501).body(SchoolApiResponse.error("Something went wrong on our side. Try again later."));
     }
 
     @ExceptionHandler(AdminResourceException.class)
@@ -138,9 +140,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(SchoolResourceBadInputExceptionHandler.class)
-
     public ResponseEntity<?> BadInput(SchoolResourceBadInputExceptionHandler badRequestError) {
         return ResponseEntity.status(400).body(SchoolApiResponse.error(badRequestError.getMessage()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<?> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        return ResponseEntity.status(400).body(SchoolApiResponse.error("Missing required parameter: " + ex.getParameterName()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(400).body(SchoolApiResponse.error("Invalid parameter type: " + ex.getName()));
     }
 }
 

@@ -80,11 +80,10 @@ public class UpdateStudentService {
         studentProfile.setGender(updateStudentDTO.gender() != null ? updateStudentDTO.gender() : Gender.NOT_SET);
         
          studentProfile.setGuardianName(updateStudentDTO.guardianName() != null? updateStudentDTO.guardianName() : null);
-        if (classId != null && studentProfile != null) {
-            SchoolClass studentClass = schoolClassRepository.findById(classId)
-                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-            studentProfile.setSchoolClass(studentClass);
-        }
-
-    }
+         if (classId != null && studentProfile != null) {
+             SchoolClass studentClass = schoolClassRepository.findById(classId)
+                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+             studentProfile.setSchoolClass(studentClass);
+         }
+     }
 }

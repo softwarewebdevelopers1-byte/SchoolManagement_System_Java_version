@@ -8,7 +8,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.school.system.DTO.AttendanceSheetSubmit;
 import com.example.school.system.DTO.ClassAttendanceDTO;
 import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
@@ -44,12 +43,12 @@ public class AttendanceService {
         public AttendanceSheetDTO getOrCreateSheet(ClassAttendanceDTO classAttendanceDTO) {
                 SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
                                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-                studentsExistence(schoolClass);
-                if (classAttendanceDTO.teacherId() != null
-                                && schoolClass.getTeacher() != null
-                                && !schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId())) {
-                        throw new SchoolResourceLockedExceptionHandler("You're not the class teacher");
-                }
+                // studentsExistence(schoolClass);
+                // if (classAttendanceDTO.teacherId() != null
+                //                 && schoolClass.getTeacher() != null
+                //                 && !schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId())) {
+                //         throw new SchoolResourceLockedExceptionHandler("You're not the class teacher");
+                // }
                 LocalDate timeNow = LocalDate.now();
                 AttendanceSheet sheet = attendanceSheetRepository
                                 .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
@@ -74,11 +73,11 @@ public class AttendanceService {
                                 });
         }
 
-        private void studentsExistence(SchoolClass schoolClass) {
-                if (schoolClass.getStudent().isEmpty() || schoolClass.getStudent() == null) {
-                        throw new SchoolResourceNotFoundExceptionHandler("No active students");
-                }
-        }
+        // private void studentsExistence(SchoolClass schoolClass) {
+        //         if (schoolClass.getStudent().isEmpty() || schoolClass.getStudent() == null) {
+        //                 throw new SchoolResourceNotFoundExceptionHandler("No active students");
+        //         }
+        // }
 
         private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
 
@@ -101,7 +100,8 @@ public class AttendanceService {
         }
 
         private AttendanceSheet createNewSheet(SchoolClass schoolClass, LocalDate date) {
-                studentsExistence(schoolClass);
+                // studentsExistence(schoolClass);
+                log.info("Creating new attendance sheet for class {} on date {}", schoolClass.getClassId(), date);      
                 AttendanceSheet sheet = new AttendanceSheet();
                 sheet.setSchoolClass(schoolClass);
                 sheet.setDate(date);

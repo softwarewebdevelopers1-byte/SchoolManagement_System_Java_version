@@ -18,6 +18,7 @@ import { SchoolSettingsTab } from "./SchoolSettingsTab";
 import { UserApprovalsTab } from "./UserApprovalsTab";
 import { ArchivesView } from "../shared/ArchivesView";
 import { ExitedStudentsView } from "../shared/ExitedStudentsView";
+import { AdminAttendanceInsights } from "./attendance-insights/AdminAttendanceInsights";
 import {
   ApiStudent,
   ApiTeacher,
@@ -120,6 +121,11 @@ const navItems: NavItem[] = [
     id: "exited",
     label: "Exited Learners",
     svg: "<path d='M16 17l5-5-5-5'/><path d='M21 12H9'/><path d='M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7'/>",
+  },
+  {
+    id: "attendance-insights",
+    label: "Attendance Insights",
+    svg: "<path d='M12 20v-6M6 20V10M18 20V4'/>",
   },
 ];
 
@@ -1262,6 +1268,10 @@ const AdminDashboard: React.FC = () => {
 
     if (activeTab === "exited") {
       return <ExitedStudentsView onRefresh={loadDashboardUsers} allowDelete />;
+    }
+
+    if (activeTab === "attendance-insights") {
+      return <AdminAttendanceInsights />;
     }
 
     return (
