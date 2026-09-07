@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.RegisterTeacherDTO;
@@ -88,6 +89,14 @@ public class TeachersService {
     }
 
     @Transactional(readOnly = true)
+    public Page<TeacherSummaryProjection> getTeacherRoster(UUID schoolId, int page, int size) {
+        return userRepository.findTeacherSummariesBySchool(
+                schoolId,
+                UserRoles.STUDENT,
+                PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100)));
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> getTeachersPaginated(UUID schoolId, int page, int size, String search) {
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
         Page<TeacherSummaryProjection> result = userRepository.findTeacherSummariesBySchool(
@@ -101,11 +110,6 @@ public class TeachersService {
             dto.setRoles(t.getRoles());
             dto.setFirstName(t.getFirstName());
             dto.setLastName(t.getLastName());
-            dto.setPhoneNumber(t.getPhoneNumber());
-            dto.setTeacherProfileId(t.getTeacherId());
-            if (t.getClassGrade() != null && t.getClassStream() != null) {
-                dto.setSchoolClass(t.getClassGrade() + " " + t.getClassStream());
-            }
             return dto;
         }).toList();
 

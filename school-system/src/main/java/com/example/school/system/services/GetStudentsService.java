@@ -16,6 +16,7 @@ import com.example.school.system.DTO.GetStudentsOfSpecificClass;
 import com.example.school.system.DTO.pagination.PageResponse;
 import com.example.school.system.DTO.student.StudentSummaryDTO;
 import com.example.school.system.projection.StudentsLoaded;
+import com.example.school.system.projection.StudentSummaryProjection;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.UserRepository;
@@ -97,6 +98,14 @@ public class GetStudentsService {
                                 studentPage.getSize(),
                                 studentPage.getTotalElements(),
                                 studentPage.getTotalPages());
+        }
+
+        @Transactional(readOnly = true)
+        public Page<StudentSummaryProjection> getStudentRoster(java.util.UUID schoolId, int page, int size) {
+                int safePage = Math.max(0, page);
+                int safeSize = Math.min(Math.max(1, size), 100);
+                return userRepository.findStudentSummariesBySchool(
+                                schoolId, UserRoles.STUDENT, PageRequest.of(safePage, safeSize));
         }
 
         @Transactional(readOnly = true)

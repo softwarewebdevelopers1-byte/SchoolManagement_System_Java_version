@@ -185,9 +185,23 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
 
   const isGradeSelected = selectedId?.startsWith("grade:");
   const currentGrade = isGradeSelected ? selectedId?.replace("grade:", "") : "";
-  const currentClass = !isGradeSelected ? classes?.find(c => c.id === selectedId) : null;
+  const currentClass = useMemo(
+    () => (!isGradeSelected ? classes.find((c) => c.id === selectedId) || null : null),
+    [classes, isGradeSelected, selectedId],
+  );
 
-  const targetClasses = isGradeSelected ? classes.filter(c => c.grade === currentGrade) : (currentClass ? [currentClass] : []);
+  const targetClasses = useMemo(
+    () => (isGradeSelected ? classes.filter((c) => c.grade === currentGrade) : (currentClass ? [currentClass] : [])),
+    [classes, currentClass, currentGrade, isGradeSelected],
+  );
+  const performancePeriod = useMemo(() => {
+    const firstClass = targetClasses[0];
+    return {
+      term: firstClass?.term ?? 1,
+      year: String(firstClass?.year ?? new Date().getFullYear()),
+      examType: firstClass?.examType?.toUpperCase() || "OPENER",
+    };
+  }, [targetClasses]);
   const availableSubjects = performanceSubjects;
 
   const targetStudents = useMemo(() => {
@@ -208,25 +222,6 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
     setIsLoading(true);
     try {
-      const rowsByStudent = new Map<string, ClassPerformanceRow>();
-      const rowsByAdmission = new Map<string, ClassPerformanceRow>();
-      targetStudents.forEach(s => {
-        const row = {
-          id: s.id,
-          name: s.studentFullName,
-          admissionNo: s.studentAdm || "-",
-          stream: s.classStream || "",
-          marks: {},
-          total: 0,
-          points: 0,
-          scoredSubjects: 0,
-          average: 0,
-          rank: 0
-        };
-        rowsByStudent.set(s.id, row);
-        if (s.studentAdm) rowsByAdmission.set(String(s.studentAdm).trim(), row);
-      });
-
       const joints = await api.get<any[]>("/school/class-subjects");
       const classKeys = new Set(
         targetClasses.map(
@@ -244,33 +239,26 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       }));
       setPerformanceSubjects(nextSubjects);
 
-      for (const cls of targetClasses) {
-        const clsSubjects = targetJoints.filter(
-          (joint) =>
-            String(joint.classGrade || "").trim() === String(cls.grade || "").trim() &&
-            String(joint.classStream || "").trim() === String(cls.stream || "").trim(),
-        );
-        for (const sub of clsSubjects) {
-          const subjectJointId = sub.id || sub.subjectJointId || sub.subjectId;
-          const response: any = await api.get("/marks", { subjectJointId });
-          const data = Array.isArray(response) ? response : response.data || [];
-          data.forEach((item: any) => {
-            const sid = item.studentId?.toString();
-            const row = rowsByStudent.get(sid) || rowsByAdmission.get(
-              String(item.admissionNo || item.studentAdm || "").trim(),
-            );
-            if (row) row.marks[subjectJointId] = computeMarkPercentage(item.marks);
-          });
-        }
-      }
-
-      const ranked = Array.from(rowsByStudent.values()).map(row => {
-        const scores = Object.values(row.marks).filter((m): m is number => typeof m === "number");
-        const total = scores.reduce((a, b) => a + b, 0);
-        const points = scores.reduce((a, b) => a + markToPoints(b, cbcBands), 0);
-        const avg = scores.length > 0 ? Math.round(total / scores.length) : 0;
-        return { ...row, total, points, scoredSubjects: scores.length, average: avg };
-      }).sort((a, b) => {
+      const dashboards = await Promise.all(targetClasses.map((cls) => {
+        const query = new URLSearchParams({
+          term: String(performancePeriod.term),
+          academicYear: performancePeriod.year,
+          examType: performancePeriod.examType,
+        });
+        return request<any[]>(`/stats/marks/class/${encodeURIComponent(cls.id)}/dashboard?${query.toString()}`);
+      }));
+      const ranked = dashboards.flat().map((item: any) => ({
+        id: String(item.studentId),
+        name: item.studentName || "",
+        admissionNo: item.admissionNo || "-",
+        stream: item.stream || "",
+        marks: {},
+        total: Math.round(Number(item.totalMarks) || 0),
+        points: Math.round(Number(item.points) || 0),
+        scoredSubjects: Number(item.scoredSubjects) || 0,
+        average: Math.round(Number(item.average) || 0),
+        rank: 0,
+      })).sort((a, b) => {
         // Sort strictly by the selected ranking mode only
         let diff = 0;
         if (rankingMode === "total_marks") {
@@ -310,19 +298,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
     setChartLoading(true);
     try {
-      const term = targetClasses[0].term;
-      const year = String(new Date().getFullYear()) || "";
-      const examType = targetClasses[0].examType?.toUpperCase() || "";
-      console.log("Loading chart data for", targetClasses);
+      const { term, year, examType } = performancePeriod;
       let data: any = null;
       if (currentClass) {
         const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
         data = await request(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/distribution?${query.toString()}`);
-        console.log("Loaded chart data for class", currentClass.id, data,"<next>",query.toString());
       } else if (currentGrade) {
         const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
         data = await request(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/distribution?${query.toString()}`);
-        console.log("Loaded chart data for grade", currentGrade, data,"<next>",query.toString());
       }
       const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
       setChartData(subjects);
@@ -341,7 +324,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
     setTrendLoading(true);
     try {
-      const year = String(targetClasses[0].year || "");
+      const year = performancePeriod.year;
       let data: any[] = [];
       if (currentClass) {
         data = await api.get(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
@@ -363,7 +346,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     setTablePage(0);
     loadChartData();
     loadTermlyTrend();
-  }, [selectedId, targetClasses[0]?.term, targetClasses[0]?.year, targetClasses[0]?.examType]);
+  }, [selectedId, performancePeriod.term, performancePeriod.year, performancePeriod.examType]);
 
   useEffect(() => {
     if (showTable && !tableLoaded) {

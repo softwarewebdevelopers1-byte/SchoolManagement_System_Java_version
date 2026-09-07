@@ -19,6 +19,7 @@ import com.example.school.system.projection.TeacherSummaryProjection;
 import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.projection.TeacherStatusCountProjection;
 import com.example.school.system.projection.SubjectCoverageProjection;
+import com.example.school.system.projection.StudentSummaryProjection;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
@@ -40,6 +41,25 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             """)
     Page<com.example.school.system.projection.StudentsLoaded> findLiveStudentsBySchoolIdWithRole(
             @Param("schoolId") UUID id, @Param("role") UserRoles role,
+            Pageable pageable);
+
+    @Query("""
+            SELECT sp.id as id,
+                   sp.studentFullName as fullName,
+                   sp.studentAdm as studentAdm,
+                   c.classId as classId,
+                   CONCAT(c.classGrade, ' ', c.classStream) as className
+            FROM Users u
+            JOIN u.studentProfile sp
+            LEFT JOIN sp.schoolClass c
+            WHERE u.school.id = :schoolId
+              AND :role MEMBER OF u.roles
+              AND (c.completed = false OR c.completed IS NULL)
+            ORDER BY sp.studentFullName ASC
+            """)
+    Page<StudentSummaryProjection> findStudentSummariesBySchool(
+            @Param("schoolId") UUID schoolId,
+            @Param("role") UserRoles role,
             Pageable pageable);
 
     @Query("""
@@ -180,19 +200,13 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             @Param("schoolId") UUID schoolId,
             @Param("role") String role);
 
-    // NEW: Lightweight teacher summary projection with pagination
     @Query("""
-                SELECT new com.example.school.system.projection.TeacherSummaryProjection(
-                    u.id, u.email, u.status, r,
-                    tp.firstName, tp.lastName, tp.phoneNumber,
-                    tp.id, s.id, s.schoolName,
-                    c.classGrade, c.classStream
-                )
+                                SELECT u.id as id,
+                                           CONCAT(COALESCE(tp.firstName, ''), ' ', COALESCE(tp.lastName, '')) as fullName,
+                                           u.email as email,
+                                           u.status as status
                 FROM Users u
-                JOIN u.roles r
                 LEFT JOIN u.teacherProfile tp
-                LEFT JOIN tp.schoolClass c
-                LEFT JOIN u.school s
                 WHERE (:schoolId IS NULL OR u.school.id = :schoolId)
                   AND :role NOT MEMBER OF u.roles
                   AND u.status NOT IN (com.example.school.system.types.AccountStatus.PENDING_APPROVAL,

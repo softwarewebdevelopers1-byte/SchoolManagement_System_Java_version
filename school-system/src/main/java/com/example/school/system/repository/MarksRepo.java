@@ -16,8 +16,37 @@ import com.example.school.system.projection.SubjectAnalyticsGradeProjection;
 import com.example.school.system.projection.SubjectAnalyticsProjection;
 import com.example.school.system.projection.SubjectGradeDistributionProjection;
 import com.example.school.system.projection.TermlyTrendProjection;
+import com.example.school.system.projection.StudentPerformanceProjection;
 
 public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
+        @Query(value = """
+                SELECT sp.student_id AS studentId,
+                       sp.student_name AS studentName,
+                       sp.student_adm AS admissionNo,
+                       c.stream AS stream,
+                       SUM(m.`average_marks%`) AS totalMarks,
+                       SUM(m.points) AS points,
+                       COUNT(m.id) AS scoredSubjects,
+                       AVG(m.`average_marks%`) AS average
+                FROM marks m
+                JOIN marks_sheet ms ON m.marks_sheet_id = ms.id
+                JOIN subject_joint sj ON ms.subject_joint_id = sj.id
+                JOIN students_profile sp ON m.student_id = sp.student_id
+                JOIN classes c ON sp.class_id = c.class_id
+                WHERE sj.class_id = :classId
+                  AND ms.academic_year = :academicYear
+                  AND ms.current_school_term = :term
+                  AND ms.exam_type = :examType
+                  AND ms.status = 'SUBMITTED'
+                GROUP BY sp.student_id, sp.student_name, sp.student_adm, c.stream
+                ORDER BY sp.student_name ASC
+                """, nativeQuery = true)
+        List<StudentPerformanceProjection> findStudentPerformanceByClass(
+                @Param("classId") UUID classId,
+                @Param("academicYear") String academicYear,
+                @Param("term") Integer term,
+                @Param("examType") String examType);
+
         @Query("""
                         SELECT m FROM MarksRow m WHERE m.StudentProfile.id = :studentId
                         AND m.marksSheet.id = :marksSheetId

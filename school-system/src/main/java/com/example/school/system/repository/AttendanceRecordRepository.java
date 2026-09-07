@@ -14,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.example.school.system.models.AttendanceRecords;
 import com.example.school.system.models.StudentProfile;
+import com.example.school.system.DTO.attendanceInsights.AttendanceSummaryDTO;
 import com.example.school.system.projection.AttendanceMonthlyProjection;
 import com.example.school.system.projection.AttendanceTermlyProjection;
 import com.example.school.system.projection.AttendanceTrendProjection;
@@ -64,6 +65,27 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("pageable") Pageable pageable);
+
+                @Query(value = """
+                                                SELECT
+                                                                sp.student_id AS studentId,
+                                                                sp.student_name AS studentName,
+                                                                sp.student_adm AS admissionNo,
+                                                                COUNT(ar.id) AS totalSessions,
+                                                                SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS presentSessions,
+                                                                ROUND(SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id), 2) AS attendancePercentage
+                                                FROM attendance_records ar
+                                                JOIN students_profile sp ON ar.student_id = sp.student_id
+                                                WHERE ar.date >= :startDate
+                                                        AND ar.date <= :endDate
+                                                        AND sp.class_id = :classId
+                                                GROUP BY sp.student_id, sp.student_name, sp.student_adm
+                                                ORDER BY sp.student_name ASC
+                                                """, nativeQuery = true)
+                List<AttendanceSummaryDTO> findTermlyAttendanceSummary(
+                                                @Param("classId") UUID classId,
+                                                @Param("startDate") LocalDate startDate,
+                                                @Param("endDate") LocalDate endDate);
 
     @Query(value = """
             SELECT

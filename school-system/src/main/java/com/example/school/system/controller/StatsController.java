@@ -20,13 +20,14 @@ import com.example.school.system.DTO.stats.GradeDistributionDTO;
 import com.example.school.system.DTO.stats.SchoolOverviewStatsDTO;
 import com.example.school.system.DTO.stats.TeacherSummaryStatsDTO;
 import com.example.school.system.DTO.stats.TermlyTrendDTO;
+import com.example.school.system.projection.StudentPerformanceProjection;
 import com.example.school.system.services.StatsService;
 import com.example.school.system.types.ExamType;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/stats")
+@RequestMapping({"/api/stats", "/api/v1/stats"})
 @RequiredArgsConstructor
 public class StatsController {
     private final StatsService statsService;
@@ -121,6 +122,23 @@ public class StatsController {
         }
         GradeDistributionDTO res = statsService.getGradeDistribution(classId, term, academicYear, parsedExamType);
         return ResponseEntity.ok(SchoolApiResponse.success(res, "class distribution loaded"));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','DEPUTYTEACHER','CLASSTEACHER')")
+    @GetMapping("/marks/class/{classId}/dashboard")
+    public ResponseEntity<?> getClassPerformanceDashboard(
+            @PathVariable UUID classId,
+            @RequestParam Integer term,
+            @RequestParam String academicYear,
+            @RequestParam String examType) {
+        try {
+            ExamType parsedExamType = ExamType.valueOf(examType.trim().toUpperCase());
+            List<StudentPerformanceProjection> res = statsService.getStudentPerformance(
+                    classId, term, academicYear, parsedExamType);
+            return ResponseEntity.ok(SchoolApiResponse.success(res, "class performance loaded"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(SchoolApiResponse.error("Invalid exam type: " + examType));
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','DEPUTYTEACHER','CLASSTEACHER')")

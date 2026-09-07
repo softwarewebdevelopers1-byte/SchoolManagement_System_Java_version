@@ -36,6 +36,7 @@ import com.example.school.system.projection.TeacherStatusCountProjection;
 import com.example.school.system.projection.SubjectCoverageProjection;
 import com.example.school.system.projection.AttendanceTrendProjection;
 import com.example.school.system.projection.TermlyTrendProjection;
+import com.example.school.system.projection.StudentPerformanceProjection;
 import com.example.school.system.repository.AttendanceRecordRepository;
 import com.example.school.system.repository.MarksRepo;
 import com.example.school.system.repository.SchoolClassRepository;
@@ -163,6 +164,12 @@ public class StatsService {
                 })
                 .collect(Collectors.toList());
     }
+
+        @Transactional(readOnly = true)
+        public List<StudentPerformanceProjection> getStudentPerformance(
+                        UUID classId, Integer term, String academicYear, ExamType examType) {
+                return marksRepo.findStudentPerformanceByClass(classId, academicYear, term, examType.name());
+        }
 
     @Transactional(readOnly = true)
     public List<ClassAnalyticsDTO> getGradeAnalytics(String grade, Integer term, String academicYear, ExamType examType) {
