@@ -83,14 +83,18 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     @Query(value = """
             SELECT
                 c.stream AS stream,
-                AVG(ctr.total_marks) AS avgMarks,
-                COUNT(sp.student_id) AS studentCount
+                AVG(m.`average_marks%`) AS avgMarks,
+                COUNT(DISTINCT sp.student_id) AS studentCount
             FROM classes c
+            LEFT JOIN subject_joint sj ON sj.class_id = c.class_id
+            LEFT JOIN marks_sheet ms ON ms.subject_joint_id = sj.id
+                AND ms.academic_year = :academicYear
+                AND ms.current_school_term = :term
+                AND ms.exam_type = :examType
+                AND ms.status = 'SUBMITTED'
+            LEFT JOIN marks m ON m.marks_sheet_id = ms.id
+                AND m.`average_marks%` IS NOT NULL
             LEFT JOIN students_profile sp ON sp.class_id = c.class_id
-            LEFT JOIN class_term_results ctr ON ctr.student_id = sp.student_id
-                AND ctr.academic_year = :academicYear
-                AND ctr.current_school_term = :term
-                AND ctr.exam_type = :examType
             WHERE c.school = :schoolId
               AND c.completed = false
             GROUP BY c.stream

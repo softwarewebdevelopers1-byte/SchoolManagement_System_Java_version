@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api } from "../../lib/api";
+import { api, request } from "../../lib/api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
 import { Class, Student, Subject } from "./types";
 import {
@@ -311,12 +311,18 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     setChartLoading(true);
     try {
       const term = targetClasses[0].term;
-      const year = String(targetClasses[0].year || "");
-      const examType = targetClasses[0].examType || "opener";
+      const year = String(new Date().getFullYear()) || "";
+      const examType = targetClasses[0].examType?.toUpperCase() || "";
+      console.log("Loading chart data for", targetClasses);
       let data: any = null;
-      if (currentGrade) {
+      if (currentClass) {
         const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
-        data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/distribution?${query.toString()}`);
+        data = await request(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/distribution?${query.toString()}`);
+        console.log("Loaded chart data for class", currentClass.id, data,"<next>",query.toString());
+      } else if (currentGrade) {
+        const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
+        data = await request(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/distribution?${query.toString()}`);
+        console.log("Loaded chart data for grade", currentGrade, data,"<next>",query.toString());
       }
       const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
       setChartData(subjects);
@@ -337,7 +343,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     try {
       const year = String(targetClasses[0].year || "");
       let data: any[] = [];
-      if (currentGrade) {
+      if (currentClass) {
+        data = await api.get(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
+      } else if (currentGrade) {
         data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
       }
       setTermlyTrend(Array.isArray(data) ? data : []);

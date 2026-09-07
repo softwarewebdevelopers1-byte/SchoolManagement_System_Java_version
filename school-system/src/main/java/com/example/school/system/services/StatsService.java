@@ -143,7 +143,7 @@ public class StatsService {
         List<SubjectGradeDistributionProjection> distributions = marksRepo.findSubjectGradeDistributionByClass(
                 classId, academicYear, term, examType.name());
 
-        Map<UUID, Map<String, Long>> distributionBySubject = distributions.stream()
+        Map<String, Map<String, Long>> distributionBySubject = distributions.stream()
                 .collect(Collectors.groupingBy(
                         SubjectGradeDistributionProjection::getSubjectId,
                         Collectors.groupingBy(
@@ -181,10 +181,10 @@ public class StatsService {
         List<SubjectGradeDistributionProjection> distributions = marksRepo.findSubjectGradeDistributionByGrade(
                 gradeInt.toString(), academicYear, term, examType.name());
 
-        Map<UUID, List<SubjectAnalyticsGradeProjection>> analyticsBySubject = analytics.stream()
+        Map<String, List<SubjectAnalyticsGradeProjection>> analyticsBySubject = analytics.stream()
                 .collect(Collectors.groupingBy(SubjectAnalyticsGradeProjection::getSubjectId));
 
-        Map<UUID, Map<String, Long>> distributionBySubject = distributions.stream()
+        Map<String, Map<String, Long>> distributionBySubject = distributions.stream()
                 .collect(Collectors.groupingBy(
                         SubjectGradeDistributionProjection::getSubjectId,
                         Collectors.groupingBy(
@@ -259,7 +259,7 @@ public class StatsService {
             List<GradeBandCountProjection> bandCounts = marksRepo.findGradeBandCountsByClass(
                     classId, academicYear, term, examType.name());
 
-            Map<UUID, List<SubjectGradeDistributionProjection>> grouped = distributions.stream()
+            Map<String, List<SubjectGradeDistributionProjection>> grouped = distributions.stream()
                     .collect(Collectors.groupingBy(SubjectGradeDistributionProjection::getSubjectId));
 
             Map<String, Long> overallBands = bandCounts.stream()
@@ -318,7 +318,7 @@ public class StatsService {
         List<GradeBandCountProjection> bandCounts = marksRepo.findGradeBandCountsByGrade(
                 gradeInt.toString(), academicYear, term, examType.name());
 
-        Map<UUID, List<SubjectGradeDistributionProjection>> grouped = distributions.stream()
+        Map<String, List<SubjectGradeDistributionProjection>> grouped = distributions.stream()
                 .collect(Collectors.groupingBy(SubjectGradeDistributionProjection::getSubjectId));
 
         Map<String, Long> overallBands = bandCounts.stream()
@@ -410,7 +410,7 @@ public class StatsService {
 
         List<AtRiskStudentDTO> atRiskStudents = atRisk.stream()
                 .map(p -> new AtRiskStudentDTO(
-                        p.getStudentId().toString(),
+                        p.getStudentId(),
                         p.getStudentName(),
                         p.getAdmissionNo(),
                         p.getAvgPercentage() != null ? p.getAvgPercentage() : 0.0))
@@ -442,7 +442,7 @@ public class StatsService {
 
         List<AtRiskStudentDTO> atRiskStudents = atRisk.stream()
                 .map(p -> new AtRiskStudentDTO(
-                        p.getStudentId().toString(),
+                        p.getStudentId(),
                         p.getStudentName(),
                         p.getAdmissionNo(),
                         p.getAvgPercentage() != null ? p.getAvgPercentage() : 0.0))

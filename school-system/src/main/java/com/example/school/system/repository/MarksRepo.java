@@ -120,7 +120,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN subjects s ON sj.subject_id = s.id
                 JOIN classes c ON sj.class_id = c.class_id
                 WHERE c.grade = :grade
-                  AND c.class_stream IS NOT NULL
+                  AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
                   AND ms.exam_type = :examType
@@ -148,7 +148,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN subjects s ON sj.subject_id = s.id
                 JOIN classes c ON sj.class_id = c.class_id
                 WHERE c.grade = :grade
-                  AND c.class_stream IS NOT NULL
+                  AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
                   AND ms.exam_type = :examType
@@ -219,7 +219,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN subject_joint sj ON ms.subject_joint_id = sj.id
                 JOIN classes c ON sj.class_id = c.class_id
                 WHERE c.grade = :grade
-                  AND c.class_stream IS NOT NULL
+                  AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
                   AND ms.exam_type = :examType
