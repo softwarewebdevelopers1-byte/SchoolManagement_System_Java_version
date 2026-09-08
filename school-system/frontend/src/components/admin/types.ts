@@ -30,7 +30,7 @@ export interface Teacher {
 
 export interface Subject {
   id: string;
-  name: string;
+  subjectName: string;
   department: string;
   mainTeacherId?: string | null;
   isOffered?: boolean;

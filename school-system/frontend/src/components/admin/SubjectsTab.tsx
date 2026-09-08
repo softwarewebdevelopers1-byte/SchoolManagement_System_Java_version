@@ -130,7 +130,7 @@ const SubjectFormModal: React.FC<{
   onClose: () => void;
   onSave: (name: string, mainTeacherId?: string) => Promise<void>;
 }> = ({ subject, teachers, onClose, onSave }) => {
-  const [name, setName] = useState(subject?.name || "");
+  const [name, setName] = useState(subject?.subjectName || "");
   const [mainTeacherId, setMainTeacherId] = useState<string>(subject?.mainTeacherId || "");
   const [saving, setSaving] = useState(false);
 
@@ -250,7 +250,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
 
   const handleDeleteSubject = (subject: Subject) => {
     showConfirm(
-      `Delete <strong>${subject.name}</strong>? This will also remove all teacher assignments for this subject.`,
+      `Delete <strong>${subject.subjectName ?? "Unnamed subject"}</strong>? This will also remove all teacher assignments for this subject.`,
       async () => {
         await onDeleteSubject(subject.id);
       },
@@ -259,11 +259,12 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   };
 
   const filteredSubjects = subjects.filter((subject) => {
-    const query = search.toLowerCase();
-    return (
-      subject.name.toLowerCase().includes(query) ||
-      subject.department.toLowerCase().includes(query)
-    );
+    console.log("subject",subject);
+    
+    const query = search?.toLowerCase();
+    const name = subject?.subjectName?.toLowerCase() || "";
+    const department = subject?.department?.toLowerCase() || "";
+    return name.includes(query) || department.includes(query);
   });
   const totalPages = Math.max(1, Math.ceil(filteredSubjects.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -339,14 +340,16 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
           </thead>
           <tbody>
             {pagedSubjects.map((subject) => {
+              console.log(subject);
+
               const usageCount = getUsageCount(subject.id);
               return (
                 <tr
                   key={subject.id}
                   style={{ transition: "background 0.2s" }}
                   onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--ct-hover, rgba(0,0,0,0.02))")
+                  (e.currentTarget.style.background =
+                    "var(--ct-hover, rgba(0,0,0,0.02))")
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
@@ -362,7 +365,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
                         fontSize: "1rem",
                       }}
                     >
-                      {subject.name}
+                      {subject.subjectName ?? "—"}
                     </p>
                   </td>
                   {/* <td style={tableCellStyle}>
