@@ -235,3 +235,52 @@ Build tool: Maven 3.9.16
 Application: Spring Boot
 Load-testing tool: k6
 ```
+
+## Get Students of a Specific School
+
+### Test Description
+
+This test evaluates the performance and reliability of the endpoint responsible for retrieving students belonging to a specific school.
+
+The test was performed using **K6** with 25 concurrent virtual users running for 30 seconds.
+
+### Test Configuration
+
+| Parameter           |                  Value |
+| ------------------- | ---------------------: |
+| Virtual Users (VUs) |                     25 |
+| Test Duration       |             30 seconds |
+| Total Iterations    |                 11,763 |
+| Total HTTP Requests |                 11,763 |
+| Maximum VUs         |                     25 |
+| Throughput          | 391.59 requests/second |
+
+### Results
+
+| Metric                |    Result |
+| --------------------- | --------: |
+| Checks                |    11,763 |
+| Checks Succeeded      |      100% |
+| Checks Failed         |        0% |
+| HTTP Requests Failed  |        0% |
+| Average Response Time |  63.41 ms |
+| Minimum Response Time |   7.03 ms |
+| Median Response Time  |  57.29 ms |
+| 90th Percentile (p90) |    101 ms |
+| 95th Percentile (p95) | 117.71 ms |
+| Maximum Response Time | 816.15 ms |
+
+### Observations
+
+The endpoint performed reliably under the tested load of 25 concurrent virtual users. All **11,763 requests returned HTTP 200**, resulting in a **0% failure rate**.
+
+The average response time was **63.41 ms**, while 95% of requests completed within approximately **117.71 ms**. The endpoint achieved an average throughput of approximately **391.59 requests per second** during the test.
+
+The results indicate that the endpoint was responsive and stable under the tested workload.
+
+### Conclusion
+
+The **Get Students of a Specific School** endpoint successfully handled the simulated workload without request failures. The low average response time and 100% successful checks indicate good performance under the tested conditions.
+
+> **Note:** The test demonstrates approximately 391.59 requests per second under 25 concurrent virtual users. This should not be interpreted as 391 users per second because a user can generate multiple HTTP requests.
+
