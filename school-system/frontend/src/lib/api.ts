@@ -6,7 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://schoolmanagement-system-java-version-1.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
@@ -318,7 +318,9 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const page = Number(params?.page || 0);
   const size = Number(params?.size || params?.limit || 50);
 
-  const sheet: any = await request<any>(`/marks/${encodeURIComponent(subjectJointId)}?page=${page}&size=${size}`);
+  const sheet: any = await request<any>(
+    `/marks/${encodeURIComponent(subjectJointId)}?page=${page}&size=${size}`,
+  );
   const cat1Enabled = sheet?.cat1Entry === true;
   const cat2Enabled = sheet?.cat2Entry === true;
   const cat3Enabled = sheet?.cat3Entry === true;
@@ -1041,9 +1043,12 @@ export const superAdminApi = {
     return request<any>("/superadmin/invitations");
   },
   revokeInvitation: async (inviteId: string): Promise<any> => {
-    return request<any>(`/superadmin/invites/${encodeURIComponent(inviteId)}/revoke`, {
-      method: "PATCH",
-    });
+    return request<any>(
+      `/superadmin/invites/${encodeURIComponent(inviteId)}/revoke`,
+      {
+        method: "PATCH",
+      },
+    );
   },
   searchSchools: async (status?: string, search?: string): Promise<any> => {
     const query = new URLSearchParams();
@@ -1052,7 +1057,11 @@ export const superAdminApi = {
     const suffix = query.toString() ? `?${query.toString()}` : "";
     return request<any>(`/superadmin/schools/search${suffix}`);
   },
-  searchStaff: async (status?: string, role?: string, search?: string): Promise<any> => {
+  searchStaff: async (
+    status?: string,
+    role?: string,
+    search?: string,
+  ): Promise<any> => {
     const query = new URLSearchParams();
     if (status) query.set("status", status);
     if (role) query.set("role", role);
@@ -1074,62 +1083,147 @@ export const superAdminApi = {
       },
     );
   },
-   createSchool: async (data: {
-     schoolName: string;
-     schoolEmail: string;
-     schoolAddress: string;
-     phoneNumber: string;
-     motto: string;
-   }): Promise<any> => {
-     const response:any = await api.post(
-       "/schools/create-school",
-       data
-     );
+  createSchool: async (data: {
+    schoolName: string;
+    schoolEmail: string;
+    schoolAddress: string;
+    phoneNumber: string;
+    motto: string;
+  }): Promise<any> => {
+    const response: any = await api.post("/schools/create-school", data);
 
-     return response.data;
-   },
-   getDailyAttendance: async (classId: string, date: string): Promise<any> => {
-     return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/daily?date=${encodeURIComponent(date)}`);
-   },
-   getMonthlyAttendance: async (classId: string, startDate: string, endDate: string, page = 0, size = 50): Promise<any> => {
-     const query = new URLSearchParams({ startDate, endDate, page: String(page), size: String(size) });
-     return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/monthly?${query.toString()}`);
-   },
-    getTermlyAttendance: async (classId: string, startDate: string, endDate: string, page = 0, size = 50): Promise<any> => {
-      const query = new URLSearchParams({ startDate, endDate, page: String(page), size: String(size) });
-      return request<any>(`/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/termly?${query.toString()}`);
-    },
-    getSchoolOverview: async (): Promise<any> => {
-      return request<any>("/stats/school/overview");
-    },
-    getAttendanceTrend: async (classId: string, startDate: string, endDate: string): Promise<any> => {
-      const query = new URLSearchParams({ startDate, endDate });
-      return request<any>(`/stats/attendance/class/${encodeURIComponent(classId)}/trend?${query.toString()}`);
-    },
-    getClassAnalytics: async (classId: string, term: number, academicYear: string, examType: string): Promise<any> => {
-      const query = new URLSearchParams({ term: String(term), academicYear, examType });
-      return request<any>(`/stats/marks/class/${encodeURIComponent(classId)}/analytics?${query.toString()}`);
-    },
-    getGradeAnalytics: async (grade: string, term: number, academicYear: string, examType: string): Promise<any> => {
-      const query = new URLSearchParams({ term: String(term), academicYear, examType });
-      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/analytics?${query.toString()}`);
-    },
-    getGradeDistribution: async (grade: string, term: number, academicYear: string, examType: string): Promise<any> => {
-      const query = new URLSearchParams({ term: String(term), academicYear, examType });
-      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/distribution?${query.toString()}`);
-    },
-    getClassDistribution: async (classId: string, term: number, academicYear: string, examType: string): Promise<any> => {
-      const query = new URLSearchParams({ term: String(term), academicYear, examType });
-      return request<any>(`/stats/marks/class/${encodeURIComponent(classId)}/distribution?${query.toString()}`);
-    },
-    getTermlyTrend: async (grade: string, academicYear: string): Promise<any> => {
-      return request<any>(`/stats/marks/grade/${encodeURIComponent(grade)}/termly-trend?academicYear=${encodeURIComponent(academicYear)}`);
-    },
-    getAtRiskStudents: async (grade: string, academicYear: string, threshold: number): Promise<any> => {
-      const query = new URLSearchParams({ grade, academicYear, threshold: String(threshold) });
-      return request<any>(`/stats/students/at-risk?${query.toString()}`);
-    },
-    getTeacherSummary: async (): Promise<any> => {
-      return request<any>("/stats/teachers/summary");
-    }
-  };
+    return response.data;
+  },
+  getDailyAttendance: async (classId: string, date: string): Promise<any> => {
+    return request<any>(
+      `/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/daily?date=${encodeURIComponent(date)}`,
+    );
+  },
+  getMonthlyAttendance: async (
+    classId: string,
+    startDate: string,
+    endDate: string,
+    page = 0,
+    size = 50,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      startDate,
+      endDate,
+      page: String(page),
+      size: String(size),
+    });
+    return request<any>(
+      `/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/monthly?${query.toString()}`,
+    );
+  },
+  getTermlyAttendance: async (
+    classId: string,
+    startDate: string,
+    endDate: string,
+    page = 0,
+    size = 50,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      startDate,
+      endDate,
+      page: String(page),
+      size: String(size),
+    });
+    return request<any>(
+      `/admin/attendance-insights/classes/${encodeURIComponent(classId)}/attendance/termly?${query.toString()}`,
+    );
+  },
+  getSchoolOverview: async (): Promise<any> => {
+    return request<any>("/stats/school/overview");
+  },
+  getAttendanceTrend: async (
+    classId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<any> => {
+    const query = new URLSearchParams({ startDate, endDate });
+    return request<any>(
+      `/stats/attendance/class/${encodeURIComponent(classId)}/trend?${query.toString()}`,
+    );
+  },
+  getClassAnalytics: async (
+    classId: string,
+    term: number,
+    academicYear: string,
+    examType: string,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      term: String(term),
+      academicYear,
+      examType,
+    });
+    return request<any>(
+      `/stats/marks/class/${encodeURIComponent(classId)}/analytics?${query.toString()}`,
+    );
+  },
+  getGradeAnalytics: async (
+    grade: string,
+    term: number,
+    academicYear: string,
+    examType: string,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      term: String(term),
+      academicYear,
+      examType,
+    });
+    return request<any>(
+      `/stats/marks/grade/${encodeURIComponent(grade)}/analytics?${query.toString()}`,
+    );
+  },
+  getGradeDistribution: async (
+    grade: string,
+    term: number,
+    academicYear: string,
+    examType: string,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      term: String(term),
+      academicYear,
+      examType,
+    });
+    return request<any>(
+      `/stats/marks/grade/${encodeURIComponent(grade)}/distribution?${query.toString()}`,
+    );
+  },
+  getClassDistribution: async (
+    classId: string,
+    term: number,
+    academicYear: string,
+    examType: string,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      term: String(term),
+      academicYear,
+      examType,
+    });
+    return request<any>(
+      `/stats/marks/class/${encodeURIComponent(classId)}/distribution?${query.toString()}`,
+    );
+  },
+  getTermlyTrend: async (grade: string, academicYear: string): Promise<any> => {
+    return request<any>(
+      `/stats/marks/grade/${encodeURIComponent(grade)}/termly-trend?academicYear=${encodeURIComponent(academicYear)}`,
+    );
+  },
+  getAtRiskStudents: async (
+    grade: string,
+    academicYear: string,
+    threshold: number,
+  ): Promise<any> => {
+    const query = new URLSearchParams({
+      grade,
+      academicYear,
+      threshold: String(threshold),
+    });
+    return request<any>(`/stats/students/at-risk?${query.toString()}`);
+  },
+  getTeacherSummary: async (): Promise<any> => {
+    return request<any>("/stats/teachers/summary");
+  },
+};

@@ -63,11 +63,6 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
-
-
-
-
-
 const hasAnyStoredValue = (marks: {
   cat1: number | string | null;
   cat2: number | string | null;
@@ -141,7 +136,9 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
   }, [classes, selectedClassId]);
 
   const currentClass = useMemo(() => {
-    return classes.find((current) => current.id === selectedClassId) || classes[0];
+    return (
+      classes.find((current) => current.id === selectedClassId) || classes[0]
+    );
   }, [classes, selectedClassId]);
   const availableSubjects = currentClass
     ? subjects.filter((subject) =>
@@ -178,7 +175,12 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
       total: 0,
       totalPages: 1,
     });
-  }, [selectedClassId, currentClass?.term, currentClass?.year, currentClass?.examType]);
+  }, [
+    selectedClassId,
+    currentClass?.term,
+    currentClass?.year,
+    currentClass?.examType,
+  ]);
 
   useEffect(() => {
     setMarksPage(1);
@@ -193,16 +195,19 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
 
     const loadDetailedMarks = async () => {
       try {
-        const response = await api.get<PaginatedMarksResponse | any[]>("/marks", {
-          subjectId: activeSubjectId,
-          classGrade: currentClass.grade,
-          classStream: currentClass.stream || "",
-          term: currentClass.term,
-          year: currentClass.year,
-          examType: currentClass.examType,
-          page: marksPage - 1,
-          limit: MARKS_PAGE_SIZE,
-        });
+        const response = await api.get<PaginatedMarksResponse | any[]>(
+          "/marks",
+          {
+            subjectId: activeSubjectId,
+            classGrade: currentClass.grade,
+            classStream: currentClass.stream || "",
+            term: currentClass.term,
+            year: currentClass.year,
+            examType: currentClass.examType,
+            page: marksPage - 1,
+            limit: MARKS_PAGE_SIZE,
+          },
+        );
         const data = Array.isArray(response) ? response : response.data;
         const pagination = Array.isArray(response)
           ? {
@@ -416,12 +421,11 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
     }
   };
 
-
   const activeSubjectStudents = subjectStudents[activeSubjectId] || [];
   const hasStudentsForSelectedClass =
-    marksPagination.total > 0 || classStudents.length > 0 || activeSubjectStudents.length > 0;
-
-
+    marksPagination.total > 0 ||
+    classStudents.length > 0 ||
+    activeSubjectStudents.length > 0;
 
   const mappedStudents: MarksStudent[] = activeSubjectStudents.map(
     (student) => {
@@ -452,7 +456,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
 
   const mappedSubjects: MarksSubject[] = availableSubjects.map((subject) => ({
     id: subject.id,
-    name: subject.name,
+    name: subject.subjectName,
     grade: currentClass?.name || "Selected class",
     subjectId: subject.id,
     classGrade: currentClass?.grade || "",
@@ -469,7 +473,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
     sharedSlotId:
       currentClass?.subjectSettings?.[subject.id]?.sharedSlotId || null,
   }));
-
 
   if (classes.length === 0) {
     return (
@@ -490,7 +493,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
             textTransform: "uppercase",
             letterSpacing: ".09em",
             margin: 0,
-            
           }}
         >
           Marks desk
@@ -507,7 +509,8 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
         </h2>
         <p style={{ margin: 0, fontSize: 13, color: "var(--textMut)" }}>
           Review one class at a time, edit detailed marks, and update final
-          percentages. For performance analysis and reports, visit the <b>Performance & Analytics</b> tab.
+          percentages. For performance analysis and reports, visit the{" "}
+          <b>Performance & Analytics</b> tab.
         </p>
       </div>
 
@@ -515,10 +518,9 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
         style={{
           ...panelStyle,
           display: "grid",
-          gridTemplateColumns:
-            isCompact
-              ? "1fr"
-              : "minmax(180px, 280px) minmax(240px, 1.4fr) repeat(3, minmax(110px, 1fr))",
+          gridTemplateColumns: isCompact
+            ? "1fr"
+            : "minmax(180px, 280px) minmax(240px, 1.4fr) repeat(3, minmax(110px, 1fr))",
           gap: 12,
         }}
       >
@@ -593,10 +595,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
             {(currentClass?.examType || "opener").toUpperCase()}
           </p>
         </div>
-
       </div>
-
-
 
       {message ? (
         <div
