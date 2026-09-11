@@ -1,5 +1,7 @@
 package com.example.school.system.error;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import java.util.HashSet;
 import org.hibernate.exception.SQLGrammarException;
 import org.springframework.dao.DataAccessException;
@@ -152,6 +154,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<?> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.status(400).body(SchoolApiResponse.error("Invalid parameter type: " + ex.getName()));
-    }
+    }  
+ @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+        public ResponseEntity<?> handleRequestMethodException(HttpRequestMethodNotSupportedException x){
+    return ResponseEntity.status(400).body(SchoolApiResponse.error(x.getMessage()));
 }
 
+   }           
