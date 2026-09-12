@@ -42,7 +42,11 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
   try {
     const session = JSON.parse(saved);
     const roles = normalizeRoles(session.user?.roles || session.roles);
-    return roles.includes("SUPERADMIN") ? <>{children}</> : <Navigate to="/login" replace />;
+    return roles.includes("SUPERADMIN") ? (
+      <>{children}</>
+    ) : (
+      <Navigate to="/login" replace />
+    );
   } catch {
     return <Navigate to="/login" replace />;
   }
@@ -67,28 +71,27 @@ const DashboardSelector = () => {
       setCheckingRemarks(false);
       return;
     }
-      let cancelled = false;
-      api
-        .get<any[]>("/school/subjects")
-        .then((subjects) => {
-          const teacherId = String(user.teacherId);
-          const assigned = (subjects || []).some(
-            (subject) =>
-              String(
-                subject.mainTeacherId || subject.mainTeacher?.id || "",
-              ) === teacherId,
-          );
-          if (!cancelled) setRemarksTeacher(assigned);
-        })
-        .catch(() => {
-          if (!cancelled) setRemarksTeacher(false);
-        })
-        .finally(() => {
-          if (!cancelled) setCheckingRemarks(false);
-        });
-      return () => {
-        cancelled = true;
-      };
+    let cancelled = false;
+    api
+      .get<any[]>("/school/subjects")
+      .then((subjects) => {
+        const teacherId = String(user.teacherId);
+        const assigned = (subjects || []).some(
+          (subject) =>
+            String(subject.mainTeacherId || subject.mainTeacher?.id || "") ===
+            teacherId,
+        );
+        if (!cancelled) setRemarksTeacher(assigned);
+      })
+      .catch(() => {
+        if (!cancelled) setRemarksTeacher(false);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingRemarks(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id, user?.teacherId]);
 
   if (!saved || !user) return <Navigate to="/login" replace />;
@@ -231,9 +234,15 @@ function App() {
                 <Routes>
                   <Route path="/" element={<SuperAdminOverview />} />
                   <Route path="/schools" element={<SuperAdminSchools />} />
-                  <Route path="/schools/:schoolId" element={<SuperAdminSchoolDetail />} />
+                  <Route
+                    path="/schools/:schoolId"
+                    element={<SuperAdminSchoolDetail />}
+                  />
                   <Route path="/staff" element={<SuperAdminStaff />} />
-                  <Route path="/invitations" element={<SuperAdminInvitations />} />
+                  <Route
+                    path="/invitations"
+                    element={<SuperAdminInvitations />}
+                  />
                   <Route path="/analytics" element={<SuperAdminAnalytics />} />
                 </Routes>
               </SuperAdminLayout>
