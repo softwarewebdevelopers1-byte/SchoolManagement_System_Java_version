@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { C, FONT } from "./shared/constants";
 import { Avatar } from "./shared/Avatar";
-import { api } from "../../lib/api";
 
 interface ClassOverviewProps {
   students: any[];
@@ -82,22 +81,18 @@ export const ClassOverview: React.FC<ClassOverviewProps> = ({
       const { request } = await import("../../lib/api");
       const resolvedClassId = classId || user?.classId;
       if (!resolvedClassId) return;
+      const today = new Date().toISOString().split("T")[0];
       const data: any = await request(
-        `/attendance/sheet?classId=${encodeURIComponent(resolvedClassId)}${teacherId ? `&teacherId=${encodeURIComponent(teacherId)}` : ""}`,
+        `/attendance/sheet/count?classId=${encodeURIComponent(resolvedClassId)}&date=${encodeURIComponent(today)}${teacherId ? `&teacherId=${encodeURIComponent(teacherId)}` : ""}`,
         { method: "GET" },
       );
-      const sheet = data?.status === "Success" ? data.data : data;
-      if (sheet?.records) {
-        const present = sheet.records.filter(
-          (r: any) => r.status === "PRESENT",
-        ).length;
-        const absent = sheet.records.filter(
-          (r: any) => r.status === "ABSENT",
-        ).length;
+      console.log("your data ", data, "on", today);
+      const summary = data?.status === "Success" ? data.data : data;
+      if (summary) {
         setAttendanceSummary({
-          present,
-          absent,
-          total: sheet.records.length,
+          present: summary.present ?? 0,
+          absent: summary.absent ?? 0,
+          total: summary.total ?? 0,
         });
       }
     } catch (_) {

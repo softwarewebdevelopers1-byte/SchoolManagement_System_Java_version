@@ -15,6 +15,7 @@ import com.example.school.system.DTO.LoadAttendaceSheetSpecificDate;
 import com.example.school.system.DTO.DTOResponse.AttendanceRecordDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.DTO.DTOResponse.SingleDayStudentAttendanceRecord;
+import com.example.school.system.DTO.DTOResponse.AttendanceRecordCountDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
 import com.example.school.system.models.AttendanceRecords;
@@ -34,165 +35,185 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class AttendanceService {
-        private final AttendanceSheetRepository attendanceSheetRepository;
-        private final AttendanceRecordRepository attendanceRecordRepository;
-        private final SchoolClassRepository schoolClassRepository;
-        private final StudentRepository studentRepository;
+    private final AttendanceSheetRepository attendanceSheetRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final StudentRepository studentRepository;
 
-        @Transactional
-        public AttendanceSheetDTO getOrCreateSheet(ClassAttendanceDTO classAttendanceDTO) {
-                SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-                // studentsExistence(schoolClass);
-                // if (classAttendanceDTO.teacherId() != null
-                //                 && schoolClass.getTeacher() != null
-                //                 && !schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId())) {
-                //         throw new SchoolResourceLockedExceptionHandler("You're not the class teacher");
-                // }
-                LocalDate timeNow = LocalDate.now();
-                AttendanceSheet sheet = attendanceSheetRepository
-                                .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
-                                .orElseGet(() -> createNewSheet(schoolClass, timeNow));
-                syncAllStudents(sheet);
-                sheet = attendanceSheetRepository.save(sheet);
-                return toAttendanceSheetDto(sheet);
-        }
-
-        private void syncAllStudents(AttendanceSheet attendanceSheet) {
-                Set<UUID> attendanceRecordsId = attendanceSheet.getAttendanceRecords().stream().map(s -> {
-                        return s.getStudent().getId();
-                }).collect(Collectors.toSet());
-
-                attendanceSheet.getSchoolClass().getStudent().stream()
-                                .filter(s -> !attendanceRecordsId.contains(s.getId())).forEach(s -> {
-                                        AttendanceRecords attendanceRecord = new AttendanceRecords();
-                                        attendanceRecord.setStudent(s);
-                                        attendanceRecord.setSheet(attendanceSheet);
-                                        attendanceRecord.setStatus(ClassAttendanceStatus.PRESENT);
-                                        attendanceSheet.getAttendanceRecords().add(attendanceRecord);
-                                });
-        }
-
-        // private void studentsExistence(SchoolClass schoolClass) {
-        //         if (schoolClass.getStudent().isEmpty() || schoolClass.getStudent() == null) {
-        //                 throw new SchoolResourceNotFoundExceptionHandler("No active students");
-        //         }
+    @Transactional
+    public AttendanceSheetDTO getOrCreateSheet(ClassAttendanceDTO classAttendanceDTO) {
+        SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+        // studentsExistence(schoolClass);
+        // if (classAttendanceDTO.teacherId() != null
+        // && schoolClass.getTeacher() != null
+        // && !schoolClass.getTeacher().getId().equals(classAttendanceDTO.teacherId()))
+        // {
+        // throw new SchoolResourceLockedExceptionHandler("You're not the class
+        // teacher");
         // }
+        LocalDate timeNow = LocalDate.now();
+        AttendanceSheet sheet = attendanceSheetRepository
+                .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
+                .orElseGet(() -> createNewSheet(schoolClass, timeNow));
+        syncAllStudents(sheet);
+        sheet = attendanceSheetRepository.save(sheet);
+        return toAttendanceSheetDto(sheet);
+    }
 
-        private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
+    private void syncAllStudents(AttendanceSheet attendanceSheet) {
+        Set<UUID> attendanceRecordsId = attendanceSheet.getAttendanceRecords().stream().map(s -> {
+            return s.getStudent().getId();
+        }).collect(Collectors.toSet());
 
-                List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
-                        AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder().recordId(r.getId())
-                                        .studentAdm(r.getStudent().getStudentAdm())
-                                        .studentName(r.getStudent().getStudentFullName()).status(r.getStatus()).build();
-                        return recordDTO;
-                }).toList();
+        attendanceSheet.getSchoolClass().getStudent().stream()
+                .filter(s -> !attendanceRecordsId.contains(s.getId())).forEach(s -> {
+                    AttendanceRecords attendanceRecord = new AttendanceRecords();
+                    attendanceRecord.setStudent(s);
+                    attendanceRecord.setSheet(attendanceSheet);
+                    attendanceRecord.setStatus(ClassAttendanceStatus.PRESENT);
+                    attendanceSheet.getAttendanceRecords().add(attendanceRecord);
+                });
+    }
 
-                StringBuilder className = new StringBuilder();
-                className.append(sheet.getSchoolClass().getClassGrade());
-                className.append(" ");
-                className.append(sheet.getSchoolClass().getClassStream());
-                AttendanceSheetDTO sheetDTO = AttendanceSheetDTO.builder()
-                                .status(sheet.getStatus() != null ? sheet.getStatus() : null).sheetId(sheet.getId())
-                                .className(className.toString())
-                                .date(sheet.getDate()).records(records).build();
-                return sheetDTO;
+    // private void studentsExistence(SchoolClass schoolClass) {
+    // if (schoolClass.getStudent().isEmpty() || schoolClass.getStudent() == null) {
+    // throw new SchoolResourceNotFoundExceptionHandler("No active students");
+    // }
+    // }
+
+    private AttendanceSheetDTO toAttendanceSheetDto(AttendanceSheet sheet) {
+
+        List<AttendanceRecordDTO> records = sheet.getAttendanceRecords().stream().map(r -> {
+            AttendanceRecordDTO recordDTO = AttendanceRecordDTO.builder().recordId(r.getId())
+                    .studentAdm(r.getStudent().getStudentAdm())
+                    .studentName(r.getStudent().getStudentFullName()).status(r.getStatus()).build();
+            return recordDTO;
+        }).toList();
+
+        StringBuilder className = new StringBuilder();
+        className.append(sheet.getSchoolClass().getClassGrade());
+        className.append(" ");
+        className.append(sheet.getSchoolClass().getClassStream());
+        AttendanceSheetDTO sheetDTO = AttendanceSheetDTO.builder()
+                .status(sheet.getStatus() != null ? sheet.getStatus() : null).sheetId(sheet.getId())
+                .className(className.toString())
+                .date(sheet.getDate()).records(records).build();
+        return sheetDTO;
+    }
+
+    private AttendanceSheet createNewSheet(SchoolClass schoolClass, LocalDate date) {
+        // studentsExistence(schoolClass);
+        log.info("Creating new attendance sheet for class {} on date {}", schoolClass.getClassId(), date);
+        AttendanceSheet sheet = new AttendanceSheet();
+        sheet.setSchoolClass(schoolClass);
+        sheet.setDate(date);
+        List<AttendanceRecords> records = schoolClass.getStudent().stream().map((s) -> {
+            AttendanceRecords r = new AttendanceRecords();
+            r.setStudent(s);
+            r.setSheet(sheet);
+            r.setStatus(ClassAttendanceStatus.PRESENT);
+            r.setDate(date);
+            return r;
+        }).toList();
+        sheet.setStatus(WholeAttendanceSheetStatus.DRAFT);
+        ;
+        sheet.setAttendanceRecords(records);
+        return attendanceSheetRepository.save(sheet);
+    }
+
+    // @Transactional
+    // public void updateStudentAttendance(StudentAttendanceDTO
+    // studentAttendanceDTO) {
+    // AttendanceRecords studentRecord = attendanceRecordRepository
+    // .findById(studentAttendanceDTO.attendanceRecord())
+    // .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+    // "attendance record for this student is missing"));
+    // studentRecord.setStatus(studentAttendanceDTO.status());
+    // attendanceRecordRepository.save(studentRecord);
+
+    // }
+
+    @Transactional
+    public SingleDayStudentAttendanceRecord getStudentSingleDayRecord(
+            FetchSingleDayStudentAttendance fetchSingleDayStudentAttendance) {
+        dateValidator(fetchSingleDayStudentAttendance.date());
+
+        StudentProfile student = studentRepository
+                .findByStudentAdm(fetchSingleDayStudentAttendance.studentAdm())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
+        if (student.getSchoolClass().getTeacher() == null) {
+            throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
         }
-
-        private AttendanceSheet createNewSheet(SchoolClass schoolClass, LocalDate date) {
-                // studentsExistence(schoolClass);
-                log.info("Creating new attendance sheet for class {} on date {}", schoolClass.getClassId(), date);      
-                AttendanceSheet sheet = new AttendanceSheet();
-                sheet.setSchoolClass(schoolClass);
-                sheet.setDate(date);
-                List<AttendanceRecords> records = schoolClass.getStudent().stream().map((s) -> {
-                        AttendanceRecords r = new AttendanceRecords();
-                        r.setStudent(s);
-                        r.setSheet(sheet);
-                        r.setStatus(ClassAttendanceStatus.PRESENT);
-                        r.setDate(date);
-                        return r;
-                }).toList();
-                sheet.setStatus(WholeAttendanceSheetStatus.DRAFT);
-                ;
-                sheet.setAttendanceRecords(records);
-                return attendanceSheetRepository.save(sheet);
+        if (fetchSingleDayStudentAttendance.teacherId() != null
+                && !student.getSchoolClass().getTeacher().getId()
+                        .equals(fetchSingleDayStudentAttendance.teacherId())) {
+            throw new SchoolResourceLockedExceptionHandler("Not your student");
         }
+        AttendanceRecords recordFound = attendanceRecordRepository.findByStudentAndDate(student,
+                fetchSingleDayStudentAttendance.date())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+                        "student record not found"));
+        return SingleDayStudentAttendanceRecord.builder().recordDate(recordFound.getDate())
+                .studentName(student.getStudentFullName()).studentAdm(student.getStudentAdm())
+                .status(recordFound.getStatus()).build();
 
-        // @Transactional
-        // public void updateStudentAttendance(StudentAttendanceDTO
-        // studentAttendanceDTO) {
-        // AttendanceRecords studentRecord = attendanceRecordRepository
-        // .findById(studentAttendanceDTO.attendanceRecord())
-        // .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-        // "attendance record for this student is missing"));
-        // studentRecord.setStatus(studentAttendanceDTO.status());
-        // attendanceRecordRepository.save(studentRecord);
+    }
 
-        // }
+    public AttendanceSheetDTO getAttendaceSheetSPecificDate(
+            LoadAttendaceSheetSpecificDate attendaceSheetSpecificDate) {
+        dateValidator(attendaceSheetSpecificDate.date());
+        SchoolClass classFound = schoolClassRepository.findById(attendaceSheetSpecificDate.classId())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
 
-        @Transactional
-        public SingleDayStudentAttendanceRecord getStudentSingleDayRecord(
-                        FetchSingleDayStudentAttendance fetchSingleDayStudentAttendance) {
-                dateValidator(fetchSingleDayStudentAttendance.date());
+        if (attendaceSheetSpecificDate.teacherId() != null
+                && classFound.getTeacher() != null
+                && !classFound.getTeacher().getId().equals(attendaceSheetSpecificDate.teacherId())) {
+            throw new SchoolResourceLockedExceptionHandler("Not your class");
+        }
+        AttendanceSheet sheet = attendanceSheetRepository
+                .findBySchoolClassClassIdAndDateAndStatus(attendaceSheetSpecificDate.classId(),
+                        attendaceSheetSpecificDate.date(), WholeAttendanceSheetStatus.LOCKED)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+                        "attendance sheet not found"));
+        return toAttendanceSheetDto(sheet);
+    }
 
-                StudentProfile student = studentRepository
-                                .findByStudentAdm(fetchSingleDayStudentAttendance.studentAdm())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
-                if (student.getSchoolClass().getTeacher() == null) {
-                        throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
+    public AttendanceRecordCountDTO getAttendanceRecordCountForDate(UUID classId, LocalDate date) {
+                dateValidator(date);
+                Object[] result = attendanceRecordRepository.countRecordsByClassAndDateExcludingDraft(classId, date);
+                if (result == null || result.length < 3 || result[0] == null) {
+                        return new AttendanceRecordCountDTO(0L, 0L, 0L, 0.0);
                 }
-                if (fetchSingleDayStudentAttendance.teacherId() != null
-                                && !student.getSchoolClass().getTeacher().getId()
-                                                .equals(fetchSingleDayStudentAttendance.teacherId())) {
-                        throw new SchoolResourceLockedExceptionHandler("Not your student");
-                }
-                AttendanceRecords recordFound = attendanceRecordRepository.findByStudentAndDate(student,
-                                fetchSingleDayStudentAttendance.date())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                                                "student record not found"));
-                return SingleDayStudentAttendanceRecord.builder().recordDate(recordFound.getDate())
-                                .studentName(student.getStudentFullName()).studentAdm(student.getStudentAdm())
-                                .status(recordFound.getStatus()).build();
-
+                Long present = toLong(result[0]);
+                Long absent = toLong(result[1]);
+                Long total = toLong(result[2]);
+                Double percentage = total > 0 ? Math.round((present * 100.0 / total) * 10.0) / 10.0 : 0.0;
+                return new AttendanceRecordCountDTO(present, absent, total, percentage);
         }
 
-        public AttendanceSheetDTO getAttendaceSheetSPecificDate(
-                        LoadAttendaceSheetSpecificDate attendaceSheetSpecificDate) {
-                dateValidator(attendaceSheetSpecificDate.date());
-                SchoolClass classFound = schoolClassRepository.findById(attendaceSheetSpecificDate.classId())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-
-                if (attendaceSheetSpecificDate.teacherId() != null
-                                && classFound.getTeacher() != null
-                                && !classFound.getTeacher().getId().equals(attendaceSheetSpecificDate.teacherId())) {
-                        throw new SchoolResourceLockedExceptionHandler("Not your class");
-                }
-                AttendanceSheet sheet = attendanceSheetRepository
-                                .findBySchoolClassClassIdAndDateAndStatus(attendaceSheetSpecificDate.classId(),
-                                                attendaceSheetSpecificDate.date(), WholeAttendanceSheetStatus.LOCKED)
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                                                "attendance sheet not found"));
-                return toAttendanceSheetDto(sheet);
+        private Long toLong(Object obj) {
+                if (obj == null) return 0L;
+                if (obj instanceof Number) return ((Number) obj).longValue();
+                return Long.parseLong(obj.toString());
         }
 
-        private void dateValidator(LocalDate date) {
-                if (date.isAfter(LocalDate.now())) {
-                        throw new SchoolResourceLockedExceptionHandler("Cannot get attendance for future date");
-                }
+    private void dateValidator(LocalDate date) {
+        if (date.isAfter(LocalDate.now())) {
+            throw new SchoolResourceLockedExceptionHandler("Cannot get attendance for future date");
         }
+    }
 
-        public void updateSheet(AttendanceSheetSubmit sheetDTO) {
-                AttendanceSheet attendanceSheet = attendanceSheetRepository
-                                .findEditableSheet(sheetDTO.attendanceSheetId(), sheetDTO.classId())
-                                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
-                                                "attendance sheet not found or already locked"));
-                Map<UUID, ClassAttendanceStatus> map = sheetDTO.attendanceRecordDTOs().stream()
-                                .collect(Collectors.toMap(r -> r.getRecordId(), r -> r.getStatus()));
-                attendanceSheet.getAttendanceRecords().forEach(r -> r.setStatus(map.get(r.getId())));
-                attendanceSheet.setStatus(WholeAttendanceSheetStatus.SUBMITTED);
-                attendanceSheetRepository.save(attendanceSheet);
-        }
+    public void updateSheet(AttendanceSheetSubmit sheetDTO) {
+        AttendanceSheet attendanceSheet = attendanceSheetRepository
+                .findEditableSheet(sheetDTO.attendanceSheetId(), sheetDTO.classId())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
+                        "attendance sheet not found or already locked"));
+        Map<UUID, ClassAttendanceStatus> map = sheetDTO.attendanceRecordDTOs().stream()
+                .collect(Collectors.toMap(r -> r.getRecordId(), r -> r.getStatus()));
+        attendanceSheet.getAttendanceRecords().forEach(r -> r.setStatus(map.get(r.getId())));
+        attendanceSheet.setStatus(WholeAttendanceSheetStatus.SUBMITTED);
+        attendanceSheetRepository.save(attendanceSheet);
+    }
 
 }
-

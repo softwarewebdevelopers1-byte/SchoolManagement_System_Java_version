@@ -14,8 +14,10 @@ import com.example.school.system.DTO.AttendanceSheetSubmit;
 import com.example.school.system.DTO.ClassAttendanceDTO;
 import com.example.school.system.DTO.FetchSingleDayStudentAttendance;
 import com.example.school.system.DTO.LoadAttendaceSheetSpecificDate;
+import com.example.school.system.DTO.DTOResponse.AttendanceRecordCountDTO;
 import com.example.school.system.DTO.DTOResponse.AttendanceSheetDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.DTO.DTOResponse.SingleDayStudentAttendanceRecord;
 import com.example.school.system.services.AttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AttendanceController {
     private final AttendanceService attendanceService;
+
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
+    @GetMapping("/sheet/count")
+    public ResponseEntity<?> getAttendanceRecordCount(@RequestParam(required = true) UUID classId,
+            @RequestParam(required = true) java.time.LocalDate date,
+            @RequestParam(required = false) UUID teacherId) {
+        var count = attendanceService.getAttendanceRecordCountForDate(classId, date);
+        return ResponseEntity.status(200).body(SchoolApiResponse.success(count, "attendance record count loaded"));
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER')")
     @GetMapping("/sheet")
@@ -58,4 +69,3 @@ public class AttendanceController {
         return ResponseEntity.status(200).body(response);
     }
 }
-
