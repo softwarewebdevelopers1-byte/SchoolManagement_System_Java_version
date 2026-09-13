@@ -121,17 +121,17 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
             @Param("startDate") java.time.LocalDate startDate,
             @Param("endDate") java.time.LocalDate endDate);
 
-    @Query(value = """
-            SELECT
-                SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN ar.status = 'ABSENT' THEN 1 ELSE 0 END) AS absent,
+@Query(value = """
+            SELECT 
+                SUM(CASE WHEN UPPER(ar.status) = 'PRESENT' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN UPPER(ar.status) = 'ABSENT' THEN 1 ELSE 0 END) AS absent,
                 COUNT(ar.id) AS total
             FROM attendance_records ar
             JOIN attendance_sheet a ON ar.attendance_sheet_id = a.id
             JOIN students_profile sp ON ar.student_id = sp.student_id
             WHERE sp.class_id = :classId
               AND ar.date = :date
-              AND a.status != 'DRAFT'
+              AND UPPER(a.status) != 'DRAFT'
             """, nativeQuery = true)
     Object[] countRecordsByClassAndDateExcludingDraft(
             @Param("classId") UUID classId,

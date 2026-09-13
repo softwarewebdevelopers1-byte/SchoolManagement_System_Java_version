@@ -181,19 +181,30 @@ public class AttendanceService {
 
     public AttendanceRecordCountDTO getAttendanceRecordCountForDate(UUID classId, LocalDate date) {
                 dateValidator(date);
+                log.info("Getting attendance record count for class {} on date {}", classId, date);     
                 Object[] result = attendanceRecordRepository.countRecordsByClassAndDateExcludingDraft(classId, date);
-                if (result == null || result.length < 3 || result[0] == null) {
+                log.info("Raw query result: {}", (Object) result);
+                if (result == null || result.length == 0 || result[0] == null) {
                         return new AttendanceRecordCountDTO(0L, 0L, 0L, 0.0);
                 }
-                Long present = toLong(result[0]);
-                Long absent = toLong(result[1]);
-                Long total = toLong(result[2]);
+                Object[] values = (result.length == 1 && result[0] instanceof Object[])
+                                ? (Object[]) result[0]
+                                : result;
+                Long present = toLong(values[0]);
+                Long absent = toLong(values[1]);
+                Long total = toLong(values[2]);
                 Double percentage = total > 0 ? Math.round((present * 100.0 / total) * 10.0) / 10.0 : 0.0;
                 return new AttendanceRecordCountDTO(present, absent, total, percentage);
         }
 
         private Long toLong(Object obj) {
                 if (obj == null) return 0L;
+                // Handle nested array case (JPA sometimes returns Object[][])
+                if (obj instanceof Object[]) {
+                        Object[] arr = (Object[]) obj;
+                        if (arr.length > 0) return toLong(arr[0]);
+                        return 0L;
+                }
                 if (obj instanceof Number) return ((Number) obj).longValue();
                 return Long.parseLong(obj.toString());
         }
