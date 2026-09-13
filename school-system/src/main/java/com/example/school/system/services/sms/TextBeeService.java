@@ -48,6 +48,6 @@ public class TextBeeService {
                 .retrieve()
                 .body(String.class);
 
-        System.out.println(response);
+        log.info("TextBee Response: {}", response);
     }
 }

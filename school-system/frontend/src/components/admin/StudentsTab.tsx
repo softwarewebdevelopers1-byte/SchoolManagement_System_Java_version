@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
-import { useClassesData } from "../../lib/adminData";
 import { api, getSchoolId, request } from "../../lib/api";
 import { mapStudentsFromApi } from "../../lib/adminData";
 import PhoneInput from "../shared/PhoneInput";
@@ -239,6 +238,7 @@ const StudentFormModal: React.FC<{
   currentClass: any;
   gradeOptions: string[];
   streamOptions: string[];
+  classesFound: any[];
   subjects: Subject[];
   classSubjectSettings: ClassSubjectSetting[];
   onClose: () => void;
@@ -248,6 +248,7 @@ const StudentFormModal: React.FC<{
   onBulkSave?: (payload: StudentPayload[]) => Promise<void>;
 }> = ({
   student,
+  classesFound,
   onClose,
   onSave,
   onBulkSave,
@@ -304,8 +305,6 @@ const StudentFormModal: React.FC<{
         }`.trim()
       : "",
   );
-
-  const { classesFound } = useClassesData() as any;
 
   const [classSelectedId, setClassSelectedId] = useState(
     () => {
@@ -1389,7 +1388,6 @@ const StudentFormModal: React.FC<{
 ========================================================= */
 
 interface StudentsTabProps {
-  students: Student[];
   classes: any;
   subjects: Subject[];
   classSubjectSettings: ClassSubjectSetting[];
@@ -1428,7 +1426,6 @@ interface StudentsTabProps {
 export const StudentsTab: React.FC<
   StudentsTabProps
 > = ({
-  students,
   classes,
   subjects,
   classSubjectSettings,
@@ -1781,17 +1778,8 @@ export const StudentsTab: React.FC<
      OPEN STUDENT MODAL
      ===================================================== */
 
-  const openStudentModal = (
-    studentId?: string,
-  ) => {
-    const student = studentId
-      ? students.find(
-          (current) =>
-            current?.userId ===
-            studentId,
-        ) || null
-      : null;
-
+  const openStudentModal = (student: Student | null = null) => {
+    const studentId = student?.userId || student?.id;
     const currentClass = student
       ? `${student.classGrade || ""} ${
           student.classStream || ""
@@ -1818,6 +1806,7 @@ export const StudentsTab: React.FC<
             ),
           ),
         )}
+        classesFound={classes}
         subjects={subjects}
         classSubjectSettings={
           classSubjectSettings
@@ -2337,7 +2326,7 @@ export const StudentsTab: React.FC<
                       <button
                         onClick={() =>
                           openStudentModal(
-                            student.userId,
+                            student,
                           )
                         }
                         style={

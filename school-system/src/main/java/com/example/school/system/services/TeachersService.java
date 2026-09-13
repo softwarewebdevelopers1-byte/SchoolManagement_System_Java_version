@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.RegisterTeacherDTO;
@@ -26,6 +26,7 @@ import com.example.school.system.models.School;
 import com.example.school.system.models.TeacherProfile;
 import com.example.school.system.models.Users;
 import com.example.school.system.projection.TeacherSummaryProjection;
+import com.example.school.system.projection.UserRoleProjection;
 import com.example.school.system.repository.TeacherProfileRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
@@ -91,44 +92,48 @@ public class TeachersService {
     @Transactional(readOnly = true)
     public Page<TeacherSummaryProjection> getTeacherRoster(UUID schoolId, int page, int size) {
         return userRepository.findTeacherSummariesBySchool(
-                schoolId,
-                UserRoles.STUDENT,
+                schoolId, UserRoles.STUDENT, null,
                 PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100)));
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getTeachersPaginated(UUID schoolId, int page, int size, String search) {
-        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
+    public Map<String, Object> getTeachersPaginated(UUID schoolId, int page, int size, String search,
+            String authHeader) {
+        tokenIssuedValidator(schoolId, authHeader);
+        int normalizedPage = Math.max(0, page);
+        int normalizedSize = Math.min(Math.max(1, size), 100);
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize);
         Page<TeacherSummaryProjection> result = userRepository.findTeacherSummariesBySchool(
-                schoolId, UserRoles.STUDENT, pageable);
+                schoolId, UserRoles.STUDENT, normalizedSearch, pageable);
+
+        List<UUID> userIds = result.getContent().stream().map(TeacherSummaryProjection::getUserId).toList();
+        Map<UUID, Set<UserRoles>> rolesByUserId = userIds.isEmpty()
+                ? Map.of()
+                : userRepository.findRolesByUserIds(userIds).stream()
+                        .collect(Collectors.groupingBy(
+                                UserRoleProjection::getUserId,
+                                Collectors.mapping(UserRoleProjection::getRole, Collectors.toSet())));
 
         List<GetTeachersDTO> content = result.getContent().stream().map(t -> {
             GetTeachersDTO dto = new GetTeachersDTO();
             dto.setUsersId(t.getUserId());
             dto.setEmail(t.getEmail());
             dto.setStatus(t.getStatus());
-            dto.setRoles(t.getRoles());
+            dto.setRoles(rolesByUserId.getOrDefault(t.getUserId(), Set.of()));
             dto.setFirstName(t.getFirstName());
             dto.setLastName(t.getLastName());
+            dto.setTeacherProfileId(t.getTeacherProfileId());
+            dto.setPhoneNumber(t.getPhoneNumber());
+            dto.setSchoolClass(t.getSchoolClass());
             return dto;
         }).toList();
 
-        List<GetTeachersDTO> filtered = content.stream()
-                .filter(dto -> {
-                    if (search == null || search.isBlank()) return true;
-                    String q = search.toLowerCase();
-                    return (dto.getFirstName() != null && dto.getFirstName().toLowerCase().contains(q))
-                            || (dto.getLastName() != null && dto.getLastName().toLowerCase().contains(q))
-                            || (dto.getEmail() != null && dto.getEmail().toLowerCase().contains(q))
-                            || (dto.getSchoolClass() != null && dto.getSchoolClass().toLowerCase().contains(q));
-                })
-                .toList();
-
         Map<String, Object> response = new HashMap<>();
-        response.put("data", filtered);
+        response.put("data", content);
         response.put("pagination", Map.of(
-                "page", page + 1,
-                "limit", size,
+                "page", normalizedPage + 1,
+                "limit", normalizedSize,
                 "total", result.getTotalElements(),
                 "totalPages", result.getTotalPages()
         ));

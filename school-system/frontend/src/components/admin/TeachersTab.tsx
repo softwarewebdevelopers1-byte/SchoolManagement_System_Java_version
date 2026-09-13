@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Class } from "./types";
 import PhoneInput from "../shared/PhoneInput";
 import { request, getSchoolId } from "../../lib/api";
-import { normalizeStatus } from "../../lib/adminData";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -158,6 +157,7 @@ const StaffFormModal: React.FC<{
     password: string;
   }) => Promise<void>;
 }> = ({ teacher, classes, onClose, onSave }) => {
+  console.log("teacher details ", teacher);
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
   const [firstName, setFirstName] = useState(teacher?.firstName || "");
   const [lastName, setLastName] = useState(teacher?.lastName);
@@ -543,8 +543,14 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           teacher.email.toLowerCase().includes(search.toLowerCase()) ||
           teacher.roleLabel.toLowerCase().includes(search.toLowerCase()),
       );
-  const clientTotalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize));
-  const currentPage = Math.min(page, useServerPagination ? totalPages : clientTotalPages);
+  const clientTotalPages = Math.max(
+    1,
+    Math.ceil(filteredTeachers.length / pageSize),
+  );
+  const currentPage = Math.min(
+    page,
+    useServerPagination ? totalPages : clientTotalPages,
+  );
   const pagedTeachers = useServerPagination
     ? filteredTeachers
     : filteredTeachers.slice(
@@ -558,15 +564,23 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
 
   const openAddTeacher = (editId?: string) => {
     const teacher = editId
-      ? teachers.find((current: any) => current.id === editId) || null
+      ? teachers.find((current: any) => current.usersId === editId) || null
       : null;
+    console.log(
+      "Teachers ",
+      teachers,
+      "editId ",
+      editId,
+      "pagedTeachers",
+      pagedTeachers,
+    );
     showModal(
       <StaffFormModal
         teacher={teacher}
         classes={classes}
         onClose={closeModal}
         onSave={async (payload) => {
-          await onSaveTeacher(payload, teacher?.userId);
+          await onSaveTeacher(payload, teacher?.usersId);
         }}
       />,
     );
@@ -673,7 +687,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           <tbody>
             {pagedTeachers.map((teacher: any) => (
               <tr
-                key={teacher.id}
+                key={teacher.usersId}
                 style={{ borderTop: "1px solid var(--borderL)" }}
               >
                 <td
@@ -706,7 +720,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                     </div>
                   </div>
                 </td>
-                <td style={bodyTextStyle}>{teacher.roleLabel}</td>
+                <td style={bodyTextStyle}>{teacher.roles?.join(", ") || "-"}</td>
                 <td style={bodyTextStyle}>{teacher.department}</td>
                 <td style={bodyTextStyle}>{teacher.phoneNumber || "-"}</td>
                 <td style={{ padding: "10px 13px" }}>
@@ -734,7 +748,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                 <td style={{ padding: "10px 13px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button
-                      onClick={() => openAddTeacher(teacher.id)}
+                      onClick={() => openAddTeacher(teacher.usersId)}
                       style={iconButtonStyle}
                     >
                       Edit
@@ -779,7 +793,9 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
           <span
             style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
           >
-            Page {currentPage} of {useServerPagination ? totalPages : clientTotalPages} | {totalElements || filteredTeachers.length} staff
+            Page {currentPage} of{" "}
+            {useServerPagination ? totalPages : clientTotalPages} |{" "}
+            {totalElements || filteredTeachers.length} staff
           </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -794,7 +810,10 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
               disabled={isLastPage || loading}
               onClick={() =>
                 setPage((previous) =>
-                  Math.min(useServerPagination ? totalPages : clientTotalPages, previous + 1),
+                  Math.min(
+                    useServerPagination ? totalPages : clientTotalPages,
+                    previous + 1,
+                  ),
                 )
               }
             >

@@ -14,20 +14,26 @@ public interface TeacherSummaryProjection {
 
     AccountStatus getStatus();
 
+    UUID getTeacherProfileId();
+
+    String getPhoneNumber();
+
+    Integer getClassGrade();
+
+    String getClassStream();
+
     default UUID getUserId() { return getId(); }
 
     default Set<UserRoles> getRoles() { return Set.of(); }
 
-    default String getFirstName() {
-        String name = getFullName() == null ? "" : getFullName().trim();
-        int separator = name.indexOf(' ');
-        return separator < 0 ? name : name.substring(0, separator);
-    }
+    String getFirstName();
 
-    default String getLastName() {
-        String name = getFullName() == null ? "" : getFullName().trim();
-        int separator = name.indexOf(' ');
-        return separator < 0 ? "" : name.substring(separator + 1);
+    String getLastName();
+
+    default String getSchoolClass() {
+        return getClassGrade() == null || getClassStream() == null
+                ? null
+                : getClassGrade() + " " + getClassStream();
     }
 
     default String getSchoolName() { return null; }

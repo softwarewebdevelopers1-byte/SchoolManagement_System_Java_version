@@ -413,7 +413,7 @@ public class SuperAdminService {
     public List<SuperAdminUserRes> getAllUsers() {
         Pageable pageable = PageRequest.of(0, 500);
         List<TeacherSummaryProjection> teachers = userRepository.findTeacherSummariesBySchool(
-                null, UserRoles.STUDENT, pageable).getContent();
+                null, UserRoles.STUDENT, null, pageable).getContent();
 
         return teachers.stream()
                 .map(t -> SuperAdminUserRes.builder()
@@ -433,7 +433,7 @@ public class SuperAdminService {
     public List<SuperAdminUserRes> getAllTeachersAndAdmins() {
         Pageable pageable = PageRequest.of(0, 500);
         List<TeacherSummaryProjection> teachers = userRepository.findTeacherSummariesBySchool(
-                null, UserRoles.STUDENT, pageable).getContent();
+                null, UserRoles.STUDENT, null, pageable).getContent();
 
         return teachers.stream()
                 .map(t -> SuperAdminUserRes.builder()

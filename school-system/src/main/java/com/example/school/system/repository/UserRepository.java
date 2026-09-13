@@ -16,6 +16,7 @@ import com.example.school.system.models.Users;
 import com.example.school.system.projection.CredentialsView;
 import com.example.school.system.projection.LoginSummaryProjection;
 import com.example.school.system.projection.TeacherSummaryProjection;
+import com.example.school.system.projection.UserRoleProjection;
 import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.projection.TeacherStatusCountProjection;
 import com.example.school.system.projection.SubjectCoverageProjection;
@@ -204,18 +205,40 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
                                 SELECT u.id as id,
                                            CONCAT(COALESCE(tp.firstName, ''), ' ', COALESCE(tp.lastName, '')) as fullName,
                                            u.email as email,
-                                           u.status as status
+                                           u.status as status,
+                                           tp.firstName as firstName,
+                                           tp.lastName as lastName,
+                                           tp.id as teacherProfileId,
+                                           tp.phoneNumber as phoneNumber,
+                                           c.classGrade as classGrade,
+                                           c.classStream as classStream
                 FROM Users u
                 LEFT JOIN u.teacherProfile tp
+                LEFT JOIN tp.schoolClass c
                 WHERE (:schoolId IS NULL OR u.school.id = :schoolId)
                   AND :role NOT MEMBER OF u.roles
                   AND u.status NOT IN (com.example.school.system.types.AccountStatus.PENDING_APPROVAL,
                                        com.example.school.system.types.AccountStatus.REJECTED_INVITE)
+                  AND (:search IS NULL
+                       OR LOWER(COALESCE(tp.firstName, '')) LIKE CONCAT('%', LOWER(:search), '%')
+                       OR LOWER(COALESCE(tp.lastName, '')) LIKE CONCAT('%', LOWER(:search), '%')
+                       OR LOWER(u.email) LIKE CONCAT('%', LOWER(:search), '%')
+                       OR LOWER(CONCAT(COALESCE(c.classGrade, ''), ' ', COALESCE(c.classStream, '')))
+                          LIKE CONCAT('%', LOWER(:search), '%'))
             """)
     Page<TeacherSummaryProjection> findTeacherSummariesBySchool(
             @Param("schoolId") UUID schoolId,
             @Param("role") UserRoles role,
+            @Param("search") String search,
             Pageable pageable);
+
+    @Query("""
+            SELECT u.id as userId, r as role
+            FROM Users u
+            JOIN u.roles r
+            WHERE u.id IN :userIds
+            """)
+    List<UserRoleProjection> findRolesByUserIds(@Param("userIds") List<UUID> userIds);
 
     // NEW: Batched user counts grouped by school for SuperAdmin
     @Query("""

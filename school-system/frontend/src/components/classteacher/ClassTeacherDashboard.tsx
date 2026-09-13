@@ -358,7 +358,14 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, adminModeClass, effectiveGrade, effectiveStream, effectiveClassId]);
+  }, [
+    effectiveGrade,
+    effectiveStream,
+    effectiveClassId,
+    currentUser?.term,
+    currentUser?.year,
+    currentUser?.examType,
+  ]);
 
   const loadSubjects = useCallback(async () => {
     const classId =getClassId()?getClassId() :effectiveClassId;

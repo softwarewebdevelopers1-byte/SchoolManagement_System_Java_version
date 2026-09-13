@@ -1113,7 +1113,6 @@ const AdminDashboard: React.FC = () => {
     if (activeTab === "students") {
       return (
         <StudentsTab
-          students={students}
           classes={classesFound}
           subjects={subjects}
           classSubjectSettings={classSubjectSettings}
