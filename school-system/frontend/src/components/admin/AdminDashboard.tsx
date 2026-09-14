@@ -1186,7 +1186,6 @@ const AdminDashboard: React.FC = () => {
       return (
         <PerformanceTab
           classes={classes}
-          students={students}
           subjects={subjects}
           subjectJoints={assignments}
           avatar={avatar}

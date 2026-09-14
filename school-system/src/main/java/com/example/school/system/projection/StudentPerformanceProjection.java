@@ -1,9 +1,7 @@
 package com.example.school.system.projection;
 
-import java.util.UUID;
-
 public interface StudentPerformanceProjection {
-    UUID getStudentId();
+    byte[] getStudentId();
     String getStudentName();
     String getAdmissionNo();
     String getStream();

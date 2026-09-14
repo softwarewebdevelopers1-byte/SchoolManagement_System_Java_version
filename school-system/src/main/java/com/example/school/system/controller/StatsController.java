@@ -20,7 +20,7 @@ import com.example.school.system.DTO.stats.GradeDistributionDTO;
 import com.example.school.system.DTO.stats.SchoolOverviewStatsDTO;
 import com.example.school.system.DTO.stats.TeacherSummaryStatsDTO;
 import com.example.school.system.DTO.stats.TermlyTrendDTO;
-import com.example.school.system.projection.StudentPerformanceProjection;
+import com.example.school.system.DTO.stats.StudentPerformanceDTO;
 import com.example.school.system.services.StatsService;
 import com.example.school.system.types.ExamType;
 
@@ -133,7 +133,7 @@ public class StatsController {
             @RequestParam String examType) {
         try {
             ExamType parsedExamType = ExamType.valueOf(examType.trim().toUpperCase());
-            List<StudentPerformanceProjection> res = statsService.getStudentPerformance(
+            List<StudentPerformanceDTO> res = statsService.getStudentPerformance(
                     classId, term, academicYear, parsedExamType);
             return ResponseEntity.ok(SchoolApiResponse.success(res, "class performance loaded"));
         } catch (IllegalArgumentException e) {

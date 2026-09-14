@@ -2,9 +2,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api, normalizeSubjectJoints, request } from "../../lib/api";
+import { api, getSchoolId, normalizeSubjectJoints, request } from "../../lib/api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
-import { Class, Student, Subject } from "./types";
+import { Class, Subject } from "./types";
 import {
   BarChart,
   Bar,
@@ -21,7 +21,6 @@ import {
 
 interface PerformanceTabProps {
   classes: Class[];
-  students: Student[];
   subjects: Subject[];
   subjectJoints?: any[];
   avatar: (name: string, size: number) => string;
@@ -114,7 +113,11 @@ const toFiniteNumber = (value: unknown): number | null => {
 const computeMarkPercentage = (marks: any): number | null => {
   if (!marks) return null;
 
-  const avgPct = toFiniteNumber(marks.avgPercentage);
+  const avgPct = toFiniteNumber(
+    typeof marks.avgPercentage === "string"
+      ? marks.avgPercentage.replace("%", "").trim()
+      : marks.avgPercentage,
+  );
   if (avgPct !== null) return Math.min(100, Math.max(0, Math.round(avgPct)));
 
   const finalScore = toFiniteNumber(marks?.finalScore);
@@ -146,8 +149,13 @@ const computeMarkPercentage = (marks: any): number | null => {
 
 const markToPoints = (v: number, bands: CbcGradingBand[]): number => resolveCbcBand(v, bands).points;
 
-export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, students, subjectJoints }) => {
+export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subjectJoints }) => {
   const { bands: cbcBands } = useCbcGradingBands();
+  const [schoolPeriod, setSchoolPeriod] = useState<{
+    term?: number;
+    year?: number | string;
+    examType?: string;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState(() => {
     const saved = localStorage.getItem("edunex.admin.performanceScope");
     if (!saved) return "";
@@ -171,18 +179,47 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
   const [tableLoaded, setTableLoaded] = useState(false);
   const [tablePage, setTablePage] = useState(0);
 
+  useEffect(() => {
+    const schoolId = getSchoolId();
+    if (!schoolId) return;
+
+    let ignore = false;
+    api.get<any>(`/schools/get/term/exam/${encodeURIComponent(schoolId)}`)
+      .then((period) => {
+        if (!ignore) {
+          setSchoolPeriod(period);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setSchoolPeriod(null);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const uniqueGrades = useMemo(() => {
     const grades = Array.from(new Set(classes.map(c => c.grade)));
     return grades.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [classes]);
 
   useEffect(() => {
-    if (!selectedId && classes.length > 0) {
+    const selectedGrade = selectedId?.startsWith("grade:")
+      ? selectedId.replace("grade:", "")
+      : "";
+    const hasValidSelection =
+      (selectedGrade && uniqueGrades.includes(selectedGrade)) ||
+      classes.some((currentClass) => currentClass.id === selectedId);
+
+    if ((!selectedId || !hasValidSelection) && classes.length > 0) {
       const nextId = classes[0].id;
       setSelectedId(nextId);
       localStorage.setItem("edunex.admin.performanceScope", JSON.stringify(nextId));
     }
-  }, [classes, selectedId]);
+  }, [classes, selectedId, uniqueGrades]);
 
   const isGradeSelected = selectedId?.startsWith("grade:");
   const currentGrade = isGradeSelected ? selectedId?.replace("grade:", "") : "";
@@ -198,28 +235,20 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
   const performancePeriod = useMemo(() => {
     const firstClass = targetClasses[0];
     return {
-      term: firstClass?.term ?? 1,
-      year: String(firstClass?.year ?? new Date().getFullYear()),
-      examType: firstClass?.examType?.toUpperCase() || "OPENER",
+      term: schoolPeriod?.term ?? firstClass?.term ?? 1,
+      year: String(schoolPeriod?.year ?? firstClass?.year ?? new Date().getFullYear()),
+      examType: schoolPeriod?.examType?.toUpperCase() || firstClass?.examType?.toUpperCase() || "OPENER",
     };
-  }, [targetClasses]);
+  }, [schoolPeriod, targetClasses]);
   const availableSubjects = performanceSubjects;
 
-  const targetStudents = useMemo(() => {
-    if (isGradeSelected) return students.filter(s => s.classGrade === currentGrade && s.status === "Active");
-    return currentClass ? students.filter(s =>
-      s.status === "Active" && (
-        s.classId === currentClass.id ||
-        (String(s.classGrade || "").trim() === String(currentClass.grade || "").trim() &&
-          String(s.classStream || "").trim() === String(currentClass.stream || "").trim())
-      )
-    ) : [];
-  }, [isGradeSelected, currentGrade, currentClass, students]);
-
-  const loadPerformance = async () => {
-    if (targetStudents.length === 0 || targetClasses.length === 0) {
+  const loadPerformance = async (): Promise<{
+    rows: ClassPerformanceRow[];
+    subjects: PerformanceSubject[];
+  }> => {
+    if (targetClasses.length === 0) {
       setPerformanceRows([]);
-      return;
+      return { rows: [], subjects: [] };
     }
     setIsLoading(true);
     try {
@@ -242,6 +271,32 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       }));
       setPerformanceSubjects(nextSubjects);
 
+      const marksBySubject = new Map<string, Map<string, number | null>>();
+      await Promise.all(
+        targetJoints.map(async (joint) => {
+          const subjectJointId = String(joint.id || joint.subjectJointId || joint.subjectId);
+          const query = new URLSearchParams({
+            subjectId: subjectJointId,
+            year: performancePeriod.year,
+            term: String(performancePeriod.term),
+            examType: performancePeriod.examType,
+            page: "0",
+            size: "1000",
+          });
+          const response = await api.get<any>(`/marks?${query.toString()}`);
+          const rows = Array.isArray(response) ? response : response?.data;
+          const marks = new Map<string, number | null>();
+
+          (Array.isArray(rows) ? rows : []).forEach((row: any) => {
+            marks.set(
+              String(row.studentId),
+              computeMarkPercentage(row),
+            );
+          });
+          marksBySubject.set(subjectJointId, marks);
+        }),
+      );
+
       const dashboards = await Promise.all(targetClasses.map((cls) => {
         const query = new URLSearchParams({
           term: String(performancePeriod.term),
@@ -255,7 +310,15 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
         name: item.studentName || "",
         admissionNo: item.admissionNo || "-",
         stream: item.stream || "",
-        marks: {},
+        marks: Object.fromEntries(
+          targetJoints.map((joint) => {
+            const subjectJointId = String(joint.id || joint.subjectJointId || joint.subjectId);
+            return [
+              subjectJointId,
+              marksBySubject.get(subjectJointId)?.get(String(item.studentId)) ?? null,
+            ];
+          }),
+        ),
         total: Math.round(Number(item.totalMarks) || 0),
         points: Math.round(Number(item.points) || 0),
         scoredSubjects: Number(item.scoredSubjects) || 0,
@@ -286,9 +349,11 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
         row.rank = currentRank;
       });
       setPerformanceRows(ranked);
+      return { rows: ranked, subjects: nextSubjects };
     } catch (err: any) {
       setPerformanceSubjects([]);
       setMsg({ text: err.message || "Failed to load performance.", type: "error" });
+      return { rows: [], subjects: [] };
     } finally {
       setIsLoading(false);
     }
@@ -393,16 +458,17 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
 
   const rankingLabel = rankingMode === "total_marks" ? "Total Marks" : "Total Points";
 
-  const handleDownloadExcel = () => {
-    if (performanceRows.length === 0) return;
-    const worksheetData = performanceRows.map(row => {
+  const handleDownloadExcel = async () => {
+    const { rows, subjects } = await loadPerformance();
+    if (rows.length === 0) return;
+    const worksheetData = rows.map(row => {
       const data: any = {
         Rank: row.rank,
         Student: row.name,
         "Adm No": row.admissionNo,
         Stream: row.stream
       };
-      availableSubjects.forEach(sub => {
+      subjects.forEach(sub => {
         data[sub.name] = row.marks[sub.id] ?? "-";
       });
       data["Total Marks"] = row.total;
@@ -419,8 +485,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     setMsg({ text: "Excel report downloaded successfully.", type: "success" });
   };
 
-  const handleDownloadPDF = () => {
-    if (performanceRows.length === 0) return;
+  const handleDownloadPDF = async () => {
+    const { rows, subjects } = await loadPerformance();
+    if (rows.length === 0) return;
     const doc = new jsPDF("landscape");
     const title = isGradeSelected ? `Grade ${currentGrade} (All Streams) Performance Report` : `${currentClass?.name} Performance Report`;
     doc.setFontSize(16);
@@ -432,13 +499,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
     
     autoTable(doc, {
-      head: [["Rank", "Student", "Adm No", "Stream", ...availableSubjects.map(s => s.name), "Total Marks", "Total Points"]],
-      body: performanceRows.map(row => [
+      head: [["Rank", "Student", "Adm No", "Stream", ...subjects.map(s => s.name), "Total Marks", "Total Points"]],
+      body: rows.map(row => [
         row.rank,
         row.name,
         row.admissionNo,
         row.stream,
-        ...availableSubjects.map(s => row.marks[s.id] ?? "-"),
+        ...subjects.map(s => row.marks[s.id] ?? "-"),
         row.total,
         row.points
       ]),

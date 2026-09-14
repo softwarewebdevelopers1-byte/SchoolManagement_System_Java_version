@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import com.example.school.system.DTO.stats.StreamPerformanceDTO;
 import com.example.school.system.DTO.stats.SubjectCoverageDTO;
 import com.example.school.system.DTO.stats.SubjectGradeDistributionDTO;
 import com.example.school.system.DTO.stats.SubjectPerformanceDTO;
+import com.example.school.system.DTO.stats.StudentPerformanceDTO;
 import com.example.school.system.DTO.stats.TeacherSummaryStatsDTO;
 import com.example.school.system.DTO.stats.TermlyTrendDTO;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -166,10 +168,29 @@ public class StatsService {
     }
 
         @Transactional(readOnly = true)
-        public List<StudentPerformanceProjection> getStudentPerformance(
+        public List<StudentPerformanceDTO> getStudentPerformance(
                         UUID classId, Integer term, String academicYear, ExamType examType) {
-                return marksRepo.findStudentPerformanceByClass(classId, academicYear, term, examType.name());
+                return marksRepo.findStudentPerformanceByClass(classId, academicYear, term, examType.name())
+                                .stream()
+                                .map(p -> new StudentPerformanceDTO(
+                                                bytesToUuid(p.getStudentId()),
+                                                p.getStudentName(),
+                                                p.getAdmissionNo(),
+                                                p.getStream(),
+                                                p.getTotalMarks(),
+                                                p.getPoints(),
+                                                p.getScoredSubjects(),
+                                                p.getAverage()))
+                                .toList();
         }
+
+    private static UUID bytesToUuid(byte[] bytes) {
+        if (bytes == null || bytes.length < 16) {
+            return null;
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return new UUID(buffer.getLong(), buffer.getLong());
+    }
 
     @Transactional(readOnly = true)
     public List<ClassAnalyticsDTO> getGradeAnalytics(String grade, Integer term, String academicYear, ExamType examType) {
