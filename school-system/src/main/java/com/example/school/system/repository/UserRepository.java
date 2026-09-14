@@ -38,7 +38,9 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             LEFT JOIN u.studentProfile sp
             LEFT JOIN sp.schoolClass c
             WHERE u.school.id = :schoolId
-              AND :role MEMBER OF u.roles AND c.completed  = false
+              AND :role MEMBER OF u.roles
+              AND u.deletedAt IS NULL
+              AND c.completed = false
             """)
     Page<com.example.school.system.projection.StudentsLoaded> findLiveStudentsBySchoolIdWithRole(
             @Param("schoolId") UUID id, @Param("role") UserRoles role,
@@ -55,6 +57,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             LEFT JOIN sp.schoolClass c
             WHERE u.school.id = :schoolId
               AND :role MEMBER OF u.roles
+              AND u.deletedAt IS NULL
               AND (c.completed = false OR c.completed IS NULL)
             ORDER BY sp.studentFullName ASC
             """)
@@ -69,7 +72,9 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
             LEFT JOIN u.studentProfile sp
             LEFT JOIN sp.schoolClass c
             WHERE u.school.id = :schoolId
-              AND :role MEMBER OF u.roles AND c.completed = true
+              AND :role MEMBER OF u.roles
+              AND u.deletedAt IS NULL
+              AND c.completed = true
             """)
     Page<com.example.school.system.projection.StudentsLoaded> findExitedStudentsBySchoolIdWithRole(
             @Param("schoolId") UUID id, @Param("role") UserRoles role,
@@ -217,6 +222,7 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
                 LEFT JOIN tp.schoolClass c
                 WHERE (:schoolId IS NULL OR u.school.id = :schoolId)
                   AND :role NOT MEMBER OF u.roles
+                  AND u.deletedAt IS NULL
                   AND u.status NOT IN (com.example.school.system.types.AccountStatus.PENDING_APPROVAL,
                                        com.example.school.system.types.AccountStatus.REJECTED_INVITE)
                   AND (:search IS NULL

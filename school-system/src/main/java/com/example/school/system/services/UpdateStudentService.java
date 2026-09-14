@@ -2,7 +2,6 @@ package com.example.school.system.services;
 
 import java.util.UUID;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +32,6 @@ public class UpdateStudentService {
     private final StudentRepository studentRepository;
 
     @Transactional
-    @CacheEvict(cacheNames = "studentRosterPages", allEntries = true)
     public void updateStudent(UpdateStudentDTO updateStudentDTO) {
         log.info("Id update trial {}, student details \n name: {} \n email: {} \n status: {} ",
                 updateStudentDTO.studentId(),
@@ -78,12 +76,13 @@ public class UpdateStudentService {
             student.setStatus(status);
         }
         studentProfile.setGender(updateStudentDTO.gender() != null ? updateStudentDTO.gender() : Gender.NOT_SET);
-        
-         studentProfile.setGuardianName(updateStudentDTO.guardianName() != null? updateStudentDTO.guardianName() : null);
-         if (classId != null && studentProfile != null) {
-             SchoolClass studentClass = schoolClassRepository.findById(classId)
-                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
-             studentProfile.setSchoolClass(studentClass);
-         }
-     }
+
+        studentProfile
+                .setGuardianName(updateStudentDTO.guardianName() != null ? updateStudentDTO.guardianName() : null);
+        if (classId != null && studentProfile != null) {
+            SchoolClass studentClass = schoolClassRepository.findById(classId)
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+            studentProfile.setSchoolClass(studentClass);
+        }
+    }
 }
