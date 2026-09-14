@@ -213,6 +213,7 @@ export default function ClassTeacherDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
 
   const { theme, toggleTheme } = useDashboardTheme();
 
@@ -398,8 +399,10 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
   }, [effectiveClassId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (profileReady) {
+      void loadData();
+    }
+  }, [loadData, profileReady]);
 
   /**
    * If electives disappear while the user is currently
@@ -483,7 +486,7 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
   }, [currentUser?.id]);
 
   useEffect(() => {
-    refreshUser();
+    void refreshUser().finally(() => setProfileReady(true));
   }, [refreshUser]);
 
   const handleManualRefresh = async () => {

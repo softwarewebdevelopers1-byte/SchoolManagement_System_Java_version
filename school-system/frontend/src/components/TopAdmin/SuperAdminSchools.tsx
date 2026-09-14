@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Filter, MoreVertical, Search } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
+import { refreshSuperAdminPlatformStatistics, useSuperAdminSchools } from "../../lib/superAdminData";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "#16a34a",
@@ -32,8 +33,8 @@ const getStatusBadgeStyle = (status: string) => ({
 
 export default function SuperAdminSchools() {
   const navigate = useNavigate();
-  const [schools, setSchools] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: schoolsData, loading, error: schoolsError, refresh: loadSchools } = useSuperAdminSchools();
+  const schools = schoolsData || [];
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -53,23 +54,6 @@ export default function SuperAdminSchools() {
       setError("Failed to copy school code.");
     }
   };
-
-  const loadSchools = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await superAdminApi.getSchools();
-      setSchools(Array.isArray(response) ? response : response?.data || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load schools");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadSchools();
-  }, []);
 
   const filteredAndSortedSchools = useMemo(() => {
     let filtered = schools.filter((school) => {
@@ -104,6 +88,7 @@ export default function SuperAdminSchools() {
     try {
       await superAdminApi.updateSchoolStatus(schoolId, newStatus);
       await loadSchools();
+      void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
     } catch (err: any) {
       setError(err.message || "Failed to update school status");
@@ -128,7 +113,7 @@ export default function SuperAdminSchools() {
         </div>
       </header>
 
-      {error && <div style={styles.error}>{error}</div>}
+      {(error || schoolsError) && <div style={styles.error}>{error || schoolsError}</div>}
 
       <div style={styles.controls}>
         <div style={styles.searchBox}>

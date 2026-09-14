@@ -267,12 +267,7 @@ const loadClasses = async () => {
   });
 };
 
-const loadSubjectJoints = async () => {
-  const schoolId = getSchoolId();
-  if (!schoolId) return [];
-  const joints = await request<any[]>(
-    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
-  );
+export const normalizeSubjectJoints = (joints: any[]) => {
   return (joints || []).map((joint: any) => {
     const parsed = splitClassName(joint.className);
     return {
@@ -291,6 +286,15 @@ const loadSubjectJoints = async () => {
       sharedSlotId: joint.electiveCode || null,
     };
   });
+};
+
+const loadSubjectJoints = async () => {
+  const schoolId = getSchoolId();
+  if (!schoolId) return [];
+  const joints = await request<any[]>(
+    `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
+  );
+  return normalizeSubjectJoints(joints || []);
 };
 
 const findClassId = async (grade?: string | number, stream?: string) => {

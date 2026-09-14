@@ -35,4 +35,7 @@ build/
 .vscode/
 .env
 postman/
+.agents/
+.codex/
+TIMETABLE**
 

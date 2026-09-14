@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { api, request } from "../../lib/api";
+import { api, normalizeSubjectJoints, request } from "../../lib/api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
 import { Class, Student, Subject } from "./types";
 import {
@@ -23,6 +23,7 @@ interface PerformanceTabProps {
   classes: Class[];
   students: Student[];
   subjects: Subject[];
+  subjectJoints?: any[];
   avatar: (name: string, size: number) => string;
 }
 
@@ -145,7 +146,7 @@ const computeMarkPercentage = (marks: any): number | null => {
 
 const markToPoints = (v: number, bands: CbcGradingBand[]): number => resolveCbcBand(v, bands).points;
 
-export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, students }) => {
+export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, students, subjectJoints }) => {
   const { bands: cbcBands } = useCbcGradingBands();
   const [selectedId, setSelectedId] = useState(() => {
     const saved = localStorage.getItem("edunex.admin.performanceScope");
@@ -222,7 +223,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
     }
     setIsLoading(true);
     try {
-      const joints = await api.get<any[]>("/school/class-subjects");
+      const joints = subjectJoints
+        ? normalizeSubjectJoints(subjectJoints)
+        : await api.get<any[]>("/school/class-subjects");
       const classKeys = new Set(
         targetClasses.map(
           (cls) => `${String(cls.grade || "").trim()}::${String(cls.stream || "").trim()}`,
@@ -354,6 +357,12 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, student
       setTableLoaded(true);
     }
   }, [showTable, tableLoaded]);
+
+  useEffect(() => {
+    if (subjectJoints) {
+      setTableLoaded(false);
+    }
+  }, [subjectJoints]);
 
   const handleSendWhatsappMarks = async () => {
     if (!currentClass) return;

@@ -787,16 +787,28 @@ const AdminDashboard: React.FC = () => {
   const saveAssignment = async (payload: {
     subjectId: string;
     teacherId: string;
+    teacherProfileId?: string;
     classGrade: string;
     classStream: string;
   }) => {
     try {
-      await api.post("/school/assignments", payload);
+      // The subject-assignment API stores a TeacherProfile relationship.  The
+      // roster's `id` is the account ID, so send its linked profile ID instead.
+      const { teacherProfileId, ...assignment } = payload;
+      if (!teacherProfileId) {
+        throw new Error("The selected staff member does not have a teacher profile.");
+      }
+      await api.post("/school/assignments", {
+        ...assignment,
+        teacherId: teacherProfileId,
+      });
       await loadDashboardData();
       showSuccess("Assignment updated successfully.");
       closeModal();
     } catch (err) {
-      showError("Failed to update assignment.");
+      showError(
+        err instanceof Error ? err.message : "Failed to update assignment.",
+      );
     }
   };
 
@@ -1176,6 +1188,7 @@ const AdminDashboard: React.FC = () => {
           classes={classes}
           students={students}
           subjects={subjects}
+          subjectJoints={assignments}
           avatar={avatar}
         />
       );

@@ -1,28 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { BarChart3, TrendingUp, Users, Building2 } from "lucide-react";
-import { superAdminApi } from "../../lib/api";
+import { useSuperAdminPlatformStatistics } from "../../lib/superAdminData";
 
 export default function SuperAdminAnalytics() {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await superAdminApi.getPlatformStatistics();
-        setStats(response || null);
-      } catch (err: any) {
-        setError(err.message || "Failed to load analytics");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadStats();
-  }, []);
+  const { data: stats, loading, error } = useSuperAdminPlatformStatistics();
 
   if (loading) {
     return (

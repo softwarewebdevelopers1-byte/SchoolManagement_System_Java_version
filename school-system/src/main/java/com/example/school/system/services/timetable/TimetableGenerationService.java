@@ -59,7 +59,6 @@ public class TimetableGenerationService {
     private final TeachingPeriodGenerator teachingPeriodGenerator;
     private final TimetableBacktrackingSolver solver;
     private final ConflictDetectionService conflictDetectionService;
-    private final ConflictResolutionService conflictResolutionService;
     private final TimetablePersistenceService persistenceService;
     private final TimetableMapper mapper;
 
@@ -140,20 +139,25 @@ public class TimetableGenerationService {
     @Transactional
     public TimetableResponse generate(UUID schoolId, boolean replaceExisting) {
         var context = loadContext(schoolId);
-        if (replaceExisting) {
-            timetableRepository.deleteBySchoolIdAndAcademicYearAndTerm(
-                    schoolId,
-                    context.settings().getAcademicYear(),
-                    context.settings().getCurrentSchoolTerm());
-        }
         var result = solver.solve(buildLessonBlocks(context), context.weeklySlots());
         var timetable = persistenceService.buildTimetable(context, result);
         var conflicts = new ArrayList<>(result.conflicts());
         if (result.success()) {
-            conflicts.addAll(conflictDetectionService.detect(timetable.getEntries(), result.lessonsRequired()));
+            conflicts.addAll(conflictDetectionService.detect(timetable, context));
         }
-        int repaired = conflictResolutionService.attemptRepair(conflicts);
-        var savedTimetable = result.success() && conflicts.isEmpty() ? timetableRepository.save(timetable) : null;
+        // Hard conflicts are never repaired after generation. A failed validation is
+        // a failed generation and must not result in a persisted timetable.
+        int repaired = 0;
+        Timetable savedTimetable = null;
+        if (result.success() && conflicts.isEmpty()) {
+            if (replaceExisting) {
+                // Only remove the previous published timetable after the candidate
+                // has been completely generated and independently validated.
+                timetableRepository.deleteBySchoolIdAndAcademicYearAndTerm(
+                        schoolId, context.settings().getAcademicYear(), context.settings().getCurrentSchoolTerm());
+            }
+            savedTimetable = timetableRepository.saveAndFlush(timetable);
+        }
         var status = result.success() && conflicts.isEmpty() ? GenerationStatus.SUCCESS : GenerationStatus.FAILED;
         var history = persistenceService.buildHistory(context, savedTimetable, result, conflicts, repaired, status);
         generationHistoryRepository.save(history);
@@ -175,7 +179,7 @@ public class TimetableGenerationService {
         var timetable = persistenceService.buildTimetable(context, result);
         var conflicts = new ArrayList<>(result.conflicts());
         if (result.success()) {
-            conflicts.addAll(conflictDetectionService.detect(timetable.getEntries(), result.lessonsRequired()));
+            conflicts.addAll(conflictDetectionService.detect(timetable, context));
         }
         return mapper.toResponse(timetable, report(result, conflicts, 0));
     }
@@ -339,6 +343,14 @@ public class TimetableGenerationService {
             if (joint.getTeacherProfile() == null) {
                 throw new SchoolResourceBadInputExceptionHandler(
                         "subject " + joint.getSubject().getSubjectName() + " has no assigned teacher");
+            }
+            if (requirement.getWeeklyLessons() == null || requirement.getWeeklyLessons() < 1) {
+                throw new SchoolResourceBadInputExceptionHandler("subject requirements must contain at least one lesson");
+            }
+            if (!requirement.getSchool().getId().equals(joint.getSchoolClass().getSchool().getId())
+                    || !requirement.getSchool().getId().equals(joint.getSubject().getSchool().getId())) {
+                throw new SchoolResourceBadInputExceptionHandler(
+                        "subject requirement, class, and subject must belong to the same school");
             }
             if (!joint.getSchoolClass().getClassId().equals(requirement.getSchoolClass().getClassId())) {
                 throw new SchoolResourceBadInputExceptionHandler("subject requirement class does not match allocation");

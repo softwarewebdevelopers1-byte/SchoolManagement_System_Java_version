@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { api, getSchoolId, request } from "./api";
+import { useCallback, useEffect, useState, useSyncExternalStore, type SetStateAction } from "react";
+import { getSchoolId, request } from "./api";
 
 export interface CbcGradingBand {
   bandId?: string;
@@ -75,39 +75,122 @@ export const cbcBandBg = (band: string) => {
   return "#f3f4f3";
 };
 
+type CbcGradingState = {
+  bands: CbcGradingBand[];
+  gradeScalerId?: string;
+  loading: boolean;
+  error: string;
+  updatedAt: number;
+};
+
+const CBC_CACHE_TTL_MS = 60_000;
+const emptyCbcState: CbcGradingState = {
+  bands: [],
+  gradeScalerId: undefined,
+  loading: true,
+  error: "",
+  updatedAt: 0,
+};
+const cbcStates = new Map<string, CbcGradingState>();
+const cbcListeners = new Map<string, Set<() => void>>();
+const cbcPending = new Map<string, Promise<CbcGradingState>>();
+
+const cbcStateFor = (schoolId: string) => cbcStates.get(schoolId) || emptyCbcState;
+const notifyCbc = (schoolId: string) =>
+  cbcListeners.get(schoolId)?.forEach((listener) => listener());
+const setCbcState = (schoolId: string, state: CbcGradingState) => {
+  cbcStates.set(schoolId, state);
+  notifyCbc(schoolId);
+};
+
+const loadCbcBands = (schoolId: string, force = false): Promise<CbcGradingState> => {
+  const current = cbcStateFor(schoolId);
+  if (!force && current.updatedAt && Date.now() - current.updatedAt < CBC_CACHE_TTL_MS) {
+    return Promise.resolve(current);
+  }
+  const pending = cbcPending.get(schoolId);
+  if (pending) return pending;
+
+  setCbcState(schoolId, { ...current, loading: true, error: "" });
+  const requestPromise = request<any>(
+    `/create/grading-scale/${encodeURIComponent(schoolId)}`,
+  )
+    .then((response) => {
+      const next = {
+        bands: normalizeCbcBands(response?.gradeBandDTOs || []),
+        gradeScalerId: response?.gradeScaleId,
+        loading: false,
+        error: "",
+        updatedAt: Date.now(),
+      };
+      setCbcState(schoolId, next);
+      return next;
+    })
+    .catch((err: unknown) => {
+      const next = {
+        ...cbcStateFor(schoolId),
+        loading: false,
+        error: err instanceof Error ? err.message : "Unable to load CBC grading configuration.",
+      };
+      setCbcState(schoolId, next);
+      throw err;
+    })
+    .finally(() => cbcPending.delete(schoolId));
+  cbcPending.set(schoolId, requestPromise);
+  return requestPromise;
+};
+
+export const invalidateCbcGradingBands = (schoolId = getSchoolId()) => {
+  if (!schoolId) return;
+  const current = cbcStateFor(schoolId);
+  setCbcState(schoolId, { ...current, updatedAt: 0 });
+};
+
 export const useCbcGradingBands = () => {
-  const [bands, setBands] = useState<CbcGradingBand[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [gradeScalerId, setGradeScalerId] = useState();
-  const [error, setError] = useState("");
+  const schoolId = getSchoolId();
+  const [draftBands, setDraftBands] = useState<CbcGradingBand[] | null>(null);
+  const subscribe = useCallback((listener: () => void) => {
+    if (!schoolId) return () => undefined;
+    const listeners = cbcListeners.get(schoolId) || new Set<() => void>();
+    listeners.add(listener);
+    cbcListeners.set(schoolId, listeners);
+    return () => listeners.delete(listener);
+  }, [schoolId]);
+  const getSnapshot = useCallback(
+    () => (schoolId ? cbcStateFor(schoolId) : emptyCbcState),
+    [schoolId],
+  );
+  const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const reload = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response: any = await request(
-        `/create/grading-scale/${encodeURIComponent(getSchoolId()!)}`,
-      );
-      console.log("response ", response?.gradeBandDTOs);
-      setGradeScalerId(response?.gradeScaleId);
-
-      setBands(normalizeCbcBands(response?.gradeBandDTOs || []));
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load CBC grading configuration.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const reload = useCallback(async () => {
+    if (!schoolId) return;
+    setDraftBands(null);
+    await loadCbcBands(schoolId, true);
+  }, [schoolId]);
 
   useEffect(() => {
-    void reload();
-  }, []);
+    if (!schoolId) return;
+    void loadCbcBands(schoolId).catch(() => undefined);
+  }, [schoolId]);
 
-  return { bands, setBands, loading, error, reload, gradeScalerId };
+  const setBands = useCallback(
+    (next: SetStateAction<CbcGradingBand[]>) => {
+      setDraftBands((current) => {
+        const base = current ?? state.bands;
+        return typeof next === "function" ? next(base) : next;
+      });
+    },
+    [state.bands],
+  );
+
+  return {
+    bands: draftBands ?? state.bands,
+    setBands,
+    loading: state.loading,
+    error: state.error,
+    reload,
+    gradeScalerId: state.gradeScalerId,
+  };
 };
 
 export const totalPointsForMarks = (

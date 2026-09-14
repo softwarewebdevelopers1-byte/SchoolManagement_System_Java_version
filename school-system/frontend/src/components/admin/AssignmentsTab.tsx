@@ -463,9 +463,11 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         teachers={teachers}
         onClose={closeModal}
         onSave={async (teacherId) => {
+          const teacher = teachers.find((item) => item.id === teacherId);
           await onSaveAssignment({
             subjectId: subject.subjectJointId,
             teacherId,
+            teacherProfileId: teacher?.teacherProfileId,
             classId: currentClass.classId,
           });
         }}

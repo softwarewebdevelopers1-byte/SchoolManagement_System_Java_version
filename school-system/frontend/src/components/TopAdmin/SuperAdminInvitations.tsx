@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Copy, Filter, MoreVertical, Search, Trash2 } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
+import { refreshSuperAdminPlatformStatistics, useSuperAdminSchools } from "../../lib/superAdminData";
 
 const statusColors: Record<string, string> = {
   PENDING: "#c084fc",
@@ -30,7 +31,8 @@ export default function SuperAdminInvitations() {
   const [showModal, setShowModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [schoolOptions, setSchoolOptions] = useState<any[]>([]);
+  const { data: schoolsData, error: schoolsError } = useSuperAdminSchools();
+  const schoolOptions = schoolsData || [];
   const [schoolId, setSchoolId] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
@@ -48,23 +50,15 @@ export default function SuperAdminInvitations() {
     }
   };
 
-  const loadSchools = async () => {
-    try {
-      const response = await superAdminApi.getSchools();
-      const schools = Array.isArray(response) ? response : response?.data || [];
-      setSchoolOptions(schools);
-      if (schools.length > 0 && !schoolId) {
-        setSchoolId(schools[0].schoolId || schools[0].id || "");
-      }
-    } catch {
-      setSchoolOptions([]);
-    }
-  };
-
   useEffect(() => {
     void loadInvitations();
-    void loadSchools();
   }, []);
+
+  useEffect(() => {
+    if (schoolOptions.length > 0 && !schoolId) {
+      setSchoolId(schoolOptions[0].schoolId || schoolOptions[0].id || "");
+    }
+  }, [schoolId, schoolOptions]);
 
   const filteredInvitations = useMemo(() => {
     return invitations.filter((invite) => {
@@ -96,6 +90,7 @@ export default function SuperAdminInvitations() {
     try {
       await superAdminApi.revokeInvitation(inviteId);
       await loadInvitations();
+      void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
     } catch (err: any) {
       setError(err.message || "Failed to revoke invitation");
@@ -115,6 +110,7 @@ export default function SuperAdminInvitations() {
       setInviteEmail("");
       setShowCreateModal(false);
       await loadInvitations();
+      void refreshSuperAdminPlatformStatistics().catch(() => undefined);
     } catch (err: any) {
       setError(err.message || "Failed to generate invitation link");
     } finally {
@@ -140,7 +136,7 @@ export default function SuperAdminInvitations() {
         </div>
       </header>
 
-      {error && <div style={styles.error}>{error}</div>}
+      {(error || schoolsError) && <div style={styles.error}>{error || schoolsError}</div>}
 
       <div style={styles.controls}>
         <div style={styles.searchBox}>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Phone, MapPin, Users, GraduationCap, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
+import { refreshSuperAdminPlatformStatistics, refreshSuperAdminSchools } from "../../lib/superAdminData";
 
 export default function SuperAdminSchoolDetail() {
   const { schoolId } = useParams<{ schoolId: string }>();
@@ -34,6 +35,7 @@ export default function SuperAdminSchoolDetail() {
       setUpdating(true);
       if (!schoolId) throw new Error("School ID not provided");
       await superAdminApi.updateSchoolStatus(schoolId, newStatus);
+      void Promise.all([refreshSuperAdminSchools(), refreshSuperAdminPlatformStatistics()]).catch(() => undefined);
       // Reload the school data
       const response = await superAdminApi.getSchoolById(schoolId);
       setSchool(response || null);

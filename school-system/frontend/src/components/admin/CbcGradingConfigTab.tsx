@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api, getSchoolId, request } from "../../lib/api";
 import {
+  invalidateCbcGradingBands,
   type CbcGradingBand,
   normalizeCbcBands,
   useCbcGradingBands,
@@ -163,6 +164,8 @@ export const CbcGradingConfigTab: React.FC = () => {
           gradeScaleId: gradeScalerId,
         }),
       });
+      invalidateCbcGradingBands(getSchoolId());
+      await reload();
       setMessage({
         text: "CBC grading configuration saved.",
         type: "success",

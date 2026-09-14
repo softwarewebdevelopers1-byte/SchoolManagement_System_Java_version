@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Activity,
   Building2,
@@ -14,6 +14,7 @@ import {
   Quote,
 } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
+import { refreshSuperAdminSchools, useSuperAdminPlatformStatistics } from "../../lib/superAdminData";
 
 interface SchoolForm {
   schoolName: string;
@@ -32,9 +33,7 @@ const initialSchoolForm: SchoolForm = {
 };
 
 export default function SuperAdminOverview() {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, loading, error, refresh: loadStats } = useSuperAdminPlatformStatistics();
 
   // School modal state
   const [showSchoolModal, setShowSchoolModal] = useState(false);
@@ -42,29 +41,6 @@ export default function SuperAdminOverview() {
   const [creatingSchool, setCreatingSchool] = useState(false);
   const [schoolSuccess, setSchoolSuccess] = useState<string | null>(null);
   const [schoolError, setSchoolError] = useState<string | null>(null);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await superAdminApi.getPlatformStatistics();
-
-      setStats(response || null);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load platform statistics",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadStats();
-  }, []);
 
   const openSchoolModal = () => {
     setSchoolForm(initialSchoolForm);
@@ -159,6 +135,7 @@ export default function SuperAdminOverview() {
 
       // Refresh dashboard statistics
       await loadStats();
+      void refreshSuperAdminSchools().catch(() => undefined);
 
       // Close modal after a short success display
       setTimeout(() => {

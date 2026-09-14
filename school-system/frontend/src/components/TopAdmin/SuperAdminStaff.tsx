@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Filter, MoreVertical, Search } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
+import { refreshSuperAdminPlatformStatistics } from "../../lib/superAdminData";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "#16a34a",
@@ -86,6 +87,7 @@ export default function SuperAdminStaff() {
     try {
       await superAdminApi.updateUserStatus(userId, newStatus);
       await loadStaff();
+      void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
     } catch (err: any) {
       setError(err.message || "Failed to update staff status");

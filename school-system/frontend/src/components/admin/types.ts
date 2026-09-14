@@ -7,6 +7,8 @@ import type {
 
 export interface Teacher {
   id: string;
+  /** Identifier used by subject-joint endpoints (distinct from the login user ID). */
+  teacherProfileId?: string;
   userId?: string;
   usersId?: string;
   name: string;

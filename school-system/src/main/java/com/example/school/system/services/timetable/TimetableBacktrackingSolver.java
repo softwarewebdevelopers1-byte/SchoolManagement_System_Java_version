@@ -53,6 +53,7 @@ public class TimetableBacktrackingSolver {
             return true;
         }
         if (++state.visitedNodes > MAX_SEARCH_NODES) {
+            state.searchLimitReached = true;
             return false;
         }
         var selected = selectNextLesson(remaining, state);
@@ -86,7 +87,7 @@ public class TimetableBacktrackingSolver {
 
     private List<GeneratedSlot> candidateSlots(LessonBlock lesson, SearchState state) {
         return state.weeklySlots.stream()
-                .filter(slot -> state.canStartBlockAt(lesson, slot))
+                .filter(slot -> state.canStartBlockAt(lesson, slot) && state.canPlace(lesson, slot))
                 .sorted(Comparator.comparingInt((GeneratedSlot slot) -> candidateScore(lesson, slot, state))
                         .thenComparing(GeneratedSlot::dayOfWeek)
                         .thenComparing(GeneratedSlot::periodNumber))
@@ -116,6 +117,15 @@ public class TimetableBacktrackingSolver {
 
     private List<TimetableConflict> buildFailureConflicts(List<LessonBlock> orderedLessons, SearchState state) {
         var failed = state.failedLesson == null && !orderedLessons.isEmpty() ? orderedLessons.get(0) : state.failedLesson;
+        if (state.searchLimitReached) {
+            return List.of(TimetableConflict.error(
+                    TimetableConflictType.MISSING_LESSON,
+                    "No conflict-free timetable was found within the " + MAX_SEARCH_NODES
+                            + "-node search limit. No timetable was saved.",
+                    failed == null ? null : failed.classId(),
+                    failed == null ? null : failed.teacherId(),
+                    failed == null ? null : failed.subjectId(), null, null));
+        }
         if (failed == null) {
             return List.of(TimetableConflict.error(
                     TimetableConflictType.MISSING_LESSON,
@@ -170,6 +180,7 @@ public class TimetableBacktrackingSolver {
         private final List<ScheduledLesson> scheduledLessons = new ArrayList<>();
         private LessonBlock failedLesson;
         private int visitedNodes;
+        private boolean searchLimitReached;
 
         private SearchState(List<GeneratedSlot> weeklySlots) {
             this.weeklySlots = weeklySlots;

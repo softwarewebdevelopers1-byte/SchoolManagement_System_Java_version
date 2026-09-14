@@ -47,6 +47,60 @@ const isTimetableRecord = (value: unknown): value is TimetableRecord => {
   );
 };
 
+// The timetable generator API returns one school timetable with flat entries,
+// while this library also supports the older per-class timetable document API.
+// Normalize the generated result so a validated generation is immediately
+// visible instead of being treated as an empty response.
+const normalizeGeneratedTimetable = (value: unknown): TimetableRecord[] => {
+  if (!value || typeof value !== "object") return [];
+  const generated = value as Record<string, any>;
+  if (!Array.isArray(generated.entries) || typeof generated.id !== "string") {
+    return [];
+  }
+  const byClass = new Map<string, any[]>();
+  generated.entries.forEach((entry: any) => {
+    if (!entry?.classId) return;
+    byClass.set(entry.classId, [...(byClass.get(entry.classId) || []), entry]);
+  });
+  return [...byClass.entries()].map(([classId, entries]) => ({
+    id: `${generated.id}:${classId}`,
+    batchId: generated.id,
+    classGrade: entries[0]?.className?.split(" ")[0] || "Class",
+    classStream: entries[0]?.className?.split(" ").slice(1).join(" ") || "",
+    term: generated.term || 0,
+    year: Number(generated.academicYear) || 0,
+    schoolStartTime: entries[0]?.startTime || "",
+    subjectsPerDay: 0,
+    subjectDurationMinutes: 0,
+    breaks: [],
+    days: entries.reduce((days: TimetableDay[], entry: any) => {
+      const day = `${entry.dayOfWeek || ""}`.toLowerCase();
+      const label = day ? `${day[0].toUpperCase()}${day.slice(1)}` : "Unknown";
+      const current = days.find((item) => item.day === label);
+      const lesson: TimetableEntry = {
+        type: "lesson",
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        slotNumber: entry.periodNumber,
+        subjectId: entry.subjectId,
+        subjectName: entry.subjectName,
+        teacherId: entry.teacherId,
+        teacherName: entry.teacherName,
+      };
+      if (current) current.entries.push(lesson);
+      else days.push({ day: label, entries: [lesson] });
+      return days;
+    }, []),
+    teacherIds: Array.from(new Set(entries.map((entry) => entry.teacherId).filter(Boolean))),
+    pdfUrl: "",
+    storagePath: "",
+    generationMode: "balanced-fallback",
+    myLessons: [],
+    createdAt: generated.generatedAt || "",
+    updatedAt: generated.generatedAt || "",
+  }));
+};
+
 const buildLessonMeta = (entry: TimetableEntry | null) => {
   if (!entry || entry.type !== "lesson") {
     return "No lesson scheduled";
@@ -122,8 +176,8 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
                 : data && typeof data === "object" && ("id" in data || "days" in data)
                   ? [data]
                   : [];
-        const normalized = (Array.isArray(source) ? source : []).filter(
-          (item): item is TimetableRecord => isTimetableRecord(item),
+        const normalized = (Array.isArray(source) ? source : []).flatMap((item) =>
+          isTimetableRecord(item) ? [item] : normalizeGeneratedTimetable(item),
         );
         setTimetables(normalized);
       } catch (err) {

@@ -106,4 +106,103 @@ class TimetableGenerateRequestTest {
         assertEquals(4, result.scheduledLessons().size());
         assertFalse(result.scheduledLessons().stream().anyMatch(item -> item.firstSlot() == null));
     }
+
+    @Test
+    void solverSeparatesLessonsThatShareATeacher() {
+        var teacher = UUID.randomUUID();
+        var classOne = UUID.randomUUID();
+        var classTwo = UUID.randomUUID();
+        var subject = UUID.randomUUID();
+        var slots = List.of(
+                new GeneratedSlot(DayOfWeek.MONDAY, 1, LocalTime.of(8, 0), LocalTime.of(8, 40)),
+                new GeneratedSlot(DayOfWeek.MONDAY, 2, LocalTime.of(8, 40), LocalTime.of(9, 20)));
+        var lessons = List.of(
+                new LessonBlock(UUID.randomUUID(), classOne, subject, teacher, UUID.randomUUID(), "Math",
+                        SubjectType.COMPULSORY, SubjectTimePreference.NEUTRAL, 1, 1, Set.of()),
+                new LessonBlock(UUID.randomUUID(), classTwo, subject, teacher, UUID.randomUUID(), "Math",
+                        SubjectType.COMPULSORY, SubjectTimePreference.NEUTRAL, 1, 1, Set.of()));
+
+        var result = new TimetableBacktrackingSolver().solve(lessons, slots);
+
+        assertTrue(result.success());
+        assertEquals(2, result.scheduledLessons().stream().map(item -> item.firstSlot().periodNumber()).distinct().count());
+    }
+
+    @Test
+    void solverFailsInsteadOfReturningAPartialTimetableWhenCapacityIsImpossible() {
+        var teacher = UUID.randomUUID();
+        var slots = List.of(new GeneratedSlot(DayOfWeek.MONDAY, 1, LocalTime.of(8, 0), LocalTime.of(8, 40)));
+        var lessons = List.of(
+                new LessonBlock(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), teacher, UUID.randomUUID(),
+                        "Math", SubjectType.COMPULSORY, SubjectTimePreference.NEUTRAL, 1, 1, Set.of()),
+                new LessonBlock(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), teacher, UUID.randomUUID(),
+                        "English", SubjectType.COMPULSORY, SubjectTimePreference.NEUTRAL, 1, 1, Set.of()));
+
+        var result = new TimetableBacktrackingSolver().solve(lessons, slots);
+
+        assertFalse(result.success());
+        assertTrue(result.scheduledLessons().isEmpty());
+        assertEquals(0, result.lessonsGenerated());
+        assertFalse(result.conflicts().isEmpty());
+    }
+
+    @Test
+    void teachingPeriodsSkipConfiguredBreaks() {
+        var settings = new com.example.school.system.models.SchoolSettings();
+        settings.setSchoolStartTime(LocalTime.of(8, 0));
+        settings.setLessonsPerDay(3);
+        settings.setMinutesPerLesson(40);
+        var schoolBreak = new com.example.school.system.models.SchoolBreak();
+        schoolBreak.setName("break");
+        schoolBreak.setStartTime(LocalTime.of(8, 40));
+        schoolBreak.setEndTime(LocalTime.of(9, 0));
+        settings.setBreaks(List.of(schoolBreak));
+
+        var periods = new TeachingPeriodGenerator().generateDailyPeriods(settings);
+
+        assertEquals(LocalTime.of(8, 0), periods.get(0).startTime());
+        assertEquals(LocalTime.of(9, 0), periods.get(1).startTime());
+        assertFalse(periods.stream().anyMatch(period -> period.startTime().isBefore(LocalTime.of(9, 0))
+                && period.endTime().isAfter(LocalTime.of(8, 40))));
+    }
+
+    @Test
+    void finalValidatorRejectsDuplicateClassTeacherAndLessonSlots() {
+        var schoolClass = new com.example.school.system.models.SchoolClass();
+        schoolClass.setClassId(UUID.randomUUID());
+        var teacher = new com.example.school.system.models.TeacherProfile();
+        teacher.setId(UUID.randomUUID());
+        var subject = new com.example.school.system.models.Subject();
+        subject.setId(UUID.randomUUID());
+        var joint = new com.example.school.system.models.SubjectJoint();
+        joint.setId(UUID.randomUUID());
+        joint.setSchoolClass(schoolClass);
+        joint.setSubject(subject);
+        joint.setTeacherProfile(teacher);
+        var first = timetableEntry(schoolClass, teacher, subject, joint);
+        var duplicate = timetableEntry(schoolClass, teacher, subject, joint);
+
+        var conflicts = new ConflictDetectionService().detect(List.of(first, duplicate), 2);
+
+        assertTrue(conflicts.stream().anyMatch(conflict -> conflict.type().name().equals("CLASS_CONFLICT")));
+        assertTrue(conflicts.stream().anyMatch(conflict -> conflict.type().name().equals("TEACHER_CONFLICT")));
+        assertTrue(conflicts.stream().anyMatch(conflict -> conflict.type().name().equals("DUPLICATE_ENTRY")));
+    }
+
+    private com.example.school.system.models.TimetableEntry timetableEntry(
+            com.example.school.system.models.SchoolClass schoolClass,
+            com.example.school.system.models.TeacherProfile teacher,
+            com.example.school.system.models.Subject subject,
+            com.example.school.system.models.SubjectJoint joint) {
+        var entry = new com.example.school.system.models.TimetableEntry();
+        entry.setSchoolClass(schoolClass);
+        entry.setTeacherProfile(teacher);
+        entry.setSubject(subject);
+        entry.setSubjectJoint(joint);
+        entry.setDayOfWeek(DayOfWeek.MONDAY);
+        entry.setPeriodNumber(1);
+        entry.setStartTime(LocalTime.of(8, 0));
+        entry.setEndTime(LocalTime.of(8, 40));
+        return entry;
+    }
 }

@@ -175,6 +175,10 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
         method: "POST",
         body: JSON.stringify({
           schoolId: getSchoolId(),
+          // This screen generates the current school's single active timetable.
+          // Ask the backend to replace it atomically only after a valid candidate
+          // has been found and validated.
+          replaceExisting: true,
           schoolStartTime,
           lessonsPerDay: subjectsPerDay,
           minutesPerLesson: subjectDurationMinutes,
@@ -186,9 +190,22 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
         }),
       });
 
+      if (response?.status !== "ACTIVE") {
+        const failures = response?.report?.conflicts
+          ?.map((conflict: { message?: string }) => conflict.message)
+          .filter(Boolean);
+        setStatus({
+          type: "error",
+          text:
+            failures?.[0] ||
+            "Unable to generate a conflict-free timetable. Review subject requirements, teacher assignments, and available teaching periods.",
+        });
+        return;
+      }
+
       setStatus({
         type: "success",
-        text: response.message || "School timetables generated successfully.",
+        text: `Conflict-free timetable generated with ${response?.entries?.length ?? 0} lessons.`,
       });
       setRefreshKey((current) => current + 1);
     } catch (err) {
