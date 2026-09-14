@@ -157,7 +157,6 @@ const StaffFormModal: React.FC<{
     password: string;
   }) => Promise<void>;
 }> = ({ teacher, classes, onClose, onSave }) => {
-  console.log("teacher details ", teacher);
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
   const [firstName, setFirstName] = useState(teacher?.firstName || "");
   const [lastName, setLastName] = useState(teacher?.lastName);
@@ -566,14 +565,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
     const teacher = editId
       ? teachers.find((current: any) => current.usersId === editId) || null
       : null;
-    console.log(
-      "Teachers ",
-      teachers,
-      "editId ",
-      editId,
-      "pagedTeachers",
-      pagedTeachers,
-    );
+
     showModal(
       <StaffFormModal
         teacher={teacher}
