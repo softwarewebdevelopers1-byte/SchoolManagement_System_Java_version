@@ -287,7 +287,7 @@ const StudentFormModal: React.FC<{
   );
 
   const [status, setStatus] = useState(
-    student?.status || "ACTIVE",
+    student?.status.toUpperCase() || "ACTIVE",
   );
 
   const [email, setEmail] = useState(
@@ -1309,7 +1309,7 @@ const StudentFormModal: React.FC<{
                     inactive
                   </option>
 
-                  <option value="DELETED">
+                  <option disabled value="DELETED">
                     deleted
                   </option>
                 </select>
@@ -1399,7 +1399,7 @@ interface StudentsTabProps {
 
   onDeleteStudent: (
     studentId: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 
   pill: (
     text: string,
@@ -1862,9 +1862,26 @@ export const StudentsTab: React.FC<
   ) => {
     showConfirm(
       `Delete <strong>${name}</strong> from the enrolled students list?`,
-      () => {
-        void onDeleteStudent(
-          studentId,
+      async () => {
+        const deleted = await onDeleteStudent(studentId);
+        if (!deleted) return;
+
+        const isDeletedStudent = (student: Student) =>
+          (student.userId || student.id) === studentId;
+
+        setPageResponse((previous) =>
+          previous
+            ? {
+                ...previous,
+                content: previous.content.filter(
+                  (student) => !isDeletedStudent(student),
+                ),
+                totalElements: Math.max(0, previous.totalElements - 1),
+              }
+            : previous,
+        );
+        setAllStudents((previous) =>
+          previous.filter((student) => !isDeletedStudent(student)),
         );
       },
       true,

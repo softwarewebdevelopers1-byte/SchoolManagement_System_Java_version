@@ -629,11 +629,15 @@ const AdminDashboard: React.FC = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
-      await api.delete(`/users/${studentId}`);
+      await request(`/delete/user?id=${encodeURIComponent(studentId)}`, {
+        method: "PATCH",
+      });
       await loadDashboardData();
       showSuccess("Student record deleted.");
+      return true;
     } catch (err) {
       showError("Failed to delete student.");
+      return false;
     }
   };
 
@@ -692,8 +696,10 @@ const AdminDashboard: React.FC = () => {
       });
       await loadDashboardData();
       showSuccess("Staff record deleted.");
+      return true;
     } catch (err) {
       showError("Failed to delete staff member.");
+      return false;
     }
   };
 

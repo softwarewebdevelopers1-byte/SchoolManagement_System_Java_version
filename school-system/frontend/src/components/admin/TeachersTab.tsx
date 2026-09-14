@@ -471,7 +471,7 @@ interface TeachersTabProps {
     },
     teacherId?: string,
   ) => Promise<void>;
-  onDeleteTeacher: (teacherId: string) => Promise<void>;
+  onDeleteTeacher: (teacherId: string) => Promise<boolean>;
   avatar: (name: string, size: number) => string;
   pill: (text: string, color: string) => string;
   showModal: (content: React.ReactNode) => void;
@@ -587,10 +587,24 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   };
 
   const confirmDeleteStaff = (teacher: any) => {
+    const teacherId = teacher.usersId || teacher.userId;
+    if (!teacherId) {
+      setError("The selected staff member does not have a user ID.");
+      return;
+    }
+
     showConfirm(
-      `Remove <strong>${teacher.name}</strong> from the staff directory?`,
+      `Remove <strong>${teacher.firstName} ${teacher.lastName}</strong> from the staff directory?`,
       async () => {
-        await onDeleteTeacher(teacher.userId);
+        const deleted = await onDeleteTeacher(teacherId);
+        if (!deleted) return;
+
+        setServerTeachers((previous) =>
+          previous.filter(
+            (current) => (current.usersId || current.userId) !== teacherId,
+          ),
+        );
+        setTotalElements((previous) => Math.max(0, previous - 1));
       },
       true,
     );
@@ -720,7 +734,9 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
                     </div>
                   </div>
                 </td>
-                <td style={bodyTextStyle}>{teacher.roles?.join(", ") || "-"}</td>
+                <td style={bodyTextStyle}>
+                  {teacher.roles?.join(", ") || "-"}
+                </td>
                 <td style={bodyTextStyle}>{teacher.department}</td>
                 <td style={bodyTextStyle}>{teacher.phoneNumber || "-"}</td>
                 <td style={{ padding: "10px 13px" }}>
