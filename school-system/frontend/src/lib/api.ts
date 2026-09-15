@@ -686,7 +686,7 @@ const fetchSubjectsData = async <T>(): Promise<T> => {
   );
   return (subjects || []).map((subject: any) => ({
     id: subject.subjectId || subject.id,
-    name: subject.subjectName || subject.name,
+    subjectName: subject.subjectName || subject.name,
     department: subject.department || "General",
     mainTeacherId: subject.mainTeacherId || subject.mainTeacher || null,
   })) as T;

@@ -540,6 +540,13 @@ const AdminDashboard: React.FC = () => {
           status: teacher.status,
         })),
       );
+      const normalizedSubjects = (nextSubjects || []).map((subject: any) => ({
+        ...subject,
+        id: subject.id || subject.subjectId,
+        subjectName: subject.subjectName || subject.name,
+        department: subject.department || "General",
+        mainTeacherId: subject.mainTeacherId || subject.mainTeacher || null,
+      }));
       const normalizedAssignments = (nextAssignments || []).map((assignment: any) => ({
         ...assignment,
         subjectId: assignment.subjectJointId || assignment.subjectId || assignment.id,
@@ -548,7 +555,7 @@ const AdminDashboard: React.FC = () => {
       const nextClasses = deriveClasses(
         mappedStudents,
         mappedTeachers,
-        nextSubjects || [],
+        normalizedSubjects,
         normalizedAssignments,
         nextClassSubjectSettings,
       );
@@ -558,7 +565,7 @@ const AdminDashboard: React.FC = () => {
       setStudents(
         mappedStudents.filter((student) => student.status !== "Completed"),
       );
-      setSubjects(nextSubjects || []);
+      setSubjects(normalizedSubjects);
       setAssignments(normalizedAssignments);
       setClassSubjectSettings(nextClassSubjectSettings);
       setSubjectJointsData(
