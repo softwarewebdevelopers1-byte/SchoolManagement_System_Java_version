@@ -4,13 +4,23 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +29,8 @@ import com.example.school.system.DTO.ResultAccessRequest;
 import com.example.school.system.DTO.ResultAccessResponse;
 import com.example.school.system.DTO.ResultPublicationRequest;
 import com.example.school.system.DTO.ResultPublicationResponse;
+import com.example.school.system.DTO.ResultLinkResponse;
+import com.example.school.system.DTO.ResultLinksPageResponse;
 import com.example.school.system.error.ResultAccessExpiredException;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
@@ -31,6 +43,7 @@ import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
+import com.example.school.system.types.ExamType;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.types.MarksSheetStatus;
 import com.example.school.system.DTO.GradingClassStudents;
@@ -55,6 +68,12 @@ public class ResultAccessService {
 
     @Value("${results.public-url:http://localhost:5173/results/}")
     private String publicResultsUrl;
+
+    @Value("${results.token.encryption-key:${jwt.secret}}")
+    private String tokenEncryptionKey = "local-test-key";
+
+    @Value("${results.token.expiration:7d}")
+    private Duration tokenExpiration = Duration.ofDays(7);
 
     @Transactional
     public ResultAccessResponse createAccess(ResultAccessRequest request) {
@@ -88,7 +107,8 @@ public class ResultAccessService {
         access.setCurrentSchoolTerm(request.term());
         access.setExamType(request.examType());
         access.setTokenHash(hashToken(rawToken));
-        access.setExpiresAt(request.expiresAt());
+        access.setEncryptedToken(encryptToken(rawToken));
+        access.setExpiresAt(effectiveExpiry(request.expiresAt()));
         ResultAccess saved = accessRepository.save(access);
 
         return new ResultAccessResponse(
@@ -164,7 +184,8 @@ public class ResultAccessService {
             access.setCurrentSchoolTerm(request.term());
             access.setExamType(request.examType());
             access.setTokenHash(hashToken(rawToken));
-            access.setExpiresAt(request.expiresAt());
+            access.setEncryptedToken(encryptToken(rawToken));
+            access.setExpiresAt(effectiveExpiry(request.expiresAt()));
             access.setRevokedAt(null);
             accessToSave.add(access);
             links.add(new ResultAccessResponse(
@@ -194,6 +215,70 @@ public class ResultAccessService {
     }
 
     @Transactional(readOnly = true)
+    public ResultLinksPageResponse listLinks(int page, int size, String search, String status,
+            String sortField, String sortDirection) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        int normalizedPage = Math.max(0, page);
+        int normalizedSize = Math.min(Math.max(1, size), 100);
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+        String normalizedStatus = status == null || status.isBlank() ? null : status.trim().toUpperCase();
+        String property = switch (sortField == null ? "" : sortField) {
+            case "student" -> "studentProfile.studentFullName";
+            case "expiresAt" -> "expiresAt";
+            case "status" -> "revokedAt";
+            default -> "createdAt";
+        };
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize, Sort.by(direction, property));
+        Page<ResultAccess> result = accessRepository.findAllForSchool(
+                schoolId, normalizedSearch, normalizedStatus, pageable);
+        return new ResultLinksPageResponse(
+                result.getContent().stream().map(this::toLinkResponse).toList(),
+                result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Transactional(readOnly = true)
+    public ResultLinkResponse getLink(UUID accessId) {
+        ResultAccess access = findSchoolAccess(accessId);
+        return toLinkResponse(access);
+    }
+
+    @Transactional
+    public ResultLinkResponse renewLink(UUID accessId) {
+        ResultAccess access = findSchoolAccess(accessId);
+        Instant now = Instant.now();
+        if (access.getRevokedAt() != null) {
+            throw new SchoolResourceNotFoundExceptionHandler("results link not found");
+        }
+        if (access.getEncryptedToken() != null
+                && access.getExpiresAt() != null
+                && access.getExpiresAt().isAfter(now)) {
+            throw new SchoolResourceExistsExceptionHandler("this results link is still active");
+        }
+
+        ClassTermResults publication = classTermResultsRepo
+                .findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        access.getStudentProfile().getId(),
+                        access.getAcademicYear(),
+                        access.getCurrentSchoolTerm(),
+                        access.getExamType())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("published results not found"));
+        if (!publication.isPublished()) {
+            throw new SchoolResourceNotFoundExceptionHandler("this result is not currently published");
+        }
+
+        String rawToken = generateToken();
+        access.setTokenHash(hashToken(rawToken));
+        access.setEncryptedToken(encryptToken(rawToken));
+        access.setExpiresAt(effectiveExpiry(null));
+        access.setRevokedAt(null);
+        access.setRenewedAt(now);
+        access.setRenewedBy(authenticatedUserService.currentUserId());
+        return toLinkResponse(accessRepository.save(access));
+    }
+
+    @Transactional(readOnly = true)
     public ParentResultsResponse getPublishedResults(String rawToken) {
         ResultAccess access = accessRepository.findByTokenHash(hashToken(rawToken))
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("results link not found"));
@@ -205,11 +290,22 @@ public class ResultAccessService {
             throw new ResultAccessExpiredException();
         }
 
+        UUID studentId = access.getStudentProfile().getId();
+        List<ClassTermResults> publishedExams =
+                classTermResultsRepo.findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
+                        studentId, access.getAcademicYear(), access.getCurrentSchoolTerm());
+        ExamType previousExam = publishedExams.stream()
+                .map(ClassTermResults::getExamType)
+                .filter(exam -> exam != null && exam.ordinal() < access.getExamType().ordinal())
+                .max(Comparator.comparingInt(Enum::ordinal))
+                .orElse(null);
+
         List<PublicResultRow> rows = publicResultsRepository.findPublishedResults(
-                access.getStudentProfile().getId(),
+                studentId,
                 access.getAcademicYear(),
                 access.getCurrentSchoolTerm(),
-                access.getExamType().ordinal());
+                access.getExamType().name(),
+                previousExam == null ? null : previousExam.name());
         if (rows.isEmpty()) {
             throw new SchoolResourceNotFoundExceptionHandler("published results not found");
         }
@@ -218,14 +314,18 @@ public class ResultAccessService {
         List<ParentResultsResponse.SubjectResult> subjects = rows.stream()
                 .filter(row -> row.getSubjectId() != null)
                 .map(row -> new ParentResultsResponse.SubjectResult(
-                        row.getSubjectId(),
+                        uuidFromHex(row.getSubjectId()),
                         row.getSubjectName(),
                         row.getScore(),
                         100,
                         row.getSubjectGrade(),
                         row.getPoints(),
                         blankToNull(row.getTeacherName()),
-                        null))
+                        blankToNull(row.getRemarks()),
+                        row.getPreviousScore(),
+                        row.getScore() == null || row.getPreviousScore() == null
+                                ? null
+                                : row.getScore() - row.getPreviousScore()))
                 .toList();
 
         double average = subjects.stream()
@@ -243,7 +343,7 @@ public class ResultAccessService {
 
         return new ParentResultsResponse(
                 new ParentResultsResponse.Student(
-                        first.getStudentId(),
+                        uuidFromHex(first.getStudentId()),
                         first.getStudentName(),
                         first.getStudentAdm(),
                         String.valueOf(first.getClassGrade()),
@@ -263,7 +363,9 @@ public class ResultAccessService {
                         first.getAcademicYear() + "-" + first.getTerm() + "-" + first.getExamType(),
                         termName,
                         null,
-                        null),
+                        null,
+                        access.getExamType().name(),
+                        previousExam == null ? null : previousExam.name()),
                 subjects,
                 new ParentResultsResponse.Summary(totalMarks, average, first.getOverallGrade()),
                 new ParentResultsResponse.Attendance(0, 0, 0, 0),
@@ -276,6 +378,87 @@ public class ResultAccessService {
         byte[] bytes = new byte[32];
         SECURE_RANDOM.nextBytes(bytes);
         return TOKEN_ENCODER.encodeToString(bytes);
+    }
+
+    private ResultAccess findSchoolAccess(UUID accessId) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        return accessRepository.findByIdForSchool(accessId, schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("results link not found"));
+    }
+
+    private ResultLinkResponse toLinkResponse(ResultAccess access) {
+        Instant now = Instant.now();
+        String status = access.getRevokedAt() != null
+                ? "REVOKED"
+                : access.getExpiresAt() != null && !access.getExpiresAt().isAfter(now)
+                        ? "EXPIRED"
+                        : "ACTIVE";
+        String url = access.getEncryptedToken() == null
+                ? null
+                : publicResultsUrl + decryptToken(access.getEncryptedToken());
+        StudentProfile student = access.getStudentProfile();
+        String className = student.getSchoolClass() == null
+                ? null
+                : "Grade " + student.getSchoolClass().getClassGrade()
+                        + (student.getSchoolClass().getClassStream() == null
+                                ? ""
+                                : " " + student.getSchoolClass().getClassStream());
+        return new ResultLinkResponse(
+                access.getId(),
+                student.getId(),
+                student.getStudentFullName(),
+                student.getStudentAdm(),
+                className,
+                access.getAcademicYear(),
+                access.getCurrentSchoolTerm(),
+                access.getExamType().name(),
+                status,
+                url,
+                access.getCreatedAt(),
+                access.getExpiresAt(),
+                access.getRenewedAt());
+    }
+
+    private Instant effectiveExpiry(Instant requestedExpiry) {
+        return requestedExpiry != null ? requestedExpiry : Instant.now().plus(tokenExpiration);
+    }
+
+    private String encryptToken(String rawToken) {
+        try {
+            byte[] iv = new byte[12];
+            SECURE_RANDOM.nextBytes(iv);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, encryptionKey(), new GCMParameterSpec(128, iv));
+            byte[] ciphertext = cipher.doFinal(rawToken.getBytes(StandardCharsets.UTF_8));
+            return TOKEN_ENCODER.encodeToString(iv) + "." + TOKEN_ENCODER.encodeToString(ciphertext);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to protect results link", exception);
+        }
+    }
+
+    private String decryptToken(String encryptedToken) {
+        try {
+            String[] parts = encryptedToken.split("\\.", 2);
+            if (parts.length != 2) {
+                throw new IllegalStateException("Invalid protected results link");
+            }
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, encryptionKey(),
+                    new GCMParameterSpec(128, Base64.getUrlDecoder().decode(parts[0])));
+            return new String(cipher.doFinal(Base64.getUrlDecoder().decode(parts[1])), StandardCharsets.UTF_8);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to recover results link", exception);
+        }
+    }
+
+    private SecretKeySpec encryptionKey() {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(tokenEncryptionKey.getBytes(StandardCharsets.UTF_8));
+            return new SecretKeySpec(digest, "AES");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 
     private static String hashToken(String rawToken) {
@@ -297,5 +480,19 @@ public class ResultAccessService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static UUID uuidFromHex(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String hex = value.replace("-", "").trim();
+        if (hex.length() != 32) {
+            throw new IllegalStateException("Invalid UUID returned for published results");
+        }
+        String formatted = hex.substring(0, 8) + "-" + hex.substring(8, 12) + "-"
+                + hex.substring(12, 16) + "-" + hex.substring(16, 20) + "-"
+                + hex.substring(20);
+        return UUID.fromString(formatted);
     }
 }

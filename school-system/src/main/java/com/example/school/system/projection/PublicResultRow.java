@@ -1,9 +1,7 @@
 package com.example.school.system.projection;
 
-import java.util.UUID;
-
 public interface PublicResultRow {
-    UUID getStudentId();
+    String getStudentId();
     String getStudentName();
     String getStudentAdm();
     Integer getClassGrade();
@@ -19,10 +17,12 @@ public interface PublicResultRow {
     Double getOverallTotalMarks();
     Integer getPosition();
     Integer getTotalStudents();
-    UUID getSubjectId();
+    String getSubjectId();
     String getSubjectName();
     Integer getScore();
     String getSubjectGrade();
     Double getPoints();
     String getTeacherName();
+    String getRemarks();
+    Double getPreviousScore();
 }

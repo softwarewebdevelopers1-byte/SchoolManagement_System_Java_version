@@ -85,6 +85,8 @@
 .subjects-table tbody tr:nth-child(even) { background: var(--edunex-gold-pale); }
 .subjects-table tbody tr:hover { background: var(--edunex-gold-light); }
 .subjects-table td:first-child { color: var(--edunex-green); font-weight: 800; text-transform: capitalize; }
+.comparison-note { margin: 0 42px 14px; padding: 10px 12px; border-left: 3px solid var(--edunex-gold); color: var(--edunex-muted); background: var(--edunex-gold-pale); font-size: 13px; }
+.difference-positive { color: #3b6d11; font-weight: 800; }.difference-negative { color: #a32d2d; font-weight: 800; }.difference-neutral { color: var(--edunex-muted); font-weight: 800; }
 
 .attendance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 0 42px; }
 .attendance-card { padding: 18px 12px; border: 1px solid var(--edunex-border); border-radius: 12px; text-align: center; }

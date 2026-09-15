@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.ResultAccessRequest;
@@ -46,5 +47,29 @@ public class PublicResultsController {
     public ResponseEntity<?> revokeAccess(@PathVariable UUID accessId) {
         resultAccessService.revokeAccess(accessId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/admin/results-links")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> listResultLinks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+        return ResponseEntity.ok(resultAccessService.listLinks(page, size, search, status, sort, direction));
+    }
+
+    @GetMapping("/api/admin/results-links/{accessId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getResultLink(@PathVariable UUID accessId) {
+        return ResponseEntity.ok(resultAccessService.getLink(accessId));
+    }
+
+    @PostMapping("/api/admin/results-links/{accessId}/renew")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> renewResultLink(@PathVariable UUID accessId) {
+        return ResponseEntity.ok(resultAccessService.renewLink(accessId));
     }
 }

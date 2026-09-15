@@ -21,6 +21,9 @@ public interface ClassTermResultsRepo extends JpaRepository<ClassTermResults, UU
     List<ClassTermResults> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
             UUID classId, String academicYear, Integer term, ExamType examType);
 
+    List<ClassTermResults> findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
+            UUID studentId, String academicYear, Integer term);
+
     @Modifying
     @Query(value = """
             UPDATE class_term_results r

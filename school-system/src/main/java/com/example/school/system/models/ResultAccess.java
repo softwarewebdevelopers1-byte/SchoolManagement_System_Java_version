@@ -56,6 +56,9 @@ public class ResultAccess {
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
+    @Column(name = "encrypted_token", length = 512)
+    private String encryptedToken;
+
     @Column(name = "expires_at")
     private Instant expiresAt;
 
@@ -64,6 +67,12 @@ public class ResultAccess {
 
     @Column(name = "revoked_at")
     private Instant revokedAt;
+
+    @Column(name = "renewed_at")
+    private Instant renewedAt;
+
+    @Column(name = "renewed_by", columnDefinition = "BINARY(16)")
+    private UUID renewedBy;
 
     @PrePersist
     private void generateIdAndTimestamp() {

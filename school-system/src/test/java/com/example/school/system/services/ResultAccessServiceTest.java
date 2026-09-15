@@ -1,6 +1,8 @@
 package com.example.school.system.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +96,80 @@ class ResultAccessServiceTest {
     }
 
     @Test
+    void renewsExpiredLinkAndReplacesItsToken() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        ResultAccess access = access("expired-token");
+        access.setId(accessId);
+        access.setExpiresAt(Instant.now().minusSeconds(1));
+        String oldHash = access.getTokenHash();
+
+        ClassTermResults publication = new ClassTermResults();
+        publication.setPublished(true);
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(authenticatedUserService.currentUserId()).thenReturn(adminId);
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+        when(classTermResultsRepo.findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                access.getStudentProfile().getId(), "2026", 2, ExamType.ENDTERM))
+                .thenReturn(Optional.of(publication));
+        when(accessRepository.save(access)).thenReturn(access);
+
+        var response = service.renewLink(accessId);
+
+        assertEquals("ACTIVE", response.status());
+        assertNotEquals(oldHash, access.getTokenHash());
+        assertNotNull(access.getEncryptedToken());
+        assertEquals(adminId, access.getRenewedBy());
+        assertNotNull(response.resultsUrl());
+    }
+
+    @Test
+    void rejectsRenewalOfAnActiveLink() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        ResultAccess access = access("active-token");
+        access.setId(accessId);
+        access.setExpiresAt(Instant.now().plusSeconds(60));
+        access.setEncryptedToken("existing-encrypted-token");
+
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+
+        assertThrows(com.example.school.system.error.SchoolResourceExistsExceptionHandler.class,
+                () -> service.renewLink(accessId));
+    }
+
+    @Test
+    void repairsAnActiveLinkWithoutRecoverableToken() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        ResultAccess access = access("active-token");
+        access.setId(accessId);
+        access.setExpiresAt(Instant.now().plusSeconds(60));
+        access.setEncryptedToken(null);
+
+        ClassTermResults publication = new ClassTermResults();
+        publication.setPublished(true);
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(authenticatedUserService.currentUserId()).thenReturn(UUID.randomUUID());
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+        when(classTermResultsRepo.findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                access.getStudentProfile().getId(), "2026", 2, ExamType.ENDTERM))
+                .thenReturn(Optional.of(publication));
+        when(accessRepository.save(access)).thenReturn(access);
+
+        var response = service.renewLink(accessId);
+
+        assertEquals("ACTIVE", response.status());
+        assertNotNull(response.resultsUrl());
+        assertNotNull(access.getEncryptedToken());
+    }
+
+    @Test
     void mapsOnlyThePublishedStudentRowsToParentResponse() {
         ResultAccess access = access("valid-token");
         when(accessRepository.findByTokenHash(org.mockito.ArgumentMatchers.anyString()))
@@ -103,7 +179,7 @@ class ResultAccessServiceTest {
         UUID studentId = UUID.randomUUID();
         UUID subjectId = UUID.randomUUID();
         access.getStudentProfile().setId(studentId);
-        when(row.getStudentId()).thenReturn(studentId);
+        when(row.getStudentId()).thenReturn(studentId.toString().replace("-", ""));
         when(row.getStudentName()).thenReturn("student");
         when(row.getStudentAdm()).thenReturn("ADM001");
         when(row.getClassGrade()).thenReturn(8);
@@ -116,14 +192,14 @@ class ResultAccessServiceTest {
         when(row.getOverallTotalMarks()).thenReturn(78d);
         when(row.getPosition()).thenReturn(1);
         when(row.getTotalStudents()).thenReturn(10);
-        when(row.getSubjectId()).thenReturn(subjectId);
+        when(row.getSubjectId()).thenReturn(subjectId.toString().replace("-", ""));
         when(row.getSubjectName()).thenReturn("Mathematics");
         when(row.getScore()).thenReturn(78);
         when(row.getSubjectGrade()).thenReturn("EE1");
         when(row.getPoints()).thenReturn(8d);
         when(row.getTeacherName()).thenReturn("teacher");
         when(publicResultsRepository.findPublishedResults(
-                studentId, "2026", 2, ExamType.ENDTERM.ordinal())).thenReturn(List.of(row));
+                studentId, "2026", 2, ExamType.ENDTERM.name(), null)).thenReturn(List.of(row));
 
         var response = service.getPublishedResults("valid-token");
 

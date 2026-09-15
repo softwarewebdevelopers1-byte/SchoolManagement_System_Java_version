@@ -21,7 +21,13 @@ type Result = {
     position?: number;
     totalStudents?: number;
   };
-  term: { name: string; startDate?: string; endDate?: string };
+  term: {
+    name: string;
+    startDate?: string;
+    endDate?: string;
+    examType?: string;
+    previousExamType?: string;
+  };
   subjects: Array<{
     id: string;
     name: string;
@@ -31,6 +37,8 @@ type Result = {
     points?: number;
     teacher?: string;
     remarks?: string;
+    previousScore?: number;
+    difference?: number;
   }>;
   summary: {
     totalMarks?: number;
@@ -181,7 +189,11 @@ const StudentResults = () => {
               {(school.email || school.phone) && <small>{[school.email, school.phone].filter(Boolean).join(" · ")}</small>}
             </div>
           </div>
-          <div className="report-title"><h2>Student Report Card</h2><p>{term.name}</p></div>
+          <div className="report-title">
+            <h2>Student Report Card</h2>
+            <p>{term.name}</p>
+            {term.examType && <small>{term.examType}{term.previousExamType ? ` · compared with ${term.previousExamType}` : " · first published exam"}</small>}
+          </div>
         </header>
 
         <section className="student-info-card">
@@ -203,15 +215,24 @@ const StudentResults = () => {
 
         <section className="subjects-section">
           <h3 className="section-title">Subject Results</h3>
+          <div className="comparison-note">
+            {term.previousExamType
+              ? `Performance difference compared with ${term.previousExamType}`
+              : "No previous published examination is available for comparison"}
+          </div>
           <div className="table-responsive">
             <table className="subjects-table">
-              <thead><tr><th>Subject</th><th>Teacher</th><th>Score</th><th>Grade</th><th>Points</th><th>Remarks</th></tr></thead>
+              <thead><tr><th>Subject</th><th>Teacher</th><th>Score</th><th>Grade</th><th>Points</th><th>Previous</th><th>Difference</th><th>Remarks</th></tr></thead>
               <tbody>{subjects.map((subject) => <tr key={subject.id}>
-                <td>{subject.name}</td>
+                <td>{subject.name || "Subject unavailable"}</td>
                 <td>{subject.teacher || "Not assigned"}</td>
                 <td>{subject.score ?? "-"}/{subject.maxScore ?? 100}</td>
                 <td>{subject.grade || "-"}</td>
                 <td>{subject.points ?? "-"}</td>
+                <td>{subject.previousScore ?? "N/A"}</td>
+                <td className={subject.difference == null ? "" : subject.difference > 0 ? "difference-positive" : subject.difference < 0 ? "difference-negative" : "difference-neutral"}>
+                  {subject.difference == null ? "N/A" : `${subject.difference > 0 ? "+" : ""}${subject.difference}`}
+                </td>
                 <td>{subject.remarks || "-"}</td>
               </tr>)}</tbody>
             </table>

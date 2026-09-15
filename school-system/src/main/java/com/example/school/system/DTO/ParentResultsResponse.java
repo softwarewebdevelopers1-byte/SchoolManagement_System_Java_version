@@ -35,7 +35,9 @@ public record ParentResultsResponse(
             String id,
             String name,
             String startDate,
-            String endDate) {
+            String endDate,
+            String examType,
+            String previousExamType) {
     }
 
     public record SubjectResult(
@@ -46,7 +48,9 @@ public record ParentResultsResponse(
             String grade,
             Double points,
             String teacher,
-            String remarks) {
+            String remarks,
+            Double previousScore,
+            Double difference) {
     }
 
     public record Summary(
