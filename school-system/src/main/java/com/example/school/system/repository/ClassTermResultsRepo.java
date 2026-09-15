@@ -1,6 +1,7 @@
 package com.example.school.system.repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,9 @@ public interface ClassTermResultsRepo extends JpaRepository<ClassTermResults, UU
 
     Optional<ClassTermResults> findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
             UUID studentId, String academicYear, Integer term, ExamType examType);
+
+    List<ClassTermResults> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+            UUID classId, String academicYear, Integer term, ExamType examType);
 
     @Modifying
     @Query(value = """

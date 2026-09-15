@@ -1,0 +1,212 @@
+package com.example.school.system.services;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.example.school.system.error.ResultAccessExpiredException;
+import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
+import com.example.school.system.DTO.GradingClassStudents;
+import com.example.school.system.DTO.ResultPublicationRequest;
+import com.example.school.system.DTO.ResultPublicationResponse;
+import com.example.school.system.models.ResultAccess;
+import com.example.school.system.models.MarksRow;
+import com.example.school.system.models.MarksSheet;
+import com.example.school.system.models.GradingScale;
+import com.example.school.system.models.SchoolClass;
+import com.example.school.system.models.ClassTermResults;
+import com.example.school.system.models.StudentProfile;
+import com.example.school.system.DTO.DTOResponse.AuthenticatedUserContext;
+import com.example.school.system.DTO.UserDto;
+import com.example.school.system.projection.PublicResultRow;
+import com.example.school.system.repository.ClassTermResultsRepo;
+import com.example.school.system.repository.MarksSheetRepo;
+import com.example.school.system.repository.PublicResultsRepository;
+import com.example.school.system.repository.ResultAccessRepository;
+import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.types.ExamType;
+import com.example.school.system.types.MarksSheetStatus;
+
+@ExtendWith(MockitoExtension.class)
+class ResultAccessServiceTest {
+    @Mock
+    private ResultAccessRepository accessRepository;
+    @Mock
+    private ClassTermResultsRepo classTermResultsRepo;
+    @Mock
+    private MarksSheetRepo marksSheetRepo;
+    @Mock
+    private PublicResultsRepository publicResultsRepository;
+    @Mock
+    private SchoolClassRepository schoolClassRepository;
+    @Mock
+    private AuthenticatedUserService authenticatedUserService;
+    @Mock
+    private GradingService gradingService;
+    @Mock
+    private RankingService rankingService;
+
+    private ResultAccessService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new ResultAccessService(
+                accessRepository,
+                classTermResultsRepo,
+                marksSheetRepo,
+                publicResultsRepository,
+                schoolClassRepository,
+                authenticatedUserService,
+                gradingService,
+                rankingService);
+    }
+
+    @Test
+    void rejectsUnknownToken() {
+        when(accessRepository.findByTokenHash(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(SchoolResourceNotFoundExceptionHandler.class,
+                () -> service.getPublishedResults("not-a-token"));
+    }
+
+    @Test
+    void rejectsExpiredTokenWithGoneException() {
+        ResultAccess access = access("expired-token");
+        access.setExpiresAt(Instant.now().minusSeconds(1));
+        when(accessRepository.findByTokenHash(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Optional.of(access));
+
+        assertThrows(ResultAccessExpiredException.class,
+                () -> service.getPublishedResults("expired-token"));
+    }
+
+    @Test
+    void mapsOnlyThePublishedStudentRowsToParentResponse() {
+        ResultAccess access = access("valid-token");
+        when(accessRepository.findByTokenHash(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Optional.of(access));
+
+        PublicResultRow row = org.mockito.Mockito.mock(PublicResultRow.class);
+        UUID studentId = UUID.randomUUID();
+        UUID subjectId = UUID.randomUUID();
+        access.getStudentProfile().setId(studentId);
+        when(row.getStudentId()).thenReturn(studentId);
+        when(row.getStudentName()).thenReturn("student");
+        when(row.getStudentAdm()).thenReturn("ADM001");
+        when(row.getClassGrade()).thenReturn(8);
+        when(row.getClassStream()).thenReturn("north");
+        when(row.getSchoolName()).thenReturn("school");
+        when(row.getAcademicYear()).thenReturn("2026");
+        when(row.getTerm()).thenReturn(2);
+        when(row.getExamType()).thenReturn("ENDTERM");
+        when(row.getOverallGrade()).thenReturn("EE1");
+        when(row.getOverallTotalMarks()).thenReturn(78d);
+        when(row.getPosition()).thenReturn(1);
+        when(row.getTotalStudents()).thenReturn(10);
+        when(row.getSubjectId()).thenReturn(subjectId);
+        when(row.getSubjectName()).thenReturn("Mathematics");
+        when(row.getScore()).thenReturn(78);
+        when(row.getSubjectGrade()).thenReturn("EE1");
+        when(row.getPoints()).thenReturn(8d);
+        when(row.getTeacherName()).thenReturn("teacher");
+        when(publicResultsRepository.findPublishedResults(
+                studentId, "2026", 2, ExamType.ENDTERM.ordinal())).thenReturn(List.of(row));
+
+        var response = service.getPublishedResults("valid-token");
+
+        assertEquals(studentId, response.student().id());
+        assertEquals(1, response.subjects().size());
+        assertEquals("Mathematics", response.subjects().get(0).name());
+        assertEquals(78d, response.summary().average());
+    }
+
+    @Test
+    void buildsResultsFromMarksBeforePublishingWhenNoResultsExist() {
+        UUID schoolId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        UUID publisherId = UUID.randomUUID();
+        ResultPublicationRequest request = new ResultPublicationRequest(
+                classId, "2026", 1, ExamType.ENDTERM, null);
+
+        UserDto user = UserDto.builder().schoolId(schoolId).build();
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(user, List.of()));
+        when(authenticatedUserService.currentUserId()).thenReturn(publisherId);
+        when(schoolClassRepository.findByClassIdAndSchoolId(classId, schoolId))
+                .thenReturn(Optional.of(new SchoolClass()));
+
+        StudentProfile student = new StudentProfile();
+        student.setId(studentId);
+        MarksRow row = new MarksRow();
+        row.setStudentProfile(student);
+        row.setTotalMarks(78);
+        MarksSheet sheet = new MarksSheet();
+        sheet.setMarks(List.of(row));
+        when(marksSheetRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
+                classId, "2026", 1, ExamType.ENDTERM, MarksSheetStatus.SUBMITTED))
+                .thenReturn(List.of(sheet));
+        GradingScale gradingScale = new GradingScale();
+        when(gradingService.getOrCreateDefaultScale(schoolId)).thenReturn(gradingScale);
+
+        ClassTermResults generated = new ClassTermResults();
+        generated.setStudentProfile(student);
+        when(classTermResultsRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                classId, "2026", 1, ExamType.ENDTERM)).thenReturn(List.of(generated));
+        when(accessRepository.findAllByStudentProfileIdInAndAcademicYearAndCurrentSchoolTermAndExamType(
+                List.of(studentId), "2026", 1, ExamType.ENDTERM)).thenReturn(List.of());
+        when(accessRepository.saveAll(org.mockito.ArgumentMatchers.anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ResultPublicationResponse response = service.publishResults(request);
+
+        assertEquals(1, response.publishedStudents());
+        org.mockito.Mockito.verify(rankingService).StudentClassRanking(
+                new GradingClassStudents(classId, ExamType.ENDTERM, "2026", 1, gradingScale));
+        org.mockito.Mockito.verify(classTermResultsRepo).saveAll(List.of(generated));
+    }
+
+    @Test
+    void rejectsPublicationWhenSubmittedMarksAreAbsent() {
+        UUID schoolId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(
+                        UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(schoolClassRepository.findByClassIdAndSchoolId(classId, schoolId))
+                .thenReturn(Optional.of(new SchoolClass()));
+        when(marksSheetRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
+                classId, "2026", 1, ExamType.ENDTERM, MarksSheetStatus.SUBMITTED))
+                .thenReturn(List.of());
+
+        assertThrows(SchoolResourceNotFoundExceptionHandler.class,
+                () -> service.publishResults(new ResultPublicationRequest(
+                        classId, "2026", 1, ExamType.ENDTERM, null)));
+        org.mockito.Mockito.verifyNoInteractions(rankingService);
+    }
+
+    private ResultAccess access(String rawToken) {
+        ResultAccess access = new ResultAccess();
+        access.setStudentProfile(new com.example.school.system.models.StudentProfile());
+        access.getStudentProfile().setId(UUID.randomUUID());
+        access.setAcademicYear("2026");
+        access.setCurrentSchoolTerm(2);
+        access.setExamType(ExamType.ENDTERM);
+        String hash = ReflectionTestUtils.invokeMethod(service, "hashToken", rawToken);
+        access.setTokenHash(hash);
+        return access;
+    }
+}

@@ -1,0 +1,119 @@
+.results-page {
+  --edunex-green: #0b2018;
+  --edunex-green-mid: #163325;
+  --edunex-gold: #c9963d;
+  --edunex-gold-light: #f5ead4;
+  --edunex-gold-pale: #faf4e8;
+  --edunex-cream: #fdfbf7;
+  --edunex-sand: #f0e9dc;
+  --edunex-border: #e8dcc8;
+  --edunex-text: #1a1208;
+  --edunex-muted: #7a6040;
+  min-height: 100vh;
+  padding: 28px 18px;
+  background: linear-gradient(180deg, var(--edunex-green) 0 230px, var(--edunex-sand) 230px 100%);
+  color: var(--edunex-text);
+  font-family: "Nunito", Arial, sans-serif;
+}
+
+.results-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(232, 220, 200, 0.9);
+  border-radius: 18px;
+  background: var(--edunex-cream);
+  box-shadow: 0 24px 60px rgba(11, 32, 24, 0.18);
+}
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px 42px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--edunex-green-mid), var(--edunex-green));
+}
+
+.school-info { display: flex; align-items: center; gap: 16px; }
+.school-logo {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  flex: 0 0 64px;
+  overflow: hidden;
+  border: 2px solid rgba(201, 150, 61, 0.7);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  object-fit: cover;
+  font-size: 30px;
+}
+.school-info h1 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; letter-spacing: 0.02em; text-transform: capitalize; }
+.school-info p, .school-info small, .report-title p { margin: 4px 0 0; color: #d8e7dc; }
+.report-title { text-align: right; }
+.report-title h2 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 28px; }
+
+.student-info-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 30px 42px;
+  border-bottom: 1px solid var(--edunex-border);
+  background: var(--edunex-gold-pale);
+}
+.student-details { flex: 1; min-width: 240px; }
+.student-details h3 { margin: 0 0 14px; color: var(--edunex-green); font-family: "Cormorant Garamond", Georgia, serif; font-size: 30px; text-transform: capitalize; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 20px; }
+.detail-item { display: flex; gap: 7px; font-size: 14px; }
+.detail-item .label, .summary-label { color: var(--edunex-muted); }
+.detail-item .value { font-weight: 700; }
+.performance-summary { display: flex; gap: 12px; flex-wrap: wrap; }
+.summary-item { min-width: 100px; padding: 13px 16px; border: 1px solid var(--edunex-border); border-radius: 12px; background: #fff; text-align: center; }
+.summary-value { display: block; color: var(--edunex-green); font-size: 23px; font-weight: 800; }
+.summary-label { display: block; margin-top: 3px; font-size: 11px; font-weight: 700; }
+
+.subjects-section, .attendance-section, .comments-section { padding: 28px 0 4px; }
+.section-title { margin: 0 42px 16px; padding-bottom: 10px; border-bottom: 2px solid var(--edunex-gold); color: var(--edunex-green); font-family: "Cormorant Garamond", Georgia, serif; font-size: 24px; }
+.table-responsive { overflow-x: auto; padding: 0 42px; }
+.subjects-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.subjects-table thead { color: #fff; background: var(--edunex-green-mid); }
+.subjects-table th { padding: 13px 12px; text-align: left; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+.subjects-table td { padding: 14px 12px; border-bottom: 1px solid var(--edunex-border); }
+.subjects-table tbody tr:nth-child(even) { background: var(--edunex-gold-pale); }
+.subjects-table tbody tr:hover { background: var(--edunex-gold-light); }
+.subjects-table td:first-child { color: var(--edunex-green); font-weight: 800; text-transform: capitalize; }
+
+.attendance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 0 42px; }
+.attendance-card { padding: 18px 12px; border: 1px solid var(--edunex-border); border-radius: 12px; text-align: center; }
+.attendance-card.present { background: #eaf3de; }.attendance-card.absent { background: #fcebeb; }.attendance-card.late { background: #faeeda; }.attendance-card.total { background: var(--edunex-gold-pale); }
+.attendance-value { display: block; color: var(--edunex-green); font-size: 26px; font-weight: 800; }.attendance-label { color: var(--edunex-muted); font-size: 12px; font-weight: 700; }
+.attendance-section > p, .comments-section > p { margin: 14px 42px; color: var(--edunex-muted); }
+.btn-print { margin: 28px 42px; padding: 12px 22px; border: 0; border-radius: 8px; color: #fff; background: var(--edunex-gold); font: inherit; font-weight: 800; cursor: pointer; }
+.btn-print:hover { background: #ad7d2d; }
+.results-footer { margin: 0; padding: 18px 42px; border-top: 1px solid var(--edunex-border); color: var(--edunex-muted); background: var(--edunex-gold-pale); font-size: 12px; text-align: center; }
+
+.results-state-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, var(--edunex-green) 0 230px, var(--edunex-sand) 230px 100%); font-family: "Nunito", Arial, sans-serif; }
+.results-state-card { width: min(100%, 520px); padding: 42px 34px; border: 1px solid var(--edunex-border); border-radius: 18px; color: var(--edunex-text); background: var(--edunex-cream); box-shadow: 0 24px 60px rgba(11, 32, 24, 0.18); text-align: center; }
+.results-state-card h1 { margin: 12px 0 10px; color: var(--edunex-green); font-family: "Cormorant Garamond", Georgia, serif; font-size: 34px; }
+.results-state-card p { margin: 0; color: var(--edunex-muted); line-height: 1.6; }
+.state-eyebrow { color: var(--edunex-gold) !important; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.error-icon { display: grid; width: 54px; height: 54px; margin: 0 auto; place-items: center; border: 2px solid var(--edunex-gold); border-radius: 50%; color: var(--edunex-gold); font-size: 28px; font-weight: 800; }
+.spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.25); border-top-color: var(--edunex-gold); border-radius: 50%; animation: edunex-spin 1s linear infinite; }
+.results-state-card .spinner { margin: 0 auto 14px; border-color: var(--edunex-border); border-top-color: var(--edunex-gold); }
+@keyframes edunex-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 760px) {
+  .results-page { padding: 10px; background: var(--edunex-sand); }
+  .results-header, .student-info-card { flex-direction: column; align-items: stretch; padding: 24px 20px; }
+  .report-title { text-align: left; }.performance-summary { justify-content: stretch; }.summary-item { flex: 1; }
+  .section-title { margin-left: 20px; margin-right: 20px; }.table-responsive, .attendance-grid { padding-left: 20px; padding-right: 20px; }.attendance-grid { grid-template-columns: repeat(2, 1fr); }
+  .attendance-section > p, .comments-section > p { margin-left: 20px; margin-right: 20px; }.btn-print { margin-left: 20px; margin-right: 20px; }
+}
+
+@media print {
+  .results-page { padding: 0; background: #fff; }.results-container { border: 0; box-shadow: none; border-radius: 0; }
+  .btn-print { display: none; }.results-header, .subjects-table thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

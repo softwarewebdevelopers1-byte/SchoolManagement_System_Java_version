@@ -29,6 +29,7 @@ import SuperAdminInvitations from "./components/TopAdmin/SuperAdminInvitations";
 import SuperAdminAnalytics from "./components/TopAdmin/SuperAdminAnalytics";
 import SuperAdminLoginPage from "./components/auth/SuperAdminLoginPage";
 import "./App.css";
+import StudentResults from "./components/StudentsResultsPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -262,6 +263,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route element={<StudentResults />} path="/edunex-org/results" />
+        <Route element={<StudentResults />} path="/results/:token" />
 
         <Route
           path="/edunex-org/students"

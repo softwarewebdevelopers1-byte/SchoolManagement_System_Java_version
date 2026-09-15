@@ -19,6 +19,7 @@ import { UserApprovalsTab } from "./UserApprovalsTab";
 import { ArchivesView } from "../shared/ArchivesView";
 import { ExitedStudentsView } from "../shared/ExitedStudentsView";
 import { AdminAttendanceInsights } from "./attendance-insights/AdminAttendanceInsights";
+import { ResultsPublishingTab } from "./ResultsPublishingTab";
 import {
   ApiStudent,
   ApiTeacher,
@@ -65,6 +66,11 @@ const navItems: NavItem[] = [
     id: "performance",
     label: "Performance & Analytics",
     svg: "<path d='M12 20v-6M6 20V10M18 20V4'/>",
+  },
+  {
+    id: "results",
+    label: "Results Publishing",
+    svg: "<path d='M4 4h16v16H4z'/><path d='M8 9h8M8 13h8M8 17h5'/>",
   },
   {
     id: "subjects",
@@ -1070,6 +1076,7 @@ const AdminDashboard: React.FC = () => {
       cycle: "Academic cycle",
       "school-settings": "School settings",
       "cbc-grading": "CBC grading configuration",
+      results: "Results publishing",
       archives: "Archives",
       exited: "Exited learners",
     };
@@ -1110,6 +1117,9 @@ const AdminDashboard: React.FC = () => {
   };
 
   const renderActiveTab = () => {
+    if (activeTab === "results") {
+      return <ResultsPublishingTab classes={classesFound} />;
+    }
     if (activeTab === "classes") {
       return (
         <ClassesTab

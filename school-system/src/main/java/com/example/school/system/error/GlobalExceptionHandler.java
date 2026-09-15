@@ -30,6 +30,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(404).body(SchoolApiResponse.error(schoolNotFoundException.getMessage()));
     }
 
+    @ExceptionHandler(ResultAccessExpiredException.class)
+    public ResponseEntity<?> resultAccessExpired(ResultAccessExpiredException exception) {
+        return ResponseEntity.status(HttpStatus.GONE).body(SchoolApiResponse.error(exception.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> BadRequestError(MethodArgumentNotValidException badRequesException) {
         var badRequest = new HashSet<>();
