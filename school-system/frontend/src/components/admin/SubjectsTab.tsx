@@ -131,9 +131,11 @@ const SubjectFormModal: React.FC<{
   onSave: (name: string, mainTeacherId?: string) => Promise<void>;
 }> = ({ subject, teachers, onClose, onSave }) => {
   const [name, setName] = useState(subject?.subjectName || "");
-  const [mainTeacherId, setMainTeacherId] = useState<string>(subject?.mainTeacherId || "");
+  const [mainTeacherId, setMainTeacherId] = useState<string>(
+    subject?.mainTeacherId || "",
+  );
+  console.log("all teachers", teachers);
   const [saving, setSaving] = useState(false);
-
   return (
     <div>
       <div style={modalHeaderStyle}>
@@ -166,7 +168,7 @@ const SubjectFormModal: React.FC<{
           >
             <option value="">No main teacher</option>
             {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
+              <option key={teacher.id} value={teacher?.teacherProfileId}>
                 {teacher.name || teacher.email}
               </option>
             ))}
@@ -259,8 +261,6 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   };
 
   const filteredSubjects = subjects.filter((subject) => {
-    console.log("subject",subject);
-    
     const query = search?.toLowerCase();
     const name = subject?.subjectName?.toLowerCase() || "";
     const department = subject?.department?.toLowerCase() || "";
@@ -348,8 +348,8 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
                   key={subject.id}
                   style={{ transition: "background 0.2s" }}
                   onMouseEnter={(e) =>
-                  (e.currentTarget.style.background =
-                    "var(--ct-hover, rgba(0,0,0,0.02))")
+                    (e.currentTarget.style.background =
+                      "var(--ct-hover, rgba(0,0,0,0.02))")
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
@@ -441,7 +441,8 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
           <span
             style={{ fontSize: 12, fontWeight: 700, color: "var(--textMut)" }}
           >
-            Page {currentPage} of {totalPages} | {filteredSubjects.length} subjects
+            Page {currentPage} of {totalPages} | {filteredSubjects.length}{" "}
+            subjects
           </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
