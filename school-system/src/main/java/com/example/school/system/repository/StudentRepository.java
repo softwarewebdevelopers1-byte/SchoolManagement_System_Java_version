@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.example.school.system.DTO.student.StudentSummaryDTO;
 import com.example.school.system.models.StudentProfile;
+import com.example.school.system.projection.StudentContactProjection;
 
 public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
 
@@ -45,6 +46,13 @@ public interface StudentRepository extends JpaRepository<StudentProfile, UUID> {
     // Optimized count without fetching entities
     @Query("SELECT COUNT(sp) FROM StudentProfile sp WHERE sp.schoolClass.classId = :classId")
     long countByClassId(@Param("classId") UUID classId);
+
+    @Query("""
+        SELECT sp.id AS studentId, sp.studentFullName AS studentName, sp.phoneNumber AS phoneNumber
+        FROM StudentProfile sp
+        WHERE sp.id IN :studentIds
+    """)
+    List<StudentContactProjection> findContactsByIdIn(@Param("studentIds") List<UUID> studentIds);
 
     // Kept for backward compatibility with MarksEntryService and other callers
     @EntityGraph(attributePaths = { "studentSubjectSelections", "studentSubjectSelections.subjectJoint", "student", "schoolClass" })

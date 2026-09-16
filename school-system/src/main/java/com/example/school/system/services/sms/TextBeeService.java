@@ -50,4 +50,28 @@ public class TextBeeService {
 
         log.info("TextBee Response: {}", response);
     }
+
+    public void sendBulkSms(List<SmsMessage> messages) {
+        if (messages.isEmpty()) {
+            return;
+        }
+        Map<String, Object> requestBody = Map.of(
+                "deviceId", deviceId,
+                "messages", messages.stream()
+                        .map(message -> Map.of(
+                                "recipients", List.of(message.recipient()),
+                                "message", message.message()))
+                        .toList());
+
+        restClient.post()
+                .uri(Url + "/gateway/send-bulk-sms")
+                .header("x-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(requestBody)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    public record SmsMessage(String recipient, String message) {
+    }
 }

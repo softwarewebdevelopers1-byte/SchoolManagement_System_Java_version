@@ -11,12 +11,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,11 +43,16 @@ import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.ResultAccess;
 import com.example.school.system.models.StudentProfile;
+import com.example.school.system.models.ResultSmsNotification;
+import com.example.school.system.projection.StudentContactProjection;
 import com.example.school.system.projection.PublicResultRow;
 import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
+import com.example.school.system.repository.ResultSmsNotificationRepository;
+import com.example.school.system.repository.StudentRepository;
+import com.example.school.system.services.sms.events.ResultSmsNotificationEvent;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.types.MarksSheetStatus;
@@ -66,6 +75,9 @@ public class ResultAccessService {
     private final AuthenticatedUserService authenticatedUserService;
     private final GradingService gradingService;
     private final RankingService rankingService;
+    private final StudentRepository studentRepository;
+    private final ResultSmsNotificationRepository resultSmsNotificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${results.public-url:http://localhost:5173/results/}")
     private String publicResultsUrl;
@@ -204,7 +216,56 @@ public class ResultAccessService {
                     saved.getId(), link.studentId(), link.token(), link.url(), link.expiresAt()));
         }
         classTermResultsRepo.saveAll(results);
+        Map<UUID, StudentProfile> studentsById = results.stream()
+                .collect(Collectors.toMap(
+                        result -> result.getStudentProfile().getId(),
+                        ClassTermResults::getStudentProfile,
+                        (first, ignored) -> first));
+        queueResultNotifications(request, links, studentIds, studentsById);
         return new ResultPublicationResponse(results.size(), links);
+    }
+
+    private void queueResultNotifications(ResultPublicationRequest request,
+            List<ResultAccessResponse> links, List<UUID> studentIds,
+            Map<UUID, StudentProfile> studentsById) {
+        if (links.isEmpty()) {
+            return;
+        }
+        Map<UUID, StudentContactProjection> contacts = studentRepository.findContactsByIdIn(studentIds).stream()
+                .filter(contact -> contact.getPhoneNumber() != null && !contact.getPhoneNumber().isBlank())
+                .collect(Collectors.toMap(StudentContactProjection::getStudentId, contact -> contact,
+                        (first, ignored) -> first));
+        java.util.Set<UUID> alreadyQueued = resultSmsNotificationRepository
+                .findAllByStudentProfileIdInAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        studentIds, request.academicYear(), request.term(), request.examType())
+                .stream()
+                .map(notification -> notification.getStudentProfile().getId())
+                .collect(Collectors.toSet());
+        List<ResultSmsNotification> notifications = new ArrayList<>();
+        for (ResultAccessResponse link : links) {
+            if (alreadyQueued.contains(link.studentId())) {
+                continue;
+            }
+            StudentContactProjection contact = contacts.get(link.studentId());
+            if (contact == null) {
+                continue;
+            }
+            ResultSmsNotification notification = new ResultSmsNotification();
+            notification.setStudentProfile(studentsById.get(link.studentId()));
+            notification.setAcademicYear(request.academicYear());
+            notification.setCurrentSchoolTerm(request.term());
+            notification.setExamType(request.examType());
+            notification.setRecipientPhone(contact.getPhoneNumber().trim());
+            notification.setMessage("Results for " + contact.getStudentName()
+                    + " are published. View results: " + link.url());
+            notifications.add(notification);
+        }
+        if (notifications.isEmpty()) {
+            return;
+        }
+        List<ResultSmsNotification> saved = resultSmsNotificationRepository.saveAll(notifications);
+        eventPublisher.publishEvent(new ResultSmsNotificationEvent(
+                saved.stream().map(ResultSmsNotification::getId).toList()));
     }
 
     @Transactional
@@ -252,6 +313,7 @@ public class ResultAccessService {
         if (access.getRevokedAt() != null) {
             throw new SchoolResourceNotFoundExceptionHandler("results link not found");
         }
+
         if (access.getEncryptedToken() != null
                 && access.getExpiresAt() != null
                 && access.getExpiresAt().isAfter(now)) {
@@ -277,6 +339,40 @@ public class ResultAccessService {
         access.setRenewedAt(now);
         access.setRenewedBy(authenticatedUserService.currentUserId());
         return toLinkResponse(accessRepository.save(access));
+    }
+
+    @Transactional
+    public void resendResultNotification(UUID accessId) {
+        ResultAccess access = findSchoolAccess(accessId);
+        if (access.getRevokedAt() != null
+                || (access.getExpiresAt() != null && !access.getExpiresAt().isAfter(Instant.now()))) {
+            throw new SchoolResourceNotFoundExceptionHandler("results link is not active");
+        }
+        ClassTermResults publication = classTermResultsRepo
+                .findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        access.getStudentProfile().getId(),
+                        access.getAcademicYear(),
+                        access.getCurrentSchoolTerm(),
+                        access.getExamType())
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("published results not found"));
+        if (!publication.isPublished()) {
+            throw new SchoolResourceNotFoundExceptionHandler("results have not been published");
+        }
+        String phoneNumber = access.getStudentProfile().getPhoneNumber();
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new SchoolResourceNotFoundExceptionHandler("student has no registered guardian phone number");
+        }
+
+        ResultSmsNotification notification = new ResultSmsNotification();
+        notification.setStudentProfile(access.getStudentProfile());
+        notification.setAcademicYear(access.getAcademicYear());
+        notification.setCurrentSchoolTerm(access.getCurrentSchoolTerm());
+        notification.setExamType(access.getExamType());
+        notification.setRecipientPhone(phoneNumber.trim());
+        notification.setMessage("Results for " + access.getStudentProfile().getStudentFullName()
+                + " are published. View results: " + toLinkResponse(access).resultsUrl());
+        ResultSmsNotification saved = resultSmsNotificationRepository.save(notification);
+        eventPublisher.publishEvent(new ResultSmsNotificationEvent(List.of(saved.getId())));
     }
 
     @Transactional(readOnly = true)

@@ -72,4 +72,13 @@ public class PublicResultsController {
     public ResponseEntity<?> renewResultLink(@PathVariable UUID accessId) {
         return ResponseEntity.ok(resultAccessService.renewLink(accessId));
     }
+
+    @PostMapping("/api/admin/results-links/{accessId}/resend")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> resendResultNotification(@PathVariable UUID accessId) {
+        resultAccessService.resendResultNotification(accessId);
+        return ResponseEntity.accepted().body(
+                com.example.school.system.DTO.DTOResponse.SchoolApiResponse.success(
+                        "results notification queued for resend"));
+    }
 }

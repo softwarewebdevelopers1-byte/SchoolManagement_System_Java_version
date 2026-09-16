@@ -52,6 +52,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [copyingId, setCopyingId] = useState<string | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
 
@@ -193,6 +194,20 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
     }
   };
 
+  const resendResults = async (link: ResultLink) => {
+    if (!window.confirm(`Resend ${link.studentName}'s results notification?`)) return;
+    setResendingId(link.accessId);
+    setMessage("");
+    try {
+      await request(`/admin/results-links/${link.accessId}/resend`, { method: "POST" });
+      setMessage(`Results notification queued for ${link.studentName}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to resend the results notification.");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const formatDate = (value?: string) => value ? new Date(value).toLocaleString() : "Not available";
   const linksContent = links?.content || [];
   const filteredLinks = examTypeFilter
@@ -306,6 +321,11 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
                         <button type="button" className={styles.primaryButton} disabled={copyingId === link.accessId} onClick={() => void copyLink(link)}>
                           {copyingId === link.accessId ? "Copying..." : "Copy"}
                         </button>
+                        {link.status === "ACTIVE" && (
+                          <button type="button" className={styles.secondaryButton} disabled={resendingId === link.accessId} onClick={() => void resendResults(link)}>
+                            {resendingId === link.accessId ? "Queuing..." : "Resend"}
+                          </button>
+                        )}
                       </> : (link.status === "EXPIRED" || (link.status === "ACTIVE" && !link.resultsUrl)) ? (
                         <button type="button" className={styles.primaryButton} disabled={renewingId === link.accessId} onClick={() => void renewLink(link)}>
                           {renewingId === link.accessId ? "Renewing..." : link.status === "ACTIVE" ? "Repair Link" : "Renew"}

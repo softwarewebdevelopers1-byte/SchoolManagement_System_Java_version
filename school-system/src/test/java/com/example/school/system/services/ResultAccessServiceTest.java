@@ -37,7 +37,10 @@ import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
+import com.example.school.system.repository.ResultSmsNotificationRepository;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.repository.StudentRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.types.MarksSheetStatus;
 
@@ -59,6 +62,12 @@ class ResultAccessServiceTest {
     private GradingService gradingService;
     @Mock
     private RankingService rankingService;
+    @Mock
+    private StudentRepository studentRepository;
+    @Mock
+    private ResultSmsNotificationRepository resultSmsNotificationRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private ResultAccessService service;
 
@@ -72,7 +81,10 @@ class ResultAccessServiceTest {
                 schoolClassRepository,
                 authenticatedUserService,
                 gradingService,
-                rankingService);
+                rankingService,
+                studentRepository,
+                resultSmsNotificationRepository,
+                eventPublisher);
     }
 
     @Test
