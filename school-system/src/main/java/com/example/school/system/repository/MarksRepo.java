@@ -36,7 +36,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY sp.student_id, sp.student_name, sp.student_adm, c.stream
                 ORDER BY sp.student_name ASC
@@ -79,7 +87,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY s.id, s.subject_name
                 """, nativeQuery = true)
@@ -101,7 +117,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, m.grade
@@ -125,7 +149,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE s.school_id = :schoolId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY s.id, s.subject_name
                 """, nativeQuery = true)
@@ -152,7 +184,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                   AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY s.id, s.subject_name, c.stream
                 """, nativeQuery = true)
@@ -180,7 +220,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                   AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, s.subject_name, m.grade
@@ -207,7 +255,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, s.subject_name, m.grade
@@ -228,7 +284,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                   AND m.grade IS NOT NULL
                 GROUP BY m.grade
@@ -251,7 +315,15 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                   AND c.stream IS NOT NULL
                   AND ms.academic_year = :academicYear
                   AND ms.current_school_term = :term
-                  AND ms.exam_type = :examType
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                   AND m.grade IS NOT NULL
                 GROUP BY m.grade
@@ -273,13 +345,23 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN subject_joint sj ON ms.subject_joint_id = sj.id
                 WHERE sj.class_id = :classId
                   AND ms.academic_year = :academicYear
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY ms.current_school_term
                 ORDER BY ms.current_school_term ASC
                 """, nativeQuery = true)
         List<TermlyTrendProjection> findTermlyTrendByClass(
                 @Param("classId") UUID classId,
-                @Param("academicYear") String academicYear);
+                @Param("academicYear") String academicYear,
+                @Param("examType") String examType);
 
         @Query(value = """
                 SELECT
@@ -293,13 +375,23 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN classes c ON sj.class_id = c.class_id
                 WHERE c.grade = :grade
                   AND ms.academic_year = :academicYear
+                  AND ms.exam_type = CASE UPPER(:examType)
+                      WHEN 'OPENER' THEN 0
+                      WHEN 'MIDTERM' THEN 1
+                      WHEN 'ENDTERM' THEN 2
+                      WHEN '0' THEN 0
+                      WHEN '1' THEN 1
+                      WHEN '2' THEN 2
+                      ELSE -1
+                  END
                   AND ms.status = 'SUBMITTED'
                 GROUP BY ms.current_school_term
                 ORDER BY ms.current_school_term ASC
                 """, nativeQuery = true)
         List<TermlyTrendProjection> findTermlyTrendByGrade(
                 @Param("grade") String grade,
-                @Param("academicYear") String academicYear);
+                @Param("academicYear") String academicYear,
+                @Param("examType") String examType);
 
         @Query(value = """
                 SELECT
@@ -348,5 +440,3 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 @Param("academicYear") String academicYear,
                 @Param("threshold") double threshold);
 }
-
-

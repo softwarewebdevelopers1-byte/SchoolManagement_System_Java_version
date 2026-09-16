@@ -91,8 +91,8 @@ public class SubjectService {
         Subject subjectToUpdate = subjectRepository.findByIdAndSchoolId(subjectDTO.subjectId(),
                 subjectDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject not found"));
-        if (!subjectName.equals(subjectToUpdate.getSubjectName()) && subjectName != null
-                && subjectRepository.existsBySubjectNameAndSchoolId(subjectName, subjectDTO.schoolId())) {
+        if (subjectRepository.existsBySubjectNameAndSchoolIdAndIdNot(
+                subjectName, subjectDTO.schoolId(), subjectDTO.subjectId())) {
             throw new SchoolResourceExistsExceptionHandler("subject already exists");
         }
         subjectToUpdate.setSubjectName(subjectName);

@@ -145,18 +145,30 @@ public class StatsController {
     @GetMapping("/marks/grade/{grade}/termly-trend")
     public ResponseEntity<?> getTermlyTrend(
             @PathVariable String grade,
-            @RequestParam String academicYear) {
-        List<TermlyTrendDTO> res = statsService.getTermlyTrendByGrade(grade, academicYear);
-        return ResponseEntity.ok(SchoolApiResponse.success(res, "termly trend loaded"));
+            @RequestParam String academicYear,
+            @RequestParam String examType) {
+        try {
+            ExamType parsedExamType = ExamType.valueOf(examType.trim().toUpperCase());
+            List<TermlyTrendDTO> res = statsService.getTermlyTrendByGrade(grade, academicYear, parsedExamType);
+            return ResponseEntity.ok(SchoolApiResponse.success(res, "termly trend loaded"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(SchoolApiResponse.error("Invalid exam type: " + examType));
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','DEPUTYTEACHER','CLASSTEACHER')")
     @GetMapping("/marks/class/{classId}/termly-trend")
     public ResponseEntity<?> getClassTermlyTrend(
             @PathVariable UUID classId,
-            @RequestParam String academicYear) {
-        List<TermlyTrendDTO> res = statsService.getTermlyTrend(classId, academicYear);
-        return ResponseEntity.ok(SchoolApiResponse.success(res, "class termly trend loaded"));
+            @RequestParam String academicYear,
+            @RequestParam String examType) {
+        try {
+            ExamType parsedExamType = ExamType.valueOf(examType.trim().toUpperCase());
+            List<TermlyTrendDTO> res = statsService.getTermlyTrend(classId, academicYear, parsedExamType);
+            return ResponseEntity.ok(SchoolApiResponse.success(res, "class termly trend loaded"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(SchoolApiResponse.error("Invalid exam type: " + examType));
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','HEADTEACHER','DEPUTYTEACHER')")

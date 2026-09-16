@@ -38,7 +38,19 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
                 m.grade AS subjectGrade,
                 m.points AS points,
                 CONCAT(COALESCE(tp.first_name, ''), ' ', COALESCE(tp.last_name, '')) AS teacherName,
-                tr.remark AS remarks,
+                (
+                    SELECT tr.remark
+                    FROM teacher_remarks tr
+                    WHERE tr.school_id = s.id
+                      AND tr.subject_id = subject.id
+                      AND tr.grade_band = m.grade
+                    ORDER BY CASE
+                        WHEN tr.teacher_id = COALESCE(sj.teacher_profile_id, subject.main_teacher_id) THEN 0
+                        WHEN tr.teacher_id = subject.main_teacher_id THEN 1
+                        ELSE 2
+                    END, tr.id
+                    LIMIT 1
+                ) AS remarks,
                 prev_m.`average_marks%` AS previousScore
             FROM class_term_result ctr
             JOIN students_profile sp ON sp.student_id = ctr.student_profile_student_id
@@ -47,7 +59,11 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
             LEFT JOIN marks_sheet ms
                 ON ms.academic_year = ctr.academic_year
                 AND ms.current_school_term = ctr.current_school_term
-                AND ms.exam_type = ctr.exam_type
+                AND ms.exam_type = CASE ctr.exam_type
+                    WHEN 'OPENER' THEN 0
+                    WHEN 'MIDTERM' THEN 1
+                    WHEN 'ENDTERM' THEN 2
+                END
                 AND ms.status = 'SUBMITTED'
             LEFT JOIN marks m
                 ON m.student_id = sp.student_id
@@ -57,15 +73,15 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
                 AND sj.class_id = c.class_id
             LEFT JOIN subjects subject ON subject.id = sj.subject_id
             LEFT JOIN teachers_profile tp ON tp.id = COALESCE(sj.teacher_profile_id, subject.main_teacher_id)
-            LEFT JOIN teacher_remarks tr
-                ON tr.subject_id = subject.id
-                AND tr.teacher_id = COALESCE(sj.teacher_profile_id, subject.main_teacher_id)
-                AND tr.grade_band = m.grade
             LEFT JOIN marks_sheet prev_ms
                 ON :previousExam IS NOT NULL
                 AND prev_ms.academic_year = ctr.academic_year
                 AND prev_ms.current_school_term = ctr.current_school_term
-                AND prev_ms.exam_type = :previousExam
+                AND prev_ms.exam_type = CASE :previousExam
+                    WHEN 'OPENER' THEN 0
+                    WHEN 'MIDTERM' THEN 1
+                    WHEN 'ENDTERM' THEN 2
+                END
                 AND prev_ms.status = 'SUBMITTED'
                 AND prev_ms.subject_joint_id = ms.subject_joint_id
             LEFT JOIN marks prev_m

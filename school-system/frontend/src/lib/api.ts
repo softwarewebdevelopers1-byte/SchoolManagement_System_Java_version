@@ -322,16 +322,25 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
   const page = Number(params?.page || 0);
   const size = Number(params?.size || params?.limit || 50);
 
-  const sheet: any = await request<any>(
-    `/marks/${encodeURIComponent(subjectJointId)}?page=${page}&size=${size}`,
-  );
+  const hasPeriod =
+    params?.term !== undefined &&
+    params?.year !== undefined &&
+    params?.examType !== undefined;
+  const sheet: any = hasPeriod
+    ? await request<any>(
+        `/marks?subjectId=${encodeURIComponent(subjectJointId)}&term=${encodeURIComponent(params.term)}&year=${encodeURIComponent(params.year)}&examType=${encodeURIComponent(params.examType)}&page=${page}&size=${size}`,
+      )
+    : await request<any>(
+        `/marks/${encodeURIComponent(subjectJointId)}?page=${page}&size=${size}`,
+      );
+  const periodRows = Array.isArray(sheet?.data) ? sheet.data : null;
   const cat1Enabled = sheet?.cat1Entry === true;
   const cat2Enabled = sheet?.cat2Entry === true;
   const cat3Enabled = sheet?.cat3Entry === true;
-  const data = (sheet?.marksRow || []).map((row: any) => ({
+  const data = (periodRows || sheet?.marksRow || []).map((row: any) => ({
     studentId: row.studentId,
-    admissionNo: row.studentAdm,
-    name: row.studentName,
+    admissionNo: row.admissionNo || row.studentAdm,
+    name: row.studentName || row.name,
     marks: {
       cat1: row.cat1,
       cat2: row.cat2,
@@ -345,17 +354,18 @@ const loadLegacyMarks = async <T>(params?: Record<string, any>): Promise<T> => {
       cat5Max: 0,
       exam: row.exam,
       examMax: sheet.maxExam || 100,
-      finalScore: row.totalMarks,
-      avgPercentage: row.avgPercentage,
+      finalScore: row.totalMarks ?? row.marks?.finalScore,
+      avgPercentage: row.avgPercentage ?? row.marks?.avgPercentage,
       points: row.points,
-      cbcBand: row.marksGrade,
+      cbcBand: row.marksGrade || row.cbcBand,
     },
   }));
+  const resultPagination = sheet?.pagination || {};
   const pagination = {
-    page: sheet?.page || page + 1,
-    limit: sheet?.pageSize || size,
-    total: sheet?.totalStudents || data.length,
-    totalPages: sheet?.totalPages || 1,
+    page: sheet?.page || resultPagination.page || page + 1,
+    limit: sheet?.pageSize || resultPagination.limit || size,
+    total: sheet?.totalStudents || resultPagination.total || data.length,
+    totalPages: sheet?.totalPages || resultPagination.totalPages || 1,
   };
   return { data, pagination } as T;
 };
@@ -1210,9 +1220,14 @@ export const superAdminApi = {
       `/stats/marks/class/${encodeURIComponent(classId)}/distribution?${query.toString()}`,
     );
   },
-  getTermlyTrend: async (grade: string, academicYear: string): Promise<any> => {
+  getTermlyTrend: async (
+    grade: string,
+    academicYear: string,
+    examType = "OPENER",
+  ): Promise<any> => {
+    const query = new URLSearchParams({ academicYear, examType });
     return request<any>(
-      `/stats/marks/grade/${encodeURIComponent(grade)}/termly-trend?academicYear=${encodeURIComponent(academicYear)}`,
+      `/stats/marks/grade/${encodeURIComponent(grade)}/termly-trend?${query.toString()}`,
     );
   },
   getAtRiskStudents: async (

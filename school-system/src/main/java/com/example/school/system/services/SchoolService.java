@@ -223,6 +223,10 @@ public class SchoolService {
                         term);
                 schoolSettings.setCurrentSchoolTerm(term);
             }
+            if (updateTermAndExam.academicYear() != null && !updateTermAndExam.academicYear().isBlank()) {
+                changed = true;
+                schoolSettings.setAcademicYear(updateTermAndExam.academicYear().trim());
+            }
             if (updateTermAndExam.finalGrade() != null) {
                 changed = true;
                 schoolSettings.setFinalGrade(updateTermAndExam.finalGrade());

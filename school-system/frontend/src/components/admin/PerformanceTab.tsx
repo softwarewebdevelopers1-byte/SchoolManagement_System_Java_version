@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -24,6 +24,7 @@ interface PerformanceTabProps {
   subjects: Subject[];
   subjectJoints?: any[];
   avatar: (name: string, size: number) => string;
+  periodRefreshKey?: number;
 }
 
 interface ClassPerformanceRow {
@@ -149,7 +150,11 @@ const computeMarkPercentage = (marks: any): number | null => {
 
 const markToPoints = (v: number, bands: CbcGradingBand[]): number => resolveCbcBand(v, bands).points;
 
-export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subjectJoints }) => {
+export const PerformanceTab: React.FC<PerformanceTabProps> = ({
+  classes,
+  subjectJoints,
+  periodRefreshKey = 0,
+}) => {
   const { bands: cbcBands } = useCbcGradingBands();
   const [schoolPeriod, setSchoolPeriod] = useState<{
     term?: number;
@@ -178,12 +183,21 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
   const [showTable, setShowTable] = useState(false);
   const [tableLoaded, setTableLoaded] = useState(false);
   const [tablePage, setTablePage] = useState(0);
+  const performanceRequestId = useRef(0);
+  const analyticsRequestId = useRef(0);
 
   useEffect(() => {
     const schoolId = getSchoolId();
     if (!schoolId) return;
 
     let ignore = false;
+    setSchoolPeriod(null);
+    setPerformanceRows([]);
+    setPerformanceSubjects([]);
+    setChartData([]);
+    setTermlyTrend([]);
+    setTableLoaded(false);
+    setShowTable(false);
     api.get<any>(`/schools/get/term/exam/${encodeURIComponent(schoolId)}`)
       .then((period) => {
         if (!ignore) {
@@ -199,7 +213,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [periodRefreshKey]);
 
   const uniqueGrades = useMemo(() => {
     const grades = Array.from(new Set(classes.map(c => c.grade)));
@@ -246,6 +260,12 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
     rows: ClassPerformanceRow[];
     subjects: PerformanceSubject[];
   }> => {
+    const requestId = ++performanceRequestId.current;
+    if (!schoolPeriod) {
+      setPerformanceRows([]);
+      setPerformanceSubjects([]);
+      return { rows: [], subjects: [] };
+    }
     if (targetClasses.length === 0) {
       setPerformanceRows([]);
       return { rows: [], subjects: [] };
@@ -269,6 +289,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
         id: joint.id || joint.subjectJointId || joint.subjectId,
         name: joint.name || joint.subjectName || "Subject",
       }));
+      if (requestId !== performanceRequestId.current) {
+        return { rows: [], subjects: [] };
+      }
       setPerformanceSubjects(nextSubjects);
 
       const marksBySubject = new Map<string, Map<string, number | null>>();
@@ -348,18 +371,24 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
         }
         row.rank = currentRank;
       });
+      if (requestId !== performanceRequestId.current) {
+        return { rows: [], subjects: [] };
+      }
       setPerformanceRows(ranked);
       return { rows: ranked, subjects: nextSubjects };
     } catch (err: any) {
+      if (requestId !== performanceRequestId.current) {
+        return { rows: [], subjects: [] };
+      }
       setPerformanceSubjects([]);
       setMsg({ text: err.message || "Failed to load performance.", type: "error" });
       return { rows: [], subjects: [] };
     } finally {
-      setIsLoading(false);
+      if (requestId === performanceRequestId.current) setIsLoading(false);
     }
   };
 
-  const loadChartData = async () => {
+  const loadChartData = async (requestId: number) => {
     if (targetClasses.length === 0) {
       setChartData([]);
       return;
@@ -375,17 +404,19 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
         const query = new URLSearchParams({ term: String(term), academicYear: year, examType });
         data = await request(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/distribution?${query.toString()}`);
       }
+      if (requestId !== analyticsRequestId.current) return;
       const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
       setChartData(subjects);
     } catch (err: any) {
+      if (requestId !== analyticsRequestId.current) return;
       setMsg({ text: err.message || "Failed to load analytics.", type: "error" });
       setChartData([]);
     } finally {
-      setChartLoading(false);
+      if (requestId === analyticsRequestId.current) setChartLoading(false);
     }
   };
 
-  const loadTermlyTrend = async () => {
+  const loadTermlyTrend = async (requestId: number) => {
     if (targetClasses.length === 0) {
       setTermlyTrend([]);
       return;
@@ -393,35 +424,55 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ classes, subject
     setTrendLoading(true);
     try {
       const year = performancePeriod.year;
+      const examType = performancePeriod.examType;
       let data: any[] = [];
       if (currentClass) {
-        data = await api.get(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
+        data = await api.get(`/stats/marks/class/${encodeURIComponent(currentClass.id)}/termly-trend?academicYear=${encodeURIComponent(year)}&examType=${encodeURIComponent(examType)}`);
       } else if (currentGrade) {
-        data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/termly-trend?academicYear=${encodeURIComponent(year)}`);
+        data = await api.get(`/stats/marks/grade/${encodeURIComponent(currentGrade)}/termly-trend?academicYear=${encodeURIComponent(year)}&examType=${encodeURIComponent(examType)}`);
       }
+      if (requestId !== analyticsRequestId.current) return;
       setTermlyTrend(Array.isArray(data) ? data : []);
     } catch (err: any) {
+      if (requestId !== analyticsRequestId.current) return;
       setMsg({ text: err.message || "Failed to load termly trend.", type: "error" });
       setTermlyTrend([]);
     } finally {
-      setTrendLoading(false);
+      if (requestId === analyticsRequestId.current) setTrendLoading(false);
     }
   };
 
   useEffect(() => {
     setShowTable(false);
     setTableLoaded(false);
+    setPerformanceRows([]);
+    setPerformanceSubjects([]);
     setTablePage(0);
-    loadChartData();
-    loadTermlyTrend();
-  }, [selectedId, performancePeriod.term, performancePeriod.year, performancePeriod.examType]);
+    performanceRequestId.current += 1;
+    analyticsRequestId.current += 1;
+    if (!schoolPeriod) {
+      setChartData([]);
+      setTermlyTrend([]);
+      return;
+    }
+    const requestId = ++analyticsRequestId.current;
+    loadChartData(requestId);
+    loadTermlyTrend(requestId);
+  }, [selectedId, performancePeriod.term, performancePeriod.year, performancePeriod.examType, schoolPeriod]);
 
   useEffect(() => {
-    if (showTable && !tableLoaded) {
+    if (showTable && !tableLoaded && schoolPeriod) {
       loadPerformance();
       setTableLoaded(true);
     }
-  }, [showTable, tableLoaded]);
+  }, [
+    showTable,
+    tableLoaded,
+    schoolPeriod,
+    performancePeriod.term,
+    performancePeriod.year,
+    performancePeriod.examType,
+  ]);
 
   useEffect(() => {
     if (subjectJoints) {

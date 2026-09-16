@@ -13,6 +13,8 @@ import com.example.school.system.models.Subject;
 public interface SubjectRepository extends JpaRepository<Subject, UUID> {
     boolean existsBySubjectNameAndSchoolId(String subjectName, UUID schoolId);
 
+    boolean existsBySubjectNameAndSchoolIdAndIdNot(String subjectName, UUID schoolId, UUID id);
+
     Optional<Subject> findBySubjectNameAndSchoolId(String subjectName, UUID schoolId);
 
         @Query("""

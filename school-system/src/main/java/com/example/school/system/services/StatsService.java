@@ -180,7 +180,10 @@ public class StatsService {
                                                 p.getTotalMarks(),
                                                 p.getPoints(),
                                                 p.getScoredSubjects(),
-                                                p.getAverage()))
+                                                p.getAverage(),
+                                                examType.name(),
+                                                term,
+                                                academicYear))
                                 .toList();
         }
 
@@ -387,14 +390,14 @@ public class StatsService {
     }
 
     @Transactional(readOnly = true)
-    public List<TermlyTrendDTO> getTermlyTrend(UUID classId, String academicYear) {
+    public List<TermlyTrendDTO> getTermlyTrend(UUID classId, String academicYear, ExamType examType) {
         if (classId != null) {
             SchoolClass schoolClass = schoolClassRepository.findByClassId(classId)
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
             if (!schoolClass.getSchool().getId().equals(currentSchoolId())) {
                 throw new SchoolResourceNotFoundExceptionHandler("class not found in current school");
             }
-            return marksRepo.findTermlyTrendByClass(classId, academicYear).stream()
+            return marksRepo.findTermlyTrendByClass(classId, academicYear, examType.name()).stream()
                     .map(p -> new TermlyTrendDTO(
                             p.getTerm(),
                             p.getAvgPercentage() != null ? p.getAvgPercentage() : 0.0,
@@ -406,7 +409,7 @@ public class StatsService {
     }
 
     @Transactional(readOnly = true)
-    public List<TermlyTrendDTO> getTermlyTrendByGrade(String grade, String academicYear) {
+    public List<TermlyTrendDTO> getTermlyTrendByGrade(String grade, String academicYear, ExamType examType) {
         Integer gradeInt = grade != null && !grade.isBlank() ? Integer.parseInt(grade.trim()) : null;
         if (gradeInt == null) {
             throw new SchoolResourceNotFoundExceptionHandler("grade is required");
@@ -415,7 +418,7 @@ public class StatsService {
         if (gradeClasses.isEmpty()) {
             throw new SchoolResourceNotFoundExceptionHandler("grade not found in current school");
         }
-        return marksRepo.findTermlyTrendByGrade(gradeInt.toString(), academicYear).stream()
+        return marksRepo.findTermlyTrendByGrade(gradeInt.toString(), academicYear, examType.name()).stream()
                 .map(p -> new TermlyTrendDTO(
                         p.getTerm(),
                         p.getAvgPercentage() != null ? p.getAvgPercentage() : 0.0,

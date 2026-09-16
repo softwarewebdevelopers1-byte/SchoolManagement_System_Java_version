@@ -54,16 +54,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({
   const [atRiskLoading, setAtRiskLoading] = useState(false);
 
   const firstGrade = classes[0]?.grade;
+  const firstExamType = String(classes[0]?.examType || "OPENER").toUpperCase();
 
   useEffect(() => {
     if (!firstGrade) return;
     const yearStr = String(year || "");
     setTrendLoading(true);
-    api.get(`/stats/marks/grade/${encodeURIComponent(firstGrade)}/termly-trend?academicYear=${encodeURIComponent(yearStr)}`)
+    api.get(`/stats/marks/grade/${encodeURIComponent(firstGrade)}/termly-trend?academicYear=${encodeURIComponent(yearStr)}&examType=${encodeURIComponent(firstExamType)}`)
       .then((data: any) => setTermlyTrend(Array.isArray(data) ? data : []))
       .catch(() => setTermlyTrend([]))
       .finally(() => setTrendLoading(false));
-  }, [firstGrade, year]);
+  }, [firstGrade, firstExamType, year]);
 
   useEffect(() => {
     if (!firstGrade) return;

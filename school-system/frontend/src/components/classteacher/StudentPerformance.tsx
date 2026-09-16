@@ -126,6 +126,9 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
   const [remarksBySubject, setRemarksBySubject] = useState<
     Record<string, Record<string, string>>
   >({});
+  const [periodMarks, setPeriodMarks] = useState<Record<string, number> | null>(
+    null,
+  );
 
   useEffect(() => {
     const loadRemarks = async () => {
@@ -163,9 +166,69 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
     [student, subjects],
   );
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPeriodMarks = async () => {
+      if (!student || !studentSubjects.length) {
+        setPeriodMarks({});
+        return;
+      }
+
+      setPeriodMarks({});
+      const marksBySubject: Record<string, number> = {};
+      const studentId = String(
+        student.studentId || student.id || student.userId || "",
+      );
+
+      await Promise.allSettled(
+        studentSubjects.map(async (subject: any) => {
+          const subjectId = getSubId(subject?.id || subject?._id);
+          if (!subjectId) return;
+
+          const response: any = await api.get("/marks", {
+            subjectId,
+            term,
+            year,
+            examType,
+          });
+          const rows = Array.isArray(response) ? response : response.data || [];
+          const row = rows.find(
+            (candidate: any) =>
+              String(candidate.studentId || "") === studentId,
+          );
+          if (!row) return;
+
+          const raw =
+            row.avgPercentage ??
+            row.totalMarks ??
+            row.marks?.avgPercentage ??
+            row.marks?.finalScore ??
+            row.marks?.totalMarks;
+          const mark = Number(String(raw ?? "").replace("%", ""));
+          if (Number.isFinite(mark)) {
+            marksBySubject[subjectId] = mark;
+          }
+        }),
+      );
+
+      if (!cancelled) {
+        setPeriodMarks(marksBySubject);
+      }
+    };
+
+    void loadPeriodMarks();
+    return () => {
+      cancelled = true;
+    };
+  }, [student, studentSubjects, term, year, examType]);
+
   const marks = useMemo(
-    () => marksForStudentSubjects(student, studentSubjects),
-    [student, studentSubjects],
+    () =>
+      periodMarks === null
+        ? marksForStudentSubjects(student, studentSubjects)
+        : periodMarks,
+    [student, studentSubjects, periodMarks],
   );
 
   const subjectMarks = useMemo(() => {

@@ -197,6 +197,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({
       return;
     }   
     setLoadingMarks(true);
+    setStudentsWithMarks(
+      students.map((student) => ({
+        ...student,
+        marks: {},
+      })),
+    );
     const marksByStudent: Record<string, Record<string, number>> = {};
     await Promise.allSettled(
       subjects.map(async (subject: any) => {
@@ -214,6 +220,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({
         rows.forEach((row: any) => {
           const studentId = String(row.studentId || "");
           const raw =
+            row.avgPercentage ??
+            row.totalMarks ??
             row.marks?.avgPercentage ??
             row.marks?.finalScore ??
             row.marks?.totalMarks;
@@ -227,10 +235,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({
     setStudentsWithMarks(
       students.map((student) => ({
         ...student,
-        marks: {
-          ...(student.marks || {}),
-          ...(marksByStudent[String(student.id || student.userId)] || {}),
-        },
+        marks: marksByStudent[String(
+          student.studentId || student.id || student.userId,
+        )] || {},
       })),
     );
     setLoadingMarks(false);

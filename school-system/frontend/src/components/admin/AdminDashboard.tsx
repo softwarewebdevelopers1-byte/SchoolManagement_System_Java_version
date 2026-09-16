@@ -479,6 +479,7 @@ const AdminDashboard: React.FC = () => {
   const [subjectJointsData, setSubjectJointsData] = useState<subjectJoints[]>(
     [],
   );
+  const [periodRefreshKey, setPeriodRefreshKey] = useState(0);
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
@@ -957,11 +958,13 @@ const AdminDashboard: React.FC = () => {
         method: "PUT",
         body: JSON.stringify({
           term,
+          academicYear: String(year),
           examType: examType.toUpperCase(),
           schoolId: getSchoolId(),
         }),
       });
       await loadDashboardData();
+      setPeriodRefreshKey((value) => value + 1);
       showSuccess(
         res?.message ||
           `All classes have been updated to Term ${term}, ${year} (${examType}).`,
@@ -1206,6 +1209,7 @@ const AdminDashboard: React.FC = () => {
           subjects={subjects}
           subjectJoints={assignments}
           avatar={avatar}
+          periodRefreshKey={periodRefreshKey}
         />
       );
     }
