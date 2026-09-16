@@ -40,7 +40,7 @@ public class TeacherRemark {
     private Subject subject;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
+    @JoinColumn(name = "teacher_id")
     private TeacherProfile teacher;
 
     @Column(name = "grade_band", nullable = false)

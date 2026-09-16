@@ -199,7 +199,7 @@ export const CycleTab: React.FC<CycleTabProps> = ({
                 <option value="">--select--</option>
                 <option value="OPENER">Opener Exam</option>
                 <option value="MIDTERM">Mid Term</option>
-                <option value="CLOSING">Closing Exam</option>
+                <option value="ENDTERM">Closing Exam</option>
               </select>
             </div>
 

@@ -35,6 +35,7 @@ import com.example.school.system.error.ResultAccessExpiredException;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.ClassTermResults;
+import com.example.school.system.models.GradeBand;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.ResultAccess;
 import com.example.school.system.models.StudentProfile;
@@ -334,6 +335,7 @@ public class ResultAccessService {
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
+        String overallGrade = calculateOverallGrade(first, average);
         int totalMarks = first.getOverallTotalMarks() == null
                 ? subjects.stream().map(ParentResultsResponse.SubjectResult::score)
                         .filter(Objects::nonNull).mapToInt(Integer::intValue).sum()
@@ -350,7 +352,7 @@ public class ResultAccessService {
                         first.getClassGrade() + " " + first.getClassStream(),
                         null,
                         average,
-                        first.getOverallGrade(),
+                        overallGrade,
                         first.getPosition(),
                         first.getTotalStudents()),
                 new ParentResultsResponse.School(
@@ -367,11 +369,23 @@ public class ResultAccessService {
                         access.getExamType().name(),
                         previousExam == null ? null : previousExam.name()),
                 subjects,
-                new ParentResultsResponse.Summary(totalMarks, average, first.getOverallGrade()),
+                new ParentResultsResponse.Summary(totalMarks, average, overallGrade),
                 new ParentResultsResponse.Attendance(0, 0, 0, 0),
                 null,
                 null,
                 null);
+    }
+
+    private String calculateOverallGrade(PublicResultRow first, double average) {
+        if (first.getSchoolId() == null) {
+            return first.getOverallGrade();
+        }
+        List<GradeBand> bands = gradingService.getOrCreateDefaultScale(uuidFromHex(first.getSchoolId())).getBands();
+        return bands.stream()
+                .filter(band -> average >= band.getMinScore() && average <= band.getMaxScore())
+                .map(GradeBand::getGrade)
+                .findFirst()
+                .orElse(first.getOverallGrade());
     }
 
     private static String generateToken() {

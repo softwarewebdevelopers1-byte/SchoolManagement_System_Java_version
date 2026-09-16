@@ -11,5 +11,7 @@ import com.example.school.system.models.TeacherRemark;
 public interface TeacherRemarkRepository extends JpaRepository<TeacherRemark, UUID> {
     List<TeacherRemark> findAllBySchoolIdAndSubjectIdAndTeacherId(UUID schoolId, UUID subjectId, UUID teacherId);
     List<TeacherRemark> findAllBySchoolIdAndSubjectId(UUID schoolId, UUID subjectId);
+    List<TeacherRemark> findAllBySchoolIdAndSubjectIdAndGradeBand(
+            UUID schoolId, UUID subjectId, String gradeBand);
     Optional<TeacherRemark> findBySchoolIdAndSubjectIdAndTeacherIdAndGradeBand(UUID schoolId, UUID subjectId, UUID teacherId, String gradeBand);
 }

@@ -10,6 +10,7 @@ public interface PublicResultRow {
     String getSchoolEmail();
     String getSchoolMotto();
     String getSchoolPhone();
+    String getSchoolId();
     String getAcademicYear();
     Integer getTerm();
     String getExamType();

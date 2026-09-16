@@ -47,6 +47,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [examTypeFilter, setExamTypeFilter] = useState("");
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -194,6 +195,9 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
 
   const formatDate = (value?: string) => value ? new Date(value).toLocaleString() : "Not available";
   const linksContent = links?.content || [];
+  const filteredLinks = examTypeFilter
+    ? linksContent.filter((link) => link.examType === examTypeFilter)
+    : linksContent;
   const totalElements = links?.totalElements || 0;
   const totalPages = links?.totalPages || 0;
 
@@ -259,13 +263,24 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
             <option value="EXPIRED">Expired</option>
             <option value="REVOKED">Revoked</option>
           </select>
+          <select
+            className={styles.statusFilter}
+            value={examTypeFilter}
+            onChange={(event) => { setPage(0); setExamTypeFilter(event.target.value); }}
+            aria-label="Filter results links by exam"
+          >
+            <option value="">All exams</option>
+            <option value="OPENER">Opener</option>
+            <option value="MIDTERM">Midterm</option>
+            <option value="ENDTERM">End term</option>
+          </select>
           <button className={styles.refreshButton} type="button" onClick={() => setReloadVersion((current) => current + 1)} disabled={loadingLinks}>
             {loadingLinks ? "Loading..." : "Refresh"}
           </button>
         </div>
         {linksError && <p className={styles.error} role="alert">{linksError}</p>}
-        {loadingLinks && !links ? <p className={styles.empty}>Loading results links...</p> : linksContent.length === 0 ? (
-          <p className={styles.empty}>{search || status ? "No results links match your search." : "No results links found."}</p>
+        {loadingLinks && !links ? <p className={styles.empty}>Loading results links...</p> : filteredLinks.length === 0 ? (
+          <p className={styles.empty}>{search || status || examTypeFilter ? "No results links match your filters." : "No results links found."}</p>
         ) : (
           <>
             <div className={styles.tableWrap}>
@@ -277,7 +292,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
                   <th><button className={styles.sortButton} type="button" onClick={() => changeSort("expiresAt")}>Expires</button></th>
                   <th>Actions</th>
                 </tr></thead>
-                <tbody>{linksContent.map((link) => (
+                <tbody>{filteredLinks.map((link) => (
                   <tr key={link.accessId}>
                     <td><strong>{link.studentName}</strong></td>
                     <td>{link.admissionNumber || "Not available"}</td>

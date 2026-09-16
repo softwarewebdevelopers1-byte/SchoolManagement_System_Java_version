@@ -3,6 +3,7 @@ package com.example.school.system.services;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import com.example.school.system.repository.StudentSubjectSelectionRepo;
 import com.example.school.system.repository.SubjectJointRepo;
 import com.example.school.system.repository.SubjectRepository;
 import com.example.school.system.repository.TeacherProfileRepository;
+import com.example.school.system.repository.TeacherRemarkRepository;
 import com.example.school.system.repository.UserRepository;
 import com.example.school.system.types.SubjectType;
 import com.example.school.system.types.UserRoles;
@@ -40,23 +42,37 @@ import com.example.school.system.models.Subject;
 // import lombok.AllArgsConstructor;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.TeacherProfile;
+import com.example.school.system.models.TeacherRemark;
 import com.example.school.system.models.Users;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class SubjectService {
+    private static final Map<String, String> DEFAULT_REMARKS = Map.of(
+            "EE1", "Excellent mastery.",
+            "EE2", "Very strong mastery.",
+            "ME1", "Good mastery.",
+            "ME2", "Satisfactory mastery.",
+            "AE1", "Developing mastery.",
+            "AE2", "Partial mastery; needs practice.",
+            "BE1", "Needs support to develop mastery.",
+            "BE2", "Needs significant support to develop mastery.");
+
     private final SubjectRepository subjectRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolRepository schoolRepository;
     private final SubjectJointRepo subjectJointRepo;
     private final TeacherProfileRepository teacherProfileRepository;
+    private final TeacherRemarkRepository teacherRemarkRepository;
     private final StudentSubjectSelectionRepo studentSubjectSelectionRepo;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public SchoolApiResponse<?> createSingleSubject(SubjectDTO subjectCreationDTO) {
-        subjectRepository.save(toSubject(subjectCreationDTO));
+        Subject subject = subjectRepository.save(toSubject(subjectCreationDTO));
+        initializeDefaultRemarks(subject);
         return SchoolApiResponse.success(subjectCreationDTO, "Subject created successfully");
     }
 
@@ -77,6 +93,20 @@ public class SubjectService {
         return subject;
     }
 
+    private void initializeDefaultRemarks(Subject subject) {
+        DEFAULT_REMARKS.forEach((gradeBand, remarkText) -> {
+            if (teacherRemarkRepository.findAllBySchoolIdAndSubjectIdAndGradeBand(
+                    subject.getSchool().getId(), subject.getId(), gradeBand).isEmpty()) {
+                TeacherRemark remark = new TeacherRemark();
+                remark.setSchool(subject.getSchool());
+                remark.setSubject(subject);
+                remark.setGradeBand(gradeBand);
+                remark.setRemark(remarkText);
+                teacherRemarkRepository.save(remark);
+            }
+        });
+    }
+
     private School subjectValidation(SubjectDTO subjectCreationDTO) {
         if (subjectRepository.existsBySubjectNameAndSchoolId(subjectCreationDTO.subjectName(),
                 subjectCreationDTO.schoolId())) {
@@ -86,6 +116,7 @@ public class SubjectService {
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
     }
 
+    @Transactional
     public SchoolApiResponse<?> updateSubject(SubjectUpdateDTO subjectDTO) {
         String subjectName = subjectDTO.subjectName().trim().toLowerCase();
         Subject subjectToUpdate = subjectRepository.findByIdAndSchoolId(subjectDTO.subjectId(),
@@ -104,6 +135,7 @@ public class SubjectService {
             subjectToUpdate.setMainTeacher(null);
         }
         subjectRepository.save(subjectToUpdate);
+        initializeDefaultRemarks(subjectToUpdate);
         return SchoolApiResponse.success("subject updated");
     }
 
@@ -174,7 +206,8 @@ public class SubjectService {
             }
             savedSubjects.add(toSubject(subjectCreationDTO));
         }
-        subjectRepository.saveAll(savedSubjects);
+        List<Subject> persistedSubjects = subjectRepository.saveAll(savedSubjects);
+        persistedSubjects.forEach(this::initializeDefaultRemarks);
         return SchoolApiResponse.success(skipped, "checkout the skipped subjects in data object above");
     }
 

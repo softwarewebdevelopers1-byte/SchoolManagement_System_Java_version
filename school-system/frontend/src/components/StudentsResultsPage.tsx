@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { request, ApiError } from "../lib/api";
 import "./StudentResults.css";
 
@@ -194,6 +196,62 @@ const StudentResults = () => {
   const attendanceRate = hasAttendance
     ? (attendance.present / attendance.totalDays) * 100
     : null;
+  const downloadResults = async () => {
+    const report = document.querySelector<HTMLElement>(".results-container");
+    if (!report) return;
+
+    const canvas = await html2canvas(report, {
+      scale: Math.min(4, Math.max(2, window.devicePixelRatio * 2)),
+      useCORS: true,
+      backgroundColor: "#fdfbf7",
+      ignoreElements: (element) => element.classList.contains("download-controls"),
+    });
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imageWidth = pageWidth - margin * 2;
+    const pageContentHeight = pageHeight - margin * 2;
+    const sourcePageHeight = Math.max(
+      1,
+      Math.floor((pageContentHeight / imageWidth) * canvas.width),
+    );
+
+    for (let sourceY = 0; sourceY < canvas.height; sourceY += sourcePageHeight) {
+      if (sourceY > 0) pdf.addPage();
+      const sourceHeight = Math.min(sourcePageHeight, canvas.height - sourceY);
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sourceHeight;
+      const pageContext = pageCanvas.getContext("2d");
+      if (!pageContext) throw new Error("Unable to prepare the results PDF.");
+      pageContext.drawImage(
+        canvas,
+        0,
+        sourceY,
+        canvas.width,
+        sourceHeight,
+        0,
+        0,
+        pageCanvas.width,
+        pageCanvas.height,
+      );
+      const pageImageHeight = (sourceHeight * imageWidth) / canvas.width;
+      pdf.addImage(
+        pageCanvas.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        imageWidth,
+        pageImageHeight,
+        undefined,
+        "NONE",
+      );
+    }
+
+    const safeName = student.name.trim().replace(/\s+/g, "_") || "student";
+    pdf.save(`${safeName}_Results.pdf`);
+  };
 
   return (
     <main className="results-page">
@@ -375,11 +433,17 @@ const StudentResults = () => {
             <p>Next term begins: {formatDate(nextTermBegins)}</p>
           )}
         </section>
-        <button className="btn btn-print" onClick={() => window.print()}>
-          Print Report Card
-        </button>
+        <div className="download-controls">
+          <button className="btn btn-print" onClick={() => window.print()}>
+            Print Report Card
+          </button>
+          <button className="btn btn-download" onClick={() => void downloadResults()}>
+            Download Results
+          </button>
+        </div>
         <p className="results-footer">
-          Term period: {formatDate(term.startDate)} - {formatDate(term.endDate)}
+          Academic period: {term.name}
+          {term.examType ? ` · ${term.examType}` : ""}
         </p>
       </div>
     </main>

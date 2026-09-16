@@ -78,8 +78,9 @@ public class RankingService {
             for (MarksRow row : sheet.getMarks()) {
                 UUID id = row.getStudentProfile().getId();
                 studentMap.merge(id,
-                        new StudentAgg(row.getStudentProfile(), row.getTotalMarks().doubleValue()),
-                        (old, n) -> new StudentAgg(old.sp(), old.total() + n.total()));
+                        new StudentAgg(row.getStudentProfile(), row.getTotalMarks().doubleValue(), 1),
+                        (old, n) -> new StudentAgg(old.sp(), old.total() + n.total(),
+                                old.subjectCount() + n.subjectCount()));
             }
         }
         return studentMap;
@@ -174,19 +175,22 @@ public class RankingService {
             result.setTotalMarks(agg.total());
             result.setClassPosition(classRanks.getOrDefault(agg.sp().getId(), 0));
             result.setStreamPosition(streamRanks.get(agg.sp().getId()));
-            result.setGrade(calculateOverallGrade(agg.total(), bands));
+            result.setGrade(calculateOverallGrade(agg.average(), bands));
             return result;
         }).toList();
     }
 
-    private String calculateOverallGrade(Double total, List<GradeBand> gradeBands) {
+    private String calculateOverallGrade(Double average, List<GradeBand> gradeBands) {
         return gradeBands.stream()
-                .filter(b -> total >= b.getMinScore() && total <= b.getMaxScore())
+                .filter(b -> average >= b.getMinScore() && average <= b.getMaxScore())
                 .map(GradeBand::getGrade)
                 .findFirst()
                 .orElse("E");
     }
 
-    record StudentAgg(StudentProfile sp, Double total) {
+    record StudentAgg(StudentProfile sp, Double total, int subjectCount) {
+        Double average() {
+            return subjectCount == 0 ? 0 : total / subjectCount;
+        }
     }
 }

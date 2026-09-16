@@ -9,6 +9,7 @@ export interface StudentReportSubjectRow {
 }
 export interface StudentReportSlipData {
   studentName: string; admissionNo: string; classLabel?: string; term: number | string; year: number | string; examType: string;
+  overallGrade?: string;
   rank?: string | number; rankingLabel?: string; schoolName?: string; schoolAddress?: string; schoolEmail?: string; phoneNumber?: string; motto?: string;
   classTeacherRemark?: string; principalRemark?: string;
   gradingScale?: Array<{ grade: string; minScore: number; maxScore: number; points: number }>;
@@ -31,7 +32,7 @@ export const buildStudentReportSlipPdf = (data: StudentReportSlipData) => {
   const priorLabels = allLabels.filter((item) => item !== currentLabel).slice(0, 3);
   const count = data.subjects.length || 1, totalMarks = numeric(data.totalMarks) || 0, totalPoints = numeric(data.totalPoints) || 0;
   const meanMark = totalMarks / count, meanPoints = (totalPoints / count).toFixed(2);
-  const level = data.gradingScale?.find((band) => meanMark >= band.minScore && meanMark <= band.maxScore)?.grade || "-";
+  const level = data.overallGrade || data.gradingScale?.find((band) => meanMark >= band.minScore && meanMark <= band.maxScore)?.grade || "-";
   const maximumPoints = data.gradingScale?.length ? count * Math.max(...data.gradingScale.map((band) => band.points)) : null;
 
   doc.setFillColor(...green); doc.rect(2, 2, 6, 293, "F");

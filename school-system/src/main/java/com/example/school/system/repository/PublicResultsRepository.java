@@ -21,6 +21,7 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
                 s.email AS schoolEmail,
                 s.motto AS schoolMotto,
                 s.phone AS schoolPhone,
+                HEX(s.id) AS schoolId,
                 ctr.academic_year AS academicYear,
                 ctr.current_school_term AS term,
                 CASE ctr.exam_type
