@@ -128,7 +128,7 @@ public class ResultAccessService {
                 saved.getId(),
                 student.getId(),
                 rawToken,
-                publicResultsUrl + rawToken,
+                buildResultsUrl(rawToken),
                 saved.getExpiresAt());
     }
 
@@ -205,7 +205,7 @@ public class ResultAccessService {
                     access.getId(),
                     result.getStudentProfile().getId(),
                     rawToken,
-                    publicResultsUrl + rawToken,
+                    buildResultsUrl(rawToken),
                     access.getExpiresAt()));
         }
         List<ResultAccess> savedAccess = accessRepository.saveAll(accessToSave);
@@ -505,7 +505,7 @@ public class ResultAccessService {
                         : "ACTIVE";
         String url = access.getEncryptedToken() == null
                 ? null
-                : publicResultsUrl + decryptToken(access.getEncryptedToken());
+                : buildResultsUrl(decryptToken(access.getEncryptedToken()));
         StudentProfile student = access.getStudentProfile();
         String className = student.getSchoolClass() == null
                 ? null
@@ -527,6 +527,17 @@ public class ResultAccessService {
                 access.getCreatedAt(),
                 access.getExpiresAt(),
                 access.getRenewedAt());
+    }
+
+    private String buildResultsUrl(String token) {
+        String baseUrl = publicResultsUrl == null ? "" : publicResultsUrl.trim();
+        while (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        if (!baseUrl.endsWith("/results")) {
+            baseUrl += "/results";
+        }
+        return baseUrl + "/" + token;
     }
 
     private Instant effectiveExpiry(Instant requestedExpiry) {
