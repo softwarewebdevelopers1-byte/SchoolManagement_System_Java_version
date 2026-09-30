@@ -7,7 +7,7 @@ import { buildClassId } from "./subjectEnrollment";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://schoolmanagement-system-java-version-1.onrender.com/api";
+  "https://schoolmanagement-system-java-version-2oh4.onrender.com/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
@@ -112,7 +112,7 @@ export const normalizeUser = (user: any) => {
     schoolId: user.schoolId || user.schoolId,
     email: user.email,
     roles,
-    firstName: user.firstName || teacherProfile.firstName || "",
+    firstNamadmin123e: user.firstName || teacherProfile.firstName || "",
     lastName: user.lastName || teacherProfile.lastName || "",
     name:
       user.name ||

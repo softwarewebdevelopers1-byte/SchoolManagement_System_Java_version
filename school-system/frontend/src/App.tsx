@@ -4,6 +4,7 @@ import StudentDashboard from "./components/students/StudentDashboard";
 import LoginPage from "./components/auth/login";
 import ErrorPage from "./components/error";
 import ClassTeacherDashboard from "./components/classteacher/ClassTeacherDashboard";
+import ComplexClassTeacherDashboard from "./components/classteacher/ComplexClassTeacherDashboard";
 import DeputyHeadDashboard from "./components/deputyhead/DeputyHeadDashboard";
 import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherDashboard";
 import TeacherRemarksPage from "./components/subjectteacher/TeacherRemarksPage";
@@ -56,6 +57,7 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
 const DashboardSelector = () => {
   const [remarksTeacher, setRemarksTeacher] = useState(false);
   const [checkingRemarks, setCheckingRemarks] = useState(true);
+  const [singleTeacherSchool, setSingleTeacherSchool] = useState<boolean | null>(null);
   const saved = localStorage.getItem("user");
   let user: any = null;
   try {
@@ -95,11 +97,42 @@ const DashboardSelector = () => {
     };
   }, [user?.id, user?.teacherId]);
 
+  // A teacher who is also the only administrator should not have to choose
+  // between two views of the same school.  This check is deliberately done
+  // only for the ADMIN + CLASSTEACHER combination and is cached for this tab.
+  useEffect(() => {
+    const roles = normalizeRoles(user?.roles || user?.role);
+    const isCandidate = roles.includes("ADMIN") && roles.includes("CLASSTEACHER");
+    if (!isCandidate || !user?.schoolId) {
+      setSingleTeacherSchool(false);
+      return;
+    }
+    let cancelled = false;
+    api.get<any[]>(`/users/${encodeURIComponent(user.schoolId)}/teachers`)
+      .then((teachers) => {
+        const isSingleTeacher = Array.isArray(teachers) && teachers.length === 1;
+        if (!cancelled) {
+          setSingleTeacherSchool(isSingleTeacher);
+          if (isSingleTeacher) {
+            sessionStorage.setItem("edunex.singleTeacherAdminClassTeacher", String(user.schoolId));
+          } else {
+            sessionStorage.removeItem("edunex.singleTeacherAdminClassTeacher");
+          }
+        }
+      })
+      .catch(() => { if (!cancelled) setSingleTeacherSchool(false); });
+    return () => { cancelled = true; };
+  }, [user?.schoolId, user?.roles]);
+
   if (!saved || !user) return <Navigate to="/login" replace />;
-  if (checkingRemarks) return null;
+  if (checkingRemarks || singleTeacherSchool === null) return null;
   try {
     const roles = normalizeRoles(user?.roles || user?.role);
     const validRoles = roles.filter((r) => ROLE_PATHS[r]);
+
+    if (singleTeacherSchool && roles.includes("ADMIN") && roles.includes("CLASSTEACHER")) {
+      return <Navigate to="/edunex-org/complex-class-teacher" replace />;
+    }
 
     const selectorRoles = [
       ...validRoles,
@@ -279,6 +312,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ClassTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edunex-org/complex-class-teacher"
+          element={
+            <ProtectedRoute>
+              <ComplexClassTeacherDashboard />
             </ProtectedRoute>
           }
         />

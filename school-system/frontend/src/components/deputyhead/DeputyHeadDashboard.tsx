@@ -188,6 +188,7 @@ export default function DeputyHeadDashboard({
 
       setClasses(Array.from(classMap.values()));
     } catch (err) {
+      console.error("Dashboard loadData failed:", err);
     } finally {
       setLoading(false);
     }

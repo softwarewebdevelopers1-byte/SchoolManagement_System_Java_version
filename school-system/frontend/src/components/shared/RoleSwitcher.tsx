@@ -26,6 +26,12 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ user }) => {
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   let roles = normalizeRoles(user?.roles || user?.role);
+  const isSingleTeacherAdminClassTeacher =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("edunex.singleTeacherAdminClassTeacher") === String(user?.schoolId);
+  if (isSingleTeacherAdminClassTeacher) {
+    roles = roles.filter((role) => role !== "ADMIN" && role !== "CLASSTEACHER");
+  }
   const validRoles = roles.filter((r) => ROLE_PATHS[r]);
 
   const uniquePathRoles: string[] = [];

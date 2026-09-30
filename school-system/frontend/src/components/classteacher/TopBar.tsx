@@ -15,6 +15,7 @@ interface TopBarProps {
   onLogout: () => void;
   user: any;
   onRefresh?: () => void;
+  dashboardTitle?: string;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -26,6 +27,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onLogout,
   user,
   onRefresh,
+  dashboardTitle = "Class Teacher Dashboard",
 }) => {
   return (
     <header
@@ -76,7 +78,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               margin: 0,
             }}
           >
-            Class Teacher Dashboard
+            {dashboardTitle}
           </p>
           <h2
             style={{
