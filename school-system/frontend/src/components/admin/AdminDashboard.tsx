@@ -684,6 +684,36 @@ const AdminDashboard: React.FC = () => {
           password: payload?.password,
         }),
       });
+
+      // Surgical update in place; broad reload avoided for single-teacher edit.
+      setTeachers((prev) =>
+        prev.map((t) => {
+          const matches =
+            t.usersId === teacherId ||
+            t.userId === teacherId ||
+            t.id === teacherId;
+          if (!matches) return t;
+          return {
+            ...t,
+            email: payload.email,
+            status: payload.status?.toUpperCase() ?? t.status,
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            // If the server recomputes `member.name` on edit, this surgical
+            // update uses the joined form until the next natural reload picks
+            // up the server value. Acceptable trade-off for the message-only
+            // PATCH response.
+            name:
+              [payload.firstName, payload.lastName].filter(Boolean).join(" ") ||
+              payload.email,
+            phone: payload.phone,
+            phoneNumber: payload.phone,
+            roles: payload.roles,
+            // roleLabel, department, classGrade, classStream, subjects,
+            // teacherNumber, joinDate are preserved from the existing row.
+          };
+        }),
+      );
     } else {
       await request(`/auth/register/teacher`, {
         method: "POST",
@@ -698,9 +728,9 @@ const AdminDashboard: React.FC = () => {
           schoolId: getSchoolId(),
         }),
       });
+      await loadDashboardData();
     }
 
-    await loadDashboardData();
     showSuccess(
       `Staff member ${teacherId ? "updated" : "added"} successfully.`,
     );
@@ -780,10 +810,23 @@ const AdminDashboard: React.FC = () => {
     try {
       if (subjectId) {
         await api.put(`/school/subjects/${subjectId}`, { name, mainTeacherId });
+
+        // Surgical update in place; broad reload avoided for single-subject edit.
+        setSubjects((prev) =>
+          prev.map((s) =>
+            s.id === subjectId
+              ? {
+                  ...s,
+                  subjectName: name,
+                  mainTeacherId: mainTeacherId ?? s.mainTeacherId,
+                }
+              : s,
+          ),
+        );
       } else {
         await api.post("/school/subjects", { name, mainTeacherId });
+        await loadDashboardData();
       }
-      await loadDashboardData();
       showSuccess(`Subject ${subjectId ? "updated" : "created"} successfully.`);
       closeModal();
     } catch (err) {
