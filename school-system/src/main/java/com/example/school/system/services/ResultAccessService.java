@@ -221,13 +221,13 @@ public class ResultAccessService {
                         result -> result.getStudentProfile().getId(),
                         ClassTermResults::getStudentProfile,
                         (first, ignored) -> first));
-        queueResultNotifications(request, links, studentIds, studentsById);
+        queueResultNotifications(request, links, studentIds, studentsById, buildMarksByStudent(markSheets));
         return new ResultPublicationResponse(results.size(), links);
     }
 
     private void queueResultNotifications(ResultPublicationRequest request,
             List<ResultAccessResponse> links, List<UUID> studentIds,
-            Map<UUID, StudentProfile> studentsById) {
+            Map<UUID, StudentProfile> studentsById, Map<UUID, List<String>> marksByStudent) {
         if (links.isEmpty()) {
             return;
         }
@@ -256,8 +256,13 @@ public class ResultAccessService {
             notification.setCurrentSchoolTerm(request.term());
             notification.setExamType(request.examType());
             notification.setRecipientPhone(contact.getPhoneNumber().trim());
-            notification.setMessage("Results for " + contact.getStudentName()
-                    + " are published. View results: " + link.url());
+            notification.setMessage(buildResultNotificationMessage(
+                    contact.getStudentName(),
+                    request.academicYear(),
+                    request.term(),
+                    request.examType(),
+                    marksByStudent.getOrDefault(link.studentId(), List.of()),
+                    link.url()));
             notifications.add(notification);
         }
         if (notifications.isEmpty()) {
@@ -266,6 +271,38 @@ public class ResultAccessService {
         List<ResultSmsNotification> saved = resultSmsNotificationRepository.saveAll(notifications);
         eventPublisher.publishEvent(new ResultSmsNotificationEvent(
                 saved.stream().map(ResultSmsNotification::getId).toList()));
+    }
+
+    private Map<UUID, List<String>> buildMarksByStudent(List<MarksSheet> markSheets) {
+        Map<UUID, List<String>> marksByStudent = new java.util.HashMap<>();
+        for (MarksSheet markSheet : markSheets) {
+            if (markSheet.getSubjectJoint() == null || markSheet.getSubjectJoint().getSubject() == null
+                    || markSheet.getMarks() == null) {
+                continue;
+            }
+            String subjectName = markSheet.getSubjectJoint().getSubject().getSubjectName();
+            if (subjectName == null || subjectName.isBlank()) {
+                continue;
+            }
+            for (var mark : markSheet.getMarks()) {
+                if (mark.getStudentProfile() == null) {
+                    continue;
+                }
+                String score = mark.getAverageMarksPercentage() == null
+                        ? "N/A"
+                        : mark.getAverageMarksPercentage() + "%";
+                marksByStudent.computeIfAbsent(mark.getStudentProfile().getId(), ignored -> new ArrayList<>())
+                        .add(subjectName + ": " + score);
+            }
+        }
+        return marksByStudent;
+    }
+
+    private String buildResultNotificationMessage(String studentName, String academicYear, Integer term,
+            ExamType examType, List<String> subjectMarks, String resultsUrl) {
+        String marks = subjectMarks.isEmpty() ? "not available" : String.join(", ", subjectMarks);
+        return "Results for " + studentName + " (" + academicYear + " Term " + term + " "
+                + examType.name() + "). Marks: " + marks + ". Full results: " + resultsUrl;
     }
 
     @Transactional
@@ -369,8 +406,24 @@ public class ResultAccessService {
         notification.setCurrentSchoolTerm(access.getCurrentSchoolTerm());
         notification.setExamType(access.getExamType());
         notification.setRecipientPhone(phoneNumber.trim());
-        notification.setMessage("Results for " + access.getStudentProfile().getStudentFullName()
-                + " are published. View results: " + toLinkResponse(access).resultsUrl());
+        List<PublicResultRow> resultRows = publicResultsRepository.findPublishedResults(
+                access.getStudentProfile().getId(),
+                access.getAcademicYear(),
+                access.getCurrentSchoolTerm(),
+                access.getExamType().name(),
+                null);
+        List<String> subjectMarks = resultRows.stream()
+                .filter(row -> row.getSubjectId() != null)
+                .map(row -> row.getSubjectName() + ": "
+                        + (row.getScore() == null ? "N/A" : row.getScore() + "%"))
+                .toList();
+        notification.setMessage(buildResultNotificationMessage(
+                access.getStudentProfile().getStudentFullName(),
+                access.getAcademicYear(),
+                access.getCurrentSchoolTerm(),
+                access.getExamType(),
+                subjectMarks,
+                toLinkResponse(access).resultsUrl()));
         ResultSmsNotification saved = resultSmsNotificationRepository.save(notification);
         eventPublisher.publishEvent(new ResultSmsNotificationEvent(List.of(saved.getId())));
     }

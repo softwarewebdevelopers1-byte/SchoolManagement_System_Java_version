@@ -1,8 +1,8 @@
 package com.example.school.system.services.sms;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResultSmsNotificationService {
     private final ResultSmsNotificationRepository notificationRepository;
-    private final TextBeeService textBeeService;
+    private final SmsService smsService;
 
     @Transactional
     public void dispatch(List<UUID> notificationIds) {
@@ -35,15 +35,28 @@ public class ResultSmsNotificationService {
         List<ResultSmsNotification> notifications = notificationRepository.findAllByIdInAndStatus(
                 notificationIds, SmsNotificationStatus.SENDING);
         try {
-            textBeeService.sendBulkSms(notifications.stream()
-                    .map(notification -> new TextBeeService.SmsMessage(
+            List<SmsSendResult> results = smsService.sendBulkSms(notifications.stream()
+                    .map(notification -> new SmsMessage(
                             notification.getRecipientPhone(), notification.getMessage()))
                     .toList());
-            Instant sentAt = Instant.now();
-            notifications.forEach(notification -> {
-                notification.setStatus(SmsNotificationStatus.SENT);
-                notification.setSentAt(sentAt);
+            if (results.size() != notifications.size()) {
+                throw new IllegalStateException("SMS provider returned an incomplete bulk result");
+            }
+            IntStream.range(0, notifications.size()).forEach(index -> {
+                ResultSmsNotification notification = notifications.get(index);
+                SmsSendResult result = results.get(index);
+                if (result.isAccepted()) {
+                    notification.setStatus(SmsNotificationStatus.ACCEPTED);
+                } else {
+                    notification.setStatus(SmsNotificationStatus.FAILED);
+                    notification.setLastError(truncate(result.errorMessage()));
+                }
             });
+            long rejected = results.stream().filter(result -> !result.isAccepted()).count();
+            if (rejected > 0) {
+                log.warn("Mobitech rejected {} of {} result notification SMS message(s)",
+                        rejected, notifications.size());
+            }
         } catch (RuntimeException exception) {
             notifications.forEach(notification -> {
                 notification.setStatus(SmsNotificationStatus.FAILED);

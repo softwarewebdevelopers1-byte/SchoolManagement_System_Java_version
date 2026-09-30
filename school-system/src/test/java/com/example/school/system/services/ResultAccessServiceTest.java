@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -29,6 +30,8 @@ import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.ClassTermResults;
+import com.example.school.system.models.Subject;
+import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.DTO.DTOResponse.AuthenticatedUserContext;
 import com.example.school.system.DTO.UserDto;
@@ -222,6 +225,54 @@ class ResultAccessServiceTest {
     }
 
     @Test
+    void resendNotificationIncludesPublishedExamMarksAndLink() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        ResultAccess access = access("valid-token");
+        access.setId(accessId);
+        access.setEncryptedToken(ReflectionTestUtils.invokeMethod(service, "encryptToken", "valid-token"));
+        ReflectionTestUtils.setField(service, "publicResultsUrl", "http://localhost:5173/results/");
+        access.getStudentProfile().setId(studentId);
+        access.getStudentProfile().setStudentFullName("Student");
+        access.getStudentProfile().setPhoneNumber("+254700000001");
+        ClassTermResults publication = new ClassTermResults();
+        publication.setPublished(true);
+
+        PublicResultRow row = org.mockito.Mockito.mock(PublicResultRow.class);
+        when(row.getSubjectId()).thenReturn(UUID.randomUUID().toString().replace("-", ""));
+        when(row.getSubjectName()).thenReturn("Mathematics");
+        when(row.getScore()).thenReturn(78);
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(
+                        UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+        when(classTermResultsRepo.findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                studentId, "2026", 2, ExamType.ENDTERM))
+                .thenReturn(Optional.of(publication));
+        when(publicResultsRepository.findPublishedResults(
+                studentId, "2026", 2, ExamType.ENDTERM.name(), null))
+                .thenReturn(List.of(row));
+        when(resultSmsNotificationRepository.save(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> {
+                    com.example.school.system.models.ResultSmsNotification notification =
+                            invocation.getArgument(0);
+                    notification.setId(UUID.randomUUID());
+                    return notification;
+                });
+
+        service.resendResultNotification(accessId);
+
+        org.mockito.ArgumentCaptor<com.example.school.system.models.ResultSmsNotification> notification =
+                org.mockito.ArgumentCaptor.forClass(com.example.school.system.models.ResultSmsNotification.class);
+        org.mockito.Mockito.verify(resultSmsNotificationRepository).save(notification.capture());
+        String message = notification.getValue().getMessage();
+        assertTrue(message.contains("Mathematics: 78%"));
+        assertTrue(message.contains("2026 Term 2 ENDTERM"));
+        assertTrue(message.contains("http://localhost:5173/results/valid-token"));
+    }
+
+    @Test
     void buildsResultsFromMarksBeforePublishingWhenNoResultsExist() {
         UUID schoolId = UUID.randomUUID();
         UUID classId = UUID.randomUUID();
@@ -242,8 +293,14 @@ class ResultAccessServiceTest {
         MarksRow row = new MarksRow();
         row.setStudentProfile(student);
         row.setTotalMarks(78);
+        row.setAverageMarksPercentage(78);
+        Subject subject = new Subject();
+        subject.setSubjectName("Mathematics");
+        SubjectJoint subjectJoint = new SubjectJoint();
+        subjectJoint.setSubject(subject);
         MarksSheet sheet = new MarksSheet();
         sheet.setMarks(List.of(row));
+        sheet.setSubjectJoint(subjectJoint);
         when(marksSheetRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
                 classId, "2026", 1, ExamType.ENDTERM, MarksSheetStatus.SUBMITTED))
                 .thenReturn(List.of(sheet));
@@ -258,6 +315,11 @@ class ResultAccessServiceTest {
                 List.of(studentId), "2026", 1, ExamType.ENDTERM)).thenReturn(List.of());
         when(accessRepository.saveAll(org.mockito.ArgumentMatchers.anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        var studentContact = contact(studentId, "student", "+254700000001");
+        org.mockito.Mockito.when(studentRepository.findContactsByIdIn(List.of(studentId)))
+                .thenReturn(List.of(studentContact));
+        org.mockito.Mockito.when(resultSmsNotificationRepository.saveAll(org.mockito.ArgumentMatchers.anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ResultPublicationResponse response = service.publishResults(request);
 
@@ -265,6 +327,12 @@ class ResultAccessServiceTest {
         org.mockito.Mockito.verify(rankingService).StudentClassRanking(
                 new GradingClassStudents(classId, ExamType.ENDTERM, "2026", 1, gradingScale));
         org.mockito.Mockito.verify(classTermResultsRepo).saveAll(List.of(generated));
+        org.mockito.ArgumentCaptor<List<com.example.school.system.models.ResultSmsNotification>> notifications =
+                org.mockito.ArgumentCaptor.forClass(List.class);
+        org.mockito.Mockito.verify(resultSmsNotificationRepository).saveAll(notifications.capture());
+        String message = notifications.getValue().get(0).getMessage();
+        org.junit.jupiter.api.Assertions.assertTrue(message.contains("Mathematics: 78%"));
+        org.junit.jupiter.api.Assertions.assertTrue(message.contains("Full results: "));
     }
 
     @Test
@@ -296,5 +364,15 @@ class ResultAccessServiceTest {
         String hash = ReflectionTestUtils.invokeMethod(service, "hashToken", rawToken);
         access.setTokenHash(hash);
         return access;
+    }
+
+    private com.example.school.system.projection.StudentContactProjection contact(
+            UUID studentId, String name, String phoneNumber) {
+        com.example.school.system.projection.StudentContactProjection contact =
+                org.mockito.Mockito.mock(com.example.school.system.projection.StudentContactProjection.class);
+        when(contact.getStudentId()).thenReturn(studentId);
+        when(contact.getStudentName()).thenReturn(name);
+        when(contact.getPhoneNumber()).thenReturn(phoneNumber);
+        return contact;
     }
 }

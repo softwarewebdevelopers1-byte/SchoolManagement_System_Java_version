@@ -1,8 +1,11 @@
 package com.example.school.system.services.sms;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -12,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class TextBeeService {
+public class TextBeeService implements SmsService {
 
     private final RestClient restClient;
 
@@ -25,7 +28,7 @@ public class TextBeeService {
     @Value("${textbee.api-url}")
     private String Url;
 
-    public TextBeeService(RestClient restClient) {
+    public TextBeeService(@Qualifier("textBeeRestClient") RestClient restClient) {
         this.restClient = restClient;
     }
 
@@ -49,6 +52,20 @@ public class TextBeeService {
                 .body(String.class);
 
         log.info("TextBee Response: {}", response);
+    }
+
+    @Override
+    public List<SmsSendResult> sendBulkSms(
+            Collection<com.example.school.system.services.sms.SmsMessage> messages) {
+        if (messages.isEmpty()) {
+            return List.of();
+        }
+        sendBulkSms(messages.stream()
+                .map(message -> new SmsMessage(message.recipient(), message.message()))
+                .toList());
+        return IntStream.range(0, messages.size())
+                .mapToObj(index -> SmsSendResult.accepted(null, "accepted"))
+                .toList();
     }
 
     public void sendBulkSms(List<SmsMessage> messages) {
