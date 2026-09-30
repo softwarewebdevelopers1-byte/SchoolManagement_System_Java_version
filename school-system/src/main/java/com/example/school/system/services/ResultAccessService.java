@@ -79,7 +79,7 @@ public class ResultAccessService {
     private final ResultSmsNotificationRepository resultSmsNotificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Value("${results.public-url:http://localhost:5173/results/}")
+    @Value("${frontend.url}")
     private String publicResultsUrl;
 
     @Value("${results.token.encryption-key:${jwt.secret}}")

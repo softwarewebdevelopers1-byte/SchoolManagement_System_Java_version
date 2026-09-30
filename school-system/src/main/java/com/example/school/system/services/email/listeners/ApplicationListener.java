@@ -1,5 +1,6 @@
 package com.example.school.system.services.email.listeners;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -10,10 +11,12 @@ import com.example.school.system.services.email.events.UserRegistrationEvent;
 
 @Component
 public class ApplicationListener {
-    private EmailSender emailSender;
+    private final EmailSender emailSender;
+    private final String frontendUrl;
 
-    public ApplicationListener(EmailSender emailSender) {
+    public ApplicationListener(EmailSender emailSender, @Value("${frontend.url}") String frontendUrl) {
         this.emailSender = emailSender;
+        this.frontendUrl = frontendUrl;
     }
 
     @Async
@@ -36,7 +39,8 @@ public class ApplicationListener {
         link.append(" ");
         link.append("href");
         link.append("=");
-        link.append("http://localhost:5173/forgot-password/");
+        link.append(frontendUrl);
+        link.append("/forgot-password/");
         link.append(resetPasswordEvent.token());
         link.append(" ");
         link.append(
