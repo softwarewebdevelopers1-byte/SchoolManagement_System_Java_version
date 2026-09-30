@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
 import { api, getSchoolId, request } from "../../lib/api";
@@ -1463,15 +1463,11 @@ export const StudentsTab: React.FC<
 
   const isClassFiltered = classFilter !== "all";
 
-  /* =====================================================
-       FETCH ALL STUDENTS FOR CLASS FILTER
-       ===================================================== */
-
-  useEffect(() => {
-    if (!isClassFiltered || !schoolId) return;
-    setLoading(true);
-    setError(null);
-    (async () => {
+  const refetchCurrentView = useCallback(async () => {
+    if (isClassFiltered) {
+      if (!schoolId) return;
+      setLoading(true);
+      setError(null);
       try {
         const response = await api.get<{
           content: any[];
@@ -1487,8 +1483,35 @@ export const StudentsTab: React.FC<
       } finally {
         setLoading(false);
       }
-    })();
-  }, [isClassFiltered, schoolId]);
+      return;
+    }
+
+    if (!schoolId) return;
+    setLoading(true);
+    try {
+      const response = await api.get<{
+        content: any[];
+        number: number;
+        size: number;
+        totalElements: number;
+        totalPages: number;
+      }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=${page}&size=${pageSize}`);
+      const mapped = mapStudentsFromApi(response?.content || []);
+      setPageResponse({
+        ...response,
+        content: mapped,
+      });
+    } catch (err: any) {
+      setError(err?.message || "Failed to load students.");
+    } finally {
+      setLoading(false);
+    }
+  }, [isClassFiltered, schoolId, page, pageSize]);
+
+  useEffect(() => {
+    if (!isClassFiltered || !schoolId) return;
+    void refetchCurrentView();
+  }, [isClassFiltered, schoolId, refetchCurrentView]);
 
   /* =====================================================
        SERVER-SIDE PAGINATION
@@ -1701,34 +1724,11 @@ export const StudentsTab: React.FC<
        SERVER-SIDE PAGINATION
        ===================================================== */
 
-  const fetchPage = async () => {
-    if (!schoolId || isClassFiltered) return;
-    setLoading(true);
-    try {
-      const response = await api.get<{
-        content: any[];
-        number: number;
-        size: number;
-        totalElements: number;
-        totalPages: number;
-      }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=${page}&size=${pageSize}`);
-      const mapped = mapStudentsFromApi(response?.content || []);
-      setPageResponse({
-        ...response,
-        content: mapped,
-      });
-    } catch (err: any) {
-      setError(err?.message || "Failed to load students.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!isClassFiltered) {
-      fetchPage();
+      void refetchCurrentView();
     }
-  }, [schoolId, page, pageSize, isClassFiltered]);
+  }, [isClassFiltered, refetchCurrentView]);
 
   /* =====================================================
       FILTERING
@@ -1764,6 +1764,110 @@ export const StudentsTab: React.FC<
   const pagedStudents = isClassFiltered
     ? filteredStudents.slice(page * pageSize, (page + 1) * pageSize)
     : filteredStudents;
+
+  function applyStudentUpdate(payload: StudentPayload, studentId: string) {
+    const cls = classes.find((currentClass: Class) => currentClass.id === payload.classId);
+    const mergedFields = {
+      ...payload,
+      classGrade: cls?.grade ?? undefined,
+      classStream: cls?.stream ?? undefined,
+    };
+    const matchesStudent = (student: Student) =>
+      (student.userId || student.id) === studentId;
+
+    let touched = false;
+
+    if (pageResponse?.content.some(matchesStudent)) {
+      setPageResponse((prev) =>
+        prev
+          ? {
+              ...prev,
+              content: prev.content.map((student: Student) =>
+                matchesStudent(student)
+                  ? {
+                      ...student,
+                      ...mergedFields,
+                      classGrade: mergedFields.classGrade ?? student.classGrade,
+                      classStream: mergedFields.classStream ?? student.classStream,
+                    }
+                  : student,
+              ),
+            }
+          : prev,
+      );
+      touched = true;
+    }
+
+    if (allStudents.some(matchesStudent)) {
+      setAllStudents((prev) =>
+        prev.map((student: Student) =>
+          matchesStudent(student)
+            ? {
+                ...student,
+                ...mergedFields,
+                classGrade: mergedFields.classGrade ?? student.classGrade,
+                classStream: mergedFields.classStream ?? student.classStream,
+              }
+            : student,
+        ),
+      );
+      touched = true;
+    }
+
+    if (!touched) void refetchCurrentView();
+  }
+
+  function applyStudentDelete(studentId: string) {
+    const matchesStudent = (student: Student) =>
+      (student.userId || student.id) === studentId;
+    const pageContainsStudent =
+      pageResponse?.content.some(matchesStudent) ?? false;
+    const pageWillBeEmpty =
+      !isClassFiltered &&
+      pageContainsStudent &&
+      pageResponse?.content.length === 1 &&
+      page > 0;
+
+    let touched = false;
+
+    if (pageContainsStudent) {
+      setPageResponse((prev) =>
+        prev
+          ? {
+              ...prev,
+              content: prev.content.filter(
+                (student: Student) => !matchesStudent(student),
+              ),
+              totalElements: Math.max(0, prev.totalElements - 1),
+            }
+          : prev,
+      );
+      touched = true;
+    }
+
+    if (allStudents.some(matchesStudent)) {
+      setAllStudents((prev) =>
+        prev.filter((student: Student) => !matchesStudent(student)),
+      );
+      touched = true;
+    }
+
+    if (!touched || pageWillBeEmpty) void refetchCurrentView();
+  }
+
+  const handleSaveStudent = async (
+    payload: StudentPayload,
+    studentId?: string,
+  ) => {
+    await onSaveStudent(payload, studentId);
+    if (studentId) applyStudentUpdate(payload, studentId);
+  };
+
+  const handleDeleteStudent = async (studentId: string) => {
+    const ok = await onDeleteStudent(studentId);
+    if (ok) applyStudentDelete(studentId);
+    return ok;
+  };
 
   /* =====================================================
       PAGINATION STATE RESET
@@ -1818,7 +1922,7 @@ export const StudentsTab: React.FC<
          * Endpoint is not changed.
          */
         onSave={async (payload) => {
-          await onSaveStudent(
+          await handleSaveStudent(
             payload,
             studentId,
           );
@@ -1863,26 +1967,8 @@ export const StudentsTab: React.FC<
     showConfirm(
       `Delete <strong>${name}</strong> from the enrolled students list?`,
       async () => {
-        const deleted = await onDeleteStudent(studentId);
+        const deleted = await handleDeleteStudent(studentId);
         if (!deleted) return;
-
-        const isDeletedStudent = (student: Student) =>
-          (student.userId || student.id) === studentId;
-
-        setPageResponse((previous) =>
-          previous
-            ? {
-                ...previous,
-                content: previous.content.filter(
-                  (student) => !isDeletedStudent(student),
-                ),
-                totalElements: Math.max(0, previous.totalElements - 1),
-              }
-            : previous,
-        );
-        setAllStudents((previous) =>
-          previous.filter((student) => !isDeletedStudent(student)),
-        );
       },
       true,
     );

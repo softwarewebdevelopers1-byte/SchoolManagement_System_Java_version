@@ -633,11 +633,13 @@ const AdminDashboard: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ ...payload, studentId }),
       });
+      // StudentsTab updates its visible local lists after this resolves.
+      // Avoid reloading unrelated dashboard data after an edit.
     } else {
       await api.post("/users", body);
+      await loadDashboardData();
     }
 
-    await loadDashboardData();
     showSuccess(`Student ${studentId ? "updated" : "enrolled"} successfully.`);
   };
 
@@ -646,7 +648,8 @@ const AdminDashboard: React.FC = () => {
       await request(`/delete/user?id=${encodeURIComponent(studentId)}`, {
         method: "PATCH",
       });
-      await loadDashboardData();
+      // StudentsTab removes the row from its visible local lists.
+      // Avoid reloading unrelated dashboard data after a deletion.
       showSuccess("Student record deleted.");
       return true;
     } catch (err) {
