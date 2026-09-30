@@ -7,20 +7,6 @@ Currently, two official plugins are available:
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Local development
-
-In dev (`npm run dev`) the API client targets `http://localhost:8000/api`. Run the
-backend against the local database first:
-
-```bash
-# from the repository root
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-```
-
-The `local` profile reads the `LOCAL_DB*` values from `.env`. Override either
-target with `VITE_API_BASE_URL` in `frontend/.env.local`. Production builds keep
-using the deployed API URL.
-
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).

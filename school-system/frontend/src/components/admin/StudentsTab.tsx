@@ -1463,34 +1463,30 @@ export const StudentsTab: React.FC<
 
   const isClassFiltered = classFilter !== "all";
 
-  const fetchClassFilteredList = useCallback(async () => {
-    if (!isClassFiltered || !schoolId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get<{
-        content: any[];
-        number: number;
-        size: number;
-        totalElements: number;
-        totalPages: number;
-      }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=0&size=500`);
-      const mapped = mapStudentsFromApi(response?.content || []);
-      setAllStudents(mapped);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load students.");
-    } finally {
-      setLoading(false);
+  const refetchCurrentView = useCallback(async () => {
+    if (isClassFiltered) {
+      if (!schoolId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get<{
+          content: any[];
+          number: number;
+          size: number;
+          totalElements: number;
+          totalPages: number;
+        }>(`/get/all/students?schoolId=${encodeURIComponent(schoolId)}&page=0&size=500`);
+        const mapped = mapStudentsFromApi(response?.content || []);
+        setAllStudents(mapped);
+      } catch (err: any) {
+        setError(err?.message || "Failed to load students.");
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
-  }, [isClassFiltered, schoolId]);
 
-  useEffect(() => {
-    if (!isClassFiltered || !schoolId) return;
-    void fetchClassFilteredList();
-  }, [isClassFiltered, schoolId, fetchClassFilteredList]);
-
-  const fetchPaginatedPage = useCallback(async () => {
-    if (isClassFiltered || !schoolId) return;
+    if (!schoolId) return;
     setLoading(true);
     try {
       const response = await api.get<{
@@ -1511,6 +1507,11 @@ export const StudentsTab: React.FC<
       setLoading(false);
     }
   }, [isClassFiltered, schoolId, page, pageSize]);
+
+  useEffect(() => {
+    if (!isClassFiltered || !schoolId) return;
+    void refetchCurrentView();
+  }, [isClassFiltered, schoolId, refetchCurrentView]);
 
   /* =====================================================
        SERVER-SIDE PAGINATION
@@ -1725,9 +1726,9 @@ export const StudentsTab: React.FC<
 
   useEffect(() => {
     if (!isClassFiltered) {
-      void fetchPaginatedPage();
+      void refetchCurrentView();
     }
-  }, [isClassFiltered, fetchPaginatedPage]);
+  }, [isClassFiltered, refetchCurrentView]);
 
   /* =====================================================
       FILTERING
@@ -1813,10 +1814,7 @@ export const StudentsTab: React.FC<
       touched = true;
     }
 
-    if (!touched) {
-      if (isClassFiltered) void fetchClassFilteredList();
-      else void fetchPaginatedPage();
-    }
+    if (!touched) void refetchCurrentView();
   }
 
   function applyStudentDelete(studentId: string) {
@@ -1854,10 +1852,7 @@ export const StudentsTab: React.FC<
       touched = true;
     }
 
-    if (!touched || pageWillBeEmpty) {
-      if (isClassFiltered) void fetchClassFilteredList();
-      else void fetchPaginatedPage();
-    }
+    if (!touched || pageWillBeEmpty) void refetchCurrentView();
   }
 
   const handleSaveStudent = async (
