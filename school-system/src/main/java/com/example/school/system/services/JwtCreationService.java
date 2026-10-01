@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +30,13 @@ public class JwtCreationService {
 
     private final long expiration = TimeUnit.DAYS.toMillis(28);
 
+    @PostConstruct
+    void validateSecret() {
+        secretKeyBuilder(secret);
+    }
+
     private SecretKey secretKeyBuilder(String key) {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(key));
     }
 
     public String GenerateAdminToken(Users users) {

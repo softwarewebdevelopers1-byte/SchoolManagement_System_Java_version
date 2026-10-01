@@ -21,8 +21,10 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.error.jwt.JwtNotMatchingExceptionHandler;
 import com.example.school.system.error.jwt.SchoolResourceLockedExceptionHandler;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     @ExceptionHandler(SchoolResourceNotFoundExceptionHandler.class)
     public ResponseEntity<?> SchoolResourceNotFoundError(
@@ -119,8 +121,9 @@ public class GlobalExceptionHandler {
 
     // getting all uncaught issues
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleServerError() {
-        return ResponseEntity.status(501).body(SchoolApiResponse.error("Something went wrong on our side. Try again later."));
+    public ResponseEntity<?> handleServerError(Exception exception) {
+        log.error("Unhandled request exception", exception);
+        return ResponseEntity.status(500).body(SchoolApiResponse.error("Something went wrong on our side. Try again later."));
     }
 
     @ExceptionHandler(AdminResourceException.class)

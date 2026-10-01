@@ -28,6 +28,15 @@ import com.example.school.system.types.UserRoles;
 public interface UserRepository extends JpaRepository<Users, UUID> {
     boolean existsByEmail(String email);
 
+    @Query("""
+            SELECT DISTINCT u
+            FROM Users u
+            LEFT JOIN FETCH u.roles
+            LEFT JOIN FETCH u.teacherProfile
+            LEFT JOIN FETCH u.school
+            """)
+    List<Users> findAllWithStaffDetails();
+
     boolean existsByIdAndSchoolStatus(UUID userId, SchoolStatus schoolStatus);
 
     boolean existsByEmailAndStatus(String email, AccountStatus status);

@@ -1,7 +1,10 @@
 package com.example.school.system.controller.superadmin;
 
+import java.time.Duration;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.example.school.system.security.ApiRateLimitService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,9 +20,20 @@ import com.example.school.system.services.superadmin.SuperAdminService;
 @RequestMapping("/api/superadmin")
 public class SuperAdminAuthController {
     private final SuperAdminService superAdminService;
+    private final ApiRateLimitService rateLimitService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody SuperAdminLoginDTO request) {
+        var decision = rateLimitService.consume(
+                "superadmin-login-account",
+                rateLimitService.normalizedIdentity(request.email()),
+                5,
+                Duration.ofMinutes(15));
+        if (!decision.allowed()) {
+            return ResponseEntity.status(429)
+                    .header("Retry-After", Long.toString(decision.retryAfterSeconds()))
+                    .body(SchoolApiResponse.error("Too many login attempts. Please retry later."));
+        }
         return ResponseEntity.ok(SchoolApiResponse.success(superAdminService.login(request.email(), request.password()),
                 "Super-admin logged in"));
     }

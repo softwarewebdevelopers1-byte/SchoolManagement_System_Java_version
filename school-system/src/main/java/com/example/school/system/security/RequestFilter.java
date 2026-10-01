@@ -15,9 +15,13 @@ import com.example.school.system.security.jwt.JwtFilter;
 public class RequestFilter {
 
     private final JwtFilter jwtFilter;
+    private final ApiIpRateLimitFilter apiIpRateLimitFilter;
+    private final ApiRateLimitFilter apiRateLimitFilter;
 
-    public RequestFilter(JwtFilter jwtFilter) {
+    public RequestFilter(JwtFilter jwtFilter, ApiRateLimitService rateLimitService) {
         this.jwtFilter = jwtFilter;
+        this.apiIpRateLimitFilter = new ApiIpRateLimitFilter(rateLimitService);
+        this.apiRateLimitFilter = new ApiRateLimitFilter(rateLimitService);
     }
 
     @Bean
@@ -38,15 +42,18 @@ public class RequestFilter {
                         .requestMatchers("/api/debug/**").permitAll()
                         .requestMatchers("/api/schools/get/school/for/user").permitAll()
                         .requestMatchers("/api/schools/create-school").permitAll()
+                        .requestMatchers("/api/complex/signup").hasRole("SUPERADMIN")
                         .requestMatchers("/api/reset/password/request").permitAll()
                         .requestMatchers("/api/reset/password/expiry-checker/**").permitAll()
                         .requestMatchers("/api/complex/login")
-                        .permitAll().requestMatchers("/api/health").permitAll().requestMatchers("/api/complex/signup").permitAll()// All other requests require
+                        .permitAll().requestMatchers("/api/health").permitAll()// All other requests require
                                                                                        // authentication
                         .anyRequest().authenticated() // ← This is the key!
                 )
                 // Add JWT filter before Spring Security's authentication
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(apiIpRateLimitFilter, JwtFilter.class)
+                .addFilterAfter(apiRateLimitFilter, JwtFilter.class);
 
         return httpSecurity.build();
     }

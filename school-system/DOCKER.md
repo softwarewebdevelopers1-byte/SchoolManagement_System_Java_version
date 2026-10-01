@@ -34,6 +34,18 @@
    `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`; blank
    overrides use the local MySQL Compose defaults and credentials.
 
+## API rate limits
+
+The backend returns `429 Too Many Requests` with a `Retry-After` header when a
+limit is reached. Login is limited by both client IP and normalized account
+identifier; public signup and invitation endpoints are IP-limited; public
+result links are limited by IP and token; and authenticated roster/dashboard
+reads are limited per user. A general API IP limit also protects other routes.
+The proxy supplies `X-Real-IP`; keep the backend private to the Compose network
+so clients cannot bypass the proxy and forge that header. Limits are held in
+memory per backend process, so multi-replica deployments should use a shared
+rate-limit store such as Redis.
+
 3. Build the frontend and backend images and start the stack:
 
    ```sh

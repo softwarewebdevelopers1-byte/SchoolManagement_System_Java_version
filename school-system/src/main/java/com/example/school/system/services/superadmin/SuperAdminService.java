@@ -243,7 +243,7 @@ public class SuperAdminService {
 
     @Transactional(readOnly = true)
     public List<SuperAdminUserRes> getPlatformStaff() {
-        List<Users> users = userRepository.findAll();
+        List<Users> users = userRepository.findAllWithStaffDetails();
         return users.stream()
                 .filter(u -> {
                     if (u == null) {

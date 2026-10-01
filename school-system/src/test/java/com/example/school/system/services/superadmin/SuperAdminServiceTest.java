@@ -48,18 +48,18 @@ class SuperAdminServiceTest {
     private SuperAdminService superAdminService;
 
     @Test
-    void getPlatformStaff_shouldExcludeStudentsAndIncludeTeacherWithoutRoles() {
+    void getPlatformStaff_shouldIncludeAllStatusesAndExcludeStudentsAndSuperAdmins() {
         Users admin = new Users();
         admin.setId(UUID.randomUUID());
         admin.setEmail("admin@demo.com");
         admin.setRoles(Set.of(UserRoles.ADMIN));
-        admin.setStatus(AccountStatus.ACTIVE);
+        admin.setStatus(AccountStatus.PENDING_APPROVAL);
 
         Users teacher = new Users();
         teacher.setId(UUID.randomUUID());
         teacher.setEmail("teacher@demo.com");
         teacher.setRoles(Set.of(UserRoles.CLASSTEACHER));
-        teacher.setStatus(AccountStatus.ACTIVE);
+        teacher.setStatus(AccountStatus.SUSPENDED);
 
         Users teacherWithoutRole = new Users();
         teacherWithoutRole.setId(UUID.randomUUID());
@@ -70,21 +70,41 @@ class SuperAdminServiceTest {
         teacherWithoutRole.getTeacherProfile().setFirstName("No");
         teacherWithoutRole.getTeacherProfile().setLastName("Role");
 
+        Users rejectedStaff = new Users();
+        rejectedStaff.setId(UUID.randomUUID());
+        rejectedStaff.setEmail("rejected@demo.com");
+        rejectedStaff.setRoles(Set.of(UserRoles.SUBJECTTEACHER));
+        rejectedStaff.setStatus(AccountStatus.REJECTED_INVITE);
+
+        Users deletedStaff = new Users();
+        deletedStaff.setId(UUID.randomUUID());
+        deletedStaff.setEmail("deleted@demo.com");
+        deletedStaff.setRoles(Set.of(UserRoles.HEADTEACHER));
+        deletedStaff.setStatus(AccountStatus.DELETED);
+
         Users student = new Users();
         student.setId(UUID.randomUUID());
         student.setEmail("student@demo.com");
         student.setRoles(Set.of(UserRoles.STUDENT));
         student.setStatus(AccountStatus.ACTIVE);
 
-        when(userRepository.findAll()).thenReturn(List.of(admin, teacher, teacherWithoutRole, student));
+        Users superAdmin = new Users();
+        superAdmin.setId(UUID.randomUUID());
+        superAdmin.setEmail("superadmin@demo.com");
+        superAdmin.setRoles(Set.of(UserRoles.SUPERADMIN));
+        superAdmin.setStatus(AccountStatus.ACTIVE);
+
+        when(userRepository.findAllWithStaffDetails())
+                .thenReturn(List.of(admin, teacher, teacherWithoutRole, rejectedStaff, deletedStaff, student, superAdmin));
 
         List<SuperAdminUserRes> result = superAdminService.getPlatformStaff();
 
-        assertThat(result).hasSize(3);
+        assertThat(result).hasSize(5);
         assertThat(result).allSatisfy(member ->
             assertThat(member.getRoles()).doesNotContain(UserRoles.STUDENT));
         assertThat(result.stream().map(SuperAdminUserRes::getEmail)).containsExactlyInAnyOrder(
-                "admin@demo.com", "teacher@demo.com", "no-role-teacher@demo.com");
+                "admin@demo.com", "teacher@demo.com", "no-role-teacher@demo.com",
+                "rejected@demo.com", "deleted@demo.com");
     }
 
     @Test

@@ -132,8 +132,10 @@ export default function SuperAdminStaff() {
               <option value="ALL">All statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
-              <option value="PENDING">Pending</option>
+              <option value="PENDING_APPROVAL">Pending approval</option>
+              <option value="REJECTED_INVITE">Rejected invite</option>
               <option value="SUSPENDED">Suspended</option>
+              <option value="DELETED">Deleted</option>
             </select>
           </div>
 
