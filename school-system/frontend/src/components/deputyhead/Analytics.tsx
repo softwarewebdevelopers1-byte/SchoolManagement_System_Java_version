@@ -411,7 +411,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({
                       color: C.text,
                     }}
                   >
-                    {t.name.split(" ").slice(-1)[0]}
+                    {(t.name || t.lastName || t.firstName || "Teacher")
+                      .split(" ")
+                      .slice(-1)[0]}
                   </span>
                   <span
                     style={{

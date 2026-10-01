@@ -8,6 +8,7 @@ export default defineConfig({
       "src/lib/api.cache.test.ts",
       "src/lib/api.network-log.test.ts",
       "src/lib/api.subjects.test.ts",
+      "src/lib/api.users.test.ts",
     ],
   },
 });

@@ -2,7 +2,8 @@
 target/
 build/
 .git/
-.env
+.env*
+!.env.example
 .mvn/
 .gradle/
 .idea/

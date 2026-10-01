@@ -774,11 +774,13 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       // values before deriving the fallback class key used by admin views.
       const classGrade = String(student.grade ?? student.classGrade ?? "");
       const classStream = String(student.stream ?? student.classStream ?? "");
+      const name =
+        student.studentFullName || student.fullName || student.name || "Unknown student";
       return {
         id: student.studentId || student.id,
         userId: student.studentId || student.id,
-        studentFullName:
-          student.studentFullName || student.fullName || student.name,
+        name,
+        studentFullName: name,
         studentAdm: student.studentAdm || student.adm || student.admissionNo,
         email: student.email,
         phoneNumber: student.phoneNumber || "",

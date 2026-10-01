@@ -4,7 +4,7 @@ import { avatarBg, initials } from "./helpers";
 import { F } from "./constants";
 
 interface AvatarProps {
-  name: string;
+  name?: string | null;
   size?: number;
 }
 

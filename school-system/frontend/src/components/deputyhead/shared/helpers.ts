@@ -2,8 +2,8 @@
 import { C } from "./constants";
 import { cbcBandBg, resolveCbcBand, type CbcGradingBand } from "../../../lib/cbcGrading";
 
-export const avatarBg = (name: string): string => {
-  const h = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+export const avatarBg = (name?: string | null): string => {
+  const h = (name || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const colors = [
     "#1D9E75",
     "#BA7517",
@@ -16,13 +16,14 @@ export const avatarBg = (name: string): string => {
   return colors[h % colors.length];
 };
 
-export const initials = (name: string): string => {
-  return name
+export const initials = (name?: string | null): string => {
+  const result = (name || "")
     .split(" ")
     .map((p) => p[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  return result || "?";
 };
 
 export const gc = (v: number): string => {
