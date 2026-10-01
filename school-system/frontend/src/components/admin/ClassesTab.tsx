@@ -374,6 +374,7 @@ const RenameClassModal: React.FC<{
                       classStream: stream.trim(),
                       classTeacherId: currentClass.classTeacherId || null,
                     }),
+                    invalidate: ["classes"],
                   });
                 } else {
                   await request("/create/school/class", {
@@ -385,6 +386,7 @@ const RenameClassModal: React.FC<{
                         : Number(grade),
                       classStream: stream.trim(),
                     }),
+                    invalidate: ["classes"],
                   });
                 }
                 onSaved();
@@ -462,6 +464,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
               schoolId: getSchoolId(),
               classTeacherId: teacherId,
             }),
+            invalidate: ["classes"],
           }).then(() => {
             closeModal();
             refresh();
@@ -512,6 +515,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
             classId: classId,
             schoolId: getSchoolId(),
           }),
+          invalidate: ["classes"],
         });
         closeModal();
         refresh();

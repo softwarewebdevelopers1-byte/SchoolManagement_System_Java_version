@@ -11,9 +11,131 @@ export const API_BASE_URL =
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
-  { expiresAt: number; data: unknown }
+  {
+    expiresAt: number;
+    data: unknown;
+    resource?: string | null;
+  }
 >();
-const inflightGetRequests = new Map<string, Promise<unknown>>();
+const inflightGetRequests = new Map<
+  string,
+  { promise: Promise<unknown>; resource: string | null }
+>();
+
+const RESOURCE_BY_PATH: Array<[RegExp, string]> = [
+  // students
+  [/^\/v\d+\/students/, "students"],
+  [/^\/get\/all\/students/, "students"],
+  [/^\/students/, "students"],
+  [/^\/update\/student/, "students"],
+  [/^\/register\/students/, "students"],
+  [/^\/register\/singlestudent\/subject-joint/, "students"],
+  [/^\/register\/multpile\/students\/subject-joint/, "students"],
+  [/^\/delete\/single\/enrollment/, "students"],
+  [/^\/delete\/multiple\/enrollment/, "students"],
+  // teachers
+  [/^\/v\d+\/teachers/, "teachers"],
+  [/^\/users\/\d+\/teachers/, "teachers"],
+  [/^\/users\/teachers/, "teachers"],
+  [/^\/auth\/register\/teacher/, "teachers"],
+  [/^\/users\/teacher\/add-profile/, "teachers"],
+  [/^\/auth\/teacher\/create-account/, "teachers"],
+  // subjects
+  [/^\/getAll\/subjects/, "subjects"],
+  [/^\/get\/all\/subjects/, "subjects"],
+  [/^\/school\/subjects/, "subjects"],
+  [/^\/subjects/, "subjects"],
+  // assignments / subject-joints
+  [/^\/get\/all\/subject-joints/, "assignments"],
+  [/^\/school\/assignments/, "assignments"],
+  [/^\/school\/class-subjects/, "assignments"],
+  [/^\/subjectJoint/, "assignments"],
+  [/^\/update\/subject-joint/, "assignments"],
+  [/^\/register\/subject-joint/, "assignments"],
+  [/^\/unassign\/subject\/teacher/, "assignments"],
+  // classes
+  [/^\/all\/classes/, "classes"],
+  [/^\/school\/classes/, "classes"],
+  [/^\/class\//, "classes"],
+  [/^\/update\/class/, "classes"],
+  [/^\/create\/school\/class/, "classes"],
+  [/^\/unassign\/classteacher/, "classes"],
+  // users
+  [/^\/users\/update/, "users"],
+  [/^\/users\/\d+$/, "users"],
+  [/^\/delete\/user/, "users"],
+  // marks
+  [/^\/marks/, "marks"],
+  // attendance
+  [/^\/attendance/, "attendance"],
+  [/^\/admin\/attendance-insights/, "attendance"],
+  // results
+  [/^\/admin\/results-links/, "results"],
+  [/^\/results/, "results"],
+  // timetable
+  [/^\/timetables/, "timetable"],
+  [/^\/school\/timetables/, "timetable"],
+  // stats
+  [/^\/v\d+\/stats/, "stats"],
+  [/^\/stats/, "stats"],
+  // parent concerns
+  [/^\/users\/parent-concerns/, "parent-concerns"],
+  // settings
+  [/^\/schools\/settings/, "settings"],
+  [/^\/schools\/get\/term/, "settings"],
+  // exited students
+  [/^\/users\/exited-students/, "students"],
+  // archives
+  [/^\/school\/archives/, "archives"],
+  // teacher remarks
+  [/^\/teacher-remarks/, "remarks"],
+];
+
+// Maps a URL or path to a coarse resource bucket for keyed cache
+// invalidation. Used both to tag cache entries at write time and
+// (via caller-supplied keys) to invalidate them.
+function resourceForPath(path: string): string | null {
+  const cleaned = path
+    .replace(/^https?:\/\/[^/]+/, "")
+    .replace(/^\/api/, "");
+  for (const [re, key] of RESOURCE_BY_PATH) {
+    if (re.test(cleaned)) return key;
+  }
+  return null;
+}
+
+function resourcesForMutation(path: string): string[] {
+  const resources = new Set<string>();
+  const resource = resourceForPath(path);
+  if (resource) resources.add(resource);
+
+  const cleaned = path
+    .replace(/^https?:\/\/[^/]+/, "")
+    .replace(/^\/api/, "");
+  if (/^\/users\/update(?:\/|$)/.test(cleaned)) {
+    resources.add("teachers");
+  } else if (/^\/delete\/user(?:\/|$)/.test(cleaned)) {
+    resources.add("students");
+    resources.add("teachers");
+  }
+
+  return Array.from(resources);
+}
+
+export function invalidateApiCacheKeys(keys: string[] | string): void {
+  const list = Array.isArray(keys) ? keys : [keys];
+  if (list.length === 0) return;
+  for (const [cacheKey, entry] of Array.from(getResponseCache.entries())) {
+    if (entry.resource && list.includes(entry.resource)) {
+      getResponseCache.delete(cacheKey);
+    }
+  }
+  for (const [cacheKey, entry] of Array.from(inflightGetRequests.entries())) {
+    if (entry.resource && list.includes(entry.resource)) {
+      inflightGetRequests.delete(cacheKey);
+    }
+  }
+}
 
 export const invalidateApiCache = () => {
   getResponseCache.clear();
@@ -162,21 +284,23 @@ export class ApiError extends Error {
 
 export const request = async <T>(
   input: string,
-  init?: RequestInit,
+  init?: RequestInit & { invalidate?: string[] },
 ): Promise<T> => {
   const target = input.startsWith("http") ? input : `${API_BASE_URL}${input}`;
   const token = getStoredSession()?.token || "";
   const method = (init?.method || "GET").toUpperCase();
   const cacheKey = `${token}:${target}`;
 
+  const { invalidate: explicitInvalidate, ...fetchInit } = init ?? {};
+
   const execute = async () => {
     const response = await fetch(target, {
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(init?.headers || {}),
+        ...(fetchInit?.headers || {}),
       },
-      ...init,
+      ...fetchInit,
     });
 
     const text = await response.text();
@@ -206,27 +330,45 @@ export const request = async <T>(
 
     const pending = inflightGetRequests.get(cacheKey);
     if (pending) {
-      return pending as Promise<T>;
+      return pending.promise as Promise<T>;
     }
 
+    const resource = resourceForPath(target);
     const promise = execute().then((data) => {
-      getResponseCache.set(cacheKey, {
-        data,
-        expiresAt: Date.now() + GET_CACHE_TTL_MS,
-      });
+      if (inflightGetRequests.get(cacheKey)?.promise === promise) {
+        getResponseCache.set(cacheKey, {
+          data,
+          expiresAt: Date.now() + GET_CACHE_TTL_MS,
+          resource,
+        });
+      }
       return data;
     });
-    inflightGetRequests.set(cacheKey, promise);
+    inflightGetRequests.set(cacheKey, { promise, resource });
 
     try {
       return (await promise) as T;
     } finally {
-      inflightGetRequests.delete(cacheKey);
+      if (inflightGetRequests.get(cacheKey)?.promise === promise) {
+        inflightGetRequests.delete(cacheKey);
+      }
     }
   }
 
   const data = await execute();
-  invalidateApiCache();
+  if (explicitInvalidate && explicitInvalidate.length > 0) {
+    invalidateApiCacheKeys(explicitInvalidate);
+  } else {
+    // Targeted invalidation: clear only the resource type that was mutated,
+    // instead of nuking ALL cached GETs (the old behavior).
+    // If no resource matches, do a full clear as a safe fallback.
+    const mutatedResources = resourcesForMutation(target);
+    if (mutatedResources.length > 0) {
+      invalidateApiCacheKeys(mutatedResources);
+    } else {
+      invalidateApiCache();
+    }
+  }
   return data;
 };
 
@@ -435,7 +577,10 @@ const saveElectiveMarks = async <T>(body: any): Promise<T> => {
   });
 };
 
-const createLegacyUser = async <T>(body: any): Promise<T> => {
+const createLegacyUser = async <T>(
+  body: any,
+  init?: RequestInit & { invalidate?: string[] },
+): Promise<T> => {
   const schoolId = getSchoolId();
   if (body?.role === "student") {
     const classId =
@@ -452,6 +597,7 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
         classId,
         schoolId,
       }),
+      ...init,
     });
   }
 
@@ -465,10 +611,15 @@ const createLegacyUser = async <T>(body: any): Promise<T> => {
       lastName: body.lastName || names.lastName,
       roles: normalizeRoles(body.roles),
     }),
+    ...init,
   });
 };
 
-const updateLegacyUser = async <T>(path: string, body: any): Promise<T> => {
+const updateLegacyUser = async <T>(
+  path: string,
+  body: any,
+  init?: RequestInit & { invalidate?: string[] },
+): Promise<T> => {
   const id = path.split("/").filter(Boolean)[1];
 
   if (body?.role === "student" || body?.admissionNo || body?.adm) {
@@ -485,6 +636,7 @@ const updateLegacyUser = async <T>(path: string, body: any): Promise<T> => {
         classId,
         status: body.status ? String(body.status).toUpperCase() : undefined,
       }),
+      ...init,
     });
   }
 
@@ -500,10 +652,14 @@ const updateLegacyUser = async <T>(path: string, body: any): Promise<T> => {
       status: body.status ? String(body.status).toUpperCase() : undefined,
       roles: normalizeRoles(body.roles),
     }),
+    ...init,
   });
 };
 
-const createLegacySubject = async <T>(body: any): Promise<T> => {
+const createLegacySubject = async <T>(
+  body: any,
+  init?: RequestInit & { invalidate?: string[] },
+): Promise<T> => {
   return request<T>("/create/subject", {
     method: "POST",
     body: JSON.stringify({
@@ -511,10 +667,15 @@ const createLegacySubject = async <T>(body: any): Promise<T> => {
       schoolId: getSchoolId(),
       mainTeacherId: body.mainTeacherId || body.mainTeacher || null,
     }),
+    ...init,
   });
 };
 
-const updateLegacySubject = async <T>(path: string, body: any): Promise<T> => {
+const updateLegacySubject = async <T>(
+  path: string,
+  body: any,
+  init?: RequestInit & { invalidate?: string[] },
+): Promise<T> => {
   const subjectId = path.split("/").filter(Boolean)[2];
   return request<T>("/update/subject", {
     method: "PATCH",
@@ -524,10 +685,14 @@ const updateLegacySubject = async <T>(path: string, body: any): Promise<T> => {
       schoolId: getSchoolId(),
       mainTeacherId: body.mainTeacherId || body.mainTeacher || null,
     }),
+    ...init,
   });
 };
 
-const createLegacyAssignment = async <T>(body: any): Promise<T> => {
+const createLegacyAssignment = async <T>(
+  body: any,
+  init?: RequestInit & { invalidate?: string[] },
+): Promise<T> => {
   const classId =
     body.classId || (await findClassId(body.classGrade, body.classStream));
   if (!body.teacherId && classId && body.classTeacherId) {
@@ -540,6 +705,7 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
         classStream: body.classStream || "",
         classTeacherId: body.classTeacherId,
       }),
+      ...init,
     });
   }
 
@@ -551,6 +717,7 @@ const createLegacyAssignment = async <T>(body: any): Promise<T> => {
       subjectJointId,
       teacherId: body.teacherId,
     }),
+    ...init,
   });
 };
 
@@ -882,15 +1049,19 @@ export const api = {
     }
     return request<T>(url);
   },
-  post: <T>(path: string, body: any) => {
+  post: <T>(
+    path: string,
+    body: any,
+    init?: RequestInit & { invalidate?: string[] },
+  ) => {
     if (path === "/users") {
-      return createLegacyUser<T>(body);
+      return createLegacyUser<T>(body, init);
     }
     if (path === "/school/subjects") {
-      return createLegacySubject<T>(body);
+      return createLegacySubject<T>(body, init);
     }
     if (path === "/school/assignments") {
-      return createLegacyAssignment<T>(body);
+      return createLegacyAssignment<T>(body, init);
     }
     if (path === "/marks/elective") {
       return saveElectiveMarks<T>(body);
@@ -903,14 +1074,20 @@ export const api = {
       return request<T>("/users/parent-concerns", {
         method: "POST",
         body: JSON.stringify(body),
+        ...init,
       });
     }
     return request<T>(path, {
       method: "POST",
       body: JSON.stringify(body),
+      ...init,
     });
   },
-  put: <T>(path: string, body: any) => {
+  put: <T>(
+    path: string,
+    body: any,
+    init?: RequestInit & { invalidate?: string[] },
+  ) => {
     if (path === "/users/password") {
       const user = normalizeUser(getStoredSession()?.user);
       return request<T>("/update/user", {
@@ -920,13 +1097,14 @@ export const api = {
           password: body.newPassword,
           confirmOldPassword: body?.oldPassword,
         }),
+        ...init,
       });
     }
     if (/^\/users\/[^/]+$/.test(path)) {
-      return updateLegacyUser<T>(path, body);
+      return updateLegacyUser<T>(path, body, init);
     }
     if (path.startsWith("/school/subjects/")) {
-      return updateLegacySubject<T>(path, body);
+      return updateLegacySubject<T>(path, body, init);
     }
     if (path === "/school/class-subjects") {
       return request<T>("/update/subject-joint", {
@@ -941,24 +1119,28 @@ export const api = {
                 : "COMPULSORY",
           electiveCode: body.sharedSlotId,
         }),
+        ...init,
       });
     }
     if (path === "/users/graduation-settings") {
       return request<T>(`/schools/update/term/exam`, {
         method: "PUT",
         body: JSON.stringify(body),
+        ...init,
       });
     }
     if (path === "/users/bulk-enroll-elective") {
       return request<T>("/users/bulk-enroll-elective", {
         method: "PUT",
         body: JSON.stringify(body),
+        ...init,
       });
     }
     if (path === "/bulk-update-term") {
       return request<T>("/schools/update/term/exam", {
         method: "PUT",
         body: JSON.stringify({ ...body, schoolId: getSchoolId() }),
+        ...init,
       });
     }
     if (
@@ -968,27 +1150,40 @@ export const api = {
       return request<T>(path, {
         method: "PUT",
         body: JSON.stringify(body),
+        ...init,
       });
     }
     return request<T>(path, {
       method: "PUT",
       body: JSON.stringify(body),
+      ...init,
     });
   },
-  patch: <T>(path: string, body: unknown) =>
+  patch: <T>(
+    path: string,
+    body: unknown,
+    init?: RequestInit & { invalidate?: string[] },
+  ) =>
     request<T>(path, {
       method: "PATCH",
       body: JSON.stringify(body),
+      ...init,
     }),
-  delete: <T>(path: string) => {
+  delete: <T>(
+    path: string,
+    init?: RequestInit & { invalidate?: string[] },
+  ) => {
     if (/^\/users\/[^/]+$/.test(path)) {
       const userId = path.split("/").pop();
       return request<T>(`/delete/user?id=${encodeURIComponent(userId || "")}`, {
         method: "PATCH",
+        ...init,
       });
     }
     if (path.startsWith("/school/assignments/")) {
       const assignmentId = path.split("/").pop();
+      // init is forwarded to the mutation only; the intermediate
+      // loadSubjectJoints() is a GET and manages its own cache.
       return loadSubjectJoints().then((joints) => {
         const joint = joints.find(
           (item) => String(item.id) === String(assignmentId),
@@ -1006,20 +1201,22 @@ export const api = {
             subjectJointId: joint.id,
             teacherId: joint.subjectTeacherId,
           }),
+          ...init,
         });
       });
     }
     if (path.startsWith("/school/subjects/")) {
-      return request<T>(path, { method: "DELETE" });
+      return request<T>(path, { method: "DELETE", ...init });
     }
     if (path.startsWith("/school/timetables/")) {
-      return request<T>(path, { method: "DELETE" });
+      return request<T>(path, { method: "DELETE", ...init });
     }
     if (path.startsWith("/users/exited-students/")) {
-      return request<T>(path, { method: "DELETE" });
+      return request<T>(path, { method: "DELETE", ...init });
     }
     return request<T>(path, {
       method: "DELETE",
+      ...init,
     });
   },
 };

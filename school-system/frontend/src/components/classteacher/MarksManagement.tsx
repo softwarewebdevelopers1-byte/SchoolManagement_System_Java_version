@@ -556,7 +556,28 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
       setMsg({ text: "Marks saved successfully!", type: "success" });
       // if (onRefresh) onRefresh();
-      await loadDetailedMarks();
+      for (const result of res) {
+        const saved = (result as any)?.savedMarks;
+        if (Array.isArray(saved)) {
+          setMarksData(prev => {
+            const updated = { ...prev };
+            for (const mark of saved) {
+              const sid = String(mark.studentId);
+              const subjectMarks = { ...(updated[activeSubjectId] || {}) };
+              if (subjectMarks[sid]) {
+                subjectMarks[sid] = {
+                  ...subjectMarks[sid],
+                  finalScore: mark.totalMarks,
+                  points: mark.points,
+                  cbcBand: mark.marksGrade,
+                };
+                updated[activeSubjectId] = subjectMarks;
+              }
+            }
+            return updated;
+          });
+        }
+      }
     } catch (err: any) {
       setMsg({ text: "Failed to save: " + err.message, type: "error" });
     }

@@ -573,6 +573,34 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
         onClose={closeModal}
         onSave={async (payload) => {
           await onSaveTeacher(payload, teacher?.usersId);
+          if (teacher?.usersId) {
+            setServerTeachers((previous) =>
+              previous.map((t) => {
+                const matches =
+                  t.usersId === teacher.usersId ||
+                  t.userId === teacher.usersId ||
+                  t.id === teacher.usersId;
+                if (!matches) return t;
+                return {
+                  ...t,
+                  ...payload,
+                  firstName: payload.firstName,
+                  lastName: payload.lastName,
+                  email: payload.email,
+                  phone: payload.phone,
+                  phoneNumber: payload.phone,
+                  roles: payload.roles,
+                  status: payload.status?.toUpperCase() || t.status,
+                  name:
+                    [payload.firstName, payload.lastName]
+                      .filter(Boolean)
+                      .join(" ") || payload.email,
+                };
+              }),
+            );
+          } else {
+            void fetchTeachers();
+          }
         }}
       />,
     );

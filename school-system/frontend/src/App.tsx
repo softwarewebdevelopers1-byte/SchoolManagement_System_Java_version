@@ -1,18 +1,5 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import StudentDashboard from "./components/students/StudentDashboard";
-import LoginPage from "./components/auth/login";
-import ErrorPage from "./components/error";
-import ClassTeacherDashboard from "./components/classteacher/ClassTeacherDashboard";
-import ComplexClassTeacherDashboard from "./components/classteacher/ComplexClassTeacherDashboard";
-import DeputyHeadDashboard from "./components/deputyhead/DeputyHeadDashboard";
-import SubjectTeacherDashboard from "./components/subjectteacher/SubjectTeacherDashboard";
-import TeacherRemarksPage from "./components/subjectteacher/TeacherRemarksPage";
-import AdminDashboard from "./components/admin/AdminDashboard";
-import LandingPage from "./components/landingPage";
-import { ChangePasswordPage } from "./components/shared/ChangePasswordPage";
-import UnassignedPage from "./components/shared/UnassignedPage";
-import PublicSchoolsPage from "./components/public/PublicSchoolsPage";
 import {
   getDefaultDashboardPath,
   normalizeUser,
@@ -20,17 +7,65 @@ import {
   ROLE_PATHS,
   api,
 } from "./lib/api";
-import SchoolRegistration from "./components/auth/SchoolRegistration";
-import SuperAdminLayout from "./components/TopAdmin/SuperAdminLayout";
-import SuperAdminOverview from "./components/TopAdmin/SuperAdminOverview";
-import SuperAdminSchools from "./components/TopAdmin/SuperAdminSchools";
-import SuperAdminSchoolDetail from "./components/TopAdmin/SuperAdminSchoolDetail";
-import SuperAdminStaff from "./components/TopAdmin/SuperAdminStaff";
-import SuperAdminInvitations from "./components/TopAdmin/SuperAdminInvitations";
-import SuperAdminAnalytics from "./components/TopAdmin/SuperAdminAnalytics";
-import SuperAdminLoginPage from "./components/auth/SuperAdminLoginPage";
 import "./App.css";
-import StudentResults from "./components/StudentsResultsPage";
+
+const StudentDashboard = lazy(() => import("./components/students/StudentDashboard"));
+const LoginPage = lazy(() => import("./components/auth/login"));
+const ErrorPage = lazy(() => import("./components/error"));
+const ClassTeacherDashboard = lazy(
+  () => import("./components/classteacher/ClassTeacherDashboard"),
+);
+const ComplexClassTeacherDashboard = lazy(
+  () => import("./components/classteacher/ComplexClassTeacherDashboard"),
+);
+const DeputyHeadDashboard = lazy(
+  () => import("./components/deputyhead/DeputyHeadDashboard"),
+);
+const SubjectTeacherDashboard = lazy(
+  () => import("./components/subjectteacher/SubjectTeacherDashboard"),
+);
+const TeacherRemarksPage = lazy(
+  () => import("./components/subjectteacher/TeacherRemarksPage"),
+);
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
+const LandingPage = lazy(() => import("./components/landingPage"));
+const ChangePasswordPage = lazy(
+  () => import("./components/shared/ChangePasswordPage").then((module) => ({
+    default: module.ChangePasswordPage,
+  })),
+);
+const UnassignedPage = lazy(() => import("./components/shared/UnassignedPage"));
+const PublicSchoolsPage = lazy(
+  () => import("./components/public/PublicSchoolsPage"),
+);
+const SchoolRegistration = lazy(
+  () => import("./components/auth/SchoolRegistration"),
+);
+const SuperAdminLayout = lazy(
+  () => import("./components/TopAdmin/SuperAdminLayout"),
+);
+const SuperAdminOverview = lazy(
+  () => import("./components/TopAdmin/SuperAdminOverview"),
+);
+const SuperAdminSchools = lazy(
+  () => import("./components/TopAdmin/SuperAdminSchools"),
+);
+const SuperAdminSchoolDetail = lazy(
+  () => import("./components/TopAdmin/SuperAdminSchoolDetail"),
+);
+const SuperAdminStaff = lazy(
+  () => import("./components/TopAdmin/SuperAdminStaff"),
+);
+const SuperAdminInvitations = lazy(
+  () => import("./components/TopAdmin/SuperAdminInvitations"),
+);
+const SuperAdminAnalytics = lazy(
+  () => import("./components/TopAdmin/SuperAdminAnalytics"),
+);
+const SuperAdminLoginPage = lazy(
+  () => import("./components/auth/SuperAdminLoginPage"),
+);
+const StudentResults = lazy(() => import("./components/StudentsResultsPage"));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -259,7 +294,8 @@ const DashboardSelector = () => {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<main role="status">Loading...</main>}>
+        <Routes>
         <Route
           path="/edunex-org/superAdmin/*"
           element={
@@ -381,7 +417,8 @@ function App() {
         />
 
         <Route path="*" element={<ErrorPage />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

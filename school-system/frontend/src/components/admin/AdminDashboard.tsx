@@ -474,8 +474,7 @@ const AdminDashboard: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<ApiAssignment[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [classesFound, setClassesFound] = useState<Class[]>([]);
+  const [rawApiClasses, setRawApiClasses] = useState<Class[]>([]);
   const [subjectJointsData, setSubjectJointsData] = useState<subjectJoints[]>(
     [],
   );
@@ -483,6 +482,19 @@ const AdminDashboard: React.FC = () => {
   const [classSubjectSettings, setClassSubjectSettings] = useState<
     ClassSubjectSetting[]
   >([]);
+
+  const classesFound = useMemo(() => {
+    const nextClasses = deriveClasses(
+      students,
+      teachers,
+      subjects,
+      assignments,
+      classSubjectSettings,
+    );
+    return mergeClassLists(rawApiClasses, nextClasses);
+  }, [students, teachers, subjects, assignments, classSubjectSettings, rawApiClasses]);
+
+  const classes = classesFound;
   const [modalContent, setModalContent] = useState<React.ReactNode | null>(
     null,
   );
@@ -507,6 +519,85 @@ const AdminDashboard: React.FC = () => {
 
   const handleChangePassword = () => {
     window.location.href = "/change-password";
+  };
+
+  const loadStudentsOnly = async () => {
+    try {
+      const studentsPage = await request<{ content: any[] }>(`/v1/students/roster?size=100`);
+      const mappedStudents = mapStudentsFromApi(
+        (studentsPage.content || []).map((student) => ({
+          ...student,
+          classGrade: splitClassName(student.className).grade,
+          classStream: splitClassName(student.className).classStream,
+        })),
+      );
+      setStudents(mappedStudents.filter((student) => student.status !== "Completed"));
+    } catch (err) {
+      console.error("Failed to reload students:", err);
+    }
+  };
+
+  const loadTeachersOnly = async () => {
+    try {
+      const teachersPage = await request<{ content: any[] }>(`/v1/teachers/roster?size=100`);
+      const mappedTeachers = mapStaffToTeachers(
+        (teachersPage.content || []).map((teacher) => ({
+          ...teacher,
+          id: teacher.id,
+          name: teacher.fullName,
+          status: teacher.status,
+        })),
+      );
+      setTeachers(mappedTeachers);
+    } catch (err) {
+      console.error("Failed to reload staff:", err);
+    }
+  };
+
+  const loadSubjectsOnly = async () => {
+    try {
+      const schoolId = getSchoolId();
+      if (!schoolId) return;
+      const nextSubjects = await request<Subject[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`);
+      const normalizedSubjects = (nextSubjects || []).map((subject: any) => ({
+        ...subject,
+        id: subject.id || subject.subjectId,
+        subjectName: subject.subjectName || subject.name,
+        department: subject.department || "General",
+        mainTeacherId: subject.mainTeacherId || subject.mainTeacher || null,
+      }));
+      setSubjects(normalizedSubjects);
+    } catch (err) {
+      console.error("Failed to reload subjects:", err);
+    }
+  };
+
+  const loadAssignmentsOnly = async () => {
+    try {
+      const schoolId = getSchoolId();
+      if (!schoolId) return;
+      const nextAssignments = await request<ApiAssignment[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`);
+      const normalizedAssignments = (nextAssignments || []).map((assignment: any) => ({
+        ...assignment,
+        subjectId: assignment.subjectJointId || assignment.subjectId || assignment.id,
+      }));
+      setAssignments(normalizedAssignments);
+      setClassSubjectSettings(normalizedAssignments as unknown as ClassSubjectSetting[]);
+      setSubjectJointsData(normalizedAssignments as unknown as subjectJoints[]);
+    } catch (err) {
+      console.error("Failed to reload assignments:", err);
+    }
+  };
+
+  const loadClassesOnly = async () => {
+    try {
+      const schoolId = getSchoolId();
+      if (!schoolId) return;
+      const apiClasses = await request<Class[]>(`/all/classes/${encodeURIComponent(schoolId)}`);
+      setRawApiClasses(apiClasses || []);
+    } catch (err) {
+      console.error("Failed to reload classes:", err);
+    }
   };
 
   const loadDashboardData = async () => {
@@ -553,14 +644,6 @@ const AdminDashboard: React.FC = () => {
         subjectId: assignment.subjectJointId || assignment.subjectId || assignment.id,
       }));
       const nextClassSubjectSettings = normalizedAssignments as unknown as ClassSubjectSetting[];
-      const nextClasses = deriveClasses(
-        mappedStudents,
-        mappedTeachers,
-        normalizedSubjects,
-        normalizedAssignments,
-        nextClassSubjectSettings,
-      );
-      const mergedClasses = mergeClassLists(apiClasses || [], nextClasses);
 
       setTeachers(mappedTeachers);
       setStudents(
@@ -572,8 +655,7 @@ const AdminDashboard: React.FC = () => {
       setSubjectJointsData(
         normalizedAssignments as unknown as subjectJoints[],
       );
-      setClasses(mergedClasses);
-      setClassesFound(mergedClasses);
+      setRawApiClasses(apiClasses || []);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to load dashboard data.",
@@ -632,12 +714,32 @@ const AdminDashboard: React.FC = () => {
       await request(`/update/student`, {
         method: "PATCH",
         body: JSON.stringify({ ...payload, studentId }),
+        invalidate: ["students"],
       });
-      // StudentsTab updates its visible local lists after this resolves.
-      // Avoid reloading unrelated dashboard data after an edit.
+      const cls = classes.find((c) => c.id === payload.classId);
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId || s.userId === studentId
+            ? {
+                ...s,
+                ...payload,
+                studentFullName: payload.studentFullName,
+                studentAdm: payload.studentAdm,
+                email: payload.email,
+                phoneNumber: payload.phoneNumber,
+                guardianName: payload.guardianName ?? s.guardianName ?? "",
+                classId: payload.classId,
+                classGrade: cls?.grade ?? s.classGrade,
+                classStream: cls?.stream ?? s.classStream,
+                gender: payload.gender || s.gender,
+                status: normalizeStatus(payload.status || s.status),
+              }
+            : s,
+        ),
+      );
     } else {
       await api.post("/users", body);
-      await loadDashboardData();
+      await loadStudentsOnly();
     }
 
     showSuccess(`Student ${studentId ? "updated" : "enrolled"} successfully.`);
@@ -648,8 +750,9 @@ const AdminDashboard: React.FC = () => {
       await request(`/delete/user?id=${encodeURIComponent(studentId)}`, {
         method: "PATCH",
       });
-      // StudentsTab removes the row from its visible local lists.
-      // Avoid reloading unrelated dashboard data after a deletion.
+      setStudents((prev) =>
+        prev.filter((s) => s.id !== studentId && s.userId !== studentId),
+      );
       showSuccess("Student record deleted.");
       return true;
     } catch (err) {
@@ -683,6 +786,7 @@ const AdminDashboard: React.FC = () => {
           teacherId: teacherId,
           password: payload?.password,
         }),
+        invalidate: ["teachers"],
       });
 
       // Surgical update in place; broad reload avoided for single-teacher edit.
@@ -727,8 +831,9 @@ const AdminDashboard: React.FC = () => {
           phoneNumber: payload.phone,
           schoolId: getSchoolId(),
         }),
+        invalidate: ["teachers"],
       });
-      await loadDashboardData();
+      await loadTeachersOnly();
     }
 
     showSuccess(
@@ -741,7 +846,14 @@ const AdminDashboard: React.FC = () => {
       await request(`/delete/user?id=${teacherId}`, {
         method: "PATCH",
       });
-      await loadDashboardData();
+      setTeachers((prev) =>
+        prev.filter(
+          (t) =>
+            t.id !== teacherId &&
+            t.userId !== teacherId &&
+            t.usersId !== teacherId,
+        ),
+      );
       showSuccess("Staff record deleted.");
       return true;
     } catch (err) {
@@ -809,7 +921,7 @@ const AdminDashboard: React.FC = () => {
   ) => {
     try {
       if (subjectId) {
-        await api.put(`/school/subjects/${subjectId}`, { name, mainTeacherId });
+        await api.put(`/school/subjects/${subjectId}`, { name, mainTeacherId }, { invalidate: ["subjects"] });
 
         // Surgical update in place; broad reload avoided for single-subject edit.
         setSubjects((prev) =>
@@ -824,8 +936,8 @@ const AdminDashboard: React.FC = () => {
           ),
         );
       } else {
-        await api.post("/school/subjects", { name, mainTeacherId });
-        await loadDashboardData();
+        await api.post("/school/subjects", { name, mainTeacherId }, { invalidate: ["subjects"] });
+        await loadSubjectsOnly();
       }
       showSuccess(`Subject ${subjectId ? "updated" : "created"} successfully.`);
       closeModal();
@@ -836,8 +948,8 @@ const AdminDashboard: React.FC = () => {
 
   const deleteSubject = async (subjectId: string) => {
     try {
-      await api.delete(`/school/subjects/${subjectId}`);
-      await loadDashboardData();
+      await api.delete(`/school/subjects/${subjectId}`, { invalidate: ["subjects"] });
+      setSubjects((prev) => prev.filter((s) => s.id !== subjectId));
       showSuccess("Subject deleted successfully.");
     } catch (err) {
       showError("Failed to delete subject.");
@@ -861,8 +973,8 @@ const AdminDashboard: React.FC = () => {
       await api.post("/school/assignments", {
         ...assignment,
         teacherId: teacherProfileId,
-      });
-      await loadDashboardData();
+      }, { invalidate: ["assignments"] });
+      await loadAssignmentsOnly();
       showSuccess("Assignment updated successfully.");
       closeModal();
     } catch (err) {
@@ -891,8 +1003,9 @@ const AdminDashboard: React.FC = () => {
           enrollmentMode,
           sharedSlotId,
         },
+        { invalidate: ["assignments"] },
       );
-      await loadDashboardData();
+      await loadAssignmentsOnly();
       showSuccess(
         response?.message ||
           (isOffered
@@ -922,8 +1035,9 @@ const AdminDashboard: React.FC = () => {
             teacherId: subjectTeacherId,
             classId: classId,
           }),
+          invalidate: ["assignments"],
         });
-        await loadDashboardData();
+        await loadAssignmentsOnly();
         showSuccess("Teacher unassigned successfully.");
       } catch (err) {
         showError("Failed to unassign teacher.");
@@ -949,7 +1063,7 @@ const AdminDashboard: React.FC = () => {
           action,
         },
       );
-      await loadDashboardData();
+      await loadAssignmentsOnly();
       showSuccess(
         response.message || "Elective enrollments updated successfully.",
       );
@@ -964,7 +1078,12 @@ const AdminDashboard: React.FC = () => {
 
   const unassignClassTeacher = async (teacherId: string) => {
     try {
-      const teacher = teachers.find((t) => t.id === teacherId);
+      const teacher = teachers.find(
+        (t) =>
+          t.id === teacherId ||
+          t.userId === teacherId ||
+          t.usersId === teacherId,
+      );
       if (teacher) {
         const existingRoles = teacher.roles || [];
         const newRoles = existingRoles.filter((r) => r !== "classteacher");
@@ -980,7 +1099,21 @@ const AdminDashboard: React.FC = () => {
           classStream: null,
           roles: newRoles,
         });
-        await loadDashboardData();
+        setTeachers((prev) =>
+          prev.map((t) =>
+            t.id === teacherId ||
+            t.userId === teacherId ||
+            t.usersId === teacherId
+              ? {
+                  ...t,
+                  roles: newRoles,
+                  classGrade: undefined,
+                  classStream: undefined,
+                }
+              : t,
+          ),
+        );
+        await loadClassesOnly();
         if (newRoles.length === 0) {
           showSuccess(
             "Class teacher unassigned. The teacher now has no roles and will be redirected to the unassigned page on next login.",
@@ -1009,7 +1142,6 @@ const AdminDashboard: React.FC = () => {
           schoolId: getSchoolId(),
         }),
       });
-      await loadDashboardData();
       setPeriodRefreshKey((value) => value + 1);
       showSuccess(
         res?.message ||
@@ -1181,7 +1313,7 @@ const AdminDashboard: React.FC = () => {
         <ClassesTab
           classes={classesFound}
           teachers={teachers}
-          onRefresh={loadDashboardData}
+          onRefresh={loadClassesOnly}
           onUnassignClassTeacher={unassignClassTeacher}
           onBulkTermUpdate={handleBulkTermUpdate}
           onSwitchTab={handleSelectTab}
@@ -1276,7 +1408,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     if (activeTab === "approvals") {
-      return <UserApprovalsTab onUpdated={loadDashboardData} />;
+      return <UserApprovalsTab onUpdated={loadTeachersOnly} />;
     }
 
     if (activeTab === "assignments") {
@@ -1334,7 +1466,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     if (activeTab === "exited") {
-      return <ExitedStudentsView onRefresh={loadDashboardData} allowDelete />;
+      return <ExitedStudentsView onRefresh={loadStudentsOnly} allowDelete />;
     }
 
     if (activeTab === "attendance-insights") {

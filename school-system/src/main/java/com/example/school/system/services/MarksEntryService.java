@@ -222,10 +222,8 @@ public class MarksEntryService {
         }
 
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size));
-        Page<MarksRow> marksPage = marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
-                subjectJointId, academicYear, term, period)
-                .map(sheet -> marksRepo.findAllByMarksSheetId(sheet.getId(), pageable))
-                .orElseGet(() -> new org.springframework.data.domain.PageImpl<>(List.of(), pageable, 0));
+        Page<MarksRow> marksPage = marksRepo.findAllForPeriod(
+                subjectJointId, academicYear, term, period, pageable);
 
         List<MarksRowDTO> marksRows = marksPage.getContent().stream().map(marks -> {
             StudentProfile student = marks.getStudentProfile();
@@ -355,6 +353,7 @@ public class MarksEntryService {
         int skippedStudentsCount = 0;
         Map<UUID, MarksRow> existingMarksMap = marksRepo.findAllByMarksSheetId(marksSheet.getId()).stream()
                 .collect(Collectors.toMap(m -> m.getStudentProfile().getId(), m -> m));
+        List<MarksRow> changedRows = new java.util.ArrayList<>();
         for (MarkInputDTO input : marksheetSaveRequest.markInputDTOs()) {
             if (!validStudentIds.contains(input.studentId())) {
                 skippedStudentsCount++;
@@ -385,8 +384,12 @@ public class MarksEntryService {
             }
             calculate(marksSheet, marks, gradingScale);
             if (changed) {
-                marksRepo.saveAndFlush(marks);
+                changedRows.add(marks);
             }
+        }
+        // Batch save all changed rows at once instead of individual saveAndFlush per row
+        if (!changedRows.isEmpty()) {
+            marksRepo.saveAll(changedRows);
         }
         marksSheet.setClassId(classId);
         marksSheet.setGrade(subjectJoint.getSchoolClass().getClassGrade());
@@ -396,8 +399,26 @@ public class MarksEntryService {
         if (rubricChanged) {
             marksSheetRepo.save(marksSheet);
         }
-        return SchoolApiResponse.success(skippedStudentsCount,
-                "Marks saved successfully. Above is the count of unsaved students");
+
+        // Build response with updated marks data so frontend can update state
+        // surgically without re-fetching the entire marksheet
+        List<MarksRowDTO> savedMarks = changedRows.stream().map(marks -> {
+            StudentProfile student = marks.getStudentProfile();
+            return MarksRowDTO.builder()
+                    .studentId(student.getId())
+                    .studentName(student.getStudentFullName())
+                    .studentAdm(student.getStudentAdm())
+                    .cat1(marks.getCat1()).cat2(marks.getCat2()).cat3(marks.getCat3())
+                    .exam(marks.getExam()).marksGrade(marks.getGrade()).points(marks.getPoints())
+                    .totalMarks(marks.getTotalMarks())
+                    .avgPercentage(marks.getAverageMarksPercentage() == null ? null
+                            : marks.getAverageMarksPercentage() + "%")
+                    .build();
+        }).toList();
+
+        return SchoolApiResponse.success(
+                Map.of("skippedCount", skippedStudentsCount, "savedMarks", savedMarks),
+                "Marks saved successfully.");
     }
 
     private void calculate(MarksSheet marksSheet, MarksRow marks,

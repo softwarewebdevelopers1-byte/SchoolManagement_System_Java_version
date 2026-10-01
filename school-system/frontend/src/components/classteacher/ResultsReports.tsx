@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import { api, getSchoolId, request } from "../../lib/api";
 import { DlIcon } from "./shared/Icons";
 import { C, FONT } from "./shared/constants";
@@ -471,6 +470,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         });
         doc.save(`CBC_MeritList_Term${term}_${Date.now()}.pdf`);
       } else if (type === "Excel Report") {
+        const XLSX = await import("xlsx");
         const worksheetData = rankedStudents.map((student) => ({
           Rank: student.rank,
           "Student Name": student.fullName,

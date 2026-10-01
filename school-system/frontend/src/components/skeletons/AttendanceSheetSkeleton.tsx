@@ -1,8 +1,6 @@
-import Skeleton from "@mui/material/Skeleton";
-
 export default function AttendanceSheetSkeleton() {
   return (
-    <div>
+    <div role="status" aria-label="Loading attendance sheet">
       <div
         style={{
           display: "flex",
@@ -12,7 +10,11 @@ export default function AttendanceSheetSkeleton() {
           flexDirection: "column",
         }}
       >
-        <Skeleton variant="rectangular" width={"100%"} height={400} />
+        <div
+          className="performance-skeleton"
+          style={{ width: "100%", height: 400 }}
+          aria-hidden="true"
+        />
       </div>
     </div>
   );

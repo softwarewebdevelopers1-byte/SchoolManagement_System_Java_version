@@ -70,6 +70,33 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
         @EntityGraph(attributePaths = { "StudentProfile", "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
         Page<MarksRow> findAllByMarksSheetId(UUID sheetId, Pageable pageable);
 
+        @Query(
+                        value = """
+                                        SELECT mark
+                                        FROM MarksRow mark
+                                        JOIN mark.marksSheet sheet
+                                        LEFT JOIN FETCH mark.StudentProfile
+                                        WHERE sheet.subjectJoint.id = :subjectJointId
+                                          AND sheet.academicYear = :academicYear
+                                          AND sheet.currentSchoolTerm = :term
+                                          AND sheet.examType = :examType
+                                        """,
+                        countQuery = """
+                                        SELECT COUNT(mark)
+                                        FROM MarksRow mark
+                                        JOIN mark.marksSheet sheet
+                                        WHERE sheet.subjectJoint.id = :subjectJointId
+                                          AND sheet.academicYear = :academicYear
+                                          AND sheet.currentSchoolTerm = :term
+                                          AND sheet.examType = :examType
+                                        """)
+        Page<MarksRow> findAllForPeriod(
+                        @Param("subjectJointId") UUID subjectJointId,
+                        @Param("academicYear") String academicYear,
+                        @Param("term") Integer term,
+                        @Param("examType") com.example.school.system.types.ExamType examType,
+                        Pageable pageable);
+
         @EntityGraph(attributePaths = { "marksSheet", "marksSheet.subjectJoint", "marksSheet.subjectJoint.schoolClass", "marksSheet.subjectJoint.subject" })
         List<MarksRow> findByStudentProfileId(UUID studentProfileId);
 

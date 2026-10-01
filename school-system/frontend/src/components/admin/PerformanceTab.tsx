@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import { api, getSchoolId, normalizeSubjectJoints, request } from "../../lib/api";
 import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
 import { Class, Subject } from "./types";
@@ -512,6 +511,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
   const handleDownloadExcel = async () => {
     const { rows, subjects } = await loadPerformance();
     if (rows.length === 0) return;
+    const XLSX = await import("xlsx");
     const worksheetData = rows.map(row => {
       const data: any = {
         Rank: row.rank,

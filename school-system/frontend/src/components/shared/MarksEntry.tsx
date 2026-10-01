@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
 import styles from "./MarksEntry.module.css";
 import { Subject, Student, MarksData } from "../subjectteacher/types";
 import { formatSubjectOfferingTag } from "../../lib/subjectEnrollment";
@@ -260,6 +259,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
     event.target.value = "";
     if (!file || !onImportMarks) return;
 
+    const XLSX = await import("xlsx");
     const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {

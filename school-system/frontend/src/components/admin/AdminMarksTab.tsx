@@ -13,7 +13,6 @@ interface AdminMarksTabProps {
   classes: Class[];
   students: Student[];
   subjects: Subject[];
-  onRefresh: () => Promise<void>;
   avatar: (name: string, size: number) => string;
 }
 
@@ -86,7 +85,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
   classes,
   students,
   subjects,
-  onRefresh,
   avatar,
 }) => {
   const [selectedClassId, setSelectedClassId] = useState(() => {
@@ -389,7 +387,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
           finalScore: marks.finalScore,
         }));
 
-      await api.post("/marks/save", {
+      const res = await api.post("/marks/save", {
         subjectId,
         classGrade: currentClass.grade,
         classStream: currentClass.stream || "",
@@ -412,7 +410,26 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
       }
 
       setMessage({ text: "Marks updated successfully.", type: "success" });
-      await onRefresh();
+      const saved = (res as any)?.savedMarks;
+      if (Array.isArray(saved)) {
+        setMarksData(prev => {
+          const updated = { ...prev };
+          const updatedMarks = { ...(updated[subjectId] || {}) };
+          for (const mark of saved) {
+            const sid = String(mark.studentId);
+            if (updatedMarks[sid]) {
+              updatedMarks[sid] = {
+                ...updatedMarks[sid],
+                finalScore: mark.totalMarks,
+                points: mark.points,
+                cbcBand: mark.marksGrade,
+              };
+            }
+          }
+          updated[subjectId] = updatedMarks;
+          return updated;
+        });
+      }
     } catch (error: any) {
       setMessage({
         text: `Failed to save marks: ${error.message}`,

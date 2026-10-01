@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
 import { Class, ClassSubjectSetting, Student, Subject } from "./types";
 import { api, getSchoolId, request } from "../../lib/api";
 import { mapStudentsFromApi } from "../../lib/adminData";
@@ -1530,6 +1529,7 @@ export const StudentsTab: React.FC<
       setUploading(true);
       setUploadMessage("");
 
+      const XLSX = await import("xlsx");
       const workbook = XLSX.read(
         await file.arrayBuffer(),
         {
@@ -1860,7 +1860,11 @@ export const StudentsTab: React.FC<
     studentId?: string,
   ) => {
     await onSaveStudent(payload, studentId);
-    if (studentId) applyStudentUpdate(payload, studentId);
+    if (studentId) {
+      applyStudentUpdate(payload, studentId);
+    } else {
+      void refetchCurrentView();
+    }
   };
 
   const handleDeleteStudent = async (studentId: string) => {

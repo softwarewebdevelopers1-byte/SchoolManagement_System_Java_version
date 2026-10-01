@@ -1,18 +1,24 @@
-import Skeleton from "@mui/material/Skeleton";
-
 export default function OverviewSkeleton() {
   return (
-    <div>
+    <div role="status" aria-label="Loading overview">
       <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
-        {" "}
-        <Skeleton variant="rectangular" width={210} height={60} />
-        <Skeleton variant="rectangular" width={210} height={60} />
-        <Skeleton variant="rectangular" width={210} height={60} />
-        <Skeleton variant="rectangular" width={210} height={60} />
+        {[0, 1, 2, 3].map((item) => (
+          <div
+            key={item}
+            className="performance-skeleton"
+            style={{ width: 210, height: 60 }}
+            aria-hidden="true"
+          />
+        ))}
       </div>
-      <Skeleton />
-      <Skeleton animation="wave" />
-      <Skeleton animation={false} />
+      {[0, 1, 2].map((item) => (
+        <div
+          key={item}
+          className="performance-skeleton"
+          style={{ height: 16, margin: "12px 20px" }}
+          aria-hidden="true"
+        />
+      ))}
     </div>
   );
 }

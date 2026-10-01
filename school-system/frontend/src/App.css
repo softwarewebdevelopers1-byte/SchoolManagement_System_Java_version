@@ -423,3 +423,20 @@ textarea {
     font-size: 1.8rem;
   }
 }
+@keyframes performance-skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.performance-skeleton {
+  background: #e5e7eb;
+  border-radius: 4px;
+  animation: performance-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .performance-skeleton {
+    animation: none;
+  }
+}

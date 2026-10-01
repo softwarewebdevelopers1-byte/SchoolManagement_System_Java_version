@@ -446,13 +446,22 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const [subjects, setSubjects] = useState<subjectJoints[]>([]);
-  useEffect(() => {
-    (async () => {
+
+  const fetchSubjectJoints = async () => {
+    const schoolId = getSchoolId();
+    if (!schoolId) return;
+    try {
       const subjectsFound: any = await request(
-        `/get/all/subject-joints/${encodeURIComponent(getSchoolId()!)}`,
+        `/get/all/subject-joints/${encodeURIComponent(schoolId)}`,
       );
-      setSubjects(subjectsFound);
-    })();
+      setSubjects(subjectsFound || []);
+    } catch (e) {
+      console.error("Failed to load subject joints:", e);
+    }
+  };
+
+  useEffect(() => {
+    void fetchSubjectJoints();
   }, []);
 
   const openAssignmentModal = (currentClass: Class, subject: subjectJoints) => {
@@ -470,6 +479,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
             teacherProfileId: teacher?.teacherProfileId,
             classId: currentClass.classId,
           });
+          await fetchSubjectJoints();
         }}
       />,
     );
@@ -494,6 +504,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
             sharedSlotId,
           );
           closeModal();
+          await fetchSubjectJoints();
         }}
       />,
     );
@@ -508,6 +519,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
           currentClass.classId || "",
           subject.subjectJointId,
         );
+        await fetchSubjectJoints();
       },
       true,
     );

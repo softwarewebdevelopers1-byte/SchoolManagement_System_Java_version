@@ -247,7 +247,6 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
   const refreshUser = useCallback(async () => {
     if (!currentUser?.id) return;
     try {
-      return;
       const freshUser: any = await api.get(`/users/${currentUser.id}`);
       if (freshUser) {
         let rolesArr = freshUser.roles;
@@ -379,6 +378,8 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
       total: 0,
       totalPages: 1,
     });
+    setPushedSubjects(new Set());
+    setPushedStudents(new Set());
   }, [term, year, examType, marksPageSize]);
 
   useEffect(() => {
@@ -386,12 +387,6 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     setPushedStudents(new Set());
     loadStudentsAndMarks();
   }, [activeSubjectId, loadStudentsAndMarks, term, year, examType, marksPage]);
-
-  // Clear pushed status when period changes
-  useEffect(() => {
-    setPushedSubjects(new Set());
-    setPushedStudents(new Set());
-  }, [term, year, examType]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 900);
@@ -552,7 +547,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
       }));
 
       try {
-        await api.post("/marks/save", {
+        const res = await api.post("/marks/save", {
           subjectJointId: currentSubject.id,
           classGrade: currentSubject.classGrade,
           classStream: currentSubject.classStream,
@@ -569,7 +564,26 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         syncPushState(assignmentId, subjectMarks);
         setMsg({ text: "Marks saved successfully!", type: "success" });
         setTimeout(() => setMsg(null), 3000);
-        loadStudentsAndMarks();
+        const saved = (res as any)?.savedMarks;
+        if (Array.isArray(saved)) {
+          setMarksData(prev => {
+            const updated = { ...prev };
+            const updatedMarks = { ...(updated[assignmentId] || {}) };
+            for (const mark of saved) {
+              const sid = String(mark.studentId);
+              if (updatedMarks[sid]) {
+                updatedMarks[sid] = {
+                  ...updatedMarks[sid],
+                  finalScore: mark.totalMarks,
+                  points: mark.points,
+                  cbcBand: mark.marksGrade,
+                };
+              }
+            }
+            updated[assignmentId] = updatedMarks;
+            return updated;
+          });
+        }
       } catch (err: any) {
         setMsg({
           text: err?.message || "Failed to save marks.",
@@ -603,7 +617,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
       }));
 
       try {
-        await api.post("/marks/save", {
+        const res = await api.post("/marks/save", {
           subjectJointId: currentSubject.id,
           classGrade: currentSubject.classGrade,
           classStream: currentSubject.classStream,
@@ -622,7 +636,26 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           type: "success",
         });
         setTimeout(() => setMsg(null), 3000);
-        loadStudentsAndMarks();
+        const saved = (res as any)?.savedMarks;
+        if (Array.isArray(saved)) {
+          setMarksData(prev => {
+            const updated = { ...prev };
+            const updatedMarks = { ...(updated[subjectId] || {}) };
+            for (const mark of saved) {
+              const sid = String(mark.studentId);
+              if (updatedMarks[sid]) {
+                updatedMarks[sid] = {
+                  ...updatedMarks[sid],
+                  finalScore: mark.totalMarks,
+                  points: mark.points,
+                  cbcBand: mark.marksGrade,
+                };
+              }
+            }
+            updated[subjectId] = updatedMarks;
+            return updated;
+          });
+        }
       } catch (err: any) {
         setMsg({
           text: err?.message || "Failed to push marks.",

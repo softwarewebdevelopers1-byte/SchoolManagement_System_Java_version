@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, getSchoolId, request } from "../../lib/api";
 import { normalizeRoles } from "../../lib/api";
@@ -119,39 +119,28 @@ function StudentDashboard() {
     return null;
   });
 
-  useEffect(() => {
-    let mounted = true;
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await api.get<StudentDashboardResponse>("/users/student-dashboard");
 
-    const loadDashboard = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await api.get<StudentDashboardResponse>("/users/student-dashboard");
-
-        if (!mounted) return;
-
-        setDashboard(response);
-        const savedStudentId = localStorage.getItem(STUDENT_DASHBOARD_SELECTED_STUDENT_KEY);
-        const nextStudent =
-          response.students.find((student) => student.id === savedStudentId) ||
-          response.students[0];
-        setSelectedStudentId(nextStudent?.id || "");
-      } catch (err: any) {
-        if (!mounted) return;
-        setError(err.message || "Could not load student performance.");
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadDashboard();
-
-    return () => {
-      mounted = false;
-    };
+      setDashboard(response);
+      const savedStudentId = localStorage.getItem(STUDENT_DASHBOARD_SELECTED_STUDENT_KEY);
+      const nextStudent =
+        response.students.find((student) => student.id === savedStudentId) ||
+        response.students[0];
+      setSelectedStudentId(nextStudent?.id || "");
+    } catch (err: any) {
+      setError(err.message || "Could not load student performance.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   useEffect(() => {
     const schoolId = getSchoolId();

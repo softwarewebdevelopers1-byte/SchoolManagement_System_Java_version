@@ -17,9 +17,11 @@ The GET cache in `api.ts` (10-second TTL, in-flight deduplication) mitigates mos
 | `GET_CACHE_TTL_MS` | 10,000 ms (10 seconds) |
 | Cache key | `${token}:${targetURL}` |
 | In-flight dedup | `inflightGetRequests` Map — collapses concurrent identical GETs |
-| POST/PUT/PATCH/DELETE | Calls `invalidateApiCache()` on success, clearing all GET cache entries |
+| POST/PUT/PATCH/DELETE | Invalidates the inferred resource bucket (or explicit buckets); unknown mutations fall back to clearing all GET entries |
 | `api.get(path)` | Dispatches `path` to internal fetcher functions that call `request()` with **different backend URLs** than what callers might expect |
 | `request(url)` | Direct HTTP call — also subject to GET cache, but bypasses `api.get()` dispatch routing |
+
+Resource invalidation also evicts matching in-flight GETs. A completed request only repopulates the cache if it is still the active request for that key, preventing stale responses from undoing a mutation's invalidation.
 
 ### StrictMode
 
@@ -309,3 +311,14 @@ Cache key matches → **cache hit** (within 10s TTL). ✓
 
 ### Development-only
 9. **StrictMode**: Accept dev-only double-render as expected behavior; ensure no production impact. No code change needed.
+
+## Follow-up implementation
+
+- Route-level dashboards and pages are lazy-loaded so users download the active route instead of the entire application at startup.
+- Marks paging now queries only the requested page and fetches its student data in the same query, instead of loading every mark row through the marksheet lookup first.
+- The term/year update no longer reloads the unrelated dashboard collections; it only refreshes the affected period-dependent UI.
+- SQL echo/format logging is disabled by default to avoid per-query logging overhead; deployments can explicitly override these settings for diagnostics.
+
+The production build's main JavaScript entry fell from 2,867.26 kB (826.56 kB gzip) before route splitting to 235.86 kB (75.48 kB gzip). XLSX parsing/export is dynamically imported only when a user selects an Excel import/export action; its 424.76 kB chunk is no longer downloaded with the route or dashboard. This is an emitted-asset comparison, not a browser load-time measurement. The frontend regression suite verifies targeted invalidation, request counts, and in-flight invalidation behavior (10 tests).
+
+The API cache remains an exact-URL cache, so URL fragmentation and duplicate fetch ownership still need to be addressed in the listed dashboard/tab call sites. Production network traces and database query timings were not available during this source-level audit.

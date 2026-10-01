@@ -269,89 +269,23 @@ export default function ClassTeacherDashboard() {
       setError(null);
       console.log("Loading class teacher dashboard data...",effectiveGrade,effectiveStream,classId);
 
-      const [studentsData, subjectsData, staffData] = (await Promise.all([
-        api.get(
-          `/users/class/${effectiveGrade}/${effectiveStream}`,
-          {
-            term: currentUser.term,
-            year: currentUser.year,
-            examType: currentUser.examType,
-          },
-        ),
+      const studentsData = (await api.get(
+        `/users/class/${effectiveGrade}/${effectiveStream}`,
+        {
+          term: currentUser.term,
+          year: currentUser.year,
+          examType: currentUser.examType,
+        },
+      )) as { content?: any[] };
 
-        api.get(`/class/subject/${encodeURIComponent(classId)}`),
-
-        api
-          .get(`/get/students?classId=${encodeURIComponent(classId)}`)
-          .then((response: any) => response || {}),
-      ])) as [{ content?: any[] }, any[], any];
-console.log("Data loaded ", studentsData, subjectsData, staffData);
+      await loadSubjects();
+      console.log("Data loaded ", studentsData);
 
       /**
        * Students
        */
       setStudents(studentsData?.content || []);
-
-      /**
-       * Normalize subject IDs.
-       */
-      const mappedSubjects = (subjectsData || []).map((subject: any) => ({
-        ...subject,
-        id: subject.id || subject._id,
-      }));
-
-      /**
-       * Keep the complete subject catalog.
-       * This is used for:
-       * - Subject registration
-       * - Elective detection
-       * - Elective enrollment
-       */
-      setClassSubjectCatalog(mappedSubjects);
-
-      /**
-       * Only active/offered subjects for marks,
-       * reports, student details, etc.
-       */
-      setSubjects(
-        mappedSubjects.filter((subject: any) => subject.isOffered !== false),
-      );
-
-      /**
-       * Support both possible API response shapes.
-       *
-       * Either:
-       * {
-       *   assignments: [],
-       *   staff: []
-       * }
-       *
-       * or an empty response.
-       */
-      const assignmentsList = staffData?.assignments || [];
-      const staffList = staffData?.staff || [];
-
-      /**
-       * Filter assignments for THIS class.
-       */
-      const classAssignments = assignmentsList
-        .filter(
-          (assignment: any) =>
-            assignment.classGrade === effectiveGrade &&
-            assignment.classStream === effectiveStream,
-        )
-        .map((assignment: any) => {
-          const teacher = staffList.find(
-            (staff: any) => staff.id === assignment.teacherId,
-          );
-
-          return {
-            ...assignment,
-            teacherName: teacher ? teacher.name : "Unknown",
-          };
-        });
-
-      setAssignments(classAssignments);
+      setAssignments([]);
     } catch (err: any) {
       console.error("Failed to load class teacher dashboard.", err);
 
@@ -759,8 +693,9 @@ console.log("Data loaded ", studentsData, subjectsData, staffData);
           <Settings
             user={effectiveUser}
             studentsCount={students.length}
-            onUserUpdate={() => {
-              window.location.reload();
+            onUserUpdate={async () => {
+              await refreshUser();
+              await loadData();
             }}
           />
         );
