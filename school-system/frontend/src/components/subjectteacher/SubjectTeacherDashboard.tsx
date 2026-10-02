@@ -14,6 +14,10 @@ import { Subject, Student, MarksData } from "./types";
 import { TeacherRemarkTab } from "./TeacherRemarkTab";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api, getSchoolId, normalizeUser, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 import { initials, avatarColor, avatar, gc } from "../../lib/dashboardHelpers";
 import OverviewSkeleton from "../skeletons/OverviewSkeletons";
@@ -115,6 +119,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     totalPages: 1,
   });
   const { theme, toggleTheme } = useDashboardTheme();
+  const toast = useNotifications();
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -562,8 +567,8 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           enrollmentCode: currentSubject.sharedSlotId,
         });
         syncPushState(assignmentId, subjectMarks);
-        setMsg({ text: "Marks saved successfully!", type: "success" });
-        setTimeout(() => setMsg(null), 3000);
+        toast.success("Marks saved successfully.");
+        setMsg(null);
         const saved = (res as any)?.savedMarks;
         if (Array.isArray(saved)) {
           setMarksData(prev => {
@@ -585,11 +590,8 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           });
         }
       } catch (err: any) {
-        setMsg({
-          text: err?.message || "Failed to save marks.",
-          type: "error",
-        });
-        setTimeout(() => setMsg(null), 3000);
+        toast.error(friendlyErrorMessage(err, "Failed to save marks."));
+        setMsg(null);
       }
     },
     [
@@ -599,6 +601,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
       subjects,
       syncPushState,
       term,
+      toast,
       year,
     ],
   );

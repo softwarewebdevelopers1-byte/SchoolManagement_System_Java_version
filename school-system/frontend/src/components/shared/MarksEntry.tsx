@@ -434,7 +434,11 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
         </div>
       )}
 
-      <div className={styles.card}>
+      <div
+        className={`${styles.card} ${
+          mode === "subject" ? styles.subjectMarksCard : ""
+        }`}
+      >
         <div
           style={{
             display: "flex",

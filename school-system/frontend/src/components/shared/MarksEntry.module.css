@@ -129,6 +129,20 @@
   padding: 1.2rem;
 }
 
+.subjectMarksCard {
+  border-color: color-mix(in srgb, var(--gold) 32%, var(--border));
+  border-radius: 14px;
+  box-shadow:
+    0 12px 30px rgba(11, 32, 24, 0.06),
+    0 2px 6px rgba(11, 32, 24, 0.04);
+  padding: clamp(0.9rem, 2vw, 1.35rem);
+}
+
+.subjectMarksCard > div:first-child {
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
 .cardLabel {
   font-size: 10px;
   font-weight: 700;
@@ -381,6 +395,10 @@
   .card {
     padding: 0.9rem;
     min-width: 0;
+  }
+
+  .subjectMarksCard {
+    padding: 0.85rem;
   }
 
   .card > div:first-child {

@@ -3,6 +3,10 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { C, FONT } from "./shared/constants";
 import { api, getClassId, getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface SubjectJointTabProps {
   subjects: any[]; // classSubjectCatalog — already loaded by parent
@@ -45,10 +49,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
 }) => {
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
+  const toast = useNotifications();
 
   // Form state for adding a new subject joint
   const [addMode, setAddMode] = useState(false);
@@ -79,8 +80,11 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
   }, [loadAllSubjects]);
 
   const showMsg = (text: string, type: "success" | "error") => {
-    setMsg({ text, type });
-    setTimeout(() => setMsg(null), 4000);
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
   };
 
   // Subjects NOT yet registered for this class
@@ -110,7 +114,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       );
       onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Failed to update subject.", "error");
+      showMsg(friendlyErrorMessage(err, "Failed to update subject."), "error");
     }
   };
 
@@ -133,7 +137,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       );
       onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Failed to update subject.", "error");
+      showMsg(friendlyErrorMessage(err, "Failed to update subject."), "error");
     }
   };
 
@@ -154,7 +158,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       showMsg("Subject type updated.", "success");
       onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Failed to update subject type.", "error");
+      showMsg(friendlyErrorMessage(err, "Failed to update subject type."), "error");
     }
   };
 
@@ -213,7 +217,7 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
       setElectiveCode("");
       onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Failed to register subject.", "error");
+      showMsg(friendlyErrorMessage(err, "Failed to register subject."), "error");
     } finally {
       setSaving(false);
     }
@@ -271,23 +275,6 @@ export const SubjectJointTab: React.FC<SubjectJointTabProps> = ({
           elective).
         </p>
       </div>
-
-      {/* Feedback message */}
-      {msg && (
-        <div
-          style={{
-            padding: "10px 16px",
-            borderRadius: 9,
-            background: msg.type === "success" ? C.greenLight : "#fdeaea",
-            color: msg.type === "success" ? "#1D9E75" : "#a32d2d",
-            fontFamily: FONT.sans,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          {msg.text}
-        </div>
-      )}
 
       {/* Add Subject Form */}
       {addMode ? (
