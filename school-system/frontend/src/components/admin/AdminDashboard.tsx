@@ -184,8 +184,8 @@ const mapStaffToTeachers = (staff: ApiTeacher[]): Teacher[] =>
   
 const mapStudentsFromApi = (students: any): Student[] =>
   students.map((student: any) => ({
-    id: student.id || student.userId || "",
-    userId: student.userId || student.id,
+    id: student.id || student.studentId || student.userId || "",
+    userId: student.userId || student.studentId || student.id,
     studentAdm: student.studentAdm || student.admissionNo || student.adm || "",
     studentFullName:
       student.studentFullName || student.name || student.fullName || "",
@@ -196,8 +196,8 @@ const mapStudentsFromApi = (students: any): Student[] =>
     phoneNumber: student.phoneNumber || student.guardianPhone || "",
     classId:
       student.classId || buildClassId(student.classGrade, student.classStream),
-    classGrade: student.classGrade,
-    classStream: student.classStream || "",
+    classGrade: student.classGrade ?? student.grade ?? "",
+    classStream: student.classStream || student.stream || "",
     enrolledSubjects: student.enrolledSubjects || [],
     status: normalizeStatus(student.status),
     term: student.term,
@@ -537,6 +537,63 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const addCreatedStudents = (createdStudents: Student[]) => {
+    const existingIds = new Set(
+      students.map((student) => student.userId || student.id),
+    );
+    const newlyCreatedStudents = createdStudents.filter(
+      (student, index, allStudents) => {
+        const studentId = student.userId || student.id;
+        return (
+          Boolean(studentId) &&
+          !existingIds.has(studentId) &&
+          allStudents.findIndex(
+            (candidate) =>
+              (candidate.userId || candidate.id) === studentId,
+          ) === index
+        );
+      },
+    );
+    if (newlyCreatedStudents.length === 0) return;
+
+    setStudents((previous) => {
+      const studentsById = new Map(
+        previous.map((student) => [
+          student.userId || student.id,
+          student,
+        ]),
+      );
+      newlyCreatedStudents.forEach((student) =>
+        studentsById.set(student.userId || student.id, student),
+      );
+      return Array.from(studentsById.values());
+    });
+
+    const additionsByClass = new Map<string, number>();
+    newlyCreatedStudents.forEach((student) => {
+      if (!student.classId) return;
+      additionsByClass.set(
+        student.classId,
+        (additionsByClass.get(student.classId) || 0) + 1,
+      );
+    });
+    setRawApiClasses((previous) =>
+      previous.map((currentClass) => {
+        const classId = String(currentClass.classId || currentClass.id || "");
+        const additions = additionsByClass.get(classId) || 0;
+        if (!additions) return currentClass;
+        const totalStudents = Number(
+          currentClass.totalStudents ?? currentClass.students ?? 0,
+        ) + additions;
+        return {
+          ...currentClass,
+          totalStudents,
+          students: totalStudents,
+        };
+      }),
+    );
+  };
+
   const loadTeachersOnly = async () => {
     try {
       const teachersPage = await request<{ content: any[] }>(`/v1/teachers/roster?size=100`);
@@ -701,11 +758,11 @@ const AdminDashboard: React.FC = () => {
       guardianName?: string | null;
       classId: string;
       schoolId: string;
-      gender?: string;
+      gender?: string | null;
       status?: string;
     },
     studentId?: string,
-  ) => {
+  ): Promise<Student | void> => {
     const body = {
       role: "student",
       ...payload,
@@ -738,11 +795,43 @@ const AdminDashboard: React.FC = () => {
         ),
       );
     } else {
-      await api.post("/users", body);
-      await loadStudentsOnly();
+      const response = await api.post<any>("/users", body);
+      const createdStudent = mapStudentsFromApi([response])[0];
+      if (!createdStudent?.id) {
+        throw new Error("The server did not return the created student record.");
+      }
+      addCreatedStudents([createdStudent]);
+      showSuccess("Student enrolled successfully.");
+      return createdStudent;
     }
 
     showSuccess(`Student ${studentId ? "updated" : "enrolled"} successfully.`);
+  };
+
+  const saveStudents = async (
+    payload: Array<{
+      studentFullName: string;
+      studentAdm: string;
+      email: string;
+      phoneNumber: string;
+      guardianName?: string | null;
+      classId: string;
+      schoolId: string;
+      gender?: string | null;
+      status?: string;
+    }>,
+  ): Promise<Student[]> => {
+    const response = await request<any[]>("/register/students/bulk", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const createdStudents = mapStudentsFromApi(response);
+    if (createdStudents.length !== payload.length || createdStudents.some((student) => !student.id)) {
+      throw new Error("The server did not return all created student records.");
+    }
+    addCreatedStudents(createdStudents);
+    showSuccess(`${createdStudents.length} students enrolled successfully.`);
+    return createdStudents;
   };
 
   const deleteStudent = async (studentId: string) => {
@@ -1333,6 +1422,7 @@ const AdminDashboard: React.FC = () => {
           subjects={subjects}
           classSubjectSettings={classSubjectSettings}
           onSaveStudent={saveStudent}
+          onBulkSave={saveStudents}
           onDeleteStudent={deleteStudent}
           pill={pill}
           showModal={showModal}

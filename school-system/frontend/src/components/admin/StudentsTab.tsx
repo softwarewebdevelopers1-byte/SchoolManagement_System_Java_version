@@ -198,7 +198,7 @@ type StudentPayload = {
   phoneNumber: string;
   classId: string;
   schoolId: string;
-  gender?: string;
+  gender?: string | null;
   status?: string;
 };
 
@@ -244,7 +244,7 @@ const StudentFormModal: React.FC<{
 
   onSave: (payload: StudentPayload) => Promise<void>;
 
-  onBulkSave?: (payload: StudentPayload[]) => Promise<void>;
+  onBulkSave: (payload: StudentPayload[]) => Promise<Student[]>;
 }> = ({
   student,
   classesFound,
@@ -537,21 +537,8 @@ const StudentFormModal: React.FC<{
             row.gender || "NOT_SET",
         }));
 
-      /*
-       * IMPORTANT:
-       *
-       * The existing bulk API is retained.
-       *
-       * No backend endpoint is changed.
-       */
-      if (onBulkSave) {
-        await onBulkSave(payload);
-      } else {
-        await request("/register/students/bulk", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-      }
+      // The existing bulk registration endpoint returns the saved student rows.
+      await onBulkSave(payload);
 
       onClose();
     } catch (err: any) {
@@ -1394,7 +1381,9 @@ interface StudentsTabProps {
   onSaveStudent: (
     payload: StudentPayload,
     studentId?: string,
-  ) => Promise<void>;
+  ) => Promise<Student | void>;
+
+  onBulkSave: (payload: StudentPayload[]) => Promise<Student[]>;
 
   onDeleteStudent: (
     studentId: string,
@@ -1429,6 +1418,7 @@ export const StudentsTab: React.FC<
   subjects,
   classSubjectSettings,
   onSaveStudent,
+  onBulkSave,
   onDeleteStudent,
   showModal,
   closeModal,
@@ -1528,6 +1518,11 @@ export const StudentsTab: React.FC<
     try {
       setUploading(true);
       setUploadMessage("");
+
+      const schoolId = getSchoolId();
+      if (!schoolId) {
+        throw new Error("School information could not be determined.");
+      }
 
       const XLSX = await import("xlsx");
       const workbook = XLSX.read(
@@ -1640,7 +1635,7 @@ export const StudentsTab: React.FC<
 
           classId,
 
-          schoolId: getSchoolId(),
+          schoolId,
         };
       });
 
@@ -1678,22 +1673,12 @@ export const StudentsTab: React.FC<
         );
       }
 
-      /*
-       * EXISTING ENDPOINT — UNCHANGED
-       */
-      await request(
-        "/register/students/bulk",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        },
-      );
+      const createdStudents = await onBulkSave(payload);
+      applyStudentCreations(createdStudents);
 
       setUploadMessage(
         `${payload.length} students imported successfully.`,
       );
-
-      window.location.reload();
     } catch (error) {
       setUploadMessage(
         error instanceof Error
@@ -1817,6 +1802,70 @@ export const StudentsTab: React.FC<
     if (!touched) void refetchCurrentView();
   }
 
+  function applyStudentCreations(createdStudents: Student[]) {
+    const uniqueCreatedStudents = createdStudents.filter(
+      (student, index, allStudents) =>
+        Boolean(student.id || student.userId) &&
+        allStudents.findIndex(
+          (candidate) =>
+            (candidate.userId || candidate.id) ===
+            (student.userId || student.id),
+        ) === index,
+    );
+
+    if (isClassFiltered) {
+      setAllStudents((previous) => {
+        const studentsById = new Map(
+          previous.map((student) => [
+            student.userId || student.id,
+            student,
+          ]),
+        );
+        uniqueCreatedStudents.forEach((student) =>
+          studentsById.set(student.userId || student.id, student),
+        );
+        return Array.from(studentsById.values()).sort((first, second) =>
+          first.studentFullName.localeCompare(second.studentFullName),
+        );
+      });
+      return;
+    }
+
+    setPageResponse((previous) => {
+      const currentContent = previous?.content || [];
+      const studentsById = new Map(
+        currentContent.map((student) => [
+          student.userId || student.id,
+          student,
+        ]),
+      );
+      const previousTotal = previous?.totalElements || 0;
+      uniqueCreatedStudents.forEach((student) =>
+        studentsById.set(student.userId || student.id, student),
+      );
+      const content = Array.from(studentsById.values()).sort(
+        (first, second) =>
+          first.studentFullName.localeCompare(second.studentFullName),
+      );
+      const totalElements = previousTotal + uniqueCreatedStudents.filter(
+        (student) =>
+          !currentContent.some(
+            (current) =>
+              (current.userId || current.id) ===
+              (student.userId || student.id),
+          ),
+      ).length;
+
+      return {
+        content: content.slice(0, pageSize),
+        number: previous?.number ?? page,
+        size: previous?.size ?? pageSize,
+        totalElements,
+        totalPages: Math.max(1, Math.ceil(totalElements / pageSize)),
+      };
+    });
+  }
+
   function applyStudentDelete(studentId: string) {
     const matchesStudent = (student: Student) =>
       (student.userId || student.id) === studentId;
@@ -1859,11 +1908,12 @@ export const StudentsTab: React.FC<
     payload: StudentPayload,
     studentId?: string,
   ) => {
-    await onSaveStudent(payload, studentId);
     if (studentId) {
+      await onSaveStudent(payload, studentId);
       applyStudentUpdate(payload, studentId);
     } else {
-      void refetchCurrentView();
+      const createdStudent = await onSaveStudent(payload);
+      if (createdStudent) applyStudentCreations([createdStudent]);
     }
   };
 
@@ -1932,29 +1982,10 @@ export const StudentsTab: React.FC<
           );
         }}
 
-        /*
-         * Multiple enrollment.
-         *
-         * Uses the existing bulk endpoint.
-         * Nothing else in the API is changed.
-         */
         onBulkSave={async (payload) => {
-          await request(
-            "/register/students/bulk",
-            {
-              method: "POST",
-              body: JSON.stringify(
-                payload,
-              ),
-            },
-          );
-
-          /*
-           * Keep existing behavior:
-           * refresh the dashboard after
-           * successful bulk enrollment.
-           */
-          window.location.reload();
+          const createdStudents = await onBulkSave(payload);
+          applyStudentCreations(createdStudents);
+          return createdStudents;
         }}
       />,
     );

@@ -1,5 +1,6 @@
 package com.example.school.system.services;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.school.system.DTO.RegisterStudentDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.DTO.student.StudentSummaryDTO;
 import com.example.school.system.error.SchoolResourceExistsExceptionHandler;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.School;
@@ -36,7 +38,7 @@ public class StudentRegistrationService {
     private final SchoolRepository schoolRepository;
 
     @Transactional
-    public SchoolApiResponse<?> registerStudent(RegisterStudentDTO registerStudentDTO) {
+    public SchoolApiResponse<StudentSummaryDTO> registerStudent(RegisterStudentDTO registerStudentDTO) {
         School schoolFound = schoolRepository.findById(registerStudentDTO.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
         // Validate and fetch class if provided
@@ -95,19 +97,41 @@ public class StudentRegistrationService {
 
         // Save student profile
         log.info("student registered {} ", studentProfile.getStudentAdm().toString());
-        studentProfileRepository.save(studentProfile);
-        return SchoolApiResponse.success("student registered successfully");
+        StudentProfile savedProfile = studentProfileRepository.save(studentProfile);
+        StudentSummaryDTO summary = toStudentSummary(savedUser, savedProfile, schoolClass);
+        return SchoolApiResponse.success(summary, "student registered successfully");
     }
 
     @Transactional
-    public SchoolApiResponse<?> registerStudents(List<RegisterStudentDTO> students) {
+    public SchoolApiResponse<List<StudentSummaryDTO>> registerStudents(List<RegisterStudentDTO> students) {
         if (students == null || students.isEmpty()) {
             throw new IllegalArgumentException("At least one student is required");
         }
+        List<StudentSummaryDTO> registeredStudents = new ArrayList<>(students.size());
         for (RegisterStudentDTO student : students) {
-            registerStudent(student);
+            registeredStudents.add(registerStudent(student).getData());
         }
-        return SchoolApiResponse.success(students.size() + " students registered successfully");
+        return SchoolApiResponse.success(
+                registeredStudents,
+                registeredStudents.size() + " students registered successfully");
+    }
+
+    private StudentSummaryDTO toStudentSummary(
+            Users user,
+            StudentProfile profile,
+            SchoolClass schoolClass) {
+        return new StudentSummaryDTO(
+                user.getId(),
+                profile.getStudentFullName(),
+                profile.getStudentAdm(),
+                user.getEmail(),
+                profile.getPhoneNumber(),
+                profile.getGuardianName(),
+                profile.getGender(),
+                user.getStatus(),
+                schoolClass.getClassId(),
+                schoolClass.getClassGrade(),
+                schoolClass.getClassStream());
     }
 
     private String generateUniqueEmail() {
