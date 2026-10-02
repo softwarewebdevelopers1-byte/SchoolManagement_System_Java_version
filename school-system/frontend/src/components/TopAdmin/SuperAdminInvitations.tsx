@@ -3,6 +3,7 @@ import { Copy, Filter, MoreVertical, Search, Trash2 } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminPlatformStatistics, useSuperAdminSchools } from "../../lib/superAdminData";
 import {
+  friendlyErrorMessage,
   useNotifications,
 } from "../shared/notifications/NotificationContext";
 
@@ -40,6 +41,10 @@ export default function SuperAdminInvitations() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
 
+  useEffect(() => {
+    if (schoolsError) toast.error(friendlyErrorMessage(schoolsError, "Unable to load schools."));
+  }, [schoolsError, toast]);
+
   const loadInvitations = async () => {
     try {
       setLoading(true);
@@ -47,7 +52,9 @@ export default function SuperAdminInvitations() {
       const response = await superAdminApi.getInvitations();
       setInvitations(Array.isArray(response) ? response : response?.data || []);
     } catch (err: any) {
-      setError(err.message || "Failed to load invitations");
+      const message = friendlyErrorMessage(err, "Failed to load invitations.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -55,7 +62,7 @@ export default function SuperAdminInvitations() {
 
   useEffect(() => {
     void loadInvitations();
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (schoolOptions.length > 0 && !schoolId) {
@@ -96,13 +103,17 @@ export default function SuperAdminInvitations() {
       setShowModal(false);
       toast.success("Invitation revoked successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to revoke invitation");
+      const message = friendlyErrorMessage(err, "Failed to revoke invitation.");
+      setError(message);
+      toast.error(message);
     }
   };
 
   const generateInvitation = async () => {
     if (!schoolId || !inviteEmail.trim()) {
-      setError("Please select a school and enter an admin email");
+      const message = "Please select a school and enter an admin email.";
+      setError(message);
+      toast.warning(message);
       return;
     }
 
@@ -116,7 +127,9 @@ export default function SuperAdminInvitations() {
       void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       toast.success("Invitation link generated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to generate invitation link");
+      const message = friendlyErrorMessage(err, "Failed to generate invitation link.");
+      setError(message);
+      toast.error(message);
     } finally {
       setCreatingInvite(false);
     }

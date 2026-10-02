@@ -3,6 +3,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
 import { request, getSchoolId } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface StudentRecordsProps {
   classId: string;
@@ -105,6 +109,7 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
   classId,
   classInfo,
 }) => {
+  const toast = useNotifications();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [size] = useState(20);
@@ -133,7 +138,9 @@ export const StudentRecords: React.FC<StudentRecordsProps> = ({
       setTotalPages(response?.totalPages || 1);
       setTotalElements(response?.totalElements || 0);
     } catch (err: any) {
-      setError(err?.message || "Failed to load students.");
+      const message = friendlyErrorMessage(err, "Failed to load students.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

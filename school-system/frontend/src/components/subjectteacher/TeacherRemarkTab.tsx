@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api, getSchoolId } from "../../lib/api";
 import { useCbcGradingBands } from "../../lib/cbcGrading";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface TeacherRemarkTabProps {
   subjectId: string;
@@ -13,6 +17,7 @@ export const TeacherRemarkTab: React.FC<TeacherRemarkTabProps> = ({
   subjectName,
   teacherId,
 }) => {
+  const toast = useNotifications();
   const { bands, loading: gradingLoading } = useCbcGradingBands();
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -39,8 +44,9 @@ export const TeacherRemarkTab: React.FC<TeacherRemarkTabProps> = ({
           }
         });
         setRemarks(next);
-      } catch {
+      } catch (error) {
         setRemarks({});
+        toast.error(friendlyErrorMessage(error, "Unable to load teacher remarks."));
       }
     };
 
@@ -64,9 +70,11 @@ export const TeacherRemarkTab: React.FC<TeacherRemarkTabProps> = ({
         remark: remarks[gradeBand] || "",
       });
       setMessage(`Saved remark for ${gradeBand}.`);
+      toast.success(`Remark for ${gradeBand} saved.`);
       setTimeout(() => setMessage(null), 2500);
     } catch (err: any) {
       setError(err?.message || "Unable to save remark.");
+      toast.error(friendlyErrorMessage(err, "Unable to save remark."));
     } finally {
       setSaving(false);
     }
@@ -89,9 +97,11 @@ export const TeacherRemarkTab: React.FC<TeacherRemarkTabProps> = ({
         ),
       );
       setMessage("All remarks saved successfully.");
+      toast.success("All remarks saved successfully.");
       setTimeout(() => setMessage(null), 2500);
     } catch (err: any) {
       setError(err?.message || "Unable to save all remarks.");
+      toast.error(friendlyErrorMessage(err, "Unable to save all remarks."));
     } finally {
       setSaving(false);
     }

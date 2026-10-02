@@ -16,6 +16,10 @@ import { ResultsReports } from "./ResultsReports";
 import { Analytics } from "./Analytics";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import type { NavItem } from "./types";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const icon = (Icon: typeof LayoutDashboard) => () => <Icon size={16} />;
 const NAV: NavItem[] = [
@@ -35,6 +39,7 @@ const NAV: NavItem[] = [
 const activeStudents = (students: any[]) => students.filter((student) => String(student.status || "ACTIVE").toUpperCase() === "ACTIVE");
 
 export default function ComplexClassTeacherDashboard() {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useDashboardTheme();
   const [user] = useState(() => {
@@ -56,7 +61,13 @@ export default function ComplexClassTeacherDashboard() {
   const [error, setError] = useState("");
 
   const loadOverview = useCallback(async () => {
-    if (!classId || !user?.classGrade || !user?.classStream) { setError("No class is assigned to your profile."); setLoading(false); return; }
+    if (!classId || !user?.classGrade || !user?.classStream) {
+      const message = "No class is assigned to your profile.";
+      setError(message);
+      toast.error(message);
+      setLoading(false);
+      return;
+    }
     setLoading(true); setError("");
     const date = new Date().toISOString().slice(0, 10);
     const context = `term=${encodeURIComponent(user.term || 1)}&academicYear=${encodeURIComponent(user.year || new Date().getFullYear())}&examType=${encodeURIComponent(user.examType || "OPENER")}`;
@@ -71,9 +82,13 @@ export default function ComplexClassTeacherDashboard() {
       setSubjects((classSubjects || []).map((subject) => ({ ...subject, id: subject.id || subject._id })));
       setAttendance(attendanceCount);
       setPerformance(dashboard);
-    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Unable to load the dashboard. Please try again."); }
+    } catch (requestError) {
+      const message = friendlyErrorMessage(requestError, "Unable to load the dashboard. Please try again.");
+      setError(message);
+      toast.error(message);
+    }
     finally { setLoading(false); }
-  }, [classId, user?.classGrade, user?.classStream, user?.term, user?.year, user?.examType, user?.teacherId]);
+  }, [classId, user?.classGrade, user?.classStream, user?.term, user?.year, user?.examType, user?.teacherId, toast]);
 
   useEffect(() => { void loadOverview(); }, [loadOverview]);
   useEffect(() => { const onResize = () => { const mobile = window.innerWidth <= 900; setIsMobile(mobile); if (!mobile) setMobileOpen(false); }; window.addEventListener("resize", onResize); return () => window.removeEventListener("resize", onResize); }, []);

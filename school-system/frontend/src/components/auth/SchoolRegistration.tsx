@@ -56,6 +56,7 @@ const SchoolRegistration: React.FC = () => {
       const data = await res;
       setReturnedCode(data);
       setSuccess(true);
+      toast.success("School registered successfully.");
       setTimeout(() => (window.location.href = `/login`),10000);
     } catch (err) {
       toast.error(friendlyErrorMessage(err, "Unable to register school. Please try again."));

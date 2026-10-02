@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Class } from "./types";
 import PhoneInput from "../shared/PhoneInput";
 import { request, getSchoolId } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -157,6 +161,7 @@ const StaffFormModal: React.FC<{
     password: string;
   }) => Promise<void>;
 }> = ({ teacher, classes, onClose, onSave }) => {
+  const toast = useNotifications();
   const [role, setRole] = useState<string[]>(teacher?.roles || []);
   const [firstName, setFirstName] = useState(teacher?.firstName || "");
   const [lastName, setLastName] = useState(teacher?.lastName);
@@ -407,22 +412,27 @@ const StaffFormModal: React.FC<{
           onClick={async () => {
             if (!firstName.trim()) {
               setErrorMsg("First name is required.");
+              toast.warning("First name is required.");
               return;
             }
             if (!lastName.trim()) {
               setErrorMsg("Last name is required");
+              toast.warning("Last name is required.");
               return;
             }
             if (!email.trim()) {
               setErrorMsg("Email is required");
+              toast.warning("Email is required.");
               return;
             }
             if (!phone.trim()) {
               setErrorMsg("Phone number is required");
+              toast.warning("Phone number is required.");
               return;
             }
             if (role.length == 0) {
               setErrorMsg("atleast one role is required");
+              toast.warning("Select at least one role.");
               return;
             }
             setErrorMsg("");
@@ -440,7 +450,9 @@ const StaffFormModal: React.FC<{
               });
               onClose();
             } catch (err: any) {
-              setErrorMsg(err?.message || "Failed to save staff member.");
+              const message = friendlyErrorMessage(err, "Failed to save staff member.");
+              setErrorMsg(message);
+              toast.error(message);
             } finally {
               setSaving(false);
             }
@@ -489,6 +501,7 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
   closeModal,
   showConfirm,
 }) => {
+  const toast = useNotifications();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 50;
@@ -516,7 +529,9 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
       setTotalPages(pagination.totalPages || 1);
       setTotalElements(pagination.total || 0);
     } catch (err: any) {
-      setError(err?.message || "Failed to load staff.");
+      const message = friendlyErrorMessage(err, "Failed to load staff.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Activity,
   Building2,
@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminSchools, useSuperAdminPlatformStatistics } from "../../lib/superAdminData";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface SchoolForm {
   schoolName: string;
@@ -33,6 +37,7 @@ const initialSchoolForm: SchoolForm = {
 };
 
 export default function SuperAdminOverview() {
+  const toast = useNotifications();
   const { data: stats, loading, error, refresh: loadStats } = useSuperAdminPlatformStatistics();
 
   // School modal state
@@ -41,6 +46,10 @@ export default function SuperAdminOverview() {
   const [creatingSchool, setCreatingSchool] = useState(false);
   const [schoolSuccess, setSchoolSuccess] = useState<string | null>(null);
   const [schoolError, setSchoolError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (error) toast.error(friendlyErrorMessage(error, "Unable to load platform statistics."));
+  }, [error, toast]);
 
   const openSchoolModal = () => {
     setSchoolForm(initialSchoolForm);
@@ -78,21 +87,25 @@ export default function SuperAdminOverview() {
     // Frontend validation
     if (!schoolForm.schoolName.trim()) {
       setSchoolError("School name is required.");
+      toast.warning("School name is required.");
       return;
     }
 
     if (!schoolForm.schoolEmail.trim()) {
       setSchoolError("School email is required.");
+      toast.warning("School email is required.");
       return;
     }
 
     if (!schoolForm.schoolAddress.trim()) {
       setSchoolError("School address is required.");
+      toast.warning("School address is required.");
       return;
     }
 
     if (!schoolForm.phoneNumber.trim()) {
       setSchoolError("Phone number is required.");
+      toast.warning("Phone number is required.");
       return;
     }
 
@@ -101,6 +114,7 @@ export default function SuperAdminOverview() {
 
     if (!emailRegex.test(schoolForm.schoolEmail.trim())) {
       setSchoolError("Please enter a valid school email address.");
+      toast.warning("Please enter a valid school email address.");
       return;
     }
 
@@ -132,6 +146,7 @@ export default function SuperAdminOverview() {
       console.log("School created:", response);
 
       setSchoolSuccess(response?.message || "School created successfully.");
+      toast.success(response?.message || "School created successfully.");
 
       // Refresh dashboard statistics
       await loadStats();
@@ -152,8 +167,9 @@ export default function SuperAdminOverview() {
         err?.message;
 
       setSchoolError(
-        backendMessage || "Failed to create school. Please try again.",
+        friendlyErrorMessage(err, "Failed to create school. Please try again."),
       );
+      toast.error(friendlyErrorMessage(err, "Failed to create school. Please try again."));
     } finally {
       setCreatingSchool(false);
     }

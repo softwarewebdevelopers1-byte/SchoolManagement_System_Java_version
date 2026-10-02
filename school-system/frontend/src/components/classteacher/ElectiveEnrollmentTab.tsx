@@ -4,6 +4,10 @@ import React, { useState, useCallback, useEffect } from "react";
 import { C, FONT } from "./shared/constants";
 import { api, getSchoolId, request } from "../../lib/api";
 import { Avatar } from "./shared/Avatar";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface ElectiveEnrollmentTabProps {
   students: any[];
@@ -43,6 +47,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   user,
   // onRefresh,
 }) => {
+  const toast = useNotifications();
   const [saving, setSaving] = useState<string | null>(null); // subjectId being saved
   const [msg, setMsg] = useState<{
     text: string;
@@ -55,6 +60,8 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
   const showMsg = (text: string, type: "success" | "error") => {
     setMsg({ text, type });
     setTimeout(() => setMsg(null), 4000);
+    if (type === "success") toast.success(text);
+    else toast.error(text);
   };
 
   const { electives } = buildElectiveGroups(subjects);
@@ -110,7 +117,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
       );
       // onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Operation failed.", "error");
+      showMsg(friendlyErrorMessage(err, "Unable to update student enrollment."), "error");
     } finally {
       setSaving(null);
     }
@@ -148,7 +155,7 @@ export const ElectiveEnrollmentTab: React.FC<ElectiveEnrollmentTabProps> = ({
       setBulkSelected(new Set());
       // onRefresh();
     } catch (err: any) {
-      showMsg(err.message || "Bulk operation failed.", "error");
+      showMsg(friendlyErrorMessage(err, "Unable to update the selected enrollments."), "error");
     } finally {
       setSaving(null);
     }

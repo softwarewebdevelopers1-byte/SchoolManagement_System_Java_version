@@ -5,6 +5,10 @@ import {
   type SubjectEnrollmentMode,
 } from "../../lib/subjectEnrollment";
 import { getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -275,6 +279,7 @@ const SubjectConfigurationModal: React.FC<{
     sharedSlotId: string | null,
   ) => Promise<void>;
 }> = ({ currentClass, subject, onClose, onSave }) => {
+  const toast = useNotifications();
   const [enrollmentMode, setEnrollmentMode] = useState<string | undefined>(
     subject?.subjectType?.toLocaleLowerCase() || "compulsory",
   );
@@ -353,8 +358,10 @@ const SubjectConfigurationModal: React.FC<{
                   try {
                     await navigator.clipboard.writeText(sharedSlotId.trim());
                     setCopied(true);
+                    toast.success("Elective slot ID copied.");
                   } catch (error) {
                     setCopied(false);
+                    toast.error(friendlyErrorMessage(error, "Unable to copy elective slot ID."));
                   }
                 }}
                 style={{ ...secondaryButtonStyle, whiteSpace: "nowrap" }}
@@ -444,6 +451,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   closeModal,
   showConfirm,
 }) => {
+  const toast = useNotifications();
   const [search, setSearch] = useState("");
   const [subjects, setSubjects] = useState<subjectJoints[]>([]);
 
@@ -457,6 +465,7 @@ export const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       setSubjects(subjectsFound || []);
     } catch (e) {
       console.error("Failed to load subject joints:", e);
+      toast.error(friendlyErrorMessage(e, "Unable to load subject assignments."));
     }
   };
 

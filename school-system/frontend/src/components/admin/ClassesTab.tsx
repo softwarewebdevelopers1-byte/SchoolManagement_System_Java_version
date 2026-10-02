@@ -254,7 +254,10 @@ const ClassTeacherModal: React.FC<{
           </button>
           <button
             onClick={async () => {
-              if (!selectedTeacherId) return;
+              if (!selectedTeacherId) {
+                toast.warning("Select a teacher before assigning the class.");
+                return;
+              }
               if (isBusy) {
                 const assignedLabel = `Grade ${
                   selectedTeacher?.classGrade && selectedTeacher.classGrade !== "null"
@@ -268,6 +271,7 @@ const ClassTeacherModal: React.FC<{
                 setError(
                   `${selectedTeacher?.firstName} is already assigned to ${assignedLabel}. Please unassign them first.`,
                 );
+                toast.warning(`${selectedTeacher?.firstName || "This teacher"} is already assigned to ${assignedLabel}. Unassign them first.`);
                 return;
               }
               setSaving(true);
@@ -367,6 +371,7 @@ const RenameClassModal: React.FC<{
             onClick={async () => {
               if (!grade.trim()) {
                 setError("Grade is required.");
+                toast.warning("Grade is required.");
                 return;
               }
               setSaving(true);

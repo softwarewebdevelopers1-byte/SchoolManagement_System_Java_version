@@ -17,6 +17,10 @@ import {
   analyticsYAxisProps,
 } from "../../shared/analytics/chartDefaults";
 import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../../shared/notifications/NotificationContext";
 
 interface MonthlyAttendanceViewProps {
   classes: { classId: string; name: string }[];
@@ -67,6 +71,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 };
 
 export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ classes }) => {
+  const toast = useNotifications();
   const [classId, setClassId] = useState(classes[0]?.classId || "");
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
@@ -93,7 +98,9 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
       setTotalPages(pageRes?.totalPages || 1);
       setTotalElements(pageRes?.totalElements || 0);
     } catch (err: any) {
-      setError(err?.message || "Failed to load attendance.");
+      const message = friendlyErrorMessage(err, "Failed to load attendance.");
+      setError(message);
+      toast.error(message);
       setData([]);
     } finally {
       setLoading(false);

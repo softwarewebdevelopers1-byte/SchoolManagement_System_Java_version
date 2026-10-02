@@ -6,6 +6,10 @@ import { RoleSwitcher } from "../shared/RoleSwitcher";
 import styles from "./StudentDashboard.module.css";
 import { buildStudentReportSlipPdf } from "../shared/studentReportSlip";
 import { useCbcGradingBands } from "../../lib/cbcGrading";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 type PerformanceMark = {
   id: string;
@@ -92,6 +96,7 @@ const STUDENT_DASHBOARD_SELECTED_STUDENT_KEY = "edunex.student.selectedStudent";
 const validStudentSections = new Set(["performance", "concerns"]);
 
 function StudentDashboard() {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<StudentDashboardResponse | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -132,7 +137,9 @@ function StudentDashboard() {
         response.students[0];
       setSelectedStudentId(nextStudent?.id || "");
     } catch (err: any) {
-      setError(err.message || "Could not load student performance.");
+      const message = friendlyErrorMessage(err, "Could not load student performance.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -240,6 +247,7 @@ function StudentDashboard() {
 
     if (!messageText.trim()) {
       setMessageNotice({ type: "error", text: "Please write your suggestion first." });
+      toast.warning("Please write your suggestion first.");
       return;
     }
 
@@ -254,11 +262,14 @@ function StudentDashboard() {
         type: "success",
         text: "Your message has been sent to school leadership.",
       });
+      toast.success("Your message has been sent to school leadership.");
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Unable to send your message right now.");
       setMessageNotice({
         type: "error",
-        text: err.message || "Unable to send your message right now.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setSendingMessage(false);
     }
@@ -302,6 +313,7 @@ function StudentDashboard() {
     });
 
     doc.save(`${selectedStudent.name.replace(/\s+/g, "-").toLowerCase()}-results.pdf`);
+    toast.success("Results report downloaded.");
   };
 
   const handleSectionChange = (section: "performance" | "concerns") => {

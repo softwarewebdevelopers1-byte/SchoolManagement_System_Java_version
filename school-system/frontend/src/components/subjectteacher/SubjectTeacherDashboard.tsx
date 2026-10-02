@@ -153,7 +153,8 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     );
     if (!currentUser?.id || !teacherProfileId) {
       setLoading(false);
-      return;
+      toast.error("Unable to load assigned subjects because your profile is unavailable.");
+      return false;
     }
     try {
       setLoading(true);
@@ -231,11 +232,15 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           );
         }
       }
+      return true;
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Unable to load your assigned subjects.");
       setMsg({
-        text: err?.message || "Unable to load your assigned subjects.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -247,10 +252,11 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     currentUser?.teacherProfileId,
     currentUser?.teacherId,
     subjectStorageKey,
+    toast,
   ]);
 
   const refreshUser = useCallback(async () => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) return true;
     try {
       const freshUser: any = await api.get(`/users/${currentUser.id}`);
       if (freshUser) {
@@ -277,22 +283,34 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         setYear(freshUser.year || 2024);
         setExamType(freshUser.examType || "opener");
       }
+      return true;
     } catch (e: any) {
+      const message = friendlyErrorMessage(e, "Unable to refresh your profile.");
       setMsg({
-        text: e?.message || "Unable to refresh your profile.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
+      return false;
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, toast]);
 
   const handleManualRefresh = async () => {
     setLoading(true);
-    await refreshUser();
-    await loadAssignments();
-    await loadStudentsAndMarks();
-    setLoading(false);
-    setMsg({ text: "Dashboard synchronized.", type: "success" });
-    setTimeout(() => setMsg(null), 3000);
+    try {
+      const profileRefreshed = await refreshUser();
+      const assignmentsRefreshed = await loadAssignments();
+      const marksRefreshed = await loadStudentsAndMarks();
+      if (profileRefreshed && assignmentsRefreshed && marksRefreshed) {
+        setMsg({ text: "Dashboard synchronized.", type: "success" });
+        toast.success("Dashboard synchronized.");
+        setTimeout(() => setMsg(null), 3000);
+      }
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to refresh the dashboard."));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -307,7 +325,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
     const currentSubject = subjects.find((s) => s.id === activeSubjectId);
     if (!currentSubject) {
       setStudents([]);
-      return;
+      return true;
     }
 
     try {
@@ -355,22 +373,25 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         [activeSubjectId]: subjectMarks,
       }));
       setMarksPagination(pagination);
+      return true;
     } catch (err: any) {
       setStudents([]);
       setPushedStudents(new Set());
+      const message = friendlyErrorMessage(err, "Unable to load students and marks for this subject.");
       setMsg({
-        text:
-          err?.message || "Unable to load students and marks for this subject.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
       setMarksPagination({
         page: marksPage,
         limit: marksPageSize,
         total: 0,
         totalPages: 1,
       });
+      return false;
     }
-  }, [activeSubjectId, subjects, marksPage, marksPageSize, syncPushState]);
+  }, [activeSubjectId, subjects, marksPage, marksPageSize, syncPushState, toast]);
 
   // Clear state when switching period
   useEffect(() => {
@@ -534,6 +555,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
         text: "Excel marks loaded. Review and save the subject marks.",
         type: "success",
       });
+      toast.info("Excel marks loaded. Review and save the subject marks.");
     },
     [],
   );
@@ -638,6 +660,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           text: `Marks saved and pushed for ${currentSubject.grade}`,
           type: "success",
         });
+        toast.success(`Marks saved and pushed for ${currentSubject.grade}.`);
         setTimeout(() => setMsg(null), 3000);
         const saved = (res as any)?.savedMarks;
         if (Array.isArray(saved)) {
@@ -660,10 +683,12 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
           });
         }
       } catch (err: any) {
+        const message = friendlyErrorMessage(err, "Failed to push marks.");
         setMsg({
-          text: err?.message || "Failed to push marks.",
+          text: message,
           type: "error",
         });
+        toast.error(message);
         setTimeout(() => setMsg(null), 3000);
       }
     },
@@ -674,6 +699,7 @@ const SubjectTeacherDashboard: React.FC<SubjectTeacherDashboardProps> = ({
       subjects,
       syncPushState,
       term,
+      toast,
       year,
     ],
   );

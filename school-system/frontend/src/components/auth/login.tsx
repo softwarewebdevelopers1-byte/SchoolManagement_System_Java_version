@@ -11,6 +11,10 @@ import {
 } from "../../lib/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Home } from "lucide-react";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 // Role labels removed
 
@@ -136,6 +140,7 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = false }) => {
+  const toast = useNotifications();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get("invite");
   const [loginIdentifier, setLoginIdentifier] = useState("");
@@ -208,10 +213,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
       })
       .catch((err: any) => {
         setInviteData(null);
-        setError(err.message || "This invitation is invalid or has expired.");
+        const message = friendlyErrorMessage(err, "This invitation is invalid or has expired.");
+        setError(message);
+        toast.error(message);
       })
       .finally(() => setInviteLoading(false));
-  }, [inviteToken]);
+  }, [inviteToken, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,7 +271,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || "Invalid login details. Please try again.");
+      const message = friendlyErrorMessage(err, "Invalid login details. Please try again.");
+      setError(message);
+      toast.error(message);
     }
     finally{
       setLoading(false);
@@ -274,6 +283,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
   const handleVerifySchoolCode = async () => {
     if (!schoolCode.trim()) {
       setError("Enter a school code first.");
+      toast.warning("Enter a school code first.");
       return;
     }
     setCodeChecking(true);
@@ -290,8 +300,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
           : response?.schoolName || response?.name || response?.data || "";
       setVerifiedSchool(String(schoolName || "School found"));
       setNotice({ text: "School code verified.", type: "success" });
+      toast.success("School code verified.");
     } catch (err: any) {
-      setError(err.message || "School code was not found.");
+      const message = friendlyErrorMessage(err, "School code was not found.");
+      setError(message);
+      toast.error(message);
     } finally {
       setCodeChecking(false);
     }
@@ -302,6 +315,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
     if (inviteToken) {
       if (!inviteData) {
         setError("This invitation could not be validated.");
+        toast.error("This invitation could not be validated.");
         return;
       }
       setLoading(true);
@@ -320,9 +334,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
           text: "Your account is ready. Sign in with your new password.",
           type: "success",
         });
+        toast.success("Your account is ready. Sign in with your new password.");
         navigate("/login", { replace: true });
       } catch (err: any) {
-        setError(err.message || "Unable to accept this invitation.");
+        const message = friendlyErrorMessage(err, "Unable to accept this invitation.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -331,6 +348,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
 
     if (!verifiedSchool) {
       setError("Verify the school code before creating the account.");
+      toast.warning("Verify the school code before creating the account.");
       return;
     }
     setLoading(true);
@@ -356,8 +374,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
         text: "Account created. Wait for the admin to accept your request, then sign in.",
         type: "success",
       });
+      toast.success("Account created. Wait for the admin to accept your request, then sign in.");
     } catch (err: any) {
-      setError(err.message || "Unable to create account.");
+      const message = friendlyErrorMessage(err, "Unable to create account.");
+      setError(message);
+      toast.error(message);
       setLoading(false);
     } finally {
       setLoading(false);
@@ -396,7 +417,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
           ? "/edunex-org/dashboard"
           : getDefaultDashboardPath(user);
     } catch (err: any) {
-      setError(err.message || "Unable to save teacher profile.");
+      const message = friendlyErrorMessage(err, "Unable to save teacher profile.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

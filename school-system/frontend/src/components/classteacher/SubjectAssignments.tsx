@@ -6,6 +6,10 @@ import {
   type SubjectEnrollmentMode,
 } from "../../lib/subjectEnrollment";
 import { api, getClassId } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const generateElectivePairId = () => `EL-${crypto.randomUUID()}`;
 
@@ -45,6 +49,7 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
   onToggleSubjectOffering,
   onRefresh,
 }) => {
+  const toast = useNotifications();
   const [busySubjectId, setBusySubjectId] = useState("");
   const [feedback, setFeedback] = useState<{
     text: string;
@@ -71,8 +76,9 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
       setAllSubjects(data || []);
     } catch (err: any) {
       setAllSubjects([]);
+      toast.error(friendlyErrorMessage(err, "Unable to load available subjects."));
       setFeedback({
-        text: err?.message || "Unable to load available subjects.",
+        text: friendlyErrorMessage(err, "Unable to load available subjects."),
         type: "error",
       });
     }
@@ -135,8 +141,10 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
     try {
       await navigator.clipboard.writeText(value.trim());
       onCopied(true);
-    } catch (_) {
+      toast.success("Elective slot code copied.");
+    } catch {
       onCopied(false);
+      toast.error("Unable to copy elective slot code.");
     }
   };
 
@@ -161,13 +169,16 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
         text: "Subject configuration saved successfully.",
         type: "success",
       });
+      toast.success("Subject configuration saved successfully.");
       setConfigModalOpen(false);
       onRefresh?.();
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Failed to save subject configuration.");
       setFeedback({
-        text: err?.message || "Failed to save subject configuration.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
     }
   };
 
@@ -199,12 +210,15 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
           : `${subjectName} has been dropped for this class.`,
         type: "success",
       });
+      toast.success(isOffered ? `${subjectName} restored for this class.` : `${subjectName} dropped from this class.`);
       onRefresh?.();
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Unable to update this subject.");
       setFeedback({
-        text: err?.message || "Unable to update this subject.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
     } finally {
       setBusySubjectId("");
     }
@@ -213,6 +227,7 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
   const handleAddSubject = async () => {
     if (!addSubjectId) {
       setFeedback({ text: "Please select a subject.", type: "error" });
+      toast.warning("Select a subject to add.");
       return;
     }
 
@@ -231,6 +246,7 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
             : null,
       });
       setFeedback({ text: "Subject added to this class.", type: "success" });
+      toast.success("Subject added to this class.");
       setAddModalOpen(false);
       setAddSubjectId("");
       setAddSubjectType("compulsory");
@@ -238,10 +254,12 @@ export const SubjectAssignments: React.FC<SubjectAssignmentsProps> = ({
       setAddElectiveCodeCopied(false);
       onRefresh?.();
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Failed to add subject to this class.");
       setFeedback({
-        text: err?.message || "Failed to add subject to this class.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
     } finally {
       setAddSaving(false);
     }

@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { api } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "./notifications/NotificationContext";
 
 interface ChangePasswordProps {
   onClose: () => void;
@@ -7,6 +11,7 @@ interface ChangePasswordProps {
 }
 
 export const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose, onSuccess }) => {
+  const toast = useNotifications();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,11 +25,13 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose, onSucce
 
     if (newPassword !== confirmPassword) {
       setError("New passwords do not match.");
+      toast.warning("Please make sure the new passwords match.");
       return;
     }
 
     if (newPassword.length < 6) {
       setError("New password must be at least 6 characters.");
+      toast.warning("New password must be at least 6 characters.");
       return;
     }
 
@@ -32,9 +39,11 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose, onSucce
     try {
       await api.put("/users/password", { oldPassword, newPassword });
       setSuccess(true);
+      toast.success("Password changed successfully.");
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      setError(err.message || "Failed to change password.");
+      setError(friendlyErrorMessage(err, "Failed to change password."));
+      toast.error(friendlyErrorMessage(err, "Failed to change password."));
     } finally {
       setLoading(false);
     }

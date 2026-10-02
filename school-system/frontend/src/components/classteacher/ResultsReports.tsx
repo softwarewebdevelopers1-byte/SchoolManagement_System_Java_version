@@ -18,6 +18,10 @@ import { Avatar } from "./shared/Avatar";
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 import { buildStudentReportSlipPdf } from "../shared/studentReportSlip";
 import OverviewSkeleton from "../skeletons/OverviewSkeletons";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface ResultsReportsProps {
   students: any[];
@@ -103,6 +107,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
   examType = "opener",
   onViewStudent,
 }) => {
+  const toast = useNotifications();
   const { bands: cbcBands } = useCbcGradingBands();
   const [msg, setMsg] = React.useState<{
     text: string;
@@ -305,12 +310,13 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
       setStudentsWithMarks(enrichedStudents);
     } catch (err) {
       console.error("Error loading marks:", err);
+      toast.error(friendlyErrorMessage(err, "Unable to load marks for the results report."));
       // Fall back to students without marks
       setStudentsWithMarks(students);
     } finally {
       setMarksLoading(false);
     }
-  }, [students, subjects, classGrade, classStream, term, year, examType]);
+  }, [students, subjects, classGrade, classStream, term, year, examType, toast]);
 
   useEffect(() => {
     void loadMarks();
@@ -385,17 +391,21 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         text: response.message || "WhatsApp marks have been queued.",
         type: "success",
       });
+      toast.success(response.message || "WhatsApp marks have been queued.");
     } catch (error: any) {
+      const message = friendlyErrorMessage(error, "Unable to queue WhatsApp marks.");
       setMsg({
-        text: error?.message || "Unable to queue WhatsApp marks.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
     } finally {
       setIsSendingWhatsapp(false);
     }
   };
 
   const handleDownload = async (type: string, studentName?: string) => {
+    let incompleteReport = false;
     try {
       if (
         type === "Full Merit List" ||
@@ -507,6 +517,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
             text: "Individual slip download requires a student selection.",
             type: "error",
           });
+           toast.warning("Select a student before downloading an individual report slip.");
           setTimeout(() => setMsg(null), 3500);
           return;
         }
@@ -634,6 +645,7 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
                   score: Number.isFinite(score) ? score : null,
                 };
               } catch (err) {
+                incompleteReport = true;
                 console.error(
                   `[ReportSlip] Error fetching ${period.label}:`,
                   err,
@@ -724,12 +736,20 @@ export const ResultsReports: React.FC<ResultsReportsProps> = ({
         doc.save(`${slip.fullName.replace(/\s+/g, "_")}_CBC_Report.pdf`);
       }
       setMsg({
-        text: `Successfully downloaded ${type}${studentName ? ` for ${studentName}` : ""}`,
+        text: incompleteReport
+          ? `${type} downloaded, but some historical assessment marks could not be loaded.`
+          : `Successfully downloaded ${type}${studentName ? ` for ${studentName}` : ""}`,
         type: "success",
       });
-    } catch (_err) {
-      setMsg({ text: `Failed to download ${type}`, type: "error" });
-      console.log(_err);
+      if (incompleteReport) {
+        toast.warning(`${type} downloaded, but some historical assessment marks could not be loaded.`);
+      } else {
+        toast.success(`${type} downloaded successfully.`);
+      }
+    } catch (err) {
+      const message = friendlyErrorMessage(err, `Failed to download ${type}.`);
+      setMsg({ text: message, type: "error" });
+      toast.error(message);
     }
     setTimeout(() => setMsg(null), 3500);
   };

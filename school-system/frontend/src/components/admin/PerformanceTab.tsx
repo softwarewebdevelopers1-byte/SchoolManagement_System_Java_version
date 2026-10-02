@@ -25,6 +25,10 @@ import {
   analyticsYAxisProps,
 } from "../shared/analytics/chartDefaults";
 import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface PerformanceTabProps {
   classes: Class[];
@@ -162,6 +166,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
   subjectJoints,
   periodRefreshKey = 0,
 }) => {
+  const toast = useNotifications();
   const { bands: cbcBands } = useCbcGradingBands();
   const [schoolPeriod, setSchoolPeriod] = useState<{
     term?: number;
@@ -388,7 +393,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
         return { rows: [], subjects: [] };
       }
       setPerformanceSubjects([]);
-      setMsg({ text: err.message || "Failed to load performance.", type: "error" });
+      const message = friendlyErrorMessage(err, "Failed to load performance.");
+      setMsg({ text: message, type: "error" });
+      toast.error(message);
       return { rows: [], subjects: [] };
     } finally {
       if (requestId === performanceRequestId.current) setIsLoading(false);
@@ -416,7 +423,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
       setChartData(subjects);
     } catch (err: any) {
       if (requestId !== analyticsRequestId.current) return;
-      setMsg({ text: err.message || "Failed to load analytics.", type: "error" });
+      const message = friendlyErrorMessage(err, "Failed to load analytics.");
+      setMsg({ text: message, type: "error" });
+      toast.error(message);
       setChartData([]);
     } finally {
       if (requestId === analyticsRequestId.current) setChartLoading(false);
@@ -442,7 +451,9 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
       setTermlyTrend(Array.isArray(data) ? data : []);
     } catch (err: any) {
       if (requestId !== analyticsRequestId.current) return;
-      setMsg({ text: err.message || "Failed to load termly trend.", type: "error" });
+      const message = friendlyErrorMessage(err, "Failed to load termly trend.");
+      setMsg({ text: message, type: "error" });
+      toast.error(message);
       setTermlyTrend([]);
     } finally {
       if (requestId === analyticsRequestId.current) setTrendLoading(false);
@@ -504,11 +515,14 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
         text: response.message || "WhatsApp marks have been queued.",
         type: "success",
       });
+      toast.success(response.message || "WhatsApp marks have been queued.");
     } catch (err: any) {
+      const message = friendlyErrorMessage(err, "Unable to queue WhatsApp marks.");
       setMsg({
-        text: err?.message || "Unable to queue WhatsApp marks.",
+        text: message,
         type: "error",
       });
+      toast.error(message);
     } finally {
       setIsSendingWhatsapp(false);
     }
@@ -542,6 +556,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
     const name = isGradeSelected ? `Grade_${currentGrade}_Combined` : (currentClass?.name || "Class");
     XLSX.writeFile(workbook, `Performance_${name}_${Date.now()}.xlsx`);
     setMsg({ text: "Excel report downloaded successfully.", type: "success" });
+    toast.success("Excel report downloaded successfully.");
   };
 
   const handleDownloadPDF = async () => {
@@ -575,6 +590,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
     });
     const name = isGradeSelected ? `Grade_${currentGrade}_Combined` : (currentClass?.name || "Class");
     doc.save(`Performance_${name}.pdf`);
+    toast.success("PDF report downloaded successfully.");
   };
 
   const scoredRows = performanceRows.filter(r => r.scoredSubjects > 0);

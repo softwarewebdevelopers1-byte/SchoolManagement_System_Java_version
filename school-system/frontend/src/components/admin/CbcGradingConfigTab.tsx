@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api, getSchoolId, request } from "../../lib/api";
 import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
+import {
   invalidateCbcGradingBands,
   type CbcGradingBand,
   normalizeCbcBands,
@@ -90,6 +94,7 @@ const validateLocally = (bands: CbcGradingBand[]) => {
 };
 
 export const CbcGradingConfigTab: React.FC = () => {
+  const toast = useNotifications();
   const { bands, setBands, loading, error, reload, gradeScalerId } =
     useCbcGradingBands();
   const [saving, setSaving] = useState(false);
@@ -151,6 +156,7 @@ export const CbcGradingConfigTab: React.FC = () => {
     const localError = validateLocally(bands);
     if (localError) {
       setMessage({ text: localError, type: "error" });
+      toast.warning(localError);
       return;
     }
 
@@ -170,12 +176,11 @@ export const CbcGradingConfigTab: React.FC = () => {
         text: "CBC grading configuration saved.",
         type: "success",
       });
+      toast.success("CBC grading configuration saved.");
     } catch (err) {
+      toast.error(friendlyErrorMessage(err, "Failed to save CBC grading configuration."));
       setMessage({
-        text:
-          err instanceof Error
-            ? err.message
-            : "Failed to save CBC grading configuration.",
+        text: friendlyErrorMessage(err, "Failed to save CBC grading configuration."),
         type: "error",
       });
     } finally {

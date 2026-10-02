@@ -3,8 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Phone, MapPin, Users, GraduationCap, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminPlatformStatistics, refreshSuperAdminSchools } from "../../lib/superAdminData";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 export default function SuperAdminSchoolDetail() {
+  const toast = useNotifications();
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
   const [school, setSchool] = useState<any>(null);
@@ -21,14 +26,16 @@ export default function SuperAdminSchoolDetail() {
         const response = await superAdminApi.getSchoolById(schoolId);
         setSchool(response || null);
       } catch (err: any) {
-        setError(err.message || "Failed to load school details");
+        const message = friendlyErrorMessage(err, "Failed to load school details.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
     };
 
     void loadSchoolDetails();
-  }, [schoolId]);
+  }, [schoolId, toast]);
 
   const updateStatus = async (newStatus: string) => {
     try {
@@ -39,8 +46,11 @@ export default function SuperAdminSchoolDetail() {
       // Reload the school data
       const response = await superAdminApi.getSchoolById(schoolId);
       setSchool(response || null);
+      toast.success("School status updated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to update school status");
+      const message = friendlyErrorMessage(err, "Failed to update school status.");
+      setError(message);
+      toast.error(message);
     } finally {
       setUpdating(false);
     }

@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, getSchoolId, PageResponse, request } from "./api";
 import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../components/shared/notifications/NotificationContext";
+import {
   buildClassId,
   getClassSubjectSetting,
   type SubjectEnrollmentMode,
@@ -467,6 +471,7 @@ export interface ClassesDataResult {
 }
 
 export const useClassesData = () => {
+  const toast = useNotifications();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -520,11 +525,13 @@ export const useClassesData = () => {
       setClasses(derivedClasses);
       setClassesFound(fetchedClassesFound);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load data.");
+      const message = friendlyErrorMessage(err, "Unable to load school data.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();

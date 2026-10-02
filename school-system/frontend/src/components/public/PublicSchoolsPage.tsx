@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { API_BASE_URL } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface PublicSchool {
   id: string;
@@ -46,6 +50,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 const PublicSchoolsPage: React.FC = () => {
+  const toast = useNotifications();
   const [schools, setSchools] = useState<PublicSchool[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -72,6 +77,7 @@ const PublicSchoolsPage: React.FC = () => {
       } catch (err) {
         if ((err as any)?.name !== "AbortError") {
           setError("Unable to load public schools right now.");
+          toast.error(friendlyErrorMessage(err, "Unable to load public schools right now."));
           setSchools([]);
         }
       } finally {
@@ -82,7 +88,7 @@ const PublicSchoolsPage: React.FC = () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [search]);
+  }, [search, toast]);
 
   useEffect(() => {
     const selectedSchool = schools.find((school) => school.id === selectedSchoolId);

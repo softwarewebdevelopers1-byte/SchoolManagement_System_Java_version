@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Filter, MoreVertical, Search } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminPlatformStatistics } from "../../lib/superAdminData";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "#16a34a",
@@ -22,6 +26,7 @@ const getStatusBadgeStyle = (status: string) => ({
 });
 
 export default function SuperAdminStaff() {
+  const toast = useNotifications();
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +43,9 @@ export default function SuperAdminStaff() {
       const response = await superAdminApi.getPlatformStaff();
       setStaff(Array.isArray(response) ? response : response?.data || []);
     } catch (err: any) {
-      setError(err.message || "Failed to load staff");
+      const message = friendlyErrorMessage(err, "Failed to load staff.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -89,8 +96,11 @@ export default function SuperAdminStaff() {
       await loadStaff();
       void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
+      toast.success("Staff status updated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to update staff status");
+      const message = friendlyErrorMessage(err, "Failed to update staff status.");
+      setError(message);
+      toast.error(message);
     }
   };
 

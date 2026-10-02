@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { api, getSchoolId } from "../../../lib/api";
 import { DailyAttendanceView } from "./DailyAttendanceView";
 import { MonthlyAttendanceView } from "./MonthlyAttendanceView";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../../shared/notifications/NotificationContext";
 
 type TabId = "daily" | "monthly";
 
@@ -33,6 +37,7 @@ const activeTabStyle: React.CSSProperties = {
 };
 
 export const AdminAttendanceInsights: React.FC = () => {
+  const toast = useNotifications();
   const [activeTab, setActiveTab] = useState<TabId>("daily");
   const [classes, setClasses] = useState<{ classId: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +62,9 @@ export const AdminAttendanceInsights: React.FC = () => {
         }).filter((item: any) => item.classId);
         setClasses(mapped);
       } catch (err: any) {
-        setError(err?.message || "Failed to load classes.");
+        const message = friendlyErrorMessage(err, "Failed to load classes.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }

@@ -38,6 +38,10 @@ import {
 } from "lucide-react";
 import ClassTeacherAttendanceHistory from "./ClassTeacherAttendanceHistory";
 import OverviewSkeleton from "../skeletons/OverviewSkeletons";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 // Wrapper icons for lucide components to match existing Icon interface
 const OverviewIcon = () => <LayoutDashboard size={16} />;
@@ -138,6 +142,7 @@ const CLASS_TEACHER_TAB_KEY = "edunex.classTeacher.activeTab";
 const validClassTeacherTabs = new Set(NAV.map((item) => item.id));
 
 export default function ClassTeacherDashboard() {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -252,6 +257,7 @@ export default function ClassTeacherDashboard() {
   const loadData = useCallback(async () => {
     if (!effectiveGrade || !effectiveStream) {
       setError("No class assigned to your profile.");
+      toast.error("No class assigned to your profile.");
       setLoading(false);
       return;
     }
@@ -260,6 +266,7 @@ export default function ClassTeacherDashboard() {
 
     if (!classId) {
       setError("No class ID is assigned to your profile.");
+      toast.error("No class ID is assigned to your profile.");
       setLoading(false);
       return;
     }
@@ -289,7 +296,9 @@ export default function ClassTeacherDashboard() {
     } catch (err: any) {
       console.error("Failed to load class teacher dashboard.", err);
 
-      setError(err?.message || "Failed to load records.");
+      const message = friendlyErrorMessage(err, "Failed to load records.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -300,6 +309,7 @@ export default function ClassTeacherDashboard() {
     currentUser?.term,
     currentUser?.year,
     currentUser?.examType,
+    toast,
   ]);
 
   const loadSubjects = useCallback(async () => {
@@ -307,6 +317,7 @@ export default function ClassTeacherDashboard() {
 
     if (!classId) {
       console.error("No class ID is assigned to this profile.");
+      toast.error("No class is assigned to your profile.");
       return;
     }
 
@@ -329,8 +340,9 @@ export default function ClassTeacherDashboard() {
       );
     } catch (err) {
       console.error("Failed to refresh class subjects.", err);
+      toast.error(friendlyErrorMessage(err, "Failed to refresh class subjects."));
     }
-  }, [effectiveClassId]);
+  }, [effectiveClassId, toast]);
 
   useEffect(() => {
     if (profileReady) {
@@ -416,8 +428,9 @@ export default function ClassTeacherDashboard() {
       setCurrentUser(updated);
     } catch (e) {
       console.error("Failed to refresh user.", e);
+      toast.error(friendlyErrorMessage(e, "Failed to refresh your profile."));
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, toast]);
 
   useEffect(() => {
     void refreshUser().finally(() => setProfileReady(true));
@@ -429,6 +442,9 @@ export default function ClassTeacherDashboard() {
     try {
       await refreshUser();
       await loadData();
+      toast.success("Class dashboard refreshed.");
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to refresh the class dashboard."));
     } finally {
       setLoading(false);
     }

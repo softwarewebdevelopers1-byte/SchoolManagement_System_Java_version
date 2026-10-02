@@ -8,6 +8,10 @@ import {
   analyticsTooltipProps,
 } from "../../shared/analytics/chartDefaults";
 import { analyticsColors } from "../../../lib/analyticsTheme";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../../shared/notifications/NotificationContext";
 
 interface DailyAttendanceViewProps {
   classes: { classId: string; name: string }[];
@@ -58,6 +62,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 };
 
 export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classes }) => {
+  const toast = useNotifications();
   const [classId, setClassId] = useState(classes[0]?.classId || "");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [records, setRecords] = useState<any[]>([]);
@@ -80,7 +85,9 @@ export const DailyAttendanceView: React.FC<DailyAttendanceViewProps> = ({ classe
       setTotalPages(data?.totalPages || 1);
       setTotalElements(data?.totalElements || 0);
     } catch (err: any) {
-      setError(err?.message || "Failed to load daily attendance.");
+      const message = friendlyErrorMessage(err, "Failed to load daily attendance.");
+      setError(message);
+      toast.error(message);
       setRecords([]);
     } finally {
       setLoading(false);

@@ -1,8 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Filter, MoreVertical, Search } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminPlatformStatistics, useSuperAdminSchools } from "../../lib/superAdminData";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const statusColors: Record<string, string> = {
   ACTIVE: "#16a34a",
@@ -32,6 +36,7 @@ const getStatusBadgeStyle = (status: string) => ({
 });
 
 export default function SuperAdminSchools() {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const { data: schoolsData, loading, error: schoolsError, refresh: loadSchools } = useSuperAdminSchools();
   const schools = schoolsData || [];
@@ -43,6 +48,10 @@ export default function SuperAdminSchools() {
   const [showModal, setShowModal] = useState(false);
   const [copiedSchoolId, setCopiedSchoolId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (schoolsError) toast.error(friendlyErrorMessage(schoolsError, "Unable to load schools."));
+  }, [schoolsError, toast]);
+
   const copySchoolCode = async (school: any) => {
     if (!school?.schoolCode) return;
 
@@ -50,8 +59,10 @@ export default function SuperAdminSchools() {
       await navigator.clipboard.writeText(String(school.schoolCode));
       setCopiedSchoolId(school.schoolId || school.id || null);
       setTimeout(() => setCopiedSchoolId(null), 1800);
+      toast.success("School code copied.");
     } catch {
       setError("Failed to copy school code.");
+      toast.error("Failed to copy school code.");
     }
   };
 
@@ -90,8 +101,11 @@ export default function SuperAdminSchools() {
       await loadSchools();
       void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
+      toast.success("School status updated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to update school status");
+      const message = friendlyErrorMessage(err, "Failed to update school status.");
+      setError(message);
+      toast.error(message);
     }
   };
 

@@ -20,6 +20,10 @@ import {
   analyticsYAxisProps,
 } from "../shared/analytics/chartDefaults";
 import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | string;
 
@@ -131,6 +135,7 @@ export default function ClassTeacherAttendanceHistory({
   token,
   onSheetLoaded,
 }: AttendanceHistoryProps) {
+  const toast = useNotifications();
   const [selectedDate, setSelectedDate] = useState("");
   const [sheet, setSheet] = useState<AttendanceHistoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -162,7 +167,9 @@ export default function ClassTeacherAttendanceHistory({
         );
 
         if (response.status === 404) {
-          setError(`No attendance sheet was found for ${formatDate(date)}.`);
+          const message = `No attendance sheet was found for ${formatDate(date)}.`;
+          setError(message);
+          toast.info(message);
           return;
         }
 
@@ -171,16 +178,17 @@ export default function ClassTeacherAttendanceHistory({
         setSheet(data);
         onSheetLoaded?.(data);
       } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Something went wrong while loading the attendance sheet.",
+        const message = friendlyErrorMessage(
+          requestError,
+          "Something went wrong while loading the attendance sheet.",
         );
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
     },
-    [classId, teacherId, endpoint, onSheetLoaded, token],
+    [classId, teacherId, endpoint, onSheetLoaded, token, toast],
   );
 
   useEffect(() => {

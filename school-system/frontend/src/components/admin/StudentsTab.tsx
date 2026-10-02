@@ -426,6 +426,7 @@ const StudentFormModal: React.FC<{
   const handleSingleSave = async () => {
     if (!name.trim()) {
       setErrorMsg("Student full name is required.");
+      toast.warning("Student full name is required.");
       return;
     }
 
@@ -434,6 +435,7 @@ const StudentFormModal: React.FC<{
         setErrorMsg(
           "Phone number must have 9 digits after +254.",
         );
+        toast.warning("Please enter a valid Kenyan phone number.");
         return;
       }
     }
@@ -472,6 +474,7 @@ const StudentFormModal: React.FC<{
   const handleMultipleSave = async () => {
     if (!multipleStudents.length) {
       setErrorMsg("Add at least one student.");
+      toast.warning("Add at least one student.");
       return;
     }
 
@@ -483,6 +486,7 @@ const StudentFormModal: React.FC<{
       setErrorMsg(
         `Student ${invalidIndex + 1}: full name is required.`,
       );
+      toast.warning(`Student ${invalidIndex + 1}: full name is required.`);
       return;
     }
 
@@ -492,6 +496,7 @@ const StudentFormModal: React.FC<{
       setErrorMsg(
         "School information could not be determined.",
       );
+      toast.error("School information could not be determined.");
       return;
     }
 
@@ -510,6 +515,7 @@ const StudentFormModal: React.FC<{
           invalidPhoneIndex + 1
         }: phone number must have 9 digits after +254.`,
       );
+      toast.warning(`Student ${invalidPhoneIndex + 1}: enter a valid Kenyan phone number.`);
       return;
     }
 
@@ -1476,7 +1482,9 @@ export const StudentsTab: React.FC<
         const mapped = mapStudentsFromApi(response?.content || []);
         setAllStudents(mapped);
       } catch (err: any) {
-        setError(err?.message || "Failed to load students.");
+        const message = friendlyErrorMessage(err, "Failed to load students.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -1499,7 +1507,9 @@ export const StudentsTab: React.FC<
         content: mapped,
       });
     } catch (err: any) {
-      setError(err?.message || "Failed to load students.");
+      const message = friendlyErrorMessage(err, "Failed to load students.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -1685,6 +1695,7 @@ export const StudentsTab: React.FC<
       applyStudentCreations(createdStudents);
 
       setUploadMessage("");
+      toast.success(`${createdStudents.length} student${createdStudents.length === 1 ? "" : "s"} imported successfully.`);
     } catch (error) {
       setUploadMessage(
         error instanceof Error

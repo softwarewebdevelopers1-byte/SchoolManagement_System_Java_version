@@ -85,8 +85,10 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
       const unwrappedData = data?.status === "Success" ? data.data : data;
       setSheet(unwrappedData || null);
     } catch (err: any) {
-      setError(err.message || "Failed to load attendance sheet.");
+      const message = friendlyErrorMessage(err, "Failed to load attendance sheet.");
+      setError(message);
       setSheet(null);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

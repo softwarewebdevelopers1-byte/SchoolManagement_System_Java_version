@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api, getSchoolId, normalizeUser } from "../../lib/api";
 import { TeacherRemarkTab } from "./TeacherRemarkTab";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface RemarkSubject {
   id: string;
@@ -9,6 +13,7 @@ interface RemarkSubject {
 }
 
 const TeacherRemarksPage: React.FC = () => {
+  const toast = useNotifications();
   const user = useMemo(() => {
     const saved = localStorage.getItem("user");
     if (!saved) return null;
@@ -44,13 +49,15 @@ const TeacherRemarksPage: React.FC = () => {
         setSubjects(assigned);
         setSelectedSubjectId(assigned[0]?.id || "");
       } catch (err: any) {
-        setError(err?.message || "Unable to load assigned subjects.");
+        const message = friendlyErrorMessage(err, "Unable to load assigned subjects.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
     };
     void loadSubjects();
-  }, [teacherId]);
+  }, [teacherId, toast]);
 
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
 

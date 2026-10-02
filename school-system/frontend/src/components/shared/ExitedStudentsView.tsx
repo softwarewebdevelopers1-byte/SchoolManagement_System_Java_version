@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api, getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "./notifications/NotificationContext";
 import type { ExitedStudent } from "../admin/types";
 
 interface ExitedStudentsViewProps {
@@ -51,6 +55,7 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
   onRefresh,
   allowDelete = false,
 }) => {
+  const toast = useNotifications();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ExitedStudent | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -83,7 +88,9 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
         setTotalPages(response?.totalPages || 1);
         setTotalElements(response?.totalElements || 0);
       } catch (err: any) {
-        setError(err?.message || "Failed to load exited students.");
+        const message = friendlyErrorMessage(err, "Failed to load exited students.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -115,10 +122,17 @@ export const ExitedStudentsView: React.FC<ExitedStudentsViewProps> = ({
     );
     if (!ok) return;
 
-    await api.delete(`/users/exited-students/${recordId}`);
-    setMessage("Exited learner archive deleted.");
-    setSelected(null);
-    await onRefresh?.();
+    try {
+      await api.delete(`/users/exited-students/${recordId}`);
+      setMessage("Exited learner archive deleted.");
+      toast.success("Exited learner archive deleted.");
+      setSelected(null);
+      await onRefresh?.();
+    } catch (error) {
+      const errorMessage = friendlyErrorMessage(error, "Unable to delete exited learner archive.");
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   return (

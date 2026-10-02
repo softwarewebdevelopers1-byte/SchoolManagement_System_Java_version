@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { analyticsColors } from "../../../lib/analyticsTheme";
+import { useNotifications } from "../notifications/NotificationContext";
 
 export interface AnalyticsTableColumn<T> {
   id: keyof T & string;
@@ -79,6 +80,7 @@ export function AnalyticsTable<T>({
   initialRowsPerPage = 10,
   emptyMessage = "No data available.",
 }: AnalyticsTableProps<T>) {
+  const toast = useNotifications();
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(initialRowsPerPage);
@@ -127,6 +129,7 @@ export function AnalyticsTable<T>({
   };
 
   const exportCsv = () => {
+    try {
     const header = columns.map((column) => csvCell(column.header));
     const dataRows = filteredRows.map((row) =>
       columns.map((column) =>
@@ -141,6 +144,10 @@ export function AnalyticsTable<T>({
     anchor.download = exportFilename;
     anchor.click();
     URL.revokeObjectURL(url);
+      toast.success("CSV report exported successfully.");
+    } catch {
+      toast.error("Unable to export the CSV report.");
+    }
   };
 
   return (

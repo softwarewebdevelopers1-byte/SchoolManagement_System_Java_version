@@ -5,6 +5,10 @@ import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
 import { pColor, sColor } from "./shared/helpers";
 import { SectionHeader } from "./shared/SectionHeader";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 type ParentConcern = {
   id: string;
@@ -21,6 +25,7 @@ type ParentConcern = {
 };
 
 export const ParentConcerns: React.FC = () => {
+  const toast = useNotifications();
   const [filter, setFilter] = useState("All");
   const [concerns, setConcerns] = useState<ParentConcern[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +43,9 @@ export const ParentConcerns: React.FC = () => {
       const data = await api.get<ParentConcern[]>("/users/parent-concerns");
       setConcerns(data);
     } catch (err: any) {
-      setError(err.message || "Unable to load parent concerns.");
+      const message = friendlyErrorMessage(err, "Unable to load parent concerns.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -57,8 +64,11 @@ export const ParentConcerns: React.FC = () => {
           concern.id === id ? { ...concern, status } : concern,
         ),
       );
+      toast.success("Parent concern status updated.");
     } catch (err: any) {
-      setError(err.message || "Unable to update concern status.");
+      const message = friendlyErrorMessage(err, "Unable to update concern status.");
+      setError(message);
+      toast.error(message);
     }
   };
 

@@ -5,6 +5,10 @@ import {
   TimetableEntry,
   TimetableRecord,
 } from "../../lib/timetableTypes";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "./notifications/NotificationContext";
 
 interface TimetableLibraryProps {
   fetchPath: string;
@@ -148,6 +152,7 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
   allowDelete = false,
   onDeleteSuccess,
 }) => {
+  const toast = useNotifications();
   const [timetables, setTimetables] = useState<TimetableRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -181,9 +186,9 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
         );
         setTimetables(normalized);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Unable to load timetables.",
-        );
+        const message = friendlyErrorMessage(err, "Unable to load timetables.");
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -251,13 +256,15 @@ export const TimetableLibrary: React.FC<TimetableLibraryProps> = ({
         current.filter((item) => item.id !== selected.id),
       );
       setActionMessage({ type: "success", text: successMessage });
+      toast.success(successMessage);
       onDeleteSuccess?.(successMessage);
     } catch (err) {
+      const message = friendlyErrorMessage(err, "Failed to delete timetable.");
       setActionMessage({
         type: "error",
-        text:
-          err instanceof Error ? err.message : "Failed to delete timetable.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setDeleting(false);
     }

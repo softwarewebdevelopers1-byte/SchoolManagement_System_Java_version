@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const roleOptions = [
   { value: "SUBJECTTEACHER", label: "Subject Teacher" },
@@ -19,6 +23,7 @@ interface PendingInvite {
 export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
   onUpdated,
 }) => {
+  const toast = useNotifications();
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -33,8 +38,9 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
       const response = await request<any>(`/users/get/invites/${encodeURIComponent(schoolId)}`);
       setInvites(response?.data || response || []);
     } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to load pending users."));
       setMessage({
-        text: error instanceof Error ? error.message : "Unable to load pending users.",
+        text: friendlyErrorMessage(error, "Unable to load pending users."),
         type: "error",
       });
     } finally {
@@ -67,12 +73,14 @@ export const UserApprovalsTab: React.FC<{ onUpdated?: () => void }> = ({
         text: status === "ACTIVE" ? `User accepted as ${roleOptions.find(r => r.value === selectedRole)?.label || selectedRole}.` : "User rejected.",
         type: "success",
       });
+      toast.success(status === "ACTIVE" ? "User approved successfully." : "User rejected.");
       setPendingAcceptId(null);
       await loadInvites();
       onUpdated?.();
     } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to update user."));
       setMessage({
-        text: error instanceof Error ? error.message : "Unable to update user.",
+        text: friendlyErrorMessage(error, "Unable to update user."),
         type: "error",
       });
     }

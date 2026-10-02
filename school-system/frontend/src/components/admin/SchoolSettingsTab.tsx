@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./AdminDashboard.module.css";
 import { getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -31,6 +35,7 @@ const labelStyle: React.CSSProperties = {
 export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
   onSaved,
 }) => {
+  const toast = useNotifications();
   const [form, setForm] = useState({
     schoolName: "",
     schoolEmail: "",
@@ -61,8 +66,10 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     try {
       await navigator.clipboard.writeText(form.schoolCode.trim());
       setSchoolCodeCopied(true);
+      toast.success("School code copied.");
       setTimeout(() => setSchoolCodeCopied(false), 2000);
     } catch {
+      toast.error("Failed to copy school code.");
       setMessage({
         text: "Failed to copy school code.",
         type: "error",
@@ -71,22 +78,26 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
   };
   useEffect(() => {
     (async () => {
-      const data: any = await request(
-        `/schools/settings?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
-      );
-      update("schoolName", data?.schoolName);
-      update("schoolEmail", data?.schoolEmail);
-      update("motto", data?.motto);
-      update("schoolAddress", data?.schoolAddress);
-      update("phoneNumber", data?.phoneNumber);
-      update("schoolCode", data?.schoolCode);
-      if (data?.visibility) setVisibility(data.visibility);
-      if (data?.latitude && data?.longitude) {
-        setLatitude(Number(data.latitude));
-        setLongitude(Number(data.longitude));
+      try {
+        const data: any = await request(
+          `/schools/settings?schoolId=${encodeURIComponent(getSchoolId() || "")}`,
+        );
+        update("schoolName", data?.schoolName);
+        update("schoolEmail", data?.schoolEmail);
+        update("motto", data?.motto);
+        update("schoolAddress", data?.schoolAddress);
+        update("phoneNumber", data?.phoneNumber);
+        update("schoolCode", data?.schoolCode);
+        if (data?.visibility) setVisibility(data.visibility);
+        if (data?.latitude && data?.longitude) {
+          setLatitude(Number(data.latitude));
+          setLongitude(Number(data.longitude));
+        }
+      } catch (error) {
+        toast.error(friendlyErrorMessage(error, "Unable to load school settings."));
       }
     })();
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -124,6 +135,7 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
     event.preventDefault();
     const schoolId = getSchoolId();
     if (!schoolId) {
+      toast.error("No school is linked to this account.");
       setMessage({
         text: "No school is linked to this account.",
         type: "error",
@@ -139,13 +151,12 @@ export const SchoolSettingsTab: React.FC<SchoolSettingsTabProps> = ({
         body: JSON.stringify({ ...form, visibility, latitude, longitude, schoolId }),
       });
       setMessage({ text: "School settings updated.", type: "success" });
+      toast.success("School settings updated.");
       onSaved?.();
     } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Failed to update school settings."));
       setMessage({
-        text:
-          error instanceof Error
-            ? error.message
-            : "Failed to update school settings.",
+        text: friendlyErrorMessage(error, "Failed to update school settings."),
         type: "error",
       });
     } finally {

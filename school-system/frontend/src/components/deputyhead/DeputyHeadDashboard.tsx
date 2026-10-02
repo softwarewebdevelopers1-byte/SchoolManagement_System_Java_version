@@ -17,6 +17,10 @@ import { avg } from "./shared/helpers";
 import { NAV_ALL } from "./shared/data";
 import { useDashboardTheme } from "../../lib/useDashboardTheme";
 import { api } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 export type UserRoleType = "deputy" | "headteacher";
 
@@ -30,6 +34,7 @@ const getDeputyHeadTabStorageKey = (role: UserRoleType) =>
 export default function DeputyHeadDashboard({
   userRole = "deputy",
 }: DeputyHeadDashboardProps) {
+  const toast = useNotifications();
   const [tab, setTab] = useState(() => {
     const nav = NAV_ALL.filter((item) => item.roles.includes(userRole));
     const saved = localStorage.getItem(getDeputyHeadTabStorageKey(userRole));
@@ -207,6 +212,7 @@ export default function DeputyHeadDashboard({
       setClasses(Array.from(classMap.values()));
     } catch (err) {
       console.error("Dashboard loadData failed:", err);
+      toast.error(friendlyErrorMessage(err, "Unable to load the school dashboard."));
     } finally {
       setLoading(false);
     }

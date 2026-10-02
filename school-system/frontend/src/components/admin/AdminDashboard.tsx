@@ -536,6 +536,7 @@ const AdminDashboard: React.FC = () => {
       setStudents(mappedStudents.filter((student) => student.status !== "Completed"));
     } catch (err) {
       console.error("Failed to reload students:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to reload students.");
     }
   };
 
@@ -610,6 +611,7 @@ const AdminDashboard: React.FC = () => {
       setTeachers(mappedTeachers);
     } catch (err) {
       console.error("Failed to reload staff:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to reload staff.");
     }
   };
 
@@ -628,6 +630,7 @@ const AdminDashboard: React.FC = () => {
       setSubjects(normalizedSubjects);
     } catch (err) {
       console.error("Failed to reload subjects:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to reload subjects.");
     }
   };
 
@@ -645,6 +648,7 @@ const AdminDashboard: React.FC = () => {
       setSubjectJointsData(normalizedAssignments as unknown as subjectJoints[]);
     } catch (err) {
       console.error("Failed to reload assignments:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to reload subject assignments.");
     }
   };
 
@@ -656,6 +660,7 @@ const AdminDashboard: React.FC = () => {
       setRawApiClasses(apiClasses || []);
     } catch (err) {
       console.error("Failed to reload classes:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to reload classes.");
     }
   };
 
@@ -714,9 +719,9 @@ const AdminDashboard: React.FC = () => {
       );
       setRawApiClasses(apiClasses || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to load dashboard data.",
-      );
+      const message = err instanceof Error ? err.message : "Unable to load dashboard data.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

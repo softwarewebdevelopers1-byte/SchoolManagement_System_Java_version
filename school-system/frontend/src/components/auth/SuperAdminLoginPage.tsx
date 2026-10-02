@@ -2,8 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Mail, Lock, ArrowLeft, AlertCircle } from "lucide-react";
 import { api, normalizeUser, normalizeRoles } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 export default function SuperAdminLoginPage() {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +40,9 @@ export default function SuperAdminLoginPage() {
       const redirect = roles.length > 1 ? "/edunex-org/dashboard" : "/edunex-org/superAdmin";
       window.location.href = redirect;
     } catch (err: any) {
-      setError(err.message || "Invalid super admin credentials.");
+      const message = friendlyErrorMessage(err, "Invalid super admin credentials.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

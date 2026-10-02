@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { DlIcon } from "../classteacher/shared/Icons";
 import { C, FONT } from "../classteacher/shared/constants";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "./notifications/NotificationContext";
 
 interface Archive {
   _id: string;
@@ -94,6 +98,7 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
   title = "Academic Archives",
   allowManagement = false,
 }) => {
+  const toast = useNotifications();
   const [allArchives, setAllArchives] = useState<Archive[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -116,9 +121,10 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
       setSelectedIds(new Set());
       setFeedback((current) => (current?.type === "error" ? null : current));
     } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to load archives right now."));
       setFeedback({
         type: "error",
-        text: error instanceof Error ? error.message : "Unable to load archives right now.",
+        text: friendlyErrorMessage(error, "Unable to load archives right now."),
       });
     } finally {
       setLoading(false);
@@ -167,11 +173,14 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
         type: "success",
         text: response.message || "Archive deleted successfully.",
       });
+      toast.success(response.message || "Archive deleted successfully.");
     } catch (error) {
+      const message = friendlyErrorMessage(error, "Unable to delete this archive.");
       setFeedback({
         type: "error",
-        text: error instanceof Error ? error.message : "Unable to delete this archive.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setDeletingId("");
     }
@@ -202,11 +211,14 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
         type: "success",
         text: response.message || "Selected archived results deleted.",
       });
+      toast.success(response.message || "Selected archived results deleted.");
     } catch (error) {
+      const message = friendlyErrorMessage(error, "Unable to delete selected results.");
       setFeedback({
         type: "error",
-        text: error instanceof Error ? error.message : "Unable to delete selected results.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setDeletingId("");
     }
@@ -226,11 +238,14 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
         `/school/archives/${encodeURIComponent(archive._id)}/results`,
       );
       setResults(data);
+      toast.success("Archived results loaded.");
     } catch (error) {
+      const message = friendlyErrorMessage(error, "Unable to load archived results.");
       setFeedback({
         type: "error",
-        text: error instanceof Error ? error.message : "Unable to load archived results.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setResultsLoadingId("");
     }

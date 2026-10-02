@@ -2,6 +2,10 @@ import React, { useMemo, useState } from "react";
 import { api, getSchoolId, request } from "../../lib/api";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import { Class } from "./types";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface TimetableTabProps {
   classes: Class[];
@@ -95,6 +99,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
   classes,
   currentPeriod,
 }) => {
+  const toast = useNotifications();
   const [schoolStartTime, setSchoolStartTime] = useState("08:00");
   const [subjectsPerDay, setSubjectsPerDay] = useState(7);
   const [subjectDurationMinutes, setSubjectDurationMinutes] = useState(40);
@@ -194,28 +199,31 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
         const failures = response?.report?.conflicts
           ?.map((conflict: { message?: string }) => conflict.message)
           .filter(Boolean);
+        const message =
+          failures?.[0] ||
+          "Unable to generate a conflict-free timetable. Review subject requirements, teacher assignments, and available teaching periods.";
         setStatus({
           type: "error",
-          text:
-            failures?.[0] ||
-            "Unable to generate a conflict-free timetable. Review subject requirements, teacher assignments, and available teaching periods.",
+          text: message,
         });
+        toast.error(message);
         return;
       }
 
+      const message = `Conflict-free timetable generated with ${response?.entries?.length ?? 0} lessons.`;
       setStatus({
         type: "success",
-        text: `Conflict-free timetable generated with ${response?.entries?.length ?? 0} lessons.`,
+        text: message,
       });
+      toast.success(message);
       setRefreshKey((current) => current + 1);
     } catch (err) {
+      const message = friendlyErrorMessage(err, "Failed to generate school timetables.");
       setStatus({
         type: "error",
-        text:
-          err instanceof Error
-            ? err.message
-            : "Failed to generate school timetables.",
+        text: message,
       });
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
