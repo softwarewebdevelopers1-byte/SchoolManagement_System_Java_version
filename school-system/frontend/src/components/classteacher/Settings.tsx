@@ -2,6 +2,10 @@
 import React, { useState } from "react";
 import { C, FONT } from "./shared/constants";
 import { api } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface SettingsProps {
   user: any;
@@ -56,6 +60,7 @@ const SectionHeader: React.FC<{
 );
 
 export const Settings: React.FC<SettingsProps> = ({ user, studentsCount, onUserUpdate }) => {
+  const toast = useNotifications();
   const [form, setForm] = useState({
     name: user?.classStream || "",
     className: `Grade ${user?.classGrade || ""}`,
@@ -90,11 +95,12 @@ export const Settings: React.FC<SettingsProps> = ({ user, studentsCount, onUserU
       };
       await api.put(`/users/${user.id}`, updatedData);
       setSaved(true);
+      toast.success("Settings saved successfully.");
       if (onUserUpdate) onUserUpdate(updatedData);
       // Update local storage too
       const savedItem = localStorage.getItem("user"); if (savedItem) { const parsed = JSON.parse(savedItem); parsed.user = updatedData; localStorage.setItem("user", JSON.stringify(parsed)); }
     } catch (err) {
-      alert("Failed to save settings");
+      toast.error(friendlyErrorMessage(err, "Failed to save settings."));
     } finally {
       setLoading(false);
     }

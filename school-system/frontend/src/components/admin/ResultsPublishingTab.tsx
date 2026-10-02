@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 import type { Class } from "./types";
 import styles from "./ResultsPublishingTab.module.css";
 
@@ -38,7 +42,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [academicYear, setAcademicYear] = useState(String(new Date().getFullYear()));
   const [term, setTerm] = useState("1");
   const [examType, setExamType] = useState("ENDTERM");
-  const [message, setMessage] = useState("");
+  const toast = useNotifications();
   const [publishing, setPublishing] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
   const [links, setLinks] = useState<ResultLinksPage | null>(null);
@@ -84,7 +88,8 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
         if (!cancelled) setLinks(response);
       } catch (error) {
         if (!cancelled) {
-          setLinksError(error instanceof Error ? error.message : "Unable to load results links.");
+          const message = friendlyErrorMessage(error, "Unable to load results links.");
+          setLinksError(message);
         }
       } finally {
         if (!cancelled) setLoadingLinks(false);
@@ -94,17 +99,20 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [showLinks, page, search, sortField, sortDirection, status, reloadVersion]);
+  }, [showLinks, page, search, sortField, sortDirection, status, reloadVersion, toast]);
 
   const publish = async () => {
     if (!classId) {
-      setMessage("Select a class before publishing results.");
+      toast.warning("Select a class before publishing results.");
       return;
     }
     setPublishing(true);
-    setMessage("");
     try {
-      const response = await request<{ publishedStudents: number; accessLinks: unknown[] }>(
+      const response = await request<{
+        publishedStudents: number;
+        previouslyPublished: boolean;
+        accessLinks: unknown[];
+      }>(
         "/results/publish",
         {
           method: "POST",
@@ -116,9 +124,13 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
           }),
         },
       );
-      setMessage(`${response.publishedStudents} student result(s) published. ${response.accessLinks.length} new secure link(s) created.`);
+      toast.success(
+        response.previouslyPublished
+          ? "Results were already published for this class."
+          : `${response.publishedStudents} student result(s) published. ${response.accessLinks.length} new secure link(s) created.`,
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to publish results.");
+      toast.error(friendlyErrorMessage(error, "Unable to publish results."));
     } finally {
       setPublishing(false);
     }
@@ -140,7 +152,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
 
   const copyLink = async (link: ResultLink) => {
     if (!link.resultsUrl) {
-      setMessage("Unable to copy this results link.");
+      toast.error("Unable to copy this results link.");
       return;
     }
     setCopyingId(link.accessId);
@@ -159,9 +171,9 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
         input.remove();
         if (!copied) throw new Error("Clipboard copy failed");
       }
-      setMessage("Link copied.");
+      toast.success("Link copied.");
     } catch {
-      setMessage("Unable to copy this results link.");
+      toast.error("Unable to copy this results link.");
     } finally {
       setCopyingId(null);
     }
@@ -169,7 +181,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
 
   const viewLink = (link: ResultLink) => {
     if (!link.resultsUrl) {
-      setMessage("Unable to open this results link.");
+      toast.error("Unable to open this results link.");
       return;
     }
     window.open(link.resultsUrl, "_blank", "noopener,noreferrer");
@@ -178,7 +190,6 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const renewLink = async (link: ResultLink) => {
     if (!window.confirm("Renew this expired results link? The old link will remain invalid.")) return;
     setRenewingId(link.accessId);
-    setMessage("");
     try {
       const renewed = await request<ResultLink>(`/admin/results-links/${link.accessId}/renew`, {
         method: "POST",
@@ -186,9 +197,9 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
       setLinks((current) => current
         ? { ...current, content: current.content.map((item) => item.accessId === renewed.accessId ? renewed : item) }
         : current);
-      setMessage("Results link renewed successfully.");
+      toast.success("Results link renewed successfully.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to renew the results link.");
+      toast.error(friendlyErrorMessage(error, "Unable to renew the results link."));
     } finally {
       setRenewingId(null);
     }
@@ -197,12 +208,11 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const resendResults = async (link: ResultLink) => {
     if (!window.confirm(`Resend ${link.studentName}'s results notification?`)) return;
     setResendingId(link.accessId);
-    setMessage("");
     try {
       await request(`/admin/results-links/${link.accessId}/resend`, { method: "POST" });
-      setMessage(`Results notification queued for ${link.studentName}.`);
+      toast.success(`Results notification queued for ${link.studentName}.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to resend the results notification.");
+      toast.error(friendlyErrorMessage(error, "Unable to resend the results notification."));
     } finally {
       setResendingId(null);
     }
@@ -250,7 +260,6 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
         <button className={styles.publishButton} type="button" onClick={() => void publish()} disabled={publishing}>
           {publishing ? "Publishing..." : "Publish Results"}
         </button>
-        {message && <p className={styles.message} role="status">{message}</p>}
       </div>
 
       <div className={styles.linksHeader}>

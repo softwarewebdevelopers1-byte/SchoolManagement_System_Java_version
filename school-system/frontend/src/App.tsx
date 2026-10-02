@@ -7,6 +7,9 @@ import {
   ROLE_PATHS,
   api,
 } from "./lib/api";
+import { NotificationContainer } from "./components/shared/notifications/NotificationContainer";
+import { NotificationErrorBoundary } from "./components/shared/notifications/NotificationErrorBoundary";
+import { NotificationProvider } from "./components/shared/notifications/NotificationProvider";
 import "./App.css";
 
 const StudentDashboard = lazy(() => import("./components/students/StudentDashboard"));
@@ -296,9 +299,12 @@ const DashboardSelector = () => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<main role="status">Loading...</main>}>
-        <Routes>
+    <NotificationProvider>
+      <BrowserRouter>
+        <NotificationContainer />
+        <NotificationErrorBoundary>
+          <Suspense fallback={<main role="status">Loading...</main>}>
+            <Routes>
         <Route
           path="/edunex-org/superAdmin/*"
           element={
@@ -421,9 +427,11 @@ function App() {
         />
 
         <Route path="*" element={<ErrorPage />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+            </Routes>
+          </Suspense>
+        </NotificationErrorBoundary>
+      </BrowserRouter>
+    </NotificationProvider>
   );
 }
 

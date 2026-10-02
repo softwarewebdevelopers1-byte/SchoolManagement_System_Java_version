@@ -8,6 +8,7 @@ import {
   resolveCbcBand,
   useCbcGradingBands,
 } from "../../lib/cbcGrading";
+import { useNotifications } from "./notifications/NotificationContext";
 
 interface MarksEntryProps {
   mode: "subject" | "class";
@@ -114,6 +115,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
   onExamTypeChange,
   pagination,
 }) => {
+  const toast = useNotifications();
   const currentSubject =
     subjects.find((subject) => subject.id === activeSubjectId) ||
     subjects[0] ||
@@ -294,7 +296,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
     });
     if (!rows.length) return;
     if (invalidRows.length) {
-      window.alert(`No matching student for Excel row(s): ${invalidRows.join(", ")}`);
+      toast.warning(`No matching student for Excel row(s): ${invalidRows.join(", ")}`);
       return;
     }
     onImportMarks(activeSubjectId, imported);

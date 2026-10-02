@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import styles from "./AdminDashboard.module.css";
 import { Class } from "./types";
 import { getSchoolId, request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const miniButtonStyle: React.CSSProperties = {
   padding: "5px 10px",
@@ -155,6 +159,7 @@ const ClassTeacherModal: React.FC<{
   onClose: () => void;
   onSave: (teacherId: string) => Promise<void>;
 }> = ({ currentClass, teachers, onClose, onSave }) => {
+  const toast = useNotifications();
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -268,6 +273,10 @@ const ClassTeacherModal: React.FC<{
               setSaving(true);
               try {
                 await onSave(selectedTeacherId);
+                toast.success("Class teacher assigned successfully.");
+                onClose();
+              } catch (error) {
+                toast.error(friendlyErrorMessage(error, "Unable to assign class teacher."));
               } finally {
                 setSaving(false);
               }
@@ -303,6 +312,7 @@ const RenameClassModal: React.FC<{
   onClose: () => void;
   onSaved: () => void;
 }> = ({ currentClass, action, onClose, onSaved }) => {
+  const toast = useNotifications();
   const parsed = splitClassName(currentClass?.className || "");
   const [grade, setGrade] = useState(
     currentClass?.grade || parsed?.grade || "",
@@ -390,8 +400,10 @@ const RenameClassModal: React.FC<{
                   });
                 }
                 onSaved();
+                toast.success(action === "create" ? "Class created successfully." : "Class updated successfully.");
                 onClose();
               } catch (error) {
+                toast.error(friendlyErrorMessage(error, "Unable to save class."));
                 setError(
                   error instanceof Error
                     ? error.message
@@ -440,6 +452,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
   showConfirm,
   showSuccess,
 }) => {
+  const toast = useNotifications();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -523,6 +536,8 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({
           showSuccess(
             "Class teacher unassigned. The teacher now has no roles and will be redirected to the unassigned page on next login.",
           );
+        } else {
+          toast.success("Class teacher unassigned successfully.");
         }
       },
       true,

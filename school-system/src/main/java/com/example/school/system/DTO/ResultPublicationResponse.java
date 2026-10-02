@@ -4,5 +4,6 @@ import java.util.List;
 
 public record ResultPublicationResponse(
         int publishedStudents,
+        boolean previouslyPublished,
         List<ResultAccessResponse> accessLinks) {
 }

@@ -1,11 +1,14 @@
 // components/classteacher/MarksManagement.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { C } from "./shared/constants";
 import { api } from "../../lib/api";
 import { buildElectiveSubjectGroups } from "../../lib/subjectEnrollment";
 import { MarksEntry } from "../shared/MarksEntry";
 import { avatar } from "../../lib/dashboardHelpers";
 import { MarksData, Subject, Student } from "../subjectteacher/types";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const hasAnyStoredValue = (marks: {
   cat1: number | string | null;
@@ -129,6 +132,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   // onRefresh,
   user,
 }) => {
+  const toast = useNotifications();
   const marksSubjectStorageKey = useMemo(
     () => getMarksSubjectStorageKey(user),
     [user?.id, user?.classGrade, user?.classStream],
@@ -143,10 +147,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   const [cachedSubjectStudents, setCachedSubjectStudents] = useState<
     Record<string, Student[]>
   >({});
-  const [msg, setMsg] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
   const [term, setTerm] = useState<number>(user?.term || 1);
   const [year, setYear] = useState<number>(user?.year || 2024);
   const [examType, setExamType] = useState<string>(user?.examType || "opener");
@@ -484,7 +484,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         ),
       },
     }));
-    setMsg({ text: "Excel marks loaded. Review and save the subject marks.", type: "success" });
+    toast.info("Excel marks loaded. Review and save the subject marks.");
   };
 
   const handleSaveMarks = async (subjectId: string, catConfigs?: any) => {
@@ -543,14 +543,10 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     });
 
     if (missingSelections.length > 0) {
-      setMsg({
-        text: "Some learners are missing an elective subject selection. Update the student enrollment first.",
-        type: "error",
-      });
+      toast.warning("Some learners are missing an elective subject selection. Update the student enrollment first.");
       return;
     }
 
-    setMsg(null);
     try {
       let res = await Promise.all(
         Array.from(marksByActualSubject.entries()).map(
@@ -572,7 +568,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         ),
       );
 
-      setMsg({ text: "Marks saved successfully!", type: "success" });
+      toast.success("Marks saved successfully!");
       // if (onRefresh) onRefresh();
       for (const result of res) {
         const saved = (result as any)?.savedMarks;
@@ -597,7 +593,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         }
       }
     } catch (err: any) {
-      setMsg({ text: "Failed to save: " + err.message, type: "error" });
+      toast.error(friendlyErrorMessage(err, "Unable to save marks."));
     }
   };
 
@@ -633,22 +629,6 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
 
   return (
     <div className="ct-anim">
-      {msg && (
-        <div
-          style={{
-            padding: "10px 20px",
-            marginBottom: 15,
-            borderRadius: 8,
-            background: msg.type === "success" ? C.greenLight : "#fdeaea",
-            color: msg.type === "success" ? C.successText : C.dangerText,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          {msg.text}
-        </div>
-      )}
-
       <MarksEntry
         mode="class"
         subjects={mappedSubjects}

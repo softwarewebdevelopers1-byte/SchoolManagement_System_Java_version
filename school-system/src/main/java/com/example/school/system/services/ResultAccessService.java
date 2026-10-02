@@ -148,6 +148,12 @@ public class ResultAccessService {
                     "no marks found for the selected class, academic year, term, and examination period");
         }
 
+        List<ClassTermResults> previousResults = classTermResultsRepo
+                .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        request.classId(), request.academicYear(), request.term(), request.examType());
+        boolean previouslyPublished = !previousResults.isEmpty()
+                && previousResults.stream().allMatch(ClassTermResults::isPublished);
+
         rankingService.StudentClassRanking(new GradingClassStudents(
                 request.classId(),
                 request.examType(),
@@ -222,7 +228,7 @@ public class ResultAccessService {
                         ClassTermResults::getStudentProfile,
                         (first, ignored) -> first));
         queueResultNotifications(request, links, studentIds, studentsById, buildMarksByStudent(markSheets));
-        return new ResultPublicationResponse(results.size(), links);
+        return new ResultPublicationResponse(results.size(), previouslyPublished, links);
     }
 
     private void queueResultNotifications(ResultPublicationRequest request,

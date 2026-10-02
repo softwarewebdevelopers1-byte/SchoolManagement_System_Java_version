@@ -3,6 +3,10 @@ import { Class, ClassSubjectSetting, Student, Subject } from "./types";
 import { api, getSchoolId, request } from "../../lib/api";
 import { mapStudentsFromApi } from "../../lib/adminData";
 import PhoneInput from "../shared/PhoneInput";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 /* =========================================================
    STYLES
@@ -252,6 +256,7 @@ const StudentFormModal: React.FC<{
   onSave,
   onBulkSave,
 }) => {
+  const toast = useNotifications();
   console.log(student);
   
   const [isCompact, setIsCompact] = useState(
@@ -454,6 +459,7 @@ const StudentFormModal: React.FC<{
       setErrorMsg(
         err?.message || "Failed to save student.",
       );
+      toast.error(friendlyErrorMessage(err, "Failed to save student."));
     } finally {
       setSaving(false);
     }
@@ -546,6 +552,7 @@ const StudentFormModal: React.FC<{
         err?.message ||
           "Failed to enroll the students.",
       );
+      toast.error(friendlyErrorMessage(err, "Failed to enroll the students."));
     } finally {
       setSaving(false);
     }
@@ -1425,6 +1432,7 @@ export const StudentsTab: React.FC<
   showConfirm,
   pill,
 }) => {
+  const toast = useNotifications();
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] =
     useState("all");
@@ -1676,15 +1684,14 @@ export const StudentsTab: React.FC<
       const createdStudents = await onBulkSave(payload);
       applyStudentCreations(createdStudents);
 
-      setUploadMessage(
-        `${payload.length} students imported successfully.`,
-      );
+      setUploadMessage("");
     } catch (error) {
       setUploadMessage(
         error instanceof Error
           ? error.message
           : "Unable to import students.",
       );
+      toast.error(friendlyErrorMessage(error, "Unable to import students."));
     } finally {
       setUploading(false);
     }

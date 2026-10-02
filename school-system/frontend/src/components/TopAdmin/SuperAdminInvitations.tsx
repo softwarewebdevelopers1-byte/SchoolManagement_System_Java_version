@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Copy, Filter, MoreVertical, Search, Trash2 } from "lucide-react";
 import { superAdminApi } from "../../lib/api";
 import { refreshSuperAdminPlatformStatistics, useSuperAdminSchools } from "../../lib/superAdminData";
+import {
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 const statusColors: Record<string, string> = {
   PENDING: "#c084fc",
@@ -22,6 +25,7 @@ const getStatusBadgeStyle = (status: string) => ({
 });
 
 export default function SuperAdminInvitations() {
+  const toast = useNotifications();
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +34,6 @@ export default function SuperAdminInvitations() {
   const [selectedInvite, setSelectedInvite] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [copied, setCopied] = useState(false);
   const { data: schoolsData, error: schoolsError } = useSuperAdminSchools();
   const schoolOptions = schoolsData || [];
   const [schoolId, setSchoolId] = useState("");
@@ -79,10 +82,9 @@ export default function SuperAdminInvitations() {
     if (!link) return;
     try {
       await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success("Invitation link copied.");
     } catch {
-      alert("Failed to copy link");
+      toast.error("Failed to copy link.");
     }
   };
 
@@ -92,6 +94,7 @@ export default function SuperAdminInvitations() {
       await loadInvitations();
       void refreshSuperAdminPlatformStatistics().catch(() => undefined);
       setShowModal(false);
+      toast.success("Invitation revoked successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to revoke invitation");
     }
@@ -111,6 +114,7 @@ export default function SuperAdminInvitations() {
       setShowCreateModal(false);
       await loadInvitations();
       void refreshSuperAdminPlatformStatistics().catch(() => undefined);
+      toast.success("Invitation link generated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to generate invitation link");
     } finally {
@@ -353,7 +357,7 @@ export default function SuperAdminInvitations() {
                     style={styles.copyButton}
                   >
                     <Copy size={14} />
-                    {copied ? "Copied" : "Copy"}
+                    Copy
                   </button>
                 </div>
               </div>

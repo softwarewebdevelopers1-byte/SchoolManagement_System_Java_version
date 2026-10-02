@@ -41,6 +41,7 @@ import {
 } from "../../lib/subjectEnrollment";
 import { students } from "../classteacher/shared/data";
 import OverviewSkeleton from "../skeletons/OverviewSkeletons";
+import { useNotifications } from "../shared/notifications/NotificationContext";
 const navItems: NavItem[] = [
   {
     id: "overview",
@@ -463,6 +464,7 @@ const primaryButtonStyle: React.CSSProperties = {
 };
 
 const AdminDashboard: React.FC = () => {
+  const toast = useNotifications();
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem(ADMIN_TAB_KEY);
     return saved && validAdminTabs.has(saved) ? saved : "overview";
@@ -1286,48 +1288,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   const showSuccess = (msg: string) => {
-    showModal(
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✅</div>
-        <h3
-          style={{
-            fontFamily: "var(--serif)",
-            fontSize: "1.5rem",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Success!
-        </h3>
-        <p style={{ color: "var(--textMut)", marginBottom: "1.5rem" }}>{msg}</p>
-        <button onClick={closeModal} style={primaryButtonStyle}>
-          Dismiss
-        </button>
-      </div>,
-    );
+    closeModal();
+    toast.success(msg);
   };
 
   const showError = (msg: string) => {
-    showModal(
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>❌</div>
-        <h3
-          style={{
-            fontFamily: "var(--serif)",
-            fontSize: "1.5rem",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Error
-        </h3>
-        <p style={{ color: "var(--textMut)", marginBottom: "1.5rem" }}>{msg}</p>
-        <button
-          onClick={closeModal}
-          style={{ ...primaryButtonStyle, background: "var(--dText)" }}
-        >
-          Dismiss
-        </button>
-      </div>,
-    );
+    closeModal();
+    toast.error(msg);
   };
 
   const unassignedCount = classesFound.filter(

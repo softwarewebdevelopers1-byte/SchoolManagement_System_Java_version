@@ -311,8 +311,15 @@ class ResultAccessServiceTest {
         generated.setStudentProfile(student);
         when(classTermResultsRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
                 classId, "2026", 1, ExamType.ENDTERM)).thenReturn(List.of(generated));
+        ResultAccess activeAccess = new ResultAccess();
+        activeAccess.setStudentProfile(student);
+        activeAccess.setAcademicYear("2026");
+        activeAccess.setCurrentSchoolTerm(1);
+        activeAccess.setExamType(ExamType.ENDTERM);
+        activeAccess.setExpiresAt(Instant.now().plusSeconds(3600));
         when(accessRepository.findAllByStudentProfileIdInAndAcademicYearAndCurrentSchoolTermAndExamType(
-                List.of(studentId), "2026", 1, ExamType.ENDTERM)).thenReturn(List.of());
+                List.of(studentId), "2026", 1, ExamType.ENDTERM))
+                .thenReturn(List.of(), List.of(activeAccess));
         when(accessRepository.saveAll(org.mockito.ArgumentMatchers.anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         var studentContact = contact(studentId, "student", "+254700000001");
@@ -324,15 +331,20 @@ class ResultAccessServiceTest {
         ResultPublicationResponse response = service.publishResults(request);
 
         assertEquals(1, response.publishedStudents());
+        assertEquals(false, response.previouslyPublished());
         org.mockito.Mockito.verify(rankingService).StudentClassRanking(
                 new GradingClassStudents(classId, ExamType.ENDTERM, "2026", 1, gradingScale));
-        org.mockito.Mockito.verify(classTermResultsRepo).saveAll(List.of(generated));
+        org.mockito.Mockito.verify(classTermResultsRepo, org.mockito.Mockito.times(1)).saveAll(List.of(generated));
         org.mockito.ArgumentCaptor<List<com.example.school.system.models.ResultSmsNotification>> notifications =
                 org.mockito.ArgumentCaptor.forClass(List.class);
         org.mockito.Mockito.verify(resultSmsNotificationRepository).saveAll(notifications.capture());
         String message = notifications.getValue().get(0).getMessage();
         org.junit.jupiter.api.Assertions.assertTrue(message.contains("Mathematics: 78%"));
         org.junit.jupiter.api.Assertions.assertTrue(message.contains("Full results: "));
+
+        ResultPublicationResponse republishedResponse = service.publishResults(request);
+        assertEquals(true, republishedResponse.previouslyPublished());
+        org.mockito.Mockito.verify(classTermResultsRepo, org.mockito.Mockito.times(2)).saveAll(List.of(generated));
     }
 
     @Test

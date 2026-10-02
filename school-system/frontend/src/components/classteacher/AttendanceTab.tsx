@@ -7,6 +7,10 @@ import {
 } from "../../lib/api";
 import { C, FONT } from "./shared/constants";
 import AttendanceSheetSkeleton from "../skeletons/AttendanceSheetSkeleton";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface AttendanceRecord {
   recordId: string;
@@ -29,13 +33,10 @@ interface AttendanceTabProps {
 }
 
 export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, teacherId }) => {
+  const toast = useNotifications();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<AttendanceSheet | null>(null);
-  const [message, setMessage] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
   const [dateFilter, setDateFilter] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
@@ -110,7 +111,6 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
 
   const handleSave = async () => {
     if (!sheet || !fetchClassId) return;
-    setMessage(null);
     try {
       let res: any = await api.patch("/attendance/update/sheet", {
         classId: fetchClassId,
@@ -119,16 +119,9 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
       });
       setSheet({ ...sheet, status: "SUBMITTED" });
 
-      setMessage({
-        text: "Attendance sheet updated successfully.",
-        type: "success",
-      });
-      setTimeout(() => setMessage(null), 3000);
+      toast.success("Attendance sheet updated successfully.");
     } catch (err: any) {
-      setMessage({
-        text: "Failed to update attendance.",
-        type: "error",
-      });
+      toast.error(friendlyErrorMessage(err, "Failed to update attendance."));
     }
   };
 
@@ -279,26 +272,6 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
           </button>
         </div>
       </div>
-
-      {message && (
-        <div
-          style={{
-            padding: "12px 18px",
-            background: message.type === "success" ? C.successBg : C.dangerBg,
-            color: message.type === "success" ? C.successText : C.dangerText,
-            borderRadius: 8,
-            marginBottom: 20,
-            fontSize: 14,
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            animation: "fadeIn 0.3s ease-out",
-          }}
-        >
-          {message.text}
-        </div>
-      )}
 
       {sheet && sheet.records && sheet.records.length > 0 ? (
         <div

@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import "./SchoolRegistration.css"; // import vanilla css
 import { request } from "../../lib/api";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface SchoolFormData {
   schoolName: string;
@@ -21,6 +25,7 @@ interface SchoolFormData {
 }
 
 const SchoolRegistration: React.FC = () => {
+  const toast = useNotifications();
   const [formData, setFormData] = useState<SchoolFormData>({
     schoolName: "",
     schoolEmail: "",
@@ -53,7 +58,7 @@ const SchoolRegistration: React.FC = () => {
       setSuccess(true);
       setTimeout(() => (window.location.href = `/login`),10000);
     } catch (err) {
-      alert(err);
+      toast.error(friendlyErrorMessage(err, "Unable to register school. Please try again."));
     } finally {
       setLoading(false);
     }

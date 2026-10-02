@@ -8,6 +8,10 @@ import {
   Student as MarksStudent,
 } from "../subjectteacher/types";
 import { Class, Student, Subject } from "./types";
+import {
+  friendlyErrorMessage,
+  useNotifications,
+} from "../shared/notifications/NotificationContext";
 
 interface AdminMarksTabProps {
   classes: Class[];
@@ -87,6 +91,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
   subjects,
   avatar,
 }) => {
+  const toast = useNotifications();
   const [selectedClassId, setSelectedClassId] = useState(() => {
     const selectedClass = sessionStorage.getItem("selectedClass");
     return selectedClass ? JSON.parse(selectedClass) : "";
@@ -104,10 +109,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
     total: 0,
     totalPages: 1,
   });
-  const [message, setMessage] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
 
   useEffect(() => {
     const handleResize = () => setIsCompact(window.innerWidth <= 820);
@@ -242,11 +243,11 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
         setMarksPagination(pagination);
       } catch (error: any) {
         if (!ignore) {
-          setMessage({
-            text:
-              error?.message || "Unable to load marks for the selected class.",
-            type: "error",
-          });
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Unable to load marks for the selected class.",
+          );
         }
       }
     };
@@ -369,8 +370,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
       return;
     }
 
-    setMessage(null);
-
     try {
       const detailedMarks = Object.entries(subjectMarks).map(
         ([studentId, marks]) => ({
@@ -409,7 +408,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
         });
       }
 
-      setMessage({ text: "Marks updated successfully.", type: "success" });
+      toast.success("Marks updated successfully.");
       const saved = (res as any)?.savedMarks;
       if (Array.isArray(saved)) {
         setMarksData(prev => {
@@ -431,10 +430,7 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
         });
       }
     } catch (error: any) {
-      setMessage({
-        text: `Failed to save marks: ${error.message}`,
-        type: "error",
-      });
+      toast.error(friendlyErrorMessage(error, "Unable to save marks."));
     }
   };
 
@@ -613,21 +609,6 @@ export const AdminMarksTab: React.FC<AdminMarksTabProps> = ({
           </p>
         </div>
       </div>
-
-      {message ? (
-        <div
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            background: message.type === "success" ? C.greenLight : "#fdeaea",
-            color: message.type === "success" ? C.successText : C.dangerText,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          {message.text}
-        </div>
-      ) : null}
 
       {availableSubjects.length === 0 ? (
         <div
