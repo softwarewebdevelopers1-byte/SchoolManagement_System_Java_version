@@ -482,7 +482,7 @@ export default function ClassTeacherAttendanceHistory({
           text-align: left;
           color: ${COLORS.darkGreen};
           background: ${COLORS.softGreen};
-          border-bottom: 1px solid ${COLORS.border};
+          border-bottom: 1px solid var(--ct-border, ${COLORS.border});
           font-size: 12px;
           font-weight: 800;
           text-transform: uppercase;
@@ -491,7 +491,7 @@ export default function ClassTeacherAttendanceHistory({
 
         .attendance-history-table td {
           padding: 14px 18px;
-          border-bottom: 1px solid ${COLORS.border};
+          border-bottom: 1px solid var(--ct-border, ${COLORS.border});
           color: ${COLORS.text};
           font-size: 13px;
         }

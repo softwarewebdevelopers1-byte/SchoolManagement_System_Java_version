@@ -140,6 +140,9 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   const [subjectStudents, setSubjectStudents] = useState<
     Record<string, Student[]>
   >({});
+  const [cachedSubjectStudents, setCachedSubjectStudents] = useState<
+    Record<string, Student[]>
+  >({});
   const [msg, setMsg] = useState<{
     text: string;
     type: "success" | "error";
@@ -316,21 +319,34 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
         pushed: false,
       }));
 
-      setMarksData((prev) => ({
-        ...prev,
-        [activeSubjectId]: relevantStudents.reduce(
-          (acc, student) => {
-            acc[student.id] = student.marks;
-            return acc;
-          },
-          {} as MarksData[string],
-        ),
-      }));
+      setMarksData((prev) => {
+        const subjectMarks = { ...(prev[activeSubjectId] || {}) };
+        relevantStudents.forEach((student) => {
+          subjectMarks[student.id] = {
+            ...student.marks,
+            ...(subjectMarks[student.id] || {}),
+          };
+        });
+        return {
+          ...prev,
+          [activeSubjectId]: subjectMarks,
+        };
+      });
 
       setSubjectStudents((prev) => ({
         ...prev,
         [activeSubjectId]: relevantStudents,
       }));
+      setCachedSubjectStudents((prev) => {
+        const studentsById = new Map(
+          (prev[activeSubjectId] || []).map((student) => [student.id, student]),
+        );
+        relevantStudents.forEach((student) => studentsById.set(student.id, student));
+        return {
+          ...prev,
+          [activeSubjectId]: Array.from(studentsById.values()),
+        };
+      });
       setMarksPagination(pagination);
     } catch (err) {
       setSubjectStudents((prev) => ({
@@ -354,6 +370,7 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
   useEffect(() => {
     setMarksData({});
     setSubjectStudents({});
+    setCachedSubjectStudents({});
     setMarksPage(1);
     setMarksPagination({
       page: 1,
@@ -479,7 +496,8 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
     const subjectMarks = marksData[subjectId];
     if (!subjectMarks) return;
 
-    const studentRows = subjectStudents[subjectId] || [];
+    const studentRows =
+      cachedSubjectStudents[subjectId] || subjectStudents[subjectId] || [];
     const studentLookup = new Map(
       studentRows.map((student) => [student.id, student]),
     );
@@ -563,15 +581,15 @@ export const MarksManagement: React.FC<MarksManagementProps> = ({
             const updated = { ...prev };
             for (const mark of saved) {
               const sid = String(mark.studentId);
-              const subjectMarks = { ...(updated[activeSubjectId] || {}) };
-              if (subjectMarks[sid]) {
-                subjectMarks[sid] = {
-                  ...subjectMarks[sid],
+              const marksByStudent = { ...(updated[subjectId] || {}) };
+              if (marksByStudent[sid]) {
+                marksByStudent[sid] = {
+                  ...marksByStudent[sid],
                   finalScore: mark.totalMarks,
                   points: mark.points,
                   cbcBand: mark.marksGrade,
                 };
-                updated[activeSubjectId] = subjectMarks;
+                updated[subjectId] = marksByStudent;
               }
             }
             return updated;

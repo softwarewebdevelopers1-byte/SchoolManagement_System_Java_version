@@ -50,10 +50,10 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
   const sheetStatus = String(sheet?.status || "DRAFT").toUpperCase();
   const statusMeta =
     sheetStatus === "LOCKED"
-      ? { label: "Locked", bg: "var(--dBg)", color: "var(--dText)" }
+      ? { label: "Locked", bg: C.dangerBg, color: C.dangerText }
       : sheetStatus === "SUBMITTED"
-        ? { label: "Saved", bg: "var(--sBg)", color: "var(--sText)" }
-        : { label: "Not saved", bg: "var(--wBg)", color: "var(--wText)" };
+        ? { label: "Saved", bg: C.successBg, color: C.successText }
+        : { label: "Not saved", bg: C.warnBg, color: C.warnText };
 
   const loadSheet = useCallback(async () => {
     if (!fetchClassId) return;
@@ -153,9 +153,9 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
     <div
       style={{
         padding: "clamp(16px, 3vw, 40px)",
-        background: "var(--white)",
+        background: C.white,
         borderRadius: 14,
-        border: "1px solid var(--border)",
+        border: `1px solid ${C.border}`,
         boxShadow: "0 12px 36px rgba(0,0,0,0.03)",
         width: "100%",
         boxSizing: "border-box",
@@ -178,7 +178,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
               margin: "0 0 8px",
               fontFamily: FONT.serif,
               fontSize: "clamp(1.4rem, 3vw, 2rem)",
-              color: "var(--text)",
+              color: C.text,
               letterSpacing: "-0.02em",
               overflowWrap: "anywhere",
             }}
@@ -190,11 +190,11 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
               margin: 0,
               fontFamily: FONT.sans,
               fontSize: 14,
-              color: "var(--textMut)",
+              color: C.textMuted,
             }}
           >
             Mark student attendance for{" "}
-            <strong style={{ color: "var(--text)" }}>
+            <strong style={{ color: C.text }}>
               {user.classGrade} {user.classStream}
             </strong>
             <span style={{ display: "block", marginTop: 4 }}>
@@ -218,20 +218,20 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
               onChange={(e) => setDateFilter(e.target.value)}
               style={{
                 padding: "10px 16px",
-                border: "1px solid var(--border)",
+                border: `1px solid ${C.border}`,
                 borderRadius: 10,
                 fontFamily: FONT.sans,
                 fontSize: 14,
-                color: "var(--text)",
-                background: "var(--cream)",
+                color: C.text,
+                background: C.cream,
                 outline: "none",
                 transition: "all 0.2s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
                 width: "100%",
                 boxSizing: "border-box",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
-              onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+              onFocus={(e) => (e.target.style.borderColor = C.gold)}
+              onBlur={(e) => (e.target.style.borderColor = C.border)}
             />
           </div>
           <span
@@ -284,9 +284,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
         <div
           style={{
             padding: "12px 18px",
-            background:
-              message.type === "success" ? "var(--sBg)" : "var(--dBg)",
-            color: message.type === "success" ? "var(--sText)" : "var(--dText)",
+            background: message.type === "success" ? C.successBg : C.dangerBg,
+            color: message.type === "success" ? C.successText : C.dangerText,
             borderRadius: 8,
             marginBottom: 20,
             fontSize: 14,
@@ -306,7 +305,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
           style={{
             borderRadius: 12,
             overflow: "hidden",
-            border: "1px solid var(--border)",
+            border: `1px solid ${C.border}`,
             width: "100%",
           }}
         >
@@ -318,21 +317,21 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                 minWidth: 420,
               }}
             >
-              <thead style={{ background: "var(--sand)" }}>
+              <thead style={{ background: C.sand }}>
                 <tr>
                   <th
                     style={{
                       textAlign: "left",
                       padding: "14px 16px",
-                      borderBottom: `1px solid ${C.borderLight}`,
-                      color: "var(--textMut)",
+                      borderBottom: `1px solid ${C.border}`,
+                      color: C.textMuted,
                       fontSize: 12,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.05em",
                       position: "sticky",
                       left: 0,
-                      background: "var(--sand)",
+                      background: C.sand,
                       zIndex: 5,
                       whiteSpace: "nowrap",
                       width: "50px",
@@ -344,8 +343,8 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                     style={{
                       textAlign: "center",
                       padding: "14px 16px",
-                      borderBottom: `1px solid ${C.borderLight}`,
-                      color: "var(--textMut)",
+                      borderBottom: `1px solid ${C.border}`,
+                      color: C.textMuted,
                       fontSize: 12,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -375,7 +374,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                     <td
                       style={{
                         padding: "14px 16px",
-                        borderBottom: `1px solid ${C.borderLight}`,
+                        borderBottom: `1px solid ${C.border}`,
                         fontSize: 14,
                         width: "auto",
                         fontWeight: 600,
@@ -392,7 +391,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                     <td
                       style={{
                         padding: "14px 16px",
-                        borderBottom: `1px solid ${C.borderLight}`,
+                        borderBottom: `1px solid ${C.border}`,
                         textAlign: "center",
                       }}
                     >
@@ -441,12 +440,12 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
           style={{
             padding: 60,
             textAlign: "center",
-            background: "var(--sand)",
+            background: C.sand,
             borderRadius: 12,
             border: `1px dashed ${C.border}`,
           }}
         >
-          <p style={{ color: "var(--textMut)", margin: 0, fontSize: 15 }}>
+          <p style={{ color: C.textMuted, margin: 0, fontSize: 15 }}>
             No attendance records found for this date.
           </p>
         </div>

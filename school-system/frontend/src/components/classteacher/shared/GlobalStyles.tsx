@@ -37,6 +37,28 @@ export const GlobalStyles: React.FC = () => (
       --ct-sidebar-border: rgba(255,255,255,0.07);
       --ct-topbar-bg: #ffffff;
       --ct-topbar-border: #e8dcc8;
+      --cg: var(--ct-green);
+      --cgm: var(--ct-green-mid);
+      --gold: var(--ct-gold);
+      --goldL: var(--ct-gold-light);
+      --goldP: var(--ct-gold-pale);
+      --cream: var(--ct-cream);
+      --sand: var(--ct-sand);
+      --border: var(--ct-border);
+      --borderL: var(--ct-border-light);
+      --text: var(--ct-text);
+      --textM: var(--ct-text-mid);
+      --textMut: var(--ct-text-muted);
+      --textF: var(--ct-text-faint);
+      --white: var(--ct-white);
+      --sBg: var(--ct-success-bg);
+      --sText: var(--ct-success-text);
+      --wBg: var(--ct-warn-bg);
+      --wText: var(--ct-warn-text);
+      --dBg: var(--ct-danger-bg);
+      --dText: var(--ct-danger-text);
+      --serif: "Cormorant Garamond", serif;
+      --sans: "Nunito", sans-serif;
       color-scheme: light;
     }
     .ct-dashboardShell[data-theme="dark"] {

@@ -556,43 +556,22 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({
               }}
             >
               <div
-                style={{
-                  flex: "1 1 160px",
-                  background: "#f2f7f4",
-                  border: "1px solid #dfe8e3",
-                  borderRadius: 12,
-                  padding: "1rem",
-                  textAlign: "center",
-                }}
+                className={`${styles.completionMetric} ${styles.completionMetricEntered}`}
               >
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#6d7c74", textTransform: "uppercase", letterSpacing: "0.05em" }}>Entered</p>
-                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#163325" }}>{enteredCount}</p>
+                <p className={styles.completionMetricLabel}>Entered</p>
+                <p className={styles.completionMetricValue}>{enteredCount}</p>
               </div>
               <div
-                style={{
-                  flex: "1 1 160px",
-                  background: "#fff1f0",
-                  border: "1px solid #f3c6c2",
-                  borderRadius: 12,
-                  padding: "1rem",
-                  textAlign: "center",
-                }}
+                className={`${styles.completionMetric} ${styles.completionMetricPending}`}
               >
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#b42318", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pending</p>
-                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#b42318" }}>{pendingCount}</p>
+                <p className={styles.completionMetricLabel}>Pending</p>
+                <p className={styles.completionMetricValue}>{pendingCount}</p>
               </div>
               <div
-                style={{
-                  flex: "1 1 160px",
-                  background: "#fbf6eb",
-                  border: "1px solid #ead7ad",
-                  borderRadius: 12,
-                  padding: "1rem",
-                  textAlign: "center",
-                }}
+                className={`${styles.completionMetric} ${styles.completionMetricComplete}`}
               >
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#8b661f", textTransform: "uppercase", letterSpacing: "0.05em" }}>Complete</p>
-                <p style={{ margin: "4px 0 0", fontFamily: "var(--serif)", fontSize: "1.6rem", fontWeight: 600, color: "#8b661f" }}>{completePct}%</p>
+                <p className={styles.completionMetricLabel}>Complete</p>
+                <p className={styles.completionMetricValue}>{completePct}%</p>
               </div>
             </div>
           );
