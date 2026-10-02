@@ -88,7 +88,25 @@ export default function DeputyHeadDashboard({
         api.get("/stats/school/overview").catch(() => null),
       ]);
       setOverviewStats(stats?.data || stats || null);
-      const allStudents = data.students || [];
+      const studentRows = Array.isArray(data.students)
+        ? data.students
+        : Array.isArray(data.students?.content)
+          ? data.students.content
+          : [];
+      const allStudents = studentRows.map((student: any) => ({
+        ...student,
+        id: student.id || student.studentId || student.userId,
+        name:
+          student.name ||
+          student.fullName ||
+          student.studentFullName ||
+          student.studentsName ||
+          "",
+        admissionNo:
+          student.admissionNo || student.adm || student.studentAdm || "",
+        classGrade: student.classGrade ?? student.grade,
+        classStream: student.classStream ?? student.stream,
+      }));
       const activeStudents = allStudents.filter(
         (student: any) => String(student.status || "active").toLowerCase() === "active",
       );

@@ -491,7 +491,7 @@ export default function ClassTeacherAttendanceHistory({
 
         .attendance-history-table td {
           padding: 14px 18px;
-          border-bottom: 1px solid #edf2ef;
+          border-bottom: 1px solid ${COLORS.border};
           color: ${COLORS.text};
           font-size: 13px;
         }

@@ -324,7 +324,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                     style={{
                       textAlign: "left",
                       padding: "14px 16px",
-                      borderBottom: "1px solid var(--border)",
+                      borderBottom: `1px solid ${C.borderLight}`,
                       color: "var(--textMut)",
                       fontSize: 12,
                       fontWeight: 700,
@@ -344,7 +344,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                     style={{
                       textAlign: "center",
                       padding: "14px 16px",
-                      borderBottom: "1px solid var(--border)",
+                      borderBottom: `1px solid ${C.borderLight}`,
                       color: "var(--textMut)",
                       fontSize: 12,
                       fontWeight: 700,
@@ -362,34 +362,40 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
                   <tr
                     key={record.recordId}
                     style={{
-                      borderBottom: "1px solid var(--border)",
-                      background: "var(--white)",
+                      background: C.white,
                       transition: "background 0.2s",
                     }}
                     onMouseOver={(e) =>
-                      (e.currentTarget.style.background = "var(--sand)")
+                      (e.currentTarget.style.background = C.sand)
                     }
                     onMouseOut={(e) =>
-                      (e.currentTarget.style.background = "var(--white)")
+                      (e.currentTarget.style.background = C.white)
                     }
                   >
                     <td
                       style={{
                         padding: "14px 16px",
+                        borderBottom: `1px solid ${C.borderLight}`,
                         fontSize: 14,
                         width: "auto",
                         fontWeight: 600,
-                        color: "var(--text)",
+                        color: C.text,
                         position: "sticky",
                         left: 0,
-                        background: "var(--white)",
+                        background: C.white,
                         zIndex: 2,
                         boxShadow: "2px 0 5px rgba(0,0,0,0.03)",
                       }}
                     >
                       {record.studentName}
                     </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                    <td
+                      style={{
+                        padding: "14px 16px",
+                        borderBottom: `1px solid ${C.borderLight}`,
+                        textAlign: "center",
+                      }}
+                    >
                       <button
                         onClick={() =>
                           handleStatusChange(
@@ -437,7 +443,7 @@ export const AttendanceTab: React.FC<AttendanceTabProps> = ({ user, classId, tea
             textAlign: "center",
             background: "var(--sand)",
             borderRadius: 12,
-            border: "1px dashed var(--border)",
+            border: `1px dashed ${C.border}`,
           }}
         >
           <p style={{ color: "var(--textMut)", margin: 0, fontSize: 15 }}>

@@ -1,5 +1,6 @@
 // components/deputyhead/ClassManagement.tsx
 import React, { useState } from "react";
+import { ArrowUpRight, BookOpen, GraduationCap, Users } from "lucide-react";
 import { SectionHeader } from "./shared/SectionHeader";
 import { C, F } from "./shared/constants";
 
@@ -20,116 +21,206 @@ export const ClassManagement: React.FC<ClassManagementProps> = ({
   const [selectedClass, setSelectedClass] = useState<any>(null);
 
   return (
-  <div className="dh-anim">
-    <SectionHeader
-      eyebrow="Classes"
-      title="Class management"
-      sub={`${classes.length} streams · Grades 7–9 · Term ${term}, ${year}`}
-    />
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-        gap: 14,
-      }}
-    >
-      {classes.map((c, i) => (
+    <div className="dh-anim">
+      <SectionHeader
+        eyebrow="Classes"
+        title="Class management"
+        sub={`${classes.length} ${classes.length === 1 ? "class" : "classes"} · Grades 7–9 · Term ${term}, ${year}`}
+      />
+      {classes.length ? (
         <div
-          key={c.id || i}
-          className="dh-card"
-          onClick={() => setSelectedClass(c)}
           style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 13,
-            padding: "1.3rem",
-            cursor: "pointer",
-            transition: "box-shadow .2s,transform .2s",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
+            gap: 18,
+            alignItems: "stretch",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginBottom: 12,
-            }}
-          >
-            <div>
-              <h3
+          {classes.map((c, i) => (
+            <button
+              key={c.id || i}
+              type="button"
+              className="dh-card"
+              onClick={() => setSelectedClass(c)}
+              aria-label={`View students in ${c.name}`}
+              style={{
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "stretch",
+                gap: 18,
+                width: "100%",
+                minWidth: 0,
+                padding: 20,
+                border: `1px solid ${C.border}`,
+                borderRadius: 16,
+                background: C.white,
+                color: C.text,
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "box-shadow .2s, transform .2s, border-color .2s",
+              }}
+            >
+              <div
                 style={{
-                  fontFamily: F.serif,
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  color: C.text,
-                  margin: "0 0 3px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
                 }}
               >
-                {c.name}
-              </h3>
-              <p
+                <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      display: "grid",
+                      placeItems: "center",
+                      width: 46,
+                      height: 46,
+                      flexShrink: 0,
+                      borderRadius: 13,
+                      background: C.goldPale,
+                      color: C.gold,
+                    }}
+                  >
+                    <GraduationCap size={23} strokeWidth={1.8} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        marginBottom: 4,
+                        color: C.textFaint,
+                        fontFamily: F.sans,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: ".09em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Grade {c.grade}
+                    </span>
+                    <h3
+                      style={{
+                        overflow: "hidden",
+                        margin: 0,
+                        color: C.text,
+                        fontFamily: F.sans,
+                        fontSize: 17,
+                        fontWeight: 800,
+                        lineHeight: 1.25,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {c.name}
+                    </h3>
+                  </div>
+                </div>
+                <ArrowUpRight aria-hidden="true" size={18} color={C.textFaint} />
+              </div>
+
+              <div
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  minHeight: 20,
+                  color: C.textMuted,
                   fontFamily: F.sans,
                   fontSize: 12,
-                  color: C.textMuted,
-                  margin: 0,
                 }}
               >
-                {c.teacher}
-              </p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 8,
-            }}
-          >
-            {[
-              ["Students", c.students],
-              ["Subjects", c.subjects],
-              ["Term", `T${c.term}`],
-            ].map(([k, v]) => (
-              <div
-                key={k}
-                style={{
-                  background: C.sand,
-                  borderRadius: 8,
-                  padding: "8px 10px",
-                  textAlign: "center",
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: F.sans,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: C.textFaint,
-                    textTransform: "uppercase",
-                    letterSpacing: ".04em",
-                    margin: "0 0 2px",
-                  }}
-                >
-                  {k}
-                </p>
-                <p
-                  style={{
-                    fontFamily: F.sans,
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    color: C.text,
-                    margin: 0,
-                  }}
-                >
-                  {v}
-                </p>
+                <Users aria-hidden="true" size={15} />
+                <span>
+                  {c.teacher && c.teacher !== "🔔"
+                    ? c.teacher
+                    : "No class teacher assigned"}
+                </span>
               </div>
-            ))}
-          </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 10,
+                  paddingTop: 15,
+                  borderTop: `1px solid ${C.borderLight}`,
+                }}
+              >
+                {[
+                  {
+                    label: "Students",
+                    value: c.students ?? 0,
+                    icon: <Users size={15} />,
+                  },
+                  {
+                    label: "Subjects",
+                    value: c.subjects ?? 0,
+                    icon: <BookOpen size={15} />,
+                  },
+                  {
+                    label: "Class average",
+                    value: c.avg > 0 ? `${c.avg}%` : "—",
+                    icon: null,
+                  },
+                  {
+                    label: "Current term",
+                    value: `Term ${c.term || term}`,
+                    icon: null,
+                  },
+                ].map((metric) => (
+                  <div key={metric.label} style={{ minWidth: 0, padding: "3px 2px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 5,
+                        color: C.textMuted,
+                        fontFamily: F.sans,
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {metric.icon}
+                      <span>{metric.label}</span>
+                    </div>
+                    <strong
+                      style={{
+                        display: "block",
+                        overflow: "hidden",
+                        color: C.text,
+                        fontFamily: F.sans,
+                        fontSize: 16,
+                        fontWeight: 800,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {metric.value}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
+      ) : (
+        <div
+          style={{
+            padding: "36px 20px",
+            border: `1px dashed ${C.border}`,
+            borderRadius: 16,
+            background: C.white,
+            color: C.textMuted,
+            fontFamily: F.sans,
+            textAlign: "center",
+          }}
+        >
+          No classes are available to display yet.
+        </div>
+      )}
 
     {selectedClass && (
       <div
