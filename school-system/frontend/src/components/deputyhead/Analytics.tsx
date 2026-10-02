@@ -1,7 +1,6 @@
 // components/deputyhead/Analytics.tsx
 import React, { useMemo, useState, useEffect } from "react";
 import { SectionHeader } from "./shared/SectionHeader";
-import { MetricCard } from "./shared/MetricCard";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
 import { api } from "../../lib/api";
@@ -13,13 +12,19 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface AnalyticsProps {
   classes?: any[];
@@ -40,7 +45,6 @@ interface AnalyticsProps {
 export const Analytics: React.FC<AnalyticsProps> = ({ 
   classes = [], 
   staff = [], 
-  students = [],
   term = 1,
   year = 2024,
   overviewStats,
@@ -84,12 +88,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({
   }, [termlyTrend]);
 
   const atRiskCount = atRiskData.length;
-  const totalStudents = overviewStats?.totalStudents || students.length || 0;
-  const highPerformingCount = Math.max(0, totalStudents - atRiskCount);
-
-  // Mock concerns since not in DB yet
-  const openConcerns = 0;
-  const highPriority = 0;
+  const atRiskChartData = useMemo(
+    () =>
+      [...atRiskData]
+        .sort((first, second) => first.avgPercentage - second.avgPercentage)
+        .slice(0, 10)
+        .map((student) => ({
+          name: student.studentName,
+          avgPercentage: student.avgPercentage,
+        })),
+    [atRiskData],
+  );
 
   return (
     <div className="dh-anim">
@@ -106,187 +115,108 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           marginBottom: 18,
         }}
       >
-        <MetricCard
+        <KpiCard
           label="Class streams"
           value={classes.length}
-          note="All streams"
-          accent={C.infoText}
         />
-        <MetricCard
+        <KpiCard
           label="Active teachers"
           value={activeTeachers}
-          note={`${staff.length} on record`}
-          accent={C.gold}
+          unit={`${staff.length} on record`}
         />
-        <MetricCard
+        <KpiCard
           label="Students covered"
           value={classes.reduce((sum, item) => sum + Number(item.students || 0), 0)}
-          note="Across listed streams"
-          accent={C.successText}
         />
-        <MetricCard
-          label="Open concerns"
-          value={openConcerns}
-          note="Awaiting response"
-          accent={C.dangerText}
-        />
+        <KpiCard label={`At-risk · Grade ${firstGrade || "—"}`} value={atRiskCount} />
       </div>
 
       {overviewStats?.subjectPerformance && overviewStats.subjectPerformance.length > 0 && (
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 13,
-            padding: "1.3rem",
-            marginBottom: 14,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: F.sans,
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            Subject performance
-          </p>
-          <ResponsiveContainer width="100%" height={260}>
+        <ChartContainer title="Subject performance" height={260}>
             <BarChart data={overviewStats.subjectPerformance}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+              <CartesianGrid {...analyticsGridProps} />
               <XAxis
+                {...analyticsXAxisProps}
                 dataKey="subjectName"
-                tick={{ fontSize: 11, fill: "#6d7c74" }}
                 interval={0}
                 angle={-25}
                 textAnchor="end"
                 height={60}
               />
-              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
-              <Tooltip
-                contentStyle={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 10,
-                  fontSize: 12,
-                }}
+              <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+              <Tooltip {...analyticsTooltipProps} />
+              <Legend {...analyticsLegendProps} />
+              <Bar
+                dataKey="avgPercentage"
+                name="Avg %"
+                fill={analyticsColors.secondary}
+                radius={analyticsChartDefaults.bar.radius}
               />
-              <Legend />
-              <Bar dataKey="avgPercentage" name="Avg %" fill={C.infoText} radius={[6, 6, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+        </ChartContainer>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 13,
-            padding: "1.3rem",
-          }}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 14 }}>
+        <ChartContainer
+          title="Termly trend"
+          height={260}
+          loading={trendLoading}
+          isEmpty={!trendLoading && termlyData.length === 0}
+          emptyMessage="No termly data available."
         >
-          <p
-            style={{
-              fontFamily: F.sans,
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            Termly trend
-          </p>
-          {trendLoading ? (
-            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>Loading trend...</div>
-          ) : termlyData.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>No termly data available.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
               <LineChart data={termlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                <XAxis dataKey="term" tick={{ fontSize: 11, fill: "#6d7c74" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
-                <Tooltip
-                  contentStyle={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    fontSize: 12,
-                  }}
+                <CartesianGrid {...analyticsGridProps} />
+                <XAxis {...analyticsXAxisProps} dataKey="term" />
+                <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+                <Tooltip {...analyticsTooltipProps} />
+                <Legend {...analyticsLegendProps} />
+                <Line
+                  type="monotone"
+                  dataKey="avg"
+                  name="Avg %"
+                  stroke={analyticsColors.accent}
+                  strokeWidth={analyticsChartDefaults.line.strokeWidth}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
-                <Legend />
-                <Line type="monotone" dataKey="avg" name="Avg %" stroke={C.gold} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 13,
-            padding: "1.3rem",
-          }}
+        </ChartContainer>
+        <ChartContainer
+          title={`At-risk students · Grade ${firstGrade || "—"}`}
+          height={260}
+          loading={atRiskLoading}
+          isEmpty={!atRiskLoading && atRiskData.length === 0}
+          emptyMessage="No at-risk students in this grade."
         >
-          <p
-            style={{
-              fontFamily: F.sans,
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            At-risk vs high-performing
-          </p>
-          {atRiskLoading ? (
-            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>Loading...</div>
-          ) : atRiskData.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", color: C.textMuted }}>No at-risk data available.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: "At-risk", value: atRiskCount },
-                    { name: "High-performing", value: highPerformingCount },
-                  ]}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  <Cell key="at-risk" fill={C.dangerText} />
-                  <Cell key="high" fill={C.successText} />
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    fontSize: 12,
-                  }}
+              <BarChart data={atRiskChartData} layout="vertical">
+                <CartesianGrid {...analyticsGridProps} />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  tick={{ fill: analyticsColors.neutral.text, fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  tick={{ fill: analyticsColors.neutral.text, fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip {...analyticsTooltipProps} />
+                <Bar
+                  dataKey="avgPercentage"
+                  name="Average %"
+                  fill={analyticsColors.danger}
+                  radius={analyticsChartDefaults.bar.radius}
+                />
+              </BarChart>
+        </ChartContainer>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 14 }}>
         {/* Stream ranking */}
         <div
           style={{
@@ -472,18 +402,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({
                 value: 0,
                 bg: C.warnBg,
                 text: C.warnText,
-              },
-              {
-                label: "Open concerns",
-                value: openConcerns,
-                bg: C.dangerBg,
-                text: C.dangerText,
-              },
-              {
-                label: "High-priority",
-                value: highPriority,
-                bg: C.dangerBg,
-                text: C.dangerText,
               },
               {
                 label: "Total classes",

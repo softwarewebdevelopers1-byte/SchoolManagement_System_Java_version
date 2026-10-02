@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "./shared/Avatar";
 import { C, FONT } from "./shared/constants";
 import {
-  gradeColor,
   marksForStudentSubjects,
   getSubId,
   sumPoints,
@@ -16,8 +15,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
   RadarChart,
   Radar,
   PolarGrid,
@@ -25,6 +22,15 @@ import {
   PolarRadiusAxis,
   Cell,
 } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import {
+  analyticsGridProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface AnalyticsProps {
   students: any[];
@@ -35,62 +41,6 @@ interface AnalyticsProps {
   year?: number;
   examType?: string;
 }
-
-const MetricCard: React.FC<{
-  label: string;
-  value: string;
-  note?: string;
-  color?: string;
-}> = ({ label, value, note, color }) => (
-  <div
-    style={{
-      background: C.white,
-      border: `1px solid ${C.border}`,
-      borderRadius: 14,
-      padding: "1.3rem 1.4rem",
-      borderTop: `3px solid ${color || C.gold}`,
-    }}
-  >
-    <p
-      style={{
-        fontFamily: FONT.sans,
-        fontSize: 11.5,
-        fontWeight: 600,
-        color: C.textMuted,
-        margin: "0 0 8px",
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-      }}
-    >
-      {label}
-    </p>
-    <p
-      style={{
-        fontFamily: FONT.serif,
-        fontSize: "2.1rem",
-        fontWeight: 600,
-        color: C.text,
-        margin: "0 0 6px",
-        lineHeight: 1,
-      }}
-    >
-      {value}
-    </p>
-    {note && (
-      <p
-        style={{
-          fontFamily: FONT.sans,
-          fontSize: 12,
-          color: C.textFaint,
-          margin: 0,
-          lineHeight: 1.5,
-        }}
-      >
-        {note}
-      </p>
-    )}
-  </div>
-);
 
 const SectionHeader: React.FC<{
   eyebrow: string;
@@ -141,40 +91,44 @@ const SubjectAverageChart: React.FC<{
   data: Array<{ id: string; name: string; avg: number }>;
   bands: any[];
 }> = ({ data, bands }) => {
-  const chartData = data.map((item) => ({
-    name: item.name.slice(0, 12),
-    avg: Math.max(0, Math.min(100, item.avg)),
-    fill: gradeColor(resolveCbcBand(item.avg, bands).cbcBand),
-  }));
+  const chartData = data.map((item) => {
+    const bandIndex = bands.findIndex(
+      (band) => band.grade === resolveCbcBand(item.avg, bands).cbcBand,
+    );
+    return {
+      name: item.name.slice(0, 12),
+      avg: Math.max(0, Math.min(100, item.avg)),
+      fill:
+        bandIndex < 0
+          ? analyticsColors.primary
+          : analyticsColors.sequential[
+              analyticsColors.sequential.length - 1 - bandIndex
+            ],
+    };
+  });
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
+      <BarChart data={chartData} margin={analyticsChartDefaults.margin}>
+        <CartesianGrid {...analyticsGridProps} />
         <XAxis
+          {...analyticsXAxisProps}
           dataKey="name"
-          tick={{ fontSize: 11, fill: "#6d7c74" }}
           interval={0}
           angle={-25}
           textAnchor="end"
           height={60}
         />
-        <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
+        <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
         <Tooltip
-          contentStyle={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
-            fontSize: 12,
-          }}
+          {...analyticsTooltipProps}
+          formatter={(value: unknown) => [`${value}%`, "Average"]}
         />
-        <Bar dataKey="avg" name="Avg %" radius={[6, 6, 0, 0]}>
+        <Bar dataKey="avg" name="Avg %" radius={analyticsChartDefaults.bar.radius}>
           {chartData.map((entry, index) => (
             <Cell key={index} fill={entry.fill} />
           ))}
         </Bar>
       </BarChart>
-    </ResponsiveContainer>
   );
 };
 
@@ -312,56 +266,36 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           marginBottom: "1.6rem",
         }}
       >
-        <MetricCard
+        <KpiCard
           label="Scored learners"
-          value={loadingMarks ? "..." : `${scoredLearners}`}
-          note={`${studentsWithMarks.length} learners enrolled`}
-          color={C.successText}
+          value={loadingMarks ? "—" : scoredLearners}
+          unit={`${studentsWithMarks.length} enrolled`}
         />
-        <MetricCard
+        <KpiCard
           label="Top student"
           value={studentAvgs[0]?.fullName || "N/A"}
-          note={studentAvgs[0] ? `${studentAvgs[0].points} pts` : "N/A"}
-          color={C.successText}
+          unit={studentAvgs[0] ? `${studentAvgs[0].points} pts` : undefined}
         />
-        <MetricCard
+        <KpiCard
           label="Best subject"
           value={bestSubject?.name.split(" ")[0] || "N/A"}
-          note="Subject-level view"
-          color={C.gold}
         />
-        <MetricCard
+        <KpiCard
           label="Subjects tracked"
-          value={`${subjects.length}`}
-          note="Subject bands remain on subject marks"
-          color={C.warnText}
+          value={subjects.length}
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 14,
-            padding: "1.4rem",
-          }}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 16 }}>
+        <ChartContainer
+          title="Subject averages"
+          height={280}
+          loading={loadingMarks}
+          isEmpty={!loadingMarks && subjectAvgs.length === 0}
+          emptyMessage="No subject performance data is available."
         >
-          <p
-            style={{
-              fontFamily: FONT.sans,
-              fontSize: 11,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              margin: "0 0 1.2rem",
-            }}
-          >
-            Subject averages
-          </p>
           <SubjectAverageChart data={subjectAvgs} bands={cbcBands} />
-        </div>
+        </ChartContainer>
 
         <div
           style={{
@@ -431,30 +365,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({
           </div>
         </div>
 
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 14,
-            padding: "1.4rem",
-            gridColumn: "1/-1",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: FONT.sans,
-              fontSize: 11,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              margin: "0 0 1.2rem",
-            }}
-          >
-            CBC band distribution
-          </p>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <ResponsiveContainer width="100%" height={320}>
+        <ChartContainer title="CBC band distribution" height={320}>
               <RadarChart data={cbcBands.map((band) => {
                 const count = subjectAvgs.filter(
                   (subject) =>
@@ -466,36 +377,27 @@ export const Analytics: React.FC<AnalyticsProps> = ({
                   fullMark: subjectAvgs.length || 1,
                 };
               })}>
-                <PolarGrid />
-                <PolarAngleAxis
-                  dataKey="band"
-                  tick={{ fontSize: 12, fill: "#1f2d26" }}
-                />
-                <PolarRadiusAxis
-                  angle={30}
-                  domain={[0, "auto"]}
-                  tick={{ fontSize: 11, fill: "#6d7c74" }}
-                />
-                <Radar
-                  name="Subjects"
-                  dataKey="count"
-                  stroke={C.gold}
-                  fill={C.gold}
-                  fillOpacity={0.35}
-                  strokeWidth={2}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    fontSize: 12,
-                  }}
-                />
+              <PolarGrid stroke={analyticsColors.neutral.grid} />
+              <PolarAngleAxis
+                dataKey="band"
+                tick={{ fontSize: 12, fill: analyticsColors.neutral.foreground }}
+              />
+              <PolarRadiusAxis
+                angle={30}
+                domain={[0, "auto"]}
+                tick={{ fontSize: 11, fill: analyticsColors.neutral.text }}
+              />
+              <Radar
+                name="Subjects"
+                dataKey="count"
+                stroke={analyticsColors.primary}
+                fill={analyticsColors.primary}
+                fillOpacity={analyticsChartDefaults.area.fillOpacity}
+                strokeWidth={2}
+              />
+              <Tooltip {...analyticsTooltipProps} />
               </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        </ChartContainer>
       </div>
     </div>
   );

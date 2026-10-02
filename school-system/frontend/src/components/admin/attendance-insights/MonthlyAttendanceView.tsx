@@ -7,9 +7,16 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Cell,
 } from "recharts";
+import { ChartContainer } from "../../shared/analytics/ChartContainer";
+import {
+  analyticsGridProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 
 interface MonthlyAttendanceViewProps {
   classes: { classId: string; name: string }[];
@@ -97,6 +104,12 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
     fetchData();
   }, [classId, startDate, endDate, page, size]);
 
+  const chartData = data.map((row: any) => ({
+    name: row.studentName || "Unknown",
+    rate: Number(row.attendancePercentage || 0),
+    studentId: row.studentId,
+  }));
+
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -109,77 +122,44 @@ export const MonthlyAttendanceView: React.FC<MonthlyAttendanceViewProps> = ({ cl
         <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPage(0); }} style={{ ...inputStyle, width: 160 }} />
       </div>
 
-      {error && (
-        <div style={{ padding: 12, background: "#fdeaea", color: "#a32d2d", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
-          {error}
-        </div>
-      )}
-
-      {!loading && data.length > 0 && (
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--border)",
-            borderRadius: 14,
-            padding: "1.2rem",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "var(--sans)",
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--textMut)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            Attendance % by student
-          </p>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={data.map((row: any) => ({
-                name: row.studentName || "Unknown",
-                rate: Number(row.attendancePercentage || 0),
-              }))}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 11, fill: "#6d7c74" }}
-                interval={0}
-                angle={-25}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis
-                domain={[0, 100]}
-                tick={{ fontSize: 11, fill: "#6d7c74" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "#fff",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  fontSize: 12,
-                }}
-                formatter={(value: any) => [`${value}%`, "Attendance"]}
-              />
-              <Bar dataKey="rate" name="Attendance %" radius={[6, 6, 0, 0]}>
-                {data.map((entry: any) => {
-                  const rate = Number(entry.attendancePercentage || 0);
-                  const fill = rate >= 90 ? "#163325" : rate >= 75 ? "#c9963d" : "#b42318";
-                  return <Cell key={entry.studentId} fill={fill} />;
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--textMut)" }}>
-            Showing page {page + 1} of {totalPages}. Green ≥90%, Amber 75-89%, Red &lt;75%.
-          </p>
-        </div>
-      )}
+      <ChartContainer
+        title="Attendance by student"
+        subtitle={`Page ${page + 1} of ${totalPages} · ${totalElements} students`}
+        height={300}
+        loading={loading}
+        isEmpty={!loading && !error && data.length === 0}
+        emptyMessage="No attendance records were found for this date range."
+        error={error || undefined}
+        onRetry={() => void fetchData()}
+      >
+        <BarChart data={chartData} margin={analyticsChartDefaults.margin}>
+          <CartesianGrid {...analyticsGridProps} />
+          <XAxis
+            {...analyticsXAxisProps}
+            dataKey="name"
+            interval={0}
+            angle={-25}
+            textAnchor="end"
+            height={60}
+          />
+          <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+          <Tooltip
+            {...analyticsTooltipProps}
+            formatter={(value: unknown) => [`${value}%`, "Attendance"]}
+          />
+          <Bar dataKey="rate" name="Attendance %" radius={analyticsChartDefaults.bar.radius}>
+            {chartData.map((entry) => {
+              const fill =
+                entry.rate >= 90
+                  ? analyticsColors.success
+                  : entry.rate >= 75
+                    ? analyticsColors.warning
+                    : analyticsColors.danger;
+              return <Cell key={entry.studentId} fill={fill} />;
+            })}
+          </Bar>
+        </BarChart>
+      </ChartContainer>
 
       {totalPages > 1 && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

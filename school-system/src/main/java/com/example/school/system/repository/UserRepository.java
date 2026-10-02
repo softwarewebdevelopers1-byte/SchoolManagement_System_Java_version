@@ -1,6 +1,7 @@
 package com.example.school.system.repository;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +22,51 @@ import com.example.school.system.projection.TeachersLoaded;
 import com.example.school.system.projection.TeacherStatusCountProjection;
 import com.example.school.system.projection.SubjectCoverageProjection;
 import com.example.school.system.projection.StudentSummaryProjection;
+import com.example.school.system.projection.PlatformStaffStatusCountProjection;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.UserRoles;
 
 public interface UserRepository extends JpaRepository<Users, UUID> {
+    @Query(value = """
+            SELECT u.status AS status, COUNT(DISTINCT u.id) AS count
+            FROM users u
+            JOIN users_roles ur ON ur.users_id = u.id
+            WHERE ur.roles IN ('ADMIN', 'HEADTEACHER', 'DEPUTYTEACHER', 'CLASSTEACHER', 'SUBJECTTEACHER')
+              AND u.deleted_at IS NULL
+            GROUP BY u.status
+            """, nativeQuery = true)
+    List<PlatformStaffStatusCountProjection> countPlatformStaffByStatus();
+
+    @Query("""
+            SELECT COUNT(DISTINCT u.id)
+            FROM Users u
+            JOIN u.roles role
+            WHERE role = :role
+              AND u.deletedAt IS NULL
+            """)
+    long countByRole(@Param("role") UserRoles role);
+
+    @Query("""
+            SELECT COUNT(DISTINCT u.id)
+            FROM Users u
+            WHERE u.date >= :startDate
+              AND u.deletedAt IS NULL
+            """)
+    long countRegistrationsSince(@Param("startDate") LocalDate startDate);
+
+    @Query("""
+            SELECT COUNT(DISTINCT u.id)
+            FROM Users u
+            JOIN u.roles role
+            WHERE role = :role
+              AND u.date >= :startDate
+              AND u.deletedAt IS NULL
+            """)
+    long countByRoleSince(
+            @Param("role") UserRoles role,
+            @Param("startDate") LocalDate startDate);
+
     boolean existsByEmail(String email);
 
     @Query("""

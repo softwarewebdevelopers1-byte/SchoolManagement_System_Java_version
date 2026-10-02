@@ -2,6 +2,7 @@ package com.example.school.system.services.superadmin;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,7 @@ import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.ExpiryLinks;
 import com.example.school.system.models.School;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.PlatformStaffStatusCountProjection;
 import com.example.school.system.projection.TeacherSummaryProjection;
 import com.example.school.system.repository.ExpiryLinksRepository;
 import com.example.school.system.repository.SchoolRepository;
@@ -98,46 +100,49 @@ public class SuperAdminService {
 
     @Transactional(readOnly = true)
     public PlatformStatisticsDto getPlatformStatistics() {
-        List<School> schools = schoolRepository.findAll();
-        List<Users> users = userRepository.findAll();
+        long totalSchools = schoolRepository.count();
+        long activeSchools = schoolRepository.countByStatus(SchoolStatus.ACTIVE);
+        long pendingSchools = schoolRepository.countByStatus(SchoolStatus.PENDING_APPROVAL);
+        long rejectedSchools = schoolRepository.countByStatus(SchoolStatus.REJECTED_APPROVAL);
+        long suspendedSchools = schoolRepository.countByStatus(SchoolStatus.INACTIVE);
 
-        long totalSchools = schools.size();
-        long activeSchools = schools.stream().filter(s -> s.getStatus() == SchoolStatus.ACTIVE).count();
-        long pendingSchools = schools.stream().filter(s -> s.getStatus() == SchoolStatus.PENDING_APPROVAL).count();
-        long rejectedSchools = schools.stream().filter(s -> s.getStatus() == SchoolStatus.REJECTED_APPROVAL).count();
-        long suspendedSchools = schools.stream().filter(s -> s.getStatus() == SchoolStatus.INACTIVE).count();
+        Map<AccountStatus, Long> staffByStatus = new EnumMap<>(AccountStatus.class);
+        for (PlatformStaffStatusCountProjection row : userRepository.countPlatformStaffByStatus()) {
+            staffByStatus.put(row.getStatus(), row.getCount());
+        }
+        long totalStaff = staffByStatus.values().stream().mapToLong(Long::longValue).sum();
+        long activeStaff = staffByStatus.getOrDefault(AccountStatus.ACTIVE, 0L);
+        long pendingStaff = staffByStatus.getOrDefault(AccountStatus.PENDING_APPROVAL, 0L);
+        long suspendedStaff = staffByStatus.getOrDefault(AccountStatus.SUSPENDED, 0L);
 
-        long totalStaff = users.stream().filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
-                r == UserRoles.ADMIN || r == UserRoles.HEADTEACHER || r == UserRoles.DEPUTYTEACHER
-                        || r == UserRoles.CLASSTEACHER || r == UserRoles.SUBJECTTEACHER)).count();
-        long activeStaff = users.stream().filter(u -> u.getStatus() == AccountStatus.ACTIVE && u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
-                r == UserRoles.ADMIN || r == UserRoles.HEADTEACHER || r == UserRoles.DEPUTYTEACHER
-                        || r == UserRoles.CLASSTEACHER || r == UserRoles.SUBJECTTEACHER)).count();
-        long pendingStaff = users.stream().filter(u -> u.getStatus() == AccountStatus.PENDING_APPROVAL && u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
-                r == UserRoles.ADMIN || r == UserRoles.HEADTEACHER || r == UserRoles.DEPUTYTEACHER
-                        || r == UserRoles.CLASSTEACHER || r == UserRoles.SUBJECTTEACHER)).count();
-        long suspendedStaff = users.stream().filter(u -> u.getStatus() == AccountStatus.SUSPENDED && u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
-                r == UserRoles.ADMIN || r == UserRoles.HEADTEACHER || r == UserRoles.DEPUTYTEACHER
-                        || r == UserRoles.CLASSTEACHER || r == UserRoles.SUBJECTTEACHER)).count();
+        var recentStartDate = java.time.LocalDate.now().minusDays(30);
+        long totalStudents = userRepository.countByRole(UserRoles.STUDENT);
+        long recentEnrollments = userRepository.countByRoleSince(UserRoles.STUDENT, recentStartDate);
+        long recentRegistrations = userRepository.countRegistrationsSince(recentStartDate);
 
-        long totalStudents = users.stream().filter(u -> u.getRoles() != null && u.getRoles().contains(UserRoles.STUDENT)).count();
-        long recentEnrollments = Math.max(0L, totalStudents);
-        long recentRegistrations = users.stream().filter(u -> u.getDate() != null).count();
-
-        List<?> recentActivity = new ArrayList<>();
-        ((ArrayList<Object>) recentActivity).add(Map.of("type", "New school registered", "count", totalSchools));
-        ((ArrayList<Object>) recentActivity).add(Map.of("type", "School approved", "count", activeSchools));
-        ((ArrayList<Object>) recentActivity).add(Map.of("type", "Teacher registered", "count", totalStaff));
-
-        List<?> recentInvitations = expiryLinksRepository.findAllByOrderByCreatedAtDesc().stream()
-                .limit(10)
-                .map(link -> Map.of(
-                        "id", link.getId(),
-                        "schoolId", link.getSchoolId(),
-                        "role", link.getRoleName(),
-                        "status", link.isUsed() ? "USED" : (link.isRevoked() ? "REVOKED" : (link.getExpirationTime() != null && link.getExpirationTime().isBefore(LocalDateTime.now()) ? "EXPIRED" : "ACTIVE")),
-                        "email", userRepository.findById(link.getUsers()).map(Users::getEmail).orElse(null),
-                        "createdAt", link.getCreatedAt()))
+        List<ExpiryLinks> latestInvitations = expiryLinksRepository.findTop10ByOrderByCreatedAtDesc();
+        List<UUID> invitationUserIds = latestInvitations.stream()
+                .map(ExpiryLinks::getUsers)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<UUID, Users> invitationUsers = userRepository.findAllById(invitationUserIds).stream()
+                .collect(Collectors.toMap(Users::getId, user -> user));
+        LocalDateTime now = LocalDateTime.now();
+        List<?> recentInvitations = latestInvitations.stream()
+                .map(link -> {
+                    Map<String, Object> invitation = new java.util.LinkedHashMap<>();
+                    invitation.put("id", link.getId());
+                    invitation.put("schoolId", link.getSchoolId());
+                    invitation.put("role", link.getRoleName());
+                    invitation.put("status", link.isUsed() ? "USED" : (link.isRevoked() ? "REVOKED"
+                            : (link.getExpirationTime() != null && link.getExpirationTime().isBefore(now)
+                                    ? "EXPIRED" : "ACTIVE")));
+                    invitation.put("email", invitationUsers.containsKey(link.getUsers())
+                            ? invitationUsers.get(link.getUsers()).getEmail() : "");
+                    invitation.put("createdAt", link.getCreatedAt());
+                    return invitation;
+                })
                 .toList();
 
         return new PlatformStatisticsDto(
@@ -153,7 +158,7 @@ public class SuperAdminService {
                 totalStudents,
                 recentEnrollments,
                 recentRegistrations,
-                recentActivity,
+                List.of(),
                 recentInvitations);
     }
 

@@ -3,7 +3,9 @@ package com.example.school.system.services.superadmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,8 +18,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.example.school.system.DTO.DTOResponse.SuperAdminSchoolRes;
 import com.example.school.system.DTO.DTOResponse.SuperAdminUserRes;
+import com.example.school.system.controller.superadmin.PlatformStatisticsDto;
+import com.example.school.system.models.ExpiryLinks;
 import com.example.school.system.models.School;
 import com.example.school.system.models.Users;
+import com.example.school.system.projection.PlatformStaffStatusCountProjection;
 import com.example.school.system.repository.ExpiryLinksRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.UserRepository;
@@ -46,6 +51,69 @@ class SuperAdminServiceTest {
 
     @InjectMocks
     private SuperAdminService superAdminService;
+
+    @Test
+    void getPlatformStatistics_shouldUseAggregatesAndReturnRecentInvitations() {
+        when(schoolRepository.count()).thenReturn(4L);
+        when(schoolRepository.countByStatus(SchoolStatus.ACTIVE)).thenReturn(2L);
+        when(schoolRepository.countByStatus(SchoolStatus.PENDING_APPROVAL)).thenReturn(1L);
+        when(schoolRepository.countByStatus(SchoolStatus.REJECTED_APPROVAL)).thenReturn(1L);
+        when(schoolRepository.countByStatus(SchoolStatus.INACTIVE)).thenReturn(0L);
+        when(userRepository.countPlatformStaffByStatus()).thenReturn(List.of(
+                statusCount(AccountStatus.ACTIVE, 4L),
+                statusCount(AccountStatus.PENDING_APPROVAL, 1L),
+                statusCount(AccountStatus.SUSPENDED, 2L)));
+        when(userRepository.countByRole(UserRoles.STUDENT)).thenReturn(100L);
+        when(userRepository.countByRoleSince(org.mockito.ArgumentMatchers.eq(UserRoles.STUDENT),
+                org.mockito.ArgumentMatchers.any())).thenReturn(6L);
+        when(userRepository.countRegistrationsSince(org.mockito.ArgumentMatchers.any())).thenReturn(8L);
+
+        UUID invitationUserId = UUID.randomUUID();
+        Users invitedUser = new Users();
+        invitedUser.setId(invitationUserId);
+        invitedUser.setEmail("admin@school.test");
+        when(userRepository.findAllById(List.of(invitationUserId))).thenReturn(List.of(invitedUser));
+
+        ExpiryLinks invitation = new ExpiryLinks();
+        invitation.setId(UUID.randomUUID());
+        invitation.setUsers(invitationUserId);
+        invitation.setSchoolId(UUID.randomUUID());
+        invitation.setRoleName(UserRoles.ADMIN.name());
+        invitation.setCreatedAt(LocalDateTime.now());
+        invitation.setExpirationTime(LocalDateTime.now().plusDays(1));
+        when(expiryLinksRepository.findTop10ByOrderByCreatedAtDesc()).thenReturn(List.of(invitation));
+
+        PlatformStatisticsDto result = superAdminService.getPlatformStatistics();
+
+        assertThat(result.totalSchools()).isEqualTo(4L);
+        assertThat(result.activeSchools()).isEqualTo(2L);
+        assertThat(result.totalStaff()).isEqualTo(7L);
+        assertThat(result.activeStaff()).isEqualTo(4L);
+        assertThat(result.pendingStaff()).isEqualTo(1L);
+        assertThat(result.suspendedStaff()).isEqualTo(2L);
+        assertThat(result.totalStudents()).isEqualTo(100L);
+        assertThat(result.recentEnrollments()).isEqualTo(6L);
+        assertThat(result.recentRegistrations()).isEqualTo(8L);
+        assertThat(result.recentActivity()).isEmpty();
+        assertThat(result.recentInvitations()).singleElement().satisfies(item ->
+                assertThat(item).asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
+                        .containsEntry("email", "admin@school.test")
+                        .containsEntry("status", "ACTIVE"));
+    }
+
+    private PlatformStaffStatusCountProjection statusCount(AccountStatus status, Long count) {
+        return new PlatformStaffStatusCountProjection() {
+            @Override
+            public AccountStatus getStatus() {
+                return status;
+            }
+
+            @Override
+            public Long getCount() {
+                return count;
+            }
+        };
+    }
 
     @Test
     void getPlatformStaff_shouldIncludeAllStatusesAndExcludeStudentsAndSuperAdmins() {

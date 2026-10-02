@@ -9,9 +9,16 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import {
+  analyticsGridProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface ProgressTabProps {
   subjects: Subject[];
@@ -84,57 +91,29 @@ export const ProgressTab: React.FC<ProgressTabProps> = ({
       </div>
 
       <div className={styles.metricGrid} style={{ marginBottom: 12 }}>
-        <div className={styles.metricCard}>
-          <p className={styles.metricLabel}>Learners</p>
-          <p className={styles.metricValue}>{students.length}</p>
-          <p className={styles.metricNote}>{currentSubject.grade}</p>
-        </div>
-        <div
-          className={styles.metricCard}
-          style={{ borderTopColor: "var(--gold)" }}
-        >
-          <p className={styles.metricLabel}>Marks ready</p>
-          <p className={styles.metricValue}>{marksReadyCount}</p>
-          <p className={styles.metricNote}>With CAT scores</p>
-        </div>
+        <KpiCard label="Learners" value={students.length} unit={currentSubject.grade} />
+        <KpiCard label="Marks ready" value={marksReadyCount} unit="With CAT scores" />
       </div>
 
-      {distribution.length > 0 && (
-        <div className={styles.card} style={{ marginBottom: 14 }}>
-          <p
-            style={{
-              fontFamily: "var(--sans)",
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--textMut)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            Score distribution
-          </p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={distribution}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-              <XAxis
-                dataKey="range"
-                tick={{ fontSize: 11, fill: "#6d7c74" }}
-              />
-              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  background: "#fff",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="count" name="Learners" fill="#c9963d" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <ChartContainer
+        title="Score distribution"
+        height={220}
+        isEmpty={distribution.length === 0}
+        emptyMessage="No scored learners are available for this subject."
+      >
+        <BarChart data={distribution} margin={analyticsChartDefaults.margin}>
+          <CartesianGrid {...analyticsGridProps} />
+          <XAxis {...analyticsXAxisProps} dataKey="range" />
+          <YAxis {...analyticsYAxisProps} allowDecimals={false} />
+          <Tooltip {...analyticsTooltipProps} />
+          <Bar
+            dataKey="count"
+            name="Learners"
+            fill={analyticsColors.accent}
+            radius={analyticsChartDefaults.bar.radius}
+          />
+        </BarChart>
+      </ChartContainer>
 
       <div className={styles.card}>
         <div className={styles.tableWrapper}>

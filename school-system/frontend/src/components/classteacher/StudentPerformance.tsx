@@ -1,19 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  RadialLinearScale,
-  ArcElement,
-  Title,
-  Tooltip,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
   Legend,
-  Filler,
-} from "chart.js";
-import { Bar, Radar, Doughnut } from "react-chartjs-2";
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { C, FONT } from "./shared/constants";
 import {
   gradeBg,
@@ -30,20 +32,16 @@ import {
 import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
 import { ArrowLeft, TrendingUp, Award, Target } from "lucide-react";
 import { api, getSchoolId } from "../../lib/api";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  RadialLinearScale,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-);
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface StudentPerformanceProps {
   student: any;
@@ -275,166 +273,16 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
     return dist;
   }, [subjectMarks]);
 
-  const barChartData = useMemo(
-    () => ({
-      labels: subjectMarks.map((s) => s.name),
-      datasets: [
-        {
-          label: "Marks (%)",
-          data: subjectMarks.map((s) => s.mark ?? 0),
-          backgroundColor: subjectMarks.map((s) =>
-            gradeColor(s.cbcBand),
-          ),
-          borderColor: subjectMarks.map((s) =>
-            gradeColor(s.cbcBand),
-          ),
-          borderWidth: 1,
-          borderRadius: 6,
-          barPercentage: 0.7,
-        },
+  const bandChartData = useMemo(
+    () =>
+      [
+        { band: "EE", count: bandDistribution.EE },
+        { band: "ME", count: bandDistribution.ME },
+        { band: "AE", count: bandDistribution.AE },
+        { band: "BE", count: bandDistribution.BE },
       ],
-    }),
-    [subjectMarks],
-  );
-
-  const barChartOptions: React.ComponentProps<typeof Bar>["options"] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      title: { display: false },
-      tooltip: {
-        backgroundColor: "#1a1a1a",
-        titleFont: { family: FONT.sans, size: 13 },
-        bodyFont: { family: FONT.sans, size: 12 },
-        padding: 12,
-        cornerRadius: 8,
-        callbacks: {
-          afterLabel: (ctx: any) => {
-            const s = subjectMarks[ctx.dataIndex];
-            return [`Band: ${s.cbcBand}`, `Points: ${s.points}`, `Remark: ${s.remark}`];
-          },
-        },
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-        grid: { color: "rgba(0,0,0,0.05)" },
-        ticks: {
-          font: { family: FONT.sans, size: 11 },
-          color: "#888",
-          callback: (value: any) => `${value}%`,
-        },
-      },
-      x: {
-        grid: { display: false },
-        ticks: {
-          font: { family: FONT.sans, size: 11 },
-          color: "#555",
-          maxRotation: 45,
-        },
-      },
-    },
-  };
-
-  const radarChartData = useMemo(
-    () => ({
-      labels: subjectMarks.map((s) => s.name.slice(0, 8)),
-      datasets: [
-        {
-          label: "Performance",
-          data: subjectMarks.map((s) => s.mark ?? 0),
-          fill: true,
-          backgroundColor: "rgba(201, 150, 61, 0.15)",
-          borderColor: "rgba(201, 150, 61, 0.8)",
-          pointBackgroundColor: "rgba(201, 150, 61, 1)",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 4,
-        },
-      ],
-    }),
-    [subjectMarks],
-  );
-
-  const radarChartOptions: React.ComponentProps<typeof Radar>["options"] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => `${ctx.parsed.r}%`,
-        },
-      },
-    },
-    scales: {
-      r: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          stepSize: 20,
-          backdropColor: "transparent",
-          font: { size: 10 },
-        },
-        grid: { color: "rgba(0,0,0,0.08)" },
-        angleLines: { color: "rgba(0,0,0,0.08)" },
-        pointLabels: {
-          font: { family: FONT.sans, size: 11 },
-          color: "#555",
-        },
-      },
-    },
-  };
-
-  const doughnutData = useMemo(
-    () => ({
-      labels: ["EE", "ME", "AE", "BE"],
-      datasets: [
-        {
-          data: [
-            bandDistribution.EE,
-            bandDistribution.ME,
-            bandDistribution.AE,
-            bandDistribution.BE,
-          ],
-          backgroundColor: [
-            "#1D9E75",
-            "#185FA5",
-            "#BA7517",
-            "#993C1D",
-          ],
-          borderColor: "#fff",
-          borderWidth: 3,
-        },
-      ],
-    }),
     [bandDistribution],
   );
-
-  const doughnutOptions: React.ComponentProps<typeof Doughnut>["options"] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: "65%",
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          font: { family: FONT.sans, size: 12 },
-          padding: 16,
-          usePointStyle: true,
-          pointStyleWidth: 10,
-        },
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => `${ctx.label}: ${ctx.parsed} subject(s)`,
-        },
-      },
-    },
-  };
 
   return (
     <div className="ct-anim" style={{ display: "grid", gap: 24 }}>
@@ -562,22 +410,20 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
             label: "Total Points",
             value: totalPoints,
             icon: <Award size={18} />,
-            color: C.gold,
-            bg: "#fff9eb",
+            color: analyticsColors.accent,
           },
           {
             label: "Total Marks",
             value: totalMarks,
             icon: <TrendingUp size={18} />,
-            color: "#185FA5",
-            bg: "#edf5fc",
+            color: analyticsColors.secondary,
           },
           {
             label: "Average",
-            value: `${averageMark}%`,
+            value: averageMark,
+            unit: "%",
             icon: <Target size={18} />,
-            color: "#1D9E75",
-            bg: "#eaf7f1",
+            color: analyticsColors.success,
           },
           {
             label: "Rank",
@@ -586,129 +432,124 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({
                 ? `${rank} of ${totalStudents}`
                 : rank ?? "-",
             icon: <Award size={18} />,
-            color: "#993C1D",
-            bg: "#faece7",
+            color: analyticsColors.danger,
           },
         ].map((stat) => (
-          <div
+          <KpiCard
             key={stat.label}
-            style={{
-              ...cardStyle,
-              background: stat.bg,
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            <div
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.8)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: stat.color,
-              }}
-            >
-              {stat.icon}
-            </div>
-            <div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: C.textMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  fontFamily: FONT.sans,
-                }}
-              >
-                {stat.label}
-              </p>
-              <p
-                style={{
-                  margin: "2px 0 0",
-                  fontSize: "1.5rem",
-                  fontWeight: 800,
-                  color: stat.color,
-                  fontFamily: FONT.serif,
-                }}
-              >
-                {stat.value}
-              </p>
-            </div>
-          </div>
+            label={stat.label}
+            value={stat.value}
+            unit={"unit" in stat ? stat.unit : undefined}
+            icon={<span style={{ color: stat.color }}>{stat.icon}</span>}
+          />
         ))}
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
           gap: 20,
         }}
       >
-        <div style={cardStyle}>
-          <h4
-            style={{
-              fontFamily: FONT.serif,
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              color: C.text,
-              margin: "0 0 16px",
-            }}
-          >
-            Subject Performance
-          </h4>
-          <div style={{ height: 320 }}>
-            <Bar data={barChartData} options={barChartOptions} />
-          </div>
-        </div>
+        <ChartContainer
+          title="Subject Performance"
+          subtitle="Marks by subject"
+          height={320}
+          isEmpty={subjectMarks.length === 0}
+          emptyMessage="No subject marks are available."
+        >
+          <BarChart data={subjectMarks} margin={analyticsChartDefaults.margin}>
+            <CartesianGrid {...analyticsGridProps} />
+            <XAxis {...analyticsXAxisProps} dataKey="name" />
+            <YAxis
+              {...analyticsYAxisProps}
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}%`}
+            />
+            <Tooltip
+              {...analyticsTooltipProps}
+              formatter={(value) => [`${value ?? 0}%`, "Marks"]}
+            />
+            <Bar dataKey="mark" name="Marks" radius={analyticsChartDefaults.bar.radius}>
+              {subjectMarks.map((subject, index) => (
+                <Cell
+                  key={subject.id}
+                  fill={analyticsColors.qualitative[index % analyticsColors.qualitative.length]}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
 
-        <div style={cardStyle}>
-          <h4
-            style={{
-              fontFamily: FONT.serif,
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              color: C.text,
-              margin: "0 0 16px",
-            }}
+        <ChartContainer
+          title="Performance Radar"
+          subtitle="Marks by subject"
+          height={320}
+          isEmpty={subjectMarks.length === 0}
+          emptyMessage="No subject marks are available."
+        >
+          <RadarChart
+            data={subjectMarks.map((subject) => ({
+              ...subject,
+              name: subject.name.slice(0, 8),
+            }))}
+            margin={analyticsChartDefaults.margin}
           >
-            Performance Radar
-          </h4>
-          <div style={{ height: 320 }}>
-            <Radar data={radarChartData} options={radarChartOptions} />
-          </div>
-        </div>
+            <PolarGrid stroke={analyticsColors.neutral.grid} />
+            <PolarAngleAxis dataKey="name" tick={{ fill: analyticsColors.neutral.text, fontSize: 11 }} />
+            <PolarRadiusAxis domain={[0, 100]} tick={{ fill: analyticsColors.neutral.text, fontSize: 10 }} />
+            <Tooltip
+              {...analyticsTooltipProps}
+              formatter={(value) => [`${value ?? 0}%`, "Performance"]}
+            />
+            <Radar
+              name="Performance"
+              dataKey="mark"
+              stroke={analyticsColors.accent}
+              fill={analyticsColors.accent}
+              fillOpacity={analyticsChartDefaults.area.fillOpacity}
+            />
+          </RadarChart>
+        </ChartContainer>
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
           gap: 20,
         }}
       >
-        <div style={cardStyle}>
-          <h4
-            style={{
-              fontFamily: FONT.serif,
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              color: C.text,
-              margin: "0 0 16px",
-            }}
-          >
-            CBC Band Distribution
-          </h4>
-          <div style={{ height: 260 }}>
-            <Doughnut data={doughnutData} options={doughnutOptions} />
-          </div>
-        </div>
+        <ChartContainer
+          title="CBC Band Distribution"
+          height={260}
+          isEmpty={!subjectMarks.length}
+          emptyMessage="No CBC band distribution is available."
+        >
+          <PieChart margin={analyticsChartDefaults.margin}>
+            <Pie
+              data={bandChartData}
+              dataKey="count"
+              nameKey="band"
+              innerRadius="58%"
+              outerRadius="82%"
+              paddingAngle={2}
+            >
+              {bandChartData.map((item, index) => (
+                <Cell
+                  key={item.band}
+                  fill={analyticsColors.qualitative[index]}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              {...analyticsTooltipProps}
+              formatter={(value, name) => [value, `${name} subjects`]}
+            />
+            <Legend {...analyticsLegendProps} verticalAlign="bottom" align="center" />
+          </PieChart>
+        </ChartContainer>
 
         <div style={cardStyle}>
           <h4

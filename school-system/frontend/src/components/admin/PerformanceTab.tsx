@@ -12,11 +12,19 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
   Cell,
   LineChart,
   Line,
 } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface PerformanceTabProps {
   classes: Class[];
@@ -582,21 +590,21 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
   }, [chartData]);
 
   const gradeColorMap: Record<string, string> = {
-    A: "#163325",
-    "A-": "#1f4d33",
-    "B+": "#2d6a4f",
-    B: "#c9963d",
-    "B-": "#b07d2e",
-    "C+": "#d4a853",
-    C: "#b42318",
-    "C-": "#8b1a12",
-    "D+": "#6d7c74",
-    D: "#5a6b62",
-    "D-": "#485851",
-    E: "#3d4240",
+    A: analyticsColors.sequential[6],
+    "A-": analyticsColors.sequential[5],
+    "B+": analyticsColors.sequential[4],
+    B: analyticsColors.sequential[3],
+    "B-": analyticsColors.sequential[2],
+    "C+": analyticsColors.sequential[1],
+    C: analyticsColors.qualitative[5],
+    "C-": analyticsColors.qualitative[6],
+    "D+": analyticsColors.neutral.axis,
+    D: analyticsColors.neutral.foreground,
+    "D-": analyticsColors.neutral.text,
+    E: analyticsColors.neutral.grid,
   };
 
-  const getBandColor = (band: string) => gradeColorMap[band] || `hsl(${band.charCodeAt(0) * 37 % 360}, 55%, 35%)`;
+  const getBandColor = (band: string) => gradeColorMap[band] || analyticsColors.neutral.text;
 
   const subjectAvgData = useMemo(() => {
     return chartData.map((item) => ({
@@ -706,69 +714,103 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({
       )}
 
       {!showTable ? (
-        <div style={{ ...panelStyle, display: "grid", gap: 14 }}>
-          {chartLoading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "var(--textMut)" }}>Loading analytics...</div>
-          ) : chartData.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "var(--textMut)" }}>No analytics data available for this scope.</div>
-          ) : (
-            <>
-              <div>
-                <p style={{ ...labelStyle, marginBottom: 8 }}>Subject Averages</p>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={subjectAvgData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6d7c74" }} interval={0} angle={-25} textAnchor="end" height={60} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
-                    <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
-                    <Bar dataKey="avg" name="Avg %" radius={[6, 6, 0, 0]}>
-                      {subjectAvgData.map((entry, index) => (
-                        <Cell key={index} fill={gradeColorMap[resolveCbcBand(entry.avg, cbcBands).cbcBand] || "#c9963d"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div>
-                <p style={{ ...labelStyle, marginBottom: 8 }}>Grade Distribution</p>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={gradeDistData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                    <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6d7c74" }} interval={0} angle={-25} textAnchor="end" height={60} />
-                    <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
-                    <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
-                    <Legend />
-                    {gradeKeys.map((key) => (
-                      <Bar key={key} dataKey={key} stackId="1" fill={getBandColor(key)} />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div>
-                <p style={{ ...labelStyle, marginBottom: 8 }}>Termly Trend</p>
-                {trendLoading ? (
-                  <div style={{ padding: "20px", textAlign: "center", color: "var(--textMut)" }}>Loading trend...</div>
-                ) : termlyTrend.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", color: "var(--textMut)" }}>No termly data available.</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <LineChart data={termlyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                      <XAxis dataKey="term" tick={{ fontSize: 11, fill: "#6d7c74" }} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6d7c74" }} />
-                      <Tooltip contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 10, fontSize: 12 }} />
-                      <Legend />
-                      <Line type="monotone" dataKey="avg" name="Avg %" stroke="#c9963d" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-              <div style={{ textAlign: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))", gap: 14 }}>
+          <ChartContainer
+            title="Subject averages"
+            height={280}
+            loading={chartLoading}
+            isEmpty={!chartLoading && subjectAvgData.length === 0}
+            emptyMessage="No performance data is available for this scope."
+          >
+            <BarChart data={subjectAvgData} margin={analyticsChartDefaults.margin}>
+              <CartesianGrid {...analyticsGridProps} />
+              <XAxis
+                {...analyticsXAxisProps}
+                dataKey="name"
+                interval={0}
+                angle={-25}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+              <Tooltip
+                {...analyticsTooltipProps}
+                formatter={(value: unknown) => [`${value}%`, "Average"]}
+              />
+              <Bar dataKey="avg" name="Avg %" radius={analyticsChartDefaults.bar.radius}>
+                {subjectAvgData.map((entry, index) => (
+                  <Cell
+                    key={`${entry.name}-${index}`}
+                    fill={gradeColorMap[resolveCbcBand(entry.avg, cbcBands).cbcBand] || analyticsColors.accent}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+          <ChartContainer
+            title="Grade distribution"
+            height={280}
+            loading={chartLoading}
+            isEmpty={!chartLoading && gradeDistData.length === 0}
+            emptyMessage="No grade distribution is available for this scope."
+          >
+            <BarChart data={gradeDistData} margin={analyticsChartDefaults.margin}>
+              <CartesianGrid {...analyticsGridProps} />
+              <XAxis
+                {...analyticsXAxisProps}
+                dataKey="subject"
+                interval={0}
+                angle={-25}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis {...analyticsYAxisProps} allowDecimals={false} />
+              <Tooltip {...analyticsTooltipProps} />
+              <Legend {...analyticsLegendProps} />
+              {gradeKeys.map((key) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  stackId="grades"
+                  fill={getBandColor(key)}
+                  radius={analyticsChartDefaults.bar.radius}
+                />
+              ))}
+            </BarChart>
+          </ChartContainer>
+          <ChartContainer
+            title="Termly trend"
+            height={260}
+            loading={trendLoading}
+            isEmpty={!trendLoading && termlyData.length === 0}
+            emptyMessage="No termly data is available for this scope."
+          >
+            <LineChart data={termlyData} margin={analyticsChartDefaults.margin}>
+              <CartesianGrid {...analyticsGridProps} />
+              <XAxis {...analyticsXAxisProps} dataKey="term" />
+              <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+              <Tooltip
+                {...analyticsTooltipProps}
+                formatter={(value: unknown) => [`${value}%`, "Average"]}
+              />
+              <Legend {...analyticsLegendProps} />
+              <Line
+                type="monotone"
+                dataKey="avg"
+                name="Avg %"
+                stroke={analyticsColors.accent}
+                strokeWidth={analyticsChartDefaults.line.strokeWidth}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ChartContainer>
+          {chartData.length > 0 && (
+            <div style={{ textAlign: "center", gridColumn: "1 / -1" }}>
                 <button type="button" onClick={() => { setShowTable(true); setTableLoaded(false); }} style={{ ...inputStyle, background: "var(--gold)", color: "#fff", cursor: "pointer", fontWeight: 700, width: "auto", padding: "10px 22px" }}>
                   View Student Records
                 </button>
-              </div>
-            </>
+            </div>
           )}
         </div>
       ) : (

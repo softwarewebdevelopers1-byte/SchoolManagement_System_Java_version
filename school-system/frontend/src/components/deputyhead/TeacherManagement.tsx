@@ -4,7 +4,16 @@ import { SectionHeader } from "./shared/SectionHeader";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
 import { api } from "../../lib/api";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface TeacherManagementProps {
   staff?: any[];
@@ -59,29 +68,8 @@ export const TeacherManagement: React.FC<TeacherManagementProps> = ({ staff = []
         }
       />
       {teacherSummary && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-          <div
-            style={{
-              background: C.white,
-              border: `1px solid ${C.border}`,
-              borderRadius: 13,
-              padding: "1.3rem",
-            }}
-          >
-            <p
-              style={{
-                fontFamily: F.sans,
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: C.textMuted,
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-                margin: "0 0 1rem",
-              }}
-            >
-              Teacher status breakdown
-            </p>
-            <ResponsiveContainer width="100%" height={240}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 14, marginBottom: 14 }}>
+          <ChartContainer title="Teacher status breakdown" height={240}>
               <PieChart>
                 <Pie
                   data={[
@@ -94,76 +82,44 @@ export const TeacherManagement: React.FC<TeacherManagementProps> = ({ staff = []
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label
                 >
                   {[
-                    { name: "Active", value: teacherSummary.active || 0, color: "#163325" },
-                    { name: "On leave", value: teacherSummary.onLeave || 0, color: "#c9963d" },
-                    { name: "Suspended", value: teacherSummary.suspended || 0, color: "#b42318" },
+                    { name: "Active", value: teacherSummary.active || 0, color: analyticsColors.success },
+                    { name: "On leave", value: teacherSummary.onLeave || 0, color: analyticsColors.warning },
+                    { name: "Suspended", value: teacherSummary.suspended || 0, color: analyticsColors.danger },
                   ]
                     .filter((entry) => entry.value > 0)
                     .map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    fontSize: 12,
-                  }}
-                />
-                <Legend />
+                <Tooltip {...analyticsTooltipProps} />
+                <Legend {...analyticsLegendProps} />
               </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div
-            style={{
-              background: C.white,
-              border: `1px solid ${C.border}`,
-              borderRadius: 13,
-              padding: "1.3rem",
-            }}
-          >
-            <p
-              style={{
-                fontFamily: F.sans,
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: C.textMuted,
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-                margin: "0 0 1rem",
-              }}
-            >
-              Subject coverage
-            </p>
-            <ResponsiveContainer width="100%" height={240}>
+          </ChartContainer>
+          <ChartContainer title="Subject coverage" height={240}>
               <BarChart
                 data={(teacherSummary.subjectCoverage || []).slice(0, 10)}
                 layout="vertical"
+                margin={analyticsChartDefaults.margin}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#6d7c74" }} allowDecimals={false} />
+                <CartesianGrid {...analyticsGridProps} />
+                <XAxis type="number" {...analyticsXAxisProps} allowDecimals={false} />
                 <YAxis
                   type="category"
                   dataKey="subjectName"
-                  tick={{ fontSize: 11, fill: "#6d7c74" }}
+                  {...analyticsYAxisProps}
                   width={120}
                 />
-                <Tooltip
-                  contentStyle={{
-                    background: C.white,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    fontSize: 12,
-                  }}
+                <Tooltip {...analyticsTooltipProps} />
+                <Bar
+                  dataKey="teacherCount"
+                  name="Teachers"
+                  fill={analyticsColors.accent}
+                  radius={analyticsChartDefaults.bar.radius}
                 />
-                <Bar dataKey="teacherCount" name="Teachers" fill={C.gold} radius={[0, 6, 6, 0]} />
               </BarChart>
-            </ResponsiveContainer>
-          </div>
+          </ChartContainer>
         </div>
       )}
       <div

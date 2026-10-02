@@ -1,345 +1,233 @@
-import React from "react";
-import { BarChart3, TrendingUp, Users, Building2 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, Tooltip, XAxis, YAxis } from "recharts";
+import { Building2, GraduationCap, Users } from "lucide-react";
+import { AnalyticsCard } from "../shared/analytics/AnalyticsCard";
+import { AnalyticsTable, type AnalyticsTableColumn } from "../shared/analytics/AnalyticsTable";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 import { useSuperAdminPlatformStatistics } from "../../lib/superAdminData";
 
-export default function SuperAdminAnalytics() {
-  const { data: stats, loading, error } = useSuperAdminPlatformStatistics();
-
-  if (loading) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.loadingCard}>Loading analytics...</div>
-      </div>
-    );
-  }
-
-  const kpis = [
-    {
-      label: "Total Schools",
-      value: stats?.totalSchools ?? 0,
-      trend: "+12%",
-      icon: Building2,
-      color: "#163325",
-    },
-    {
-      label: "Active Schools",
-      value: stats?.activeSchools ?? 0,
-      trend: "+8%",
-      icon: TrendingUp,
-      color: "#16a34a",
-    },
-    {
-      label: "Total Students",
-      value: stats?.totalStudents ?? 0,
-      trend: "+24%",
-      icon: Users,
-      color: "#0ea5e9",
-    },
-    {
-      label: "Monthly Growth",
-      value: stats?.schoolsOnboardedThisMonth ?? 0,
-      trend: "On track",
-      icon: BarChart3,
-      color: "#c9963d",
-    },
-  ];
-
-  const metrics = [
-    { label: "Pending Approvals", value: stats?.pendingApprovals ?? 0, color: "#c084fc" },
-    { label: "Active Users", value: stats?.activeUsers ?? 0, color: "#16a34a" },
-    { label: "Suspended Accounts", value: stats?.suspendedAccounts ?? 0, color: "#ef4444" },
-    { label: "Recent Invitations", value: stats?.recentInvitations.length ?? 0, color: "#ec4899" },
-  ];
-
-  return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <div>
-          <div style={styles.kicker}>Platform insights</div>
-          <h1 style={styles.title}>Analytics Dashboard</h1>
-        </div>
-      </header>
-
-      {error && <div style={styles.error}>{error}</div>}
-
-      <section style={styles.kpisGrid}>
-        {kpis.map(({ label, value, trend, icon: Icon, color }) => (
-          <div key={label} style={styles.kpiCard}>
-            <div style={{ ...styles.kpiIconWrap, background: `${color}22` }}>
-              <Icon size={24} color={color} />
-            </div>
-            <div>
-              <div style={styles.kpiLabel}>{label}</div>
-              <div style={styles.kpiValue}>{value}</div>
-              <div style={{ ...styles.kpiTrend, color }}>{trend}</div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      <div style={styles.twoCol}>
-        <section style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Key Metrics</h2>
-          </div>
-          <div style={styles.metricsList}>
-            {metrics.map(({ label, value, color }) => (
-              <div key={label} style={styles.metricRow}>
-                <div style={{ ...styles.metricDot, background: color }} />
-                <div>
-                  <div style={styles.metricLabel}>{label}</div>
-                  <div style={styles.metricValue}>{value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Platform Health</h2>
-          </div>
-          <div style={styles.healthGrid}>
-            <div style={styles.healthItem}>
-              <div style={styles.healthLabel}>System Uptime</div>
-              <div style={styles.healthValue}>99.9%</div>
-              <div style={{ ...styles.healthStatus, color: "#16a34a" }}>✓ Operational</div>
-            </div>
-            <div style={styles.healthItem}>
-              <div style={styles.healthLabel}>Average Response Time</div>
-              <div style={styles.healthValue}>245ms</div>
-              <div style={{ ...styles.healthStatus, color: "#16a34a" }}>✓ Optimal</div>
-            </div>
-            <div style={styles.healthItem}>
-              <div style={styles.healthLabel}>API Requests (24h)</div>
-              <div style={styles.healthValue}>12.4K</div>
-              <div style={{ ...styles.healthStatus, color: "#16a34a" }}>✓ Healthy</div>
-            </div>
-            <div style={styles.healthItem}>
-              <div style={styles.healthLabel}>Server Capacity</div>
-              <div style={styles.healthValue}>67%</div>
-              <div style={{ ...styles.healthStatus, color: "#16a34a" }}>✓ Available</div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <section style={styles.card}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>Recent Activity</h2>
-        </div>
-        <div style={styles.activityList}>
-          <div style={styles.activityItem}>
-            <div style={styles.activityIcon}>✅</div>
-            <div>
-              <div style={styles.activityTitle}>School Approved</div>
-              <div style={styles.activityTime}>Nairobi Academy approved 2 hours ago</div>
-            </div>
-          </div>
-          <div style={styles.activityItem}>
-            <div style={styles.activityIcon}>👥</div>
-            <div>
-              <div style={styles.activityTitle}>New Staff Member</div>
-              <div style={styles.activityTime}>12 new staff registered today</div>
-            </div>
-          </div>
-          <div style={styles.activityItem}>
-            <div style={styles.activityIcon}>📧</div>
-            <div>
-              <div style={styles.activityTitle}>Invitations Sent</div>
-              <div style={styles.activityTime}>45 invitations sent in the last 24 hours</div>
-            </div>
-          </div>
-          <div style={styles.activityItem}>
-            <div style={styles.activityIcon}>⚠️</div>
-            <div>
-              <div style={styles.activityTitle}>Pending Approvals</div>
-              <div style={styles.activityTime}>{stats?.pendingApprovals ?? 0} schools awaiting review</div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+interface RecentInvitation {
+  id?: string;
+  email?: string;
+  role?: string;
+  status?: string;
+  createdAt?: string;
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    display: "grid",
-    gap: 24,
+const invitationColumns: AnalyticsTableColumn<RecentInvitation>[] = [
+  { id: "email", header: "Email", value: (row) => row.email || "—" },
+  { id: "role", header: "Role", value: (row) => row.role || "—" },
+  { id: "status", header: "Status", value: (row) => row.status || "—" },
+  {
+    id: "createdAt",
+    header: "Created",
+    value: (row) =>
+      row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—",
   },
-  header: {
-    paddingBottom: 16,
-    borderBottom: "1px solid rgba(15,46,34,0.08)",
-  },
-  kicker: {
-    fontSize: 12,
-    color: "#5d6d66",
-    letterSpacing: 0.12,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  title: {
-    margin: 0,
-    fontSize: 32,
-    letterSpacing: -0.05,
-    color: "#0f2e22",
-  },
-  kpisGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 16,
-  },
-  kpiCard: {
-    background: "rgba(255,255,255,0.8)",
-    border: "1px solid rgba(15,46,34,0.08)",
-    borderRadius: 18,
-    padding: 20,
-    display: "flex",
-    gap: 16,
-  },
-  kpiIconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    display: "grid",
-    placeItems: "center",
-    flexShrink: 0,
-  },
-  kpiLabel: {
-    fontSize: 12,
-    color: "#5d6d66",
-    textTransform: "uppercase",
-    letterSpacing: 0.08,
-  },
-  kpiValue: {
-    fontSize: 28,
-    fontWeight: 800,
-    letterSpacing: -0.05,
-    color: "#0f2e22",
-    marginTop: 4,
-  },
-  kpiTrend: {
-    fontSize: 11,
-    fontWeight: 700,
-    marginTop: 8,
-  },
-  twoCol: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 20,
-  },
-  card: {
-    background: "rgba(255,255,255,0.8)",
-    border: "1px solid rgba(15,46,34,0.08)",
-    borderRadius: 20,
-    padding: 24,
-  },
-  cardHeader: {
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottom: "1px solid rgba(15,46,34,0.04)",
-  },
-  cardTitle: {
-    margin: 0,
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#0f2e22",
-  },
-  metricsList: {
-    display: "grid",
-    gap: 12,
-  },
-  metricRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "12px 0",
-  },
-  metricDot: {
-    width: 10,
-    height: 10,
-    borderRadius: "50%",
-    flexShrink: 0,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: "#5d6d66",
-  },
-  metricValue: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#0f2e22",
-    marginTop: 2,
-  },
-  healthGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  },
-  healthItem: {
-    padding: 12,
-    background: "rgba(22, 51, 37, 0.02)",
-    borderRadius: 12,
-    border: "1px solid rgba(15,46,34,0.04)",
-  },
-  healthLabel: {
-    fontSize: 11,
-    color: "#5d6d66",
-    textTransform: "uppercase",
-    letterSpacing: 0.08,
-  },
-  healthValue: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: "#0f2e22",
-    marginTop: 6,
-  },
-  healthStatus: {
-    fontSize: 11,
-    fontWeight: 700,
-    marginTop: 6,
-  },
-  activityList: {
-    display: "grid",
-    gap: 12,
-  },
-  activityItem: {
-    display: "flex",
-    gap: 12,
-    padding: "12px 0",
-    borderBottom: "1px solid rgba(15,46,34,0.04)",
-  },
-  activityIcon: {
-    fontSize: 20,
-    flexShrink: 0,
-  },
-  activityTitle: {
-    fontWeight: 700,
-    color: "#0f2e22",
-    fontSize: 14,
-  },
-  activityTime: {
-    fontSize: 12,
-    color: "#5d6d66",
-    marginTop: 2,
-  },
-  error: {
-    background: "#fee2e2",
-    color: "#991b1b",
-    borderRadius: 12,
-    padding: "12px 14px",
-    fontWeight: 600,
-  },
-  loadingCard: {
-    maxWidth: 500,
-    margin: "40vh auto 0",
-    background: "#fff",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 16px 40px rgba(16,36,28,0.08)",
-    textAlign: "center",
-    color: "#0f2e22",
-    fontWeight: 700,
-  },
-};
+];
+
+export default function SuperAdminAnalytics() {
+  const { data: stats, loading, error, refresh } = useSuperAdminPlatformStatistics();
+  const schoolStatus = [
+    { name: "Active", value: stats?.activeSchools ?? 0 },
+    { name: "Pending", value: stats?.pendingSchools ?? 0 },
+    { name: "Rejected", value: stats?.rejectedSchools ?? 0 },
+    { name: "Inactive", value: stats?.suspendedSchools ?? 0 },
+  ];
+  const invitationStatus = (stats?.recentInvitations ?? []).reduce(
+    (counts: Record<string, number>, invitation: RecentInvitation) => {
+      const status = invitation.status || "Unknown";
+      counts[status] = (counts[status] || 0) + 1;
+      return counts;
+    },
+    {},
+  );
+  const invitationStatusRows = Object.entries(invitationStatus).map(
+    ([name, value]) => ({ name, value }),
+  );
+  const invitations = (stats?.recentInvitations ?? []) as RecentInvitation[];
+
+  return (
+    <main style={{ display: "grid", gap: 20 }}>
+      <header>
+        <p
+          style={{
+            color: analyticsColors.neutral.text,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            margin: "0 0 6px",
+            textTransform: "uppercase",
+          }}
+        >
+          Platform insights
+        </p>
+        <h1 style={{ color: analyticsColors.primary, fontSize: 28, margin: 0 }}>
+          Analytics dashboard
+        </h1>
+      </header>
+
+      {error && (
+        <AnalyticsCard
+          title="Analytics could not be loaded"
+          actions={
+            <button type="button" onClick={() => void refresh()}>
+              Retry
+            </button>
+          }
+        >
+          <p role="alert" style={{ color: analyticsColors.danger, margin: 0 }}>
+            {error}
+          </p>
+        </AnalyticsCard>
+      )}
+
+      <section
+        aria-label="Platform key performance indicators"
+        style={{
+          display: "grid",
+          gap: 14,
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))",
+        }}
+      >
+        <KpiCard
+          label="Total schools"
+          value={loading ? "—" : stats?.totalSchools ?? 0}
+          icon={<Building2 size={20} color={analyticsColors.primary} />}
+        />
+        <KpiCard
+          label="Active schools"
+          value={loading ? "—" : stats?.activeSchools ?? 0}
+          icon={<Building2 size={20} color={analyticsColors.success} />}
+        />
+        <KpiCard
+          label="Total students"
+          value={loading ? "—" : stats?.totalStudents ?? 0}
+          icon={<GraduationCap size={20} color={analyticsColors.secondary} />}
+        />
+        <KpiCard
+          label="Registrations · 30 days"
+          value={loading ? "—" : stats?.recentRegistrations ?? 0}
+          icon={<Users size={20} color={analyticsColors.accent} />}
+        />
+      </section>
+
+      <section
+        style={{
+          display: "grid",
+          gap: 16,
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
+        }}
+      >
+        <ChartContainer
+          title="School status"
+          subtitle="Current status of registered schools"
+          height={280}
+          loading={loading}
+          isEmpty={!loading && schoolStatus.every((item) => item.value === 0)}
+          emptyMessage="No school records are available."
+          error={error}
+          onRetry={() => void refresh()}
+        >
+          <BarChart data={schoolStatus} margin={analyticsChartDefaults.margin}>
+            <CartesianGrid {...analyticsGridProps} />
+            <XAxis {...analyticsXAxisProps} dataKey="name" />
+            <YAxis {...analyticsYAxisProps} allowDecimals={false} />
+            <Tooltip {...analyticsTooltipProps} />
+            <Bar dataKey="value" name="Schools" radius={analyticsChartDefaults.bar.radius}>
+              {schoolStatus.map((entry, index) => (
+                <Cell
+                  key={entry.name}
+                  fill={
+                    [
+                      analyticsColors.success,
+                      analyticsColors.warning,
+                      analyticsColors.danger,
+                      analyticsColors.neutral.text,
+                    ][index]
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+
+        <ChartContainer
+          title="Recent invitation status"
+          subtitle="Latest invitations returned by the platform API"
+          height={280}
+          loading={loading}
+          isEmpty={!loading && invitationStatusRows.length === 0}
+          emptyMessage="No invitations are available."
+          error={error}
+          onRetry={() => void refresh()}
+        >
+          <PieChart margin={analyticsChartDefaults.margin}>
+            <Pie
+              data={invitationStatusRows}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={58}
+              outerRadius={88}
+              paddingAngle={3}
+            >
+              {invitationStatusRows.map((entry, index) => (
+                <Cell
+                  key={entry.name}
+                  fill={analyticsColors.qualitative[index % analyticsColors.qualitative.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip {...analyticsTooltipProps} />
+            <Legend {...analyticsLegendProps} />
+          </PieChart>
+        </ChartContainer>
+      </section>
+
+      <AnalyticsTable
+        title="Recent invitations"
+        columns={invitationColumns}
+        rows={invitations}
+        getRowId={(row, index) => row.id || `${row.email || "invite"}-${index}`}
+        filterable
+        exportable
+        exportFilename="recent-invitations.csv"
+        initialRowsPerPage={5}
+        rowsPerPageOptions={[5, 10]}
+        emptyMessage={loading ? "Loading invitations…" : "No recent invitations."}
+      />
+
+      <AnalyticsCard title="Staff account status">
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
+          }}
+        >
+          {[
+            { label: "Active", value: stats?.activeStaff ?? 0, color: analyticsColors.success },
+            { label: "Pending", value: stats?.pendingStaff ?? 0, color: analyticsColors.warning },
+            { label: "Suspended", value: stats?.suspendedStaff ?? 0, color: analyticsColors.danger },
+          ].map((metric) => (
+            <div key={metric.label} style={{ borderLeft: `3px solid ${metric.color}`, padding: "8px 12px" }}>
+              <div style={{ color: analyticsColors.neutral.text, fontSize: 12 }}>{metric.label}</div>
+              <strong style={{ color: analyticsColors.primary, fontSize: 20 }}>
+                {loading ? "—" : metric.value}
+              </strong>
+            </div>
+          ))}
+        </div>
+      </AnalyticsCard>
+
+    </main>
+  );
+}

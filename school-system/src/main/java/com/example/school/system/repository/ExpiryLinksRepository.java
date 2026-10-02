@@ -21,6 +21,8 @@ public interface ExpiryLinksRepository extends JpaRepository<ExpiryLinks, UUID> 
 
     List<ExpiryLinks> findAllByOrderByCreatedAtDesc();
 
+    List<ExpiryLinks> findTop10ByOrderByCreatedAtDesc();
+
     List<ExpiryLinks> findAllBySchoolIdOrderByCreatedAtDesc(UUID schoolId);
 
     int deleteByUsers(LoginView user);

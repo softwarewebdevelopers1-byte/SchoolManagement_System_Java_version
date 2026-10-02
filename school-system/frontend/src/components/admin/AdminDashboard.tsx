@@ -665,15 +665,13 @@ const AdminDashboard: React.FC = () => {
       if (!schoolId) {
         throw new Error("No school is linked to this account.");
       }
-      const [overview, studentsPage, teachersPage, nextSubjects, nextAssignments, apiClasses] = await Promise.all([
-        request<any>("/v1/stats/school/overview"),
+      const [studentsPage, teachersPage, nextSubjects, nextAssignments, apiClasses] = await Promise.all([
         request<{ content: any[] }>(`/v1/students/roster?size=100`),
         request<{ content: any[] }>(`/v1/teachers/roster?size=100`),
         request<Subject[]>(`/getAll/subjects/${encodeURIComponent(schoolId)}`),
         request<ApiAssignment[]>(`/get/all/subject-joints/${encodeURIComponent(schoolId)}`),
         request<Class[]>(`/all/classes/${encodeURIComponent(schoolId)}`),
       ]);
-      void overview;
       const mappedStudents = mapStudentsFromApi(
         (studentsPage.content || []).map((student) => ({
           ...student,

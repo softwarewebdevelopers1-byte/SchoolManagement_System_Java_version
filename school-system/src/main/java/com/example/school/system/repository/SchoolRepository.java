@@ -15,6 +15,8 @@ import com.example.school.system.types.SchoolStatus;
 import com.example.school.system.types.SchoolVisibility;
 
 public interface SchoolRepository extends JpaRepository<School, UUID> {
+    long countByStatus(SchoolStatus status);
+
     boolean existsBySchoolName(String schoolName);
 
     boolean existsByEmail(String schoolEmail);
@@ -61,4 +63,3 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
     """)
     List<PublicSchoolDTO> findPublicSchools(@Param("search") String search);
 }
-

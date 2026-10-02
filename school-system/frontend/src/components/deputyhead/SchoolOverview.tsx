@@ -4,7 +4,6 @@ import { SectionHeader } from "./shared/SectionHeader";
 import { MetricCard } from "./shared/MetricCard";
 import { Avatar } from "./shared/Avatar";
 import { C, F } from "./shared/constants";
-import { CONCERNS } from "./shared/data";
 import {
   BarChart,
   Bar,
@@ -13,8 +12,16 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
 } from "recharts";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 interface SchoolOverviewProps {
   isHT: boolean;
@@ -45,7 +52,6 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
   const totalStudents = overviewStats?.totalStudents ?? students.length;
   const totalTeachers = overviewStats?.totalStaff ?? staff.length;
   const totalClasses = overviewStats?.totalClasses ?? classes.length;
-  const openConcerns = CONCERNS.filter((c) => c.status === "Open").length;
 
   return (
     <div className="dh-anim">
@@ -80,64 +86,27 @@ export const SchoolOverview: React.FC<SchoolOverviewProps> = ({
           note="Grade 7–9 streams"
           accent={C.infoText}
         />
-        <MetricCard
-          label="Open alerts"
-          value="3"
-          note="Need attention today"
-          accent={C.dangerText}
-        />
-        <MetricCard
-          label="Parent concerns"
-          value={openConcerns}
-          note="Awaiting response"
-          accent={C.warnText}
-        />
       </div>
 
       {overviewStats?.streamPerformance && overviewStats.streamPerformance.length > 0 && (
-        <div
-          style={{
-            background: C.white,
-            border: `1px solid ${C.border}`,
-            borderRadius: 13,
-            padding: "1.3rem",
-            marginBottom: 14,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: F.sans,
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: C.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              margin: "0 0 1rem",
-            }}
-          >
-            Stream performance
-          </p>
-          <ResponsiveContainer width="100%" height={260}>
+        <ChartContainer title="Stream performance" height={260}>
             <BarChart data={overviewStats.streamPerformance}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-              <XAxis dataKey="stream" tick={{ fontSize: 11, fill: "#6d7c74" }} />
-              <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
-              <Tooltip
-                contentStyle={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 10,
-                  fontSize: 12,
-                }}
+              <CartesianGrid {...analyticsGridProps} />
+              <XAxis {...analyticsXAxisProps} dataKey="stream" />
+              <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+              <Tooltip {...analyticsTooltipProps} />
+              <Legend {...analyticsLegendProps} />
+              <Bar
+                dataKey="avgMarks"
+                name="Avg Marks"
+                fill={analyticsColors.primary}
+                radius={analyticsChartDefaults.bar.radius}
               />
-              <Legend />
-              <Bar dataKey="avgMarks" name="Avg Marks" fill={C.gold} radius={[6, 6, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+        </ChartContainer>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 14 }}>
         <div
           style={{
             background: C.white,

@@ -8,9 +8,18 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
 } from "recharts";
 import { FONT } from "./shared/constants";
+import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { KpiCard } from "../shared/analytics/KpiCard";
+import {
+  analyticsGridProps,
+  analyticsLegendProps,
+  analyticsTooltipProps,
+  analyticsXAxisProps,
+  analyticsYAxisProps,
+} from "../shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | string;
 
@@ -617,95 +626,77 @@ export default function ClassTeacherAttendanceHistory({
           </div>
         </header>
 
-        {trend.length > 0 && (
-          <div style={{ marginBottom: 22 }}>
+        <div style={{ marginBottom: 22 }}>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
                 gap: 12,
                 marginBottom: 12,
               }}
             >
-              <div className="attendance-history-stat">
-                <div className="attendance-history-stat-label">Avg Attendance (30d)</div>
-                <div className="attendance-history-stat-value">
-                  {trendLoading ? "..." : `${Math.round(trend.reduce((a, b) => a + b.rate, 0) / trend.length)}%`}
-                </div>
-              </div>
-              <div className="attendance-history-stat">
-                <div className="attendance-history-stat-label">Trend Points</div>
-                <div className="attendance-history-stat-value">{trend.length}</div>
-              </div>
+              <KpiCard
+                label="Average attendance · 30 days"
+                value={
+                  trendLoading || trend.length === 0
+                    ? "—"
+                    : Math.round(trend.reduce((a, b) => a + b.rate, 0) / trend.length)
+                }
+                unit="%"
+              />
+              <KpiCard label="Trend points" value={trend.length} />
             </div>
-            <div
-              style={{
-                background: COLORS.white,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 16,
-                padding: "1.2rem",
-                boxShadow: "0 5px 18px rgba(22, 51, 37, 0.05)",
-              }}
+            <ChartContainer
+              title="Attendance trend"
+              subtitle="Daily present and absent counts over the last 30 days"
+              height={260}
+              loading={trendLoading}
+              isEmpty={!trendLoading && trend.length === 0}
+              emptyMessage="No attendance trend has been recorded for this period."
             >
-              <p
-                style={{
-                  fontFamily: FONT.sans,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: COLORS.muted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  margin: "0 0 1rem",
-                }}
-              >
-                Attendance trend (last 30 days)
-              </p>
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e7ece9" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: "#6d7c74" }}
-                    tickFormatter={(value) => {
-                      const d = new Date(`${value}T00:00:00`);
-                      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-                    }}
-                  />
-                  <YAxis tick={{ fontSize: 11, fill: "#6d7c74" }} domain={[0, 100]} />
-                  <Tooltip
-                    contentStyle={{
-                      background: COLORS.white,
-                      border: `1px solid ${COLORS.border}`,
-                      borderRadius: 10,
-                      fontSize: 12,
-                    }}
-                    labelFormatter={(value) => {
-                      const d = new Date(`${value}T00:00:00`);
-                      return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="present"
-                    stroke={COLORS.darkGreen}
-                    strokeWidth={2}
-                    dot={false}
-                    name="Present"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="absent"
-                    stroke={COLORS.danger}
-                    strokeWidth={2}
-                    dot={false}
-                    name="Absent"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+              <LineChart data={trend} margin={analyticsChartDefaults.margin}>
+                <CartesianGrid {...analyticsGridProps} />
+                <XAxis
+                  {...analyticsXAxisProps}
+                  dataKey="date"
+                  tickFormatter={(value) => {
+                    const date = new Date(`${value}T00:00:00`);
+                    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                  }}
+                />
+                <YAxis {...analyticsYAxisProps} domain={[0, 100]} />
+                <Tooltip
+                  {...analyticsTooltipProps}
+                  labelFormatter={(value) => {
+                    const date = new Date(`${value}T00:00:00`);
+                    return date.toLocaleDateString("en-GB", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+                  }}
+                />
+                <Legend {...analyticsLegendProps} />
+                <Line
+                  type="monotone"
+                  dataKey="present"
+                  stroke={analyticsColors.success}
+                  strokeWidth={analyticsChartDefaults.line.strokeWidth}
+                  dot={false}
+                  name="Present"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="absent"
+                  stroke={analyticsColors.danger}
+                  strokeWidth={analyticsChartDefaults.line.strokeWidth}
+                  dot={false}
+                  name="Absent"
+                />
+              </LineChart>
+            </ChartContainer>
+        </div>
 
         <form
           className="attendance-history-search-card"
