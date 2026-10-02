@@ -162,6 +162,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
           }),
         },
       );
+      setPublishedClassIds((current) => new Set([...(current || []), classId]));
       setPublicationStatusVersion((current) => current + 1);
       if (response.previouslyPublished) {
         const selectedClass = classes.find((schoolClass) => schoolClass.id === classId);
@@ -284,21 +285,21 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
                 key={schoolClass.id}
                 value={schoolClass.id}
                 style={{
-                  color: publicationStatusState === "loading"
-                    ? "inherit"
+                  color: publishedClassIds?.has(schoolClass.id)
+                    ? "#16803c"
+                    : publicationStatusState === "loading"
+                      ? "inherit"
                     : publicationStatusState === "error"
                       ? "#64748b"
-                    : publishedClassIds?.has(schoolClass.id)
-                      ? "#16803c"
                       : "#c62828",
                 }}
               >
-                {publicationStatusState === "loading"
+                {publishedClassIds?.has(schoolClass.id)
+                  ? `✓ ${schoolClass.name} · results published`
+                  : publicationStatusState === "loading"
                   ? `… ${schoolClass.name} · checking status`
                   : publicationStatusState === "error"
                     ? `— ${schoolClass.name} · status unavailable`
-                  : publishedClassIds?.has(schoolClass.id)
-                    ? `✓ ${schoolClass.name} · results published`
                     : `✗ ${schoolClass.name} · results not published`}
               </option>
             ))}
