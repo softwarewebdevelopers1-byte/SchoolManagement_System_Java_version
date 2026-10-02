@@ -8,8 +8,10 @@ import com.example.school.system.DTO.UpdateSchoolDTO;
 import com.example.school.system.DTO.UpdateTermAndExam;
 import com.example.school.system.DTO.DTOResponse.PublicSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.security.ApiRateLimitService;
 import com.example.school.system.services.SchoolService;
 import com.example.school.system.types.SchoolVisibility;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,11 +36,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class SchoolController {
 
     private final SchoolService schoolService;
+    private final ApiRateLimitService rateLimitService;
 
     @PostMapping("/create-school")
     public ResponseEntity<?> createSchool(
-            @Valid @RequestBody CreateSchoolDTO schoolDto) {
-        SchoolApiResponse<?> schoolCreationRes = schoolService.registerSchool(schoolDto);
+            @Valid @RequestBody CreateSchoolDTO schoolDto,
+            HttpServletRequest request) {
+        SchoolApiResponse<?> schoolCreationRes = schoolService.registerSchool(
+                schoolDto,
+                rateLimitService.clientAddress(request));
         return ResponseEntity.status(201).body(schoolCreationRes);
     }
 

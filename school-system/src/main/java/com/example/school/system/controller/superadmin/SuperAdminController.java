@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.example.school.system.DTO.CreateSchoolDTO;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
+import com.example.school.system.services.SchoolService;
 import com.example.school.system.services.superadmin.SuperAdminService;
 import com.example.school.system.types.AccountStatus;
 import com.example.school.system.types.SchoolStatus;
@@ -25,6 +27,13 @@ import lombok.RequiredArgsConstructor;
 public class SuperAdminController {
 
     private final SuperAdminService superAdminService;
+    private final SchoolService schoolService;
+
+    @PostMapping("/schools")
+    public ResponseEntity<?> createSchool(@Valid @RequestBody CreateSchoolDTO request) {
+        return ResponseEntity.status(201).body(
+                schoolService.registerSchoolForSuperAdmin(request));
+    }
 
     @GetMapping("/platform/statistics")
     public ResponseEntity<?> getPlatformStatistics() {

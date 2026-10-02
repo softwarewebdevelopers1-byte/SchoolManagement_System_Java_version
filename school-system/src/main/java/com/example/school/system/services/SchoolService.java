@@ -40,6 +40,7 @@ public class SchoolService {
     private final RandomValuesService randomValues;
     private final JwtValidator jwtValidator;
     private final ExamSettingsRepo examSettingsRepo;
+    private final PublicSchoolCreationQuotaService publicSchoolCreationQuotaService;
 
     // cache the school code for 24 hours to reduce database hits
     public SchoolApiResponse<?> getSchool(String code) {
@@ -55,7 +56,17 @@ public class SchoolService {
     }
 
     @Transactional
-    public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto) {
+    public SchoolApiResponse<?> registerSchool(CreateSchoolDTO schoolDto, String clientAddress) {
+        publicSchoolCreationQuotaService.reserve(clientAddress);
+        return createSchool(schoolDto);
+    }
+
+    @Transactional
+    public SchoolApiResponse<?> registerSchoolForSuperAdmin(CreateSchoolDTO schoolDto) {
+        return createSchool(schoolDto);
+    }
+
+    private SchoolApiResponse<?> createSchool(CreateSchoolDTO schoolDto) {
         if (schoolRepository.existsBySchoolName(schoolDto.schoolName())
                 || schoolRepository.existsByEmail(schoolDto.schoolEmail()))
             throw new SchoolResourceExistsExceptionHandler("school with that name or email already exists");

@@ -1304,9 +1304,10 @@ export const superAdminApi = {
     phoneNumber: string;
     motto: string;
   }): Promise<any> => {
-    const response: any = await api.post("/schools/create-school", data);
-
-    return response.data;
+    return request<any>("/superadmin/schools", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
   getDailyAttendance: async (classId: string, date: string): Promise<any> => {
     return request<any>(

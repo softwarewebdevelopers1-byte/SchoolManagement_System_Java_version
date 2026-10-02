@@ -16,8 +16,8 @@ public interface ExpiryLinksRepository extends JpaRepository<ExpiryLinks, UUID> 
 
     Optional<ExpiryLinks> findByTokenAndUsed(String token, boolean value);
 
-    Optional<ExpiryLinks> findByTokenAndUsedAndExpirationTimeAfter(String token, boolean used,
-            LocalDateTime now);
+    Optional<ExpiryLinks> findByTokenAndUsedAndRevokedAndExpirationTimeAfter(String token, boolean used,
+            boolean revoked, LocalDateTime now);
 
     List<ExpiryLinks> findAllByOrderByCreatedAtDesc();
 

@@ -9,7 +9,7 @@ import {
   normalizeUser,
   request,
 } from "../../lib/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Home } from "lucide-react";
 
 // Role labels removed
@@ -136,6 +136,8 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = false }) => {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("invite");
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -148,10 +150,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, setAuthMode] = useState<"login" | "signup">(
+    inviteToken ? "signup" : "login",
+  );
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [schoolCode, setSchoolCode] = useState("");
+  const [inviteData, setInviteData] = useState<{
+    email: string;
+    schoolCode: string;
+    schoolName: string;
+  } | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(Boolean(inviteToken));
   const [verifiedSchool, setVerifiedSchool] = useState("");
   const [codeChecking, setCodeChecking] = useState(false);
   const [profileSession, setProfileSession] = useState<any | null>(null);
@@ -167,6 +177,41 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
   useEffect(() => {
     setIsSuperAdminLogin(defaultSuperAdminMode);
   }, [defaultSuperAdminMode]);
+
+  useEffect(() => {
+    if (!inviteToken) {
+      setInviteData(null);
+      setInviteLoading(false);
+      return;
+    }
+
+    setAuthMode("signup");
+    setInviteLoading(true);
+    setInviteData(null);
+    setSignupEmail("");
+    setSignupPassword("");
+    setSchoolCode("");
+    setVerifiedSchool("");
+    setError("");
+    setNotice(null);
+    api
+      .get<{
+        email: string;
+        schoolCode: string;
+        schoolName: string;
+      }>(`/superadmin/invites/${encodeURIComponent(inviteToken)}`)
+      .then((invite) => {
+        setInviteData(invite);
+        setSignupEmail(invite.email);
+        setSchoolCode(invite.schoolCode);
+        setVerifiedSchool(invite.schoolName);
+      })
+      .catch((err: any) => {
+        setInviteData(null);
+        setError(err.message || "This invitation is invalid or has expired.");
+      })
+      .finally(() => setInviteLoading(false));
+  }, [inviteToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,6 +299,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inviteToken) {
+      if (!inviteData) {
+        setError("This invitation could not be validated.");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      setNotice(null);
+      try {
+        await api.post("/superadmin/invites/accept", {
+          token: inviteToken,
+          email: inviteData.email,
+          password: signupPassword,
+        });
+        setAuthMode("login");
+        setLoginIdentifier(inviteData.email);
+        setSignupPassword("");
+        setNotice({
+          text: "Your account is ready. Sign in with your new password.",
+          type: "success",
+        });
+        navigate("/login", { replace: true });
+      } catch (err: any) {
+        setError(err.message || "Unable to accept this invitation.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!verifiedSchool) {
       setError("Verify the school code before creating the account.");
       return;
@@ -585,17 +660,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                 >
                   {loading ? <span className={styles.loader} /> : "Sign In"}
                 </button>
-                <button
-                  type="button"
-                  className={styles.authModeButton}
-                  onClick={() => {
-                    setAuthMode("signup");
-                    setError("");
-                    setNotice(null);
-                  }}
-                >
-                  Create teacher account
-                </button>
+                {!inviteToken && (
+                  <button
+                    type="button"
+                    className={styles.authModeButton}
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setError("");
+                      setNotice(null);
+                    }}
+                  >
+                    Create teacher account
+                  </button>
+                )}
               </form>
             ) : (
               <form onSubmit={handleSignup} className={styles.form}>
@@ -604,6 +681,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                   <div className={styles.codeRow}>
                     <input
                       disabled={loading ? true : false}
+                      readOnly={Boolean(inviteToken)}
                       value={schoolCode}
                       onChange={(event) => {
                         setSchoolCode(event.target.value);
@@ -612,14 +690,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                       className={styles.input}
                       required
                     />
-                    <button
-                      type="button"
-                      className={styles.codeButton}
-                      onClick={handleVerifySchoolCode}
-                      disabled={codeChecking}
-                    >
-                      {codeChecking ? "Checking..." : "Submit Code"}
-                    </button>
+                    {!inviteToken && (
+                      <button
+                        type="button"
+                        className={styles.codeButton}
+                        onClick={handleVerifySchoolCode}
+                        disabled={codeChecking}
+                      >
+                        {codeChecking ? "Checking..." : "Submit Code"}
+                      </button>
+                    )}
                   </div>
                   {verifiedSchool && (
                     <p className={styles.schoolFound}>{verifiedSchool}</p>
@@ -629,6 +709,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                   <label className={styles.inputLabel}>Email</label>
                   <input
                     disabled={loading ? true : false}
+                    readOnly={Boolean(inviteToken)}
                     type="email"
                     value={signupEmail}
                     onChange={(event) => setSignupEmail(event.target.value)}
@@ -644,9 +725,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                     value={signupPassword}
                     onChange={(event) => setSignupPassword(event.target.value)}
                     className={styles.input}
+                    autoComplete="new-password"
+                    minLength={inviteToken ? 8 : undefined}
                     required
                   />
                 </div>
+                {inviteLoading && (
+                  <p className={styles.schoolFound}>Validating invitation...</p>
+                )}
                 {error && (
                   <div className={styles.errorMessage}>
                     <span className={styles.errorIcon}>
@@ -669,7 +755,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                 <button
                   type="submit"
                   className={styles.submitButton}
-                  disabled={loading || !verifiedSchool}
+                  disabled={loading || inviteLoading || !verifiedSchool}
                 >
                   {loading ? (
                     <span className={styles.loader} />
@@ -677,17 +763,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, defaultSuperAdminMode = 
                     "Create Account"
                   )}
                 </button>
-                <button
-                  type="button"
-                  className={styles.authModeButton}
-                  onClick={() => {
-                    setAuthMode("login");
-                    setError("");
-                    setNotice(null);
-                  }}
-                >
-                  Back to sign in
-                </button>
+                {!inviteToken && (
+                  <button
+                    type="button"
+                    className={styles.authModeButton}
+                    onClick={() => {
+                      setAuthMode("login");
+                      setError("");
+                      setNotice(null);
+                    }}
+                  >
+                    Back to sign in
+                  </button>
+                )}
               </form>
             )}
           </div>

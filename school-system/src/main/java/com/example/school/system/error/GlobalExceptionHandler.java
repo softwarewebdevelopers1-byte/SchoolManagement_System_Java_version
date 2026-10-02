@@ -51,6 +51,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(409).body(SchoolApiResponse.error(existsExceptionHandler.getMessage()));
     }
 
+    @ExceptionHandler(SchoolCreationLimitException.class)
+    public ResponseEntity<?> schoolCreationLimit(SchoolCreationLimitException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(SchoolApiResponse.error(exception.getMessage()));
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<?> RouteNotFound(NoResourceFoundException noResourceFoundException) {
         return ResponseEntity.status(404).body(SchoolApiResponse.error(noResourceFoundException.getMessage()));

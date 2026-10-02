@@ -59,9 +59,12 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
             return rateLimitService.consume("login-ip", clientAddress, 20, MINUTE);
         }
 
+        if (isTeacherOnboarding(path, method)) {
+            return rateLimitService.consume("teacher-onboarding-ip", clientAddress, 10, TEN_MINUTES);
+        }
+
         if (isPublicOnboarding(path, method)) {
-            int limit = path.equals("/api/schools/create-school") ? 5 : 10;
-            return rateLimitService.consume("public-onboarding-ip:" + path, clientAddress, limit, TEN_MINUTES);
+            return rateLimitService.consume("public-onboarding-ip:" + path, clientAddress, 5, TEN_MINUTES);
         }
 
         if (path.startsWith("/api/superadmin/invites/")) {
@@ -116,8 +119,12 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
 
     private static boolean isPublicOnboarding(String path, String method) {
         return "POST".equalsIgnoreCase(method)
-                && (path.equals("/api/auth/teacher/create-account")
-                        || path.equals("/api/schools/create-school"));
+                && path.equals("/api/schools/create-school");
+    }
+
+    private static boolean isTeacherOnboarding(String path, String method) {
+        return ("GET".equalsIgnoreCase(method) && path.equals("/api/schools/get/school/for/user"))
+                || ("POST".equalsIgnoreCase(method) && path.equals("/api/auth/teacher/create-account"));
     }
 
     private static boolean isSensitiveRead(String path, String method) {

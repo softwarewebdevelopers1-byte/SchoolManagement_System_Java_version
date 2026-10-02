@@ -65,6 +65,9 @@ const SuperAdminAnalytics = lazy(
 const SuperAdminLoginPage = lazy(
   () => import("./components/auth/SuperAdminLoginPage"),
 );
+const AcceptAdminInvite = lazy(
+  () => import("./components/auth/AcceptAdminInvite"),
+);
 const StudentResults = lazy(() => import("./components/StudentsResultsPage"));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -324,6 +327,7 @@ function App() {
         <Route path="/register/school" element={<SchoolRegistration />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
+        <Route path="/invite/:token" element={<AcceptAdminInvite />} />
         <Route
           path="/edunex-org/dashboard"
           element={

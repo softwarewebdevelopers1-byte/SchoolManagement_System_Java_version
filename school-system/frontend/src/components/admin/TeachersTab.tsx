@@ -528,7 +528,12 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
     }
   }, [useServerPagination, page, search]);
 
-  const teachers = useServerPagination ? serverTeachers : propTeachers;
+  const teachers = (useServerPagination ? serverTeachers : propTeachers).filter(
+    (teacher: any) =>
+      !["PENDING", "PENDING_APPROVAL"].includes(
+        String(teacher.status || "").trim().toUpperCase(),
+      ),
+  );
   const isFirstPage = page === 1;
   const isLastPage = page >= totalPages;
 

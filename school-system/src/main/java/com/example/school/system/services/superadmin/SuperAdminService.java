@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +53,9 @@ public class SuperAdminService {
     private final PasswordEncoder passwordEncoder;
     private final JwtCreationService jwtCreationService;
 
+    @Value("${frontend.url:http://localhost:8080}")
+    private String frontendUrl;
+
     public LoginResponse login(String email, String password) {
         Users user = userRepository.findUsersByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("Invalid super-admin credentials"));
@@ -89,7 +93,7 @@ public class SuperAdminService {
         link.setExpirationTime(LocalDateTime.now().plusDays(7));
         link = expiryLinksRepository.save(link);
         return new SuperAdminInviteResponse(link.getId(), email, school.getId(), school.getSchoolName(),
-                link.getToken(), link.getExpirationTime(), link.isUsed());
+                school.getSchoolCode(), UserRoles.ADMIN.name(), link.getToken(), link.getExpirationTime(), link.isUsed());
     }
 
     @Transactional(readOnly = true)
@@ -295,7 +299,9 @@ public class SuperAdminService {
                             school != null ? school.getSchoolName() : null,
                             role,
                             status,
-                            link.getToken() != null ? "https://schoolmanagement-system-java-version-1.onrender.com/api/superadmin/invites/" + link.getToken() : null,
+                            link.getToken() != null
+                                    ? getFrontendInviteUrl(link.getToken())
+                                    : null,
                             link.getCreatedAt(),
                             link.getExpirationTime(),
                             link.getUsedAt(),
@@ -306,18 +312,19 @@ public class SuperAdminService {
     }
 
     public SuperAdminInviteResponse validateAdminInvite(String token) {
-        ExpiryLinks link = expiryLinksRepository.findByTokenAndUsedAndExpirationTimeAfter(token, false,
-                LocalDateTime.now()).orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid or expired invite"));
+        ExpiryLinks link = expiryLinksRepository
+                .findByTokenAndUsedAndRevokedAndExpirationTimeAfter(token, false, false, LocalDateTime.now())
+                .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid or expired invite"));
         Users user = userRepository.findById(link.getUsers())
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid invite user"));
         return new SuperAdminInviteResponse(link.getId(), user.getEmail(), user.getSchool().getId(),
-                user.getSchool().getSchoolName(), link.getToken(), link.getExpirationTime(), link.isUsed());
+                user.getSchool().getSchoolName(), user.getSchool().getSchoolCode(), link.getRoleName(), link.getToken(), link.getExpirationTime(), link.isUsed());
     }
 
     @Transactional
     public void acceptAdminInvite(AcceptAdminInviteRequest request) {
         ExpiryLinks link = expiryLinksRepository
-                .findByTokenAndUsedAndExpirationTimeAfter(request.token(), false, LocalDateTime.now())
+                .findByTokenAndUsedAndRevokedAndExpirationTimeAfter(request.token(), false, false, LocalDateTime.now())
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid or expired invite"));
         Users user = userRepository.findById(link.getUsers())
                 .orElseThrow(() -> new InvalidTokenExceptionHandler("Invalid invite user"));
@@ -330,6 +337,10 @@ public class SuperAdminService {
         link.setUsed(true);
         link.setUsedAt(LocalDateTime.now());
         expiryLinksRepository.save(link);
+    }
+
+    private String getFrontendInviteUrl(String token) {
+        return frontendUrl.replaceAll("/+$", "") + "/invite/" + token;
     }
 
     @Transactional

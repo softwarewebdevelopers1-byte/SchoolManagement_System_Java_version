@@ -110,7 +110,7 @@ export default function SuperAdminOverview() {
       /*
        * This calls:
        *
-       * POST /api/schools/create-school
+       * POST /api/superadmin/schools
        *
        * with:
        * {

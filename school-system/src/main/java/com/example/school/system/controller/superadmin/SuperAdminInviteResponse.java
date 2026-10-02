@@ -8,6 +8,8 @@ public record SuperAdminInviteResponse(
         String email,
         UUID schoolId,
         String schoolName,
+        String schoolCode,
+        String role,
         String token,
         LocalDateTime expiresAt,
         boolean used) {

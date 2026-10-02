@@ -59,4 +59,30 @@ class ApiRateLimitFilterTest {
         assertEquals(429, response.getStatus());
         assertEquals("2", response.getHeader("Retry-After"));
     }
+
+    @Test
+    void sharesTeacherSignupLimitBetweenSchoolCodeChecksAndAccountCreation() throws Exception {
+        ApiRateLimitFilter filter = new ApiRateLimitFilter(new ApiRateLimitService());
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            boolean verifySchoolCode = attempt % 2 == 0;
+            MockHttpServletRequest request = new MockHttpServletRequest(
+                    verifySchoolCode ? "GET" : "POST",
+                    verifySchoolCode
+                            ? "/api/schools/get/school/for/user"
+                            : "/api/auth/teacher/create-account");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilterInternal(request, response, (req, res) -> {
+            });
+            assertNotEquals(429, response.getStatus());
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/schools/get/school/for/user");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilterInternal(request, response, (req, res) -> {
+            throw new AssertionError("Throttled request must not reach the controller");
+        });
+
+        assertEquals(429, response.getStatus());
+    }
 }
