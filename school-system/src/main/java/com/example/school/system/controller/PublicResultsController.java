@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.ResultAccessRequest;
 import com.example.school.system.DTO.ResultPublicationRequest;
+import com.example.school.system.DTO.ResultPublicationStatusResponse;
 import com.example.school.system.services.ResultAccessService;
+import com.example.school.system.types.ExamType;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,16 @@ public class PublicResultsController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> publishResults(@Valid @RequestBody ResultPublicationRequest request) {
         return ResponseEntity.ok(resultAccessService.publishResults(request));
+    }
+
+    @GetMapping("/api/admin/results-publication-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResultPublicationStatusResponse> getPublicationStatus(
+            @RequestParam String academicYear,
+            @RequestParam Integer term,
+            @RequestParam ExamType examType) {
+        return ResponseEntity.ok(
+                resultAccessService.getPublicationStatus(academicYear, term, examType));
     }
 
     @DeleteMapping("/api/results/access/{accessId}")

@@ -36,6 +36,7 @@ import com.example.school.system.models.StudentProfile;
 import com.example.school.system.DTO.DTOResponse.AuthenticatedUserContext;
 import com.example.school.system.DTO.UserDto;
 import com.example.school.system.projection.PublicResultRow;
+import com.example.school.system.projection.ClassHeaderProjection;
 import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
@@ -88,6 +89,28 @@ class ResultAccessServiceTest {
                 studentRepository,
                 resultSmsNotificationRepository,
                 eventPublisher);
+    }
+
+    @Test
+    void returnsOnlyClassesWhoseEntireResultSetIsPublished() {
+        UUID schoolId = UUID.randomUUID();
+        UUID publishedClassId = UUID.randomUUID();
+        UUID unpublishedClassId = UUID.randomUUID();
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(
+                        UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(schoolClassRepository.findClassHeadersBySchoolId(schoolId)).thenReturn(List.of(
+                new ClassHeaderProjection(publishedClassId, 1, "A", false),
+                new ClassHeaderProjection(unpublishedClassId, 1, "B", false)));
+        when(classTermResultsRepo.findPublicationCounts(
+                List.of(publishedClassId, unpublishedClassId), "2026", 1, ExamType.ENDTERM))
+                .thenReturn(List.of(
+                        new Object[] { publishedClassId, 2L, 2L },
+                        new Object[] { unpublishedClassId, 2L, 1L }));
+
+        var status = service.getPublicationStatus("2026", 1, ExamType.ENDTERM);
+
+        assertEquals(java.util.Set.of(publishedClassId), status.publishedClassIds());
     }
 
     @Test
@@ -344,7 +367,14 @@ class ResultAccessServiceTest {
 
         ResultPublicationResponse republishedResponse = service.publishResults(request);
         assertEquals(true, republishedResponse.previouslyPublished());
-        org.mockito.Mockito.verify(classTermResultsRepo, org.mockito.Mockito.times(2)).saveAll(List.of(generated));
+        assertEquals(1, republishedResponse.publishedStudents());
+        assertEquals(0, republishedResponse.accessLinks().size());
+        org.mockito.Mockito.verify(rankingService, org.mockito.Mockito.times(1)).StudentClassRanking(
+                new GradingClassStudents(classId, ExamType.ENDTERM, "2026", 1, gradingScale));
+        org.mockito.Mockito.verify(classTermResultsRepo, org.mockito.Mockito.times(1))
+                .saveAll(List.of(generated));
+        org.mockito.Mockito.verify(resultSmsNotificationRepository, org.mockito.Mockito.times(1))
+                .saveAll(org.mockito.ArgumentMatchers.anyList());
     }
 
     @Test

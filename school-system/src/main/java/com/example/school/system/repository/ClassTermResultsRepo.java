@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.school.system.models.ClassTermResults;
@@ -20,6 +21,21 @@ public interface ClassTermResultsRepo extends JpaRepository<ClassTermResults, UU
 
     List<ClassTermResults> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
             UUID classId, String academicYear, Integer term, ExamType examType);
+
+    @Query("""
+            SELECT r.classId, COUNT(r), SUM(CASE WHEN r.published = true THEN 1 ELSE 0 END)
+            FROM ClassTermResults r
+            WHERE r.classId IN :classIds
+              AND r.academicYear = :academicYear
+              AND r.currentSchoolTerm = :term
+              AND r.examType = :examType
+            GROUP BY r.classId
+            """)
+    List<Object[]> findPublicationCounts(
+            @Param("classIds") List<UUID> classIds,
+            @Param("academicYear") String academicYear,
+            @Param("term") Integer term,
+            @Param("examType") ExamType examType);
 
     List<ClassTermResults> findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
             UUID studentId, String academicYear, Integer term);

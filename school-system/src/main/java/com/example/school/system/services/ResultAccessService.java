@@ -33,6 +33,7 @@ import com.example.school.system.DTO.ResultAccessRequest;
 import com.example.school.system.DTO.ResultAccessResponse;
 import com.example.school.system.DTO.ResultPublicationRequest;
 import com.example.school.system.DTO.ResultPublicationResponse;
+import com.example.school.system.DTO.ResultPublicationStatusResponse;
 import com.example.school.system.DTO.ResultLinkResponse;
 import com.example.school.system.DTO.ResultLinksPageResponse;
 import com.example.school.system.error.ResultAccessExpiredException;
@@ -138,6 +139,15 @@ public class ResultAccessService {
         schoolClassRepository.findByClassIdAndSchoolId(request.classId(), schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
 
+        List<ClassTermResults> previousResults = classTermResultsRepo
+                .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        request.classId(), request.academicYear(), request.term(), request.examType());
+        boolean previouslyPublished = !previousResults.isEmpty()
+                && previousResults.stream().allMatch(ClassTermResults::isPublished);
+        if (previouslyPublished) {
+            return new ResultPublicationResponse(previousResults.size(), true, List.of());
+        }
+
         List<MarksSheet> markSheets = marksSheetRepo
                 .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
                         request.classId(), request.academicYear(), request.term(), request.examType(),
@@ -147,12 +157,6 @@ public class ResultAccessService {
             throw new SchoolResourceNotFoundExceptionHandler(
                     "no marks found for the selected class, academic year, term, and examination period");
         }
-
-        List<ClassTermResults> previousResults = classTermResultsRepo
-                .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
-                        request.classId(), request.academicYear(), request.term(), request.examType());
-        boolean previouslyPublished = !previousResults.isEmpty()
-                && previousResults.stream().allMatch(ClassTermResults::isPublished);
 
         rankingService.StudentClassRanking(new GradingClassStudents(
                 request.classId(),
@@ -229,6 +233,27 @@ public class ResultAccessService {
                         (first, ignored) -> first));
         queueResultNotifications(request, links, studentIds, studentsById, buildMarksByStudent(markSheets));
         return new ResultPublicationResponse(results.size(), previouslyPublished, links);
+    }
+
+    @Transactional(readOnly = true)
+    public ResultPublicationStatusResponse getPublicationStatus(
+            String academicYear, Integer term, ExamType examType) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        List<UUID> classIds = schoolClassRepository.findClassHeadersBySchoolId(schoolId)
+                .stream()
+                .map(header -> header.classId())
+                .toList();
+        if (classIds.isEmpty()) {
+            return new ResultPublicationStatusResponse(java.util.Set.of());
+        }
+
+        java.util.Set<UUID> publishedClassIds = classTermResultsRepo
+                .findPublicationCounts(classIds, academicYear, term, examType)
+                .stream()
+                .filter(row -> ((Number) row[1]).longValue() == ((Number) row[2]).longValue())
+                .map(row -> (UUID) row[0])
+                .collect(java.util.stream.Collectors.toSet());
+        return new ResultPublicationStatusResponse(publishedClassIds);
     }
 
     private void queueResultNotifications(ResultPublicationRequest request,

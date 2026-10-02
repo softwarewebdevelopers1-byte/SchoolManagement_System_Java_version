@@ -8,6 +8,7 @@ import type { Class } from "./types";
 import styles from "./ResultsPublishingTab.module.css";
 
 type Props = { classes: Class[] };
+type ResultPublicationStatus = { publishedClassIds: string[] };
 type LinkStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
 type SortField = "student" | "createdAt" | "expiresAt" | "status";
 
@@ -44,6 +45,11 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [examType, setExamType] = useState("ENDTERM");
   const toast = useNotifications();
   const [publishing, setPublishing] = useState(false);
+  const [publicationStatusState, setPublicationStatusState] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
+  const [publishedClassIds, setPublishedClassIds] = useState<Set<string> | null>(null);
+  const [publicationStatusVersion, setPublicationStatusVersion] = useState(0);
   const [showLinks, setShowLinks] = useState(false);
   const [links, setLinks] = useState<ResultLinksPage | null>(null);
   const [loadingLinks, setLoadingLinks] = useState(false);
@@ -59,6 +65,33 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [copyingId, setCopyingId] = useState<string | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadPublicationStatus = async () => {
+      setPublishedClassIds(null);
+      setPublicationStatusState("loading");
+      const params = new URLSearchParams({ academicYear, term, examType });
+      try {
+        const response = await request<ResultPublicationStatus>(
+          `/admin/results-publication-status?${params.toString()}`,
+        );
+        if (!cancelled) {
+          setPublishedClassIds(new Set(response.publishedClassIds.map(String)));
+          setPublicationStatusState("loaded");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setPublicationStatusState("error");
+          toast.error(friendlyErrorMessage(error, "Unable to load class publication statuses."));
+        }
+      }
+    };
+    void loadPublicationStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear, term, examType, publicationStatusVersion, toast]);
 
   useEffect(() => {
     if (!showLinks || searchInput.trim() === search) return;
@@ -124,11 +157,17 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
           }),
         },
       );
-      toast.success(
-        response.previouslyPublished
-          ? "Results were already published for this class."
-          : `${response.publishedStudents} student result(s) published. ${response.accessLinks.length} new secure link(s) created.`,
-      );
+      setPublicationStatusVersion((current) => current + 1);
+      if (response.previouslyPublished) {
+        const selectedClass = classes.find((schoolClass) => schoolClass.id === classId);
+        toast.info(
+          `Results for ${selectedClass?.name || "this class"} are already published for ${academicYear}, Term ${term}, ${examType}.`,
+        );
+      } else {
+        toast.success(
+          `${response.publishedStudents} student result(s) published. ${response.accessLinks.length} new secure link(s) created.`,
+        );
+      }
     } catch (error) {
       toast.error(friendlyErrorMessage(error, "Unable to publish results."));
     } finally {
@@ -238,7 +277,27 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
           <select value={classId} onChange={(event) => setClassId(event.target.value)}>
             <option value="">Select class</option>
             {classes.map((schoolClass) => (
-              <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.name}</option>
+              <option
+                key={schoolClass.id}
+                value={schoolClass.id}
+                style={{
+                  color: publicationStatusState === "loading"
+                    ? "inherit"
+                    : publicationStatusState === "error"
+                      ? "#64748b"
+                    : publishedClassIds?.has(schoolClass.id)
+                      ? "#16803c"
+                      : "#c62828",
+                }}
+              >
+                {publicationStatusState === "loading"
+                  ? `… ${schoolClass.name} · checking status`
+                  : publicationStatusState === "error"
+                    ? `— ${schoolClass.name} · status unavailable`
+                  : publishedClassIds?.has(schoolClass.id)
+                    ? `✓ ${schoolClass.name} · results published`
+                    : `✗ ${schoolClass.name} · results not published`}
+              </option>
             ))}
           </select>
         </label>
