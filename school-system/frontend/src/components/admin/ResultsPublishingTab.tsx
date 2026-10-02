@@ -8,7 +8,13 @@ import type { Class } from "./types";
 import styles from "./ResultsPublishingTab.module.css";
 
 type Props = { classes: Class[] };
-type ResultPublicationStatus = { publishedClassIds: string[] };
+type ResultPublicationStatus = {
+  academicYear: string;
+  term: number;
+  examType: string;
+  publishedClassIds: string[];
+};
+type AcademicCycle = Pick<ResultPublicationStatus, "academicYear" | "term" | "examType">;
 type LinkStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
 type SortField = "student" | "createdAt" | "expiresAt" | "status";
 
@@ -40,15 +46,13 @@ const PAGE_SIZE = 20;
 
 export const ResultsPublishingTab = ({ classes }: Props) => {
   const [classId, setClassId] = useState("");
-  const [academicYear, setAcademicYear] = useState(String(new Date().getFullYear()));
-  const [term, setTerm] = useState("1");
-  const [examType, setExamType] = useState("ENDTERM");
   const toast = useNotifications();
   const [publishing, setPublishing] = useState(false);
   const [publicationStatusState, setPublicationStatusState] = useState<
     "loading" | "loaded" | "error"
   >("loading");
   const [publishedClassIds, setPublishedClassIds] = useState<Set<string> | null>(null);
+  const [currentCycle, setCurrentCycle] = useState<AcademicCycle | null>(null);
   const [publicationStatusVersion, setPublicationStatusVersion] = useState(0);
   const [showLinks, setShowLinks] = useState(false);
   const [links, setLinks] = useState<ResultLinksPage | null>(null);
@@ -71,13 +75,17 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
     const loadPublicationStatus = async () => {
       setPublishedClassIds(null);
       setPublicationStatusState("loading");
-      const params = new URLSearchParams({ academicYear, term, examType });
       try {
         const response = await request<ResultPublicationStatus>(
-          `/admin/results-publication-status?${params.toString()}`,
+          "/admin/results-publication-status",
         );
         if (!cancelled) {
           setPublishedClassIds(new Set(response.publishedClassIds.map(String)));
+          setCurrentCycle({
+            academicYear: response.academicYear,
+            term: response.term,
+            examType: response.examType,
+          });
           setPublicationStatusState("loaded");
         }
       } catch (error) {
@@ -91,7 +99,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [academicYear, term, examType, publicationStatusVersion, toast]);
+  }, [publicationStatusVersion, toast]);
 
   useEffect(() => {
     if (!showLinks || searchInput.trim() === search) return;
@@ -151,9 +159,6 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
           method: "POST",
           body: JSON.stringify({
             classId,
-            academicYear,
-            term: Number(term),
-            examType,
           }),
         },
       );
@@ -161,7 +166,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
       if (response.previouslyPublished) {
         const selectedClass = classes.find((schoolClass) => schoolClass.id === classId);
         toast.info(
-          `Results for ${selectedClass?.name || "this class"} are already published for ${academicYear}, Term ${term}, ${examType}.`,
+          `Results for ${selectedClass?.name || "this class"} are already published.`,
         );
       } else {
         toast.success(
@@ -269,9 +274,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
     <section className={styles.panel}>
       <p className={styles.eyebrow}>Academic cycle</p>
       <h2 className={styles.title}>Publish results</h2>
-      <p className={styles.intro}>
-        Results remain unavailable to parents until this class, term, and examination period are published.
-      </p>
+      <p className={styles.intro}>Select a class to publish results for the school’s current academic cycle.</p>
       <div className={styles.form}>
         <label className={styles.field}>Class
           <select value={classId} onChange={(event) => setClassId(event.target.value)}>
@@ -301,20 +304,12 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
             ))}
           </select>
         </label>
-        <label className={styles.field}>Academic year
-          <input value={academicYear} onChange={(event) => setAcademicYear(event.target.value)} />
-        </label>
-        <label className={styles.field}>Term
-          <select value={term} onChange={(event) => setTerm(event.target.value)}>
-            <option value="1">Term 1</option><option value="2">Term 2</option><option value="3">Term 3</option>
-          </select>
-        </label>
-        <label className={styles.field}>Exam
-          <select value={examType} onChange={(event) => setExamType(event.target.value)}>
-            <option value="OPENER">Opener</option><option value="MIDTERM">Midterm</option><option value="ENDTERM">End term</option>
-          </select>
-        </label>
       </div>
+      {currentCycle && publicationStatusState === "loaded" && (
+        <p className={styles.cycleNote}>
+          Current cycle: {currentCycle.academicYear} · Term {currentCycle.term} · {currentCycle.examType}
+        </p>
+      )}
       <div className={styles.actions}>
         <button className={styles.publishButton} type="button" onClick={() => void publish()} disabled={publishing}>
           {publishing ? "Publishing..." : "Publish Results"}

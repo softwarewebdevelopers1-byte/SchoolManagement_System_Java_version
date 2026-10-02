@@ -30,6 +30,9 @@ import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.GradingScale;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.models.ClassTermResults;
+import com.example.school.system.models.ExamSettings;
+import com.example.school.system.models.School;
+import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.models.Subject;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.models.StudentProfile;
@@ -43,6 +46,7 @@ import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
 import com.example.school.system.repository.ResultSmsNotificationRepository;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import com.example.school.system.types.ExamType;
@@ -60,6 +64,8 @@ class ResultAccessServiceTest {
     private PublicResultsRepository publicResultsRepository;
     @Mock
     private SchoolClassRepository schoolClassRepository;
+    @Mock
+    private SchoolRepository schoolRepository;
     @Mock
     private AuthenticatedUserService authenticatedUserService;
     @Mock
@@ -83,12 +89,25 @@ class ResultAccessServiceTest {
                 marksSheetRepo,
                 publicResultsRepository,
                 schoolClassRepository,
+                schoolRepository,
                 authenticatedUserService,
                 gradingService,
                 rankingService,
                 studentRepository,
                 resultSmsNotificationRepository,
                 eventPublisher);
+    }
+
+    private void stubCurrentAcademicCycle(UUID schoolId) {
+        ExamSettings examSettings = new ExamSettings();
+        examSettings.setExamType(ExamType.ENDTERM);
+        SchoolSettings schoolSettings = new SchoolSettings();
+        schoolSettings.setAcademicYear("2026");
+        schoolSettings.setCurrentSchoolTerm(1);
+        schoolSettings.setExamSettings(examSettings);
+        School school = new School();
+        school.setSchoolSettings(schoolSettings);
+        when(schoolRepository.findByIdWithSettings(schoolId)).thenReturn(Optional.of(school));
     }
 
     @Test
@@ -99,6 +118,7 @@ class ResultAccessServiceTest {
         when(authenticatedUserService.currentUser())
                 .thenReturn(new AuthenticatedUserContext(
                         UserDto.builder().schoolId(schoolId).build(), List.of()));
+        stubCurrentAcademicCycle(schoolId);
         when(schoolClassRepository.findClassHeadersBySchoolId(schoolId)).thenReturn(List.of(
                 new ClassHeaderProjection(publishedClassId, 1, "A", false),
                 new ClassHeaderProjection(unpublishedClassId, 1, "B", false)));
@@ -108,9 +128,12 @@ class ResultAccessServiceTest {
                         new Object[] { publishedClassId, 2L, 2L },
                         new Object[] { unpublishedClassId, 2L, 1L }));
 
-        var status = service.getPublicationStatus("2026", 1, ExamType.ENDTERM);
+        var status = service.getPublicationStatus();
 
         assertEquals(java.util.Set.of(publishedClassId), status.publishedClassIds());
+        assertEquals("2026", status.academicYear());
+        assertEquals(1, status.term());
+        assertEquals(ExamType.ENDTERM, status.examType());
     }
 
     @Test
@@ -301,12 +324,12 @@ class ResultAccessServiceTest {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
         UUID publisherId = UUID.randomUUID();
-        ResultPublicationRequest request = new ResultPublicationRequest(
-                classId, "2026", 1, ExamType.ENDTERM, null);
+        ResultPublicationRequest request = new ResultPublicationRequest(classId);
 
         UserDto user = UserDto.builder().schoolId(schoolId).build();
         when(authenticatedUserService.currentUser())
                 .thenReturn(new AuthenticatedUserContext(user, List.of()));
+        stubCurrentAcademicCycle(schoolId);
         when(authenticatedUserService.currentUserId()).thenReturn(publisherId);
         when(schoolClassRepository.findByClassIdAndSchoolId(classId, schoolId))
                 .thenReturn(Optional.of(new SchoolClass()));
@@ -384,6 +407,7 @@ class ResultAccessServiceTest {
         when(authenticatedUserService.currentUser())
                 .thenReturn(new AuthenticatedUserContext(
                         UserDto.builder().schoolId(schoolId).build(), List.of()));
+        stubCurrentAcademicCycle(schoolId);
         when(schoolClassRepository.findByClassIdAndSchoolId(classId, schoolId))
                 .thenReturn(Optional.of(new SchoolClass()));
         when(marksSheetRepo.findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
@@ -391,8 +415,7 @@ class ResultAccessServiceTest {
                 .thenReturn(List.of());
 
         assertThrows(SchoolResourceNotFoundExceptionHandler.class,
-                () -> service.publishResults(new ResultPublicationRequest(
-                        classId, "2026", 1, ExamType.ENDTERM, null)));
+                () -> service.publishResults(new ResultPublicationRequest(classId)));
         org.mockito.Mockito.verifyNoInteractions(rankingService);
     }
 

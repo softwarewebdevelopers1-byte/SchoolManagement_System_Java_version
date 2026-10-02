@@ -45,6 +45,8 @@ import com.example.school.system.models.MarksSheet;
 import com.example.school.system.models.ResultAccess;
 import com.example.school.system.models.StudentProfile;
 import com.example.school.system.models.ResultSmsNotification;
+import com.example.school.system.models.School;
+import com.example.school.system.models.SchoolSettings;
 import com.example.school.system.projection.StudentContactProjection;
 import com.example.school.system.projection.PublicResultRow;
 import com.example.school.system.repository.ClassTermResultsRepo;
@@ -56,6 +58,7 @@ import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.services.sms.events.ResultSmsNotificationEvent;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.repository.SchoolClassRepository;
+import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.types.MarksSheetStatus;
 import com.example.school.system.DTO.GradingClassStudents;
 import com.example.school.system.services.AuthenticatedUserService;
@@ -73,6 +76,7 @@ public class ResultAccessService {
     private final MarksSheetRepo marksSheetRepo;
     private final PublicResultsRepository publicResultsRepository;
     private final SchoolClassRepository schoolClassRepository;
+    private final SchoolRepository schoolRepository;
     private final AuthenticatedUserService authenticatedUserService;
     private final GradingService gradingService;
     private final RankingService rankingService;
@@ -138,10 +142,14 @@ public class ResultAccessService {
         UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
         schoolClassRepository.findByClassIdAndSchoolId(request.classId(), schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+        AcademicCycle cycle = currentAcademicCycle(schoolId);
+        String academicYear = cycle.academicYear();
+        Integer term = cycle.term();
+        ExamType examType = cycle.examType();
 
         List<ClassTermResults> previousResults = classTermResultsRepo
                 .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
-                        request.classId(), request.academicYear(), request.term(), request.examType());
+                        request.classId(), academicYear, term, examType);
         boolean previouslyPublished = !previousResults.isEmpty()
                 && previousResults.stream().allMatch(ClassTermResults::isPublished);
         if (previouslyPublished) {
@@ -150,7 +158,7 @@ public class ResultAccessService {
 
         List<MarksSheet> markSheets = marksSheetRepo
                 .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(
-                        request.classId(), request.academicYear(), request.term(), request.examType(),
+                        request.classId(), academicYear, term, examType,
                         MarksSheetStatus.SUBMITTED);
         if (markSheets.isEmpty() || markSheets.stream()
                 .noneMatch(sheet -> sheet.getMarks() != null && !sheet.getMarks().isEmpty())) {
@@ -160,15 +168,15 @@ public class ResultAccessService {
 
         rankingService.StudentClassRanking(new GradingClassStudents(
                 request.classId(),
-                request.examType(),
-                request.academicYear(),
-                request.term(),
+                examType,
+                academicYear,
+                term,
                 gradingService.getOrCreateDefaultScale(schoolId)));
 
         UUID publisherId = authenticatedUserService.currentUserId();
         List<ClassTermResults> results = classTermResultsRepo
                 .findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
-                        request.classId(), request.academicYear(), request.term(), request.examType());
+                        request.classId(), academicYear, term, examType);
         if (results.isEmpty()) {
             throw new SchoolResourceNotFoundExceptionHandler(
                     "results could not be built from the available marks");
@@ -181,7 +189,7 @@ public class ResultAccessService {
                 .toList();
         java.util.Map<UUID, ResultAccess> existingAccess = accessRepository
                 .findAllByStudentProfileIdInAndAcademicYearAndCurrentSchoolTermAndExamType(
-                        studentIds, request.academicYear(), request.term(), request.examType())
+                        studentIds, academicYear, term, examType)
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(
                         access -> access.getStudentProfile().getId(), access -> access, (first, ignored) -> first));
@@ -203,12 +211,12 @@ public class ResultAccessService {
                 access = new ResultAccess();
             }
             access.setStudentProfile(result.getStudentProfile());
-            access.setAcademicYear(request.academicYear());
-            access.setCurrentSchoolTerm(request.term());
-            access.setExamType(request.examType());
+            access.setAcademicYear(academicYear);
+            access.setCurrentSchoolTerm(term);
+            access.setExamType(examType);
             access.setTokenHash(hashToken(rawToken));
             access.setEncryptedToken(encryptToken(rawToken));
-            access.setExpiresAt(effectiveExpiry(request.expiresAt()));
+            access.setExpiresAt(effectiveExpiry(null));
             access.setRevokedAt(null);
             accessToSave.add(access);
             links.add(new ResultAccessResponse(
@@ -231,32 +239,55 @@ public class ResultAccessService {
                         result -> result.getStudentProfile().getId(),
                         ClassTermResults::getStudentProfile,
                         (first, ignored) -> first));
-        queueResultNotifications(request, links, studentIds, studentsById, buildMarksByStudent(markSheets));
+        queueResultNotifications(academicYear, term, examType, links, studentIds, studentsById,
+                buildMarksByStudent(markSheets));
         return new ResultPublicationResponse(results.size(), previouslyPublished, links);
     }
 
     @Transactional(readOnly = true)
-    public ResultPublicationStatusResponse getPublicationStatus(
-            String academicYear, Integer term, ExamType examType) {
+    public ResultPublicationStatusResponse getPublicationStatus() {
         UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        AcademicCycle cycle = currentAcademicCycle(schoolId);
         List<UUID> classIds = schoolClassRepository.findClassHeadersBySchoolId(schoolId)
                 .stream()
                 .map(header -> header.classId())
                 .toList();
         if (classIds.isEmpty()) {
-            return new ResultPublicationStatusResponse(java.util.Set.of());
+            return new ResultPublicationStatusResponse(
+                    cycle.academicYear(), cycle.term(), cycle.examType(), java.util.Set.of());
         }
 
         java.util.Set<UUID> publishedClassIds = classTermResultsRepo
-                .findPublicationCounts(classIds, academicYear, term, examType)
+                .findPublicationCounts(classIds, cycle.academicYear(), cycle.term(), cycle.examType())
                 .stream()
                 .filter(row -> ((Number) row[1]).longValue() == ((Number) row[2]).longValue())
                 .map(row -> (UUID) row[0])
                 .collect(java.util.stream.Collectors.toSet());
-        return new ResultPublicationStatusResponse(publishedClassIds);
+        return new ResultPublicationStatusResponse(
+                cycle.academicYear(), cycle.term(), cycle.examType(), publishedClassIds);
     }
 
-    private void queueResultNotifications(ResultPublicationRequest request,
+    private AcademicCycle currentAcademicCycle(UUID schoolId) {
+        School school = schoolRepository.findByIdWithSettings(schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school not found"));
+        SchoolSettings settings = school.getSchoolSettings();
+        String academicYear = settings != null && settings.getAcademicYear() != null
+                ? settings.getAcademicYear()
+                : String.valueOf(java.time.LocalDate.now().getYear());
+        Integer term = settings != null && settings.getCurrentSchoolTerm() != null
+                ? settings.getCurrentSchoolTerm()
+                : 1;
+        ExamType examType = settings != null && settings.getExamSettings() != null
+                && settings.getExamSettings().getExamType() != null
+                        ? settings.getExamSettings().getExamType()
+                        : ExamType.OPENER;
+        return new AcademicCycle(academicYear, term, examType);
+    }
+
+    private record AcademicCycle(String academicYear, Integer term, ExamType examType) {
+    }
+
+    private void queueResultNotifications(String academicYear, Integer term, ExamType examType,
             List<ResultAccessResponse> links, List<UUID> studentIds,
             Map<UUID, StudentProfile> studentsById, Map<UUID, List<String>> marksByStudent) {
         if (links.isEmpty()) {
@@ -268,7 +299,7 @@ public class ResultAccessService {
                         (first, ignored) -> first));
         java.util.Set<UUID> alreadyQueued = resultSmsNotificationRepository
                 .findAllByStudentProfileIdInAndAcademicYearAndCurrentSchoolTermAndExamType(
-                        studentIds, request.academicYear(), request.term(), request.examType())
+                        studentIds, academicYear, term, examType)
                 .stream()
                 .map(notification -> notification.getStudentProfile().getId())
                 .collect(Collectors.toSet());
@@ -283,15 +314,15 @@ public class ResultAccessService {
             }
             ResultSmsNotification notification = new ResultSmsNotification();
             notification.setStudentProfile(studentsById.get(link.studentId()));
-            notification.setAcademicYear(request.academicYear());
-            notification.setCurrentSchoolTerm(request.term());
-            notification.setExamType(request.examType());
+            notification.setAcademicYear(academicYear);
+            notification.setCurrentSchoolTerm(term);
+            notification.setExamType(examType);
             notification.setRecipientPhone(contact.getPhoneNumber().trim());
             notification.setMessage(buildResultNotificationMessage(
                     contact.getStudentName(),
-                    request.academicYear(),
-                    request.term(),
-                    request.examType(),
+                    academicYear,
+                    term,
+                    examType,
                     marksByStudent.getOrDefault(link.studentId(), List.of()),
                     link.url()));
             notifications.add(notification);

@@ -46,12 +46,8 @@ public class PublicResultsController {
 
     @GetMapping("/api/admin/results-publication-status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResultPublicationStatusResponse> getPublicationStatus(
-            @RequestParam String academicYear,
-            @RequestParam Integer term,
-            @RequestParam ExamType examType) {
-        return ResponseEntity.ok(
-                resultAccessService.getPublicationStatus(academicYear, term, examType));
+    public ResponseEntity<ResultPublicationStatusResponse> getPublicationStatus() {
+        return ResponseEntity.ok(resultAccessService.getPublicationStatus());
     }
 
     @DeleteMapping("/api/results/access/{accessId}")

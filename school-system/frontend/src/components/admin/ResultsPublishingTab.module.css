@@ -38,6 +38,8 @@
 }
 
 .field { display: grid; gap: 7px; color: var(--textM); font-size: 12px; font-weight: 800; }
+.form .field { grid-column: 1 / -1; }
+.cycleNote { margin: 12px 0 0; color: var(--textMut); font-size: 12px; font-weight: 650; }
 .field input, .field select {
   width: 100%;
   min-height: 44px;
