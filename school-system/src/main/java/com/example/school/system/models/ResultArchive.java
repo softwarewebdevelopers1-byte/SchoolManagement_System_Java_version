@@ -73,6 +73,15 @@ public class ResultArchive {
     @Column(name = "snapshot_size")
     private Long snapshotSize;
 
+    @Column(name = "class_snapshot_key", length = 1024)
+    private String classSnapshotKey;
+
+    @Column(name = "class_snapshot_sha256", length = 64)
+    private String classSnapshotSha256;
+
+    @Column(name = "class_snapshot_size")
+    private Long classSnapshotSize;
+
     @Column(name = "document_key", length = 1024)
     private String documentKey;
 
@@ -94,6 +103,12 @@ public class ResultArchive {
     @Column(name = "processing_started_at")
     private Instant processingStartedAt;
 
+    @Column(name = "lease_token", columnDefinition = "BINARY(16)")
+    private UUID leaseToken;
+
+    @Column(name = "lease_expires_at")
+    private Instant leaseExpiresAt;
+
     @Column(name = "attempt_count", nullable = false)
     private Integer attemptCount = 0;
 
@@ -102,6 +117,15 @@ public class ResultArchive {
 
     @Column(name = "last_error", length = 2000)
     private String lastError;
+
+    @Column(name = "supersedes_archive_id", columnDefinition = "BINARY(16)")
+    private UUID supersedesArchiveId;
+
+    @Column(name = "correction_reason", length = 500)
+    private String correctionReason;
+
+    @Column(name = "frozen_snapshot", columnDefinition = "LONGTEXT")
+    private String frozenSnapshot;
 
     @Version
     private Long entityVersion;

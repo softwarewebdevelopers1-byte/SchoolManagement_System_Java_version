@@ -12,7 +12,14 @@ public record ArchiveManifest(
         UUID classId,
         String period,
         Instant generatedAt,
-        List<StudentObject> students) {
-    public record StudentObject(UUID studentId, String key, String sha256, long size) {
+        String status,
+        List<Artifact> artifacts) {
+    public record Artifact(
+            String type,
+            UUID studentId,
+            String objectKey,
+            String contentType,
+            String sha256,
+            long size) {
     }
 }

@@ -72,9 +72,9 @@ class MarksEntryLockTest {
         lockedSheet.setStatus(MarksSheetStatus.LOCKED);
 
         when(settingsRepository.findBySchoolId(schoolId)).thenReturn(Optional.of(settings));
-        when(subjectJointRepo.findById(jointId)).thenReturn(Optional.of(joint));
+        when(subjectJointRepo.findForUpdateById(jointId)).thenReturn(Optional.of(joint));
         when(studentRepository.findAllBySchoolClassClassId(classId)).thenReturn(List.of());
-        when(marksSheetRepo.findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+        when(marksSheetRepo.findForUpdateBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
                 jointId, "2026", 1, ExamType.ENDTERM)).thenReturn(Optional.of(lockedSheet));
 
         assertThrows(SchoolResourceBadInputExceptionHandler.class,

@@ -88,7 +88,7 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
             LEFT JOIN marks prev_m
                 ON prev_m.student_id = sp.student_id
                 AND prev_m.marks_sheet_id = prev_ms.id
-            WHERE ctr.student_profile_student_id = :studentId
+            WHERE ctr.student_profile_student_id IN (:studentIds)
               AND ctr.academic_year = :academicYear
               AND ctr.current_school_term = :term
               AND ctr.exam_type = :examType
@@ -96,7 +96,7 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
             ORDER BY subject.subject_name ASC
             """, nativeQuery = true)
     List<PublicResultRow> findPublishedResults(
-            @Param("studentId") UUID studentId,
+            @Param("studentIds") List<UUID> studentIds,
             @Param("academicYear") String academicYear,
             @Param("term") Integer term,
             @Param("examType") String examType,

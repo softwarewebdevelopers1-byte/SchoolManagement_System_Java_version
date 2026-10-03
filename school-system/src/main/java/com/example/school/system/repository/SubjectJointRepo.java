@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.example.school.system.DTO.DTOResponse.SubjectJointClassDTO;
@@ -13,8 +14,13 @@ import com.example.school.system.DTO.DTOResponse.SubjectJointForTeacherDTO;
 import com.example.school.system.DTO.DTOResponse.SubjectJointSummaryDTO;
 import com.example.school.system.models.SubjectJoint;
 import com.example.school.system.types.SubjectType;
+import jakarta.persistence.LockModeType;
 
 public interface SubjectJointRepo extends JpaRepository<SubjectJoint, UUID> {
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT sj FROM SubjectJoint sj WHERE sj.id = :id")
+        Optional<SubjectJoint> findForUpdateById(@Param("id") UUID id);
+
         @EntityGraph(attributePaths = { "schoolClass", "schoolClass.school", "schoolClass.school.schoolSettings", "schoolClass.school.schoolSettings.examSettings", "subject" })
         Optional<SubjectJoint> findByIdAndSchoolClassClassId(UUID id, UUID classId);
 

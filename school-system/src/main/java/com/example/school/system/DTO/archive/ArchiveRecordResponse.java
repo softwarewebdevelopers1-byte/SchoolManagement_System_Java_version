@@ -24,5 +24,7 @@ public record ArchiveRecordResponse(
         Long documentSize,
         boolean cleanupEligible,
         List<String> cleanupBlockers,
-        String lastError) {
+        String lastError,
+        UUID supersedesArchiveId,
+        String correctionReason) {
 }

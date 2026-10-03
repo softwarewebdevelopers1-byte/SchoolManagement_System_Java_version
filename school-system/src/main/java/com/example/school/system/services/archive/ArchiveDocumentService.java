@@ -1,16 +1,23 @@
 package com.example.school.system.services.archive;
 
 import java.util.UUID;
+import java.nio.file.Path;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import com.example.school.system.DTO.archive.ArchiveDownload;
+import com.example.school.system.DTO.archive.ArchiveFileDownload;
+import com.example.school.system.DTO.archive.ArchiveStudentArtifact;
+import com.example.school.system.DTO.archive.ArchiveStudentsPageResponse;
 import com.example.school.system.error.SchoolResourceNotFoundExceptionHandler;
 import com.example.school.system.models.AttendanceArchive;
 import com.example.school.system.models.ResultArchive;
+import com.example.school.system.models.ResultArchiveStudent;
 import com.example.school.system.repository.AttendanceArchiveRepository;
 import com.example.school.system.repository.ResultArchiveRepository;
+import com.example.school.system.repository.ResultArchiveStudentRepository;
 import com.example.school.system.services.AuthenticatedUserService;
 import com.example.school.system.types.ArchiveStatus;
 
@@ -22,14 +29,15 @@ import lombok.RequiredArgsConstructor;
 public class ArchiveDocumentService {
     private final ResultArchiveRepository resultArchiveRepository;
     private final AttendanceArchiveRepository attendanceArchiveRepository;
+    private final ResultArchiveStudentRepository resultArchiveStudentRepository;
     private final AuthenticatedUserService authenticatedUserService;
     private final R2ObjectStorage objectStorage;
 
     public ArchiveDownload download(UUID archiveId, String kind) {
         UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
         ResultArchive result = resultArchiveRepository.findById(archiveId)
-                .filter(archive -> archive.getSchoolId().equals(schoolId)
-                        && archive.getStatus() == ArchiveStatus.VERIFIED)
+                .filter(archive -> belongsToSchool(archive.getSchoolId(), schoolId)
+                        && isRetrievable(archive.getStatus()))
                 .orElse(null);
         if (result != null) {
             if ("pdf".equalsIgnoreCase(kind)) {
@@ -37,16 +45,20 @@ public class ArchiveDocumentService {
                         result.getDocumentKey(), result.getDocumentSha256(), result.getDocumentSize()), "application/pdf",
                         "results-" + archiveId + ".pdf");
             }
-            if ("snapshot".equalsIgnoreCase(kind)) {
+
+            if ("snapshot".equalsIgnoreCase(kind) || "manifest".equalsIgnoreCase(kind)) {
+                boolean manifest = "manifest".equalsIgnoreCase(kind);
                 return new ArchiveDownload(verifiedObject(
-                        result.getSnapshotKey(), result.getSnapshotSha256(), result.getSnapshotSize()), "application/json",
-                        "results-" + archiveId + ".json");
+                        manifest ? result.getSnapshotKey() : result.getClassSnapshotKey(),
+                        manifest ? result.getSnapshotSha256() : result.getClassSnapshotSha256(),
+                        manifest ? result.getSnapshotSize() : result.getClassSnapshotSize()), "application/json",
+                        "results-" + archiveId + (manifest ? "-manifest.json" : "-snapshot.json"));
             }
         }
 
         AttendanceArchive attendance = attendanceArchiveRepository.findById(archiveId)
-                .filter(archive -> archive.getSchoolId().equals(schoolId)
-                        && archive.getStatus() == ArchiveStatus.VERIFIED)
+                .filter(archive -> belongsToSchool(archive.getSchoolId(), schoolId)
+                        && isRetrievable(archive.getStatus()))
                 .orElse(null);
         if (attendance != null) {
             if ("pdf".equalsIgnoreCase(kind)) {
@@ -54,20 +66,121 @@ public class ArchiveDocumentService {
                         attendance.getDocumentKey(), attendance.getDocumentSha256(), attendance.getDocumentSize()), "application/pdf",
                         "attendance-" + archiveId + ".pdf");
             }
-            if ("snapshot".equalsIgnoreCase(kind)) {
+            if ("snapshot".equalsIgnoreCase(kind) || "manifest".equalsIgnoreCase(kind)) {
+                boolean manifest = "manifest".equalsIgnoreCase(kind);
                 return new ArchiveDownload(verifiedObject(
-                        attendance.getSnapshotKey(), attendance.getSnapshotSha256(), attendance.getSnapshotSize()), "application/json",
-                        "attendance-" + archiveId + ".json");
+                        manifest ? attendance.getManifestKey() : attendance.getSnapshotKey(),
+                        manifest ? attendance.getManifestSha256() : attendance.getSnapshotSha256(),
+                        manifest ? attendance.getManifestSize() : attendance.getSnapshotSize()), "application/json",
+                        "attendance-" + archiveId + (manifest ? "-manifest.json" : ".json"));
             }
         }
         throw new SchoolResourceNotFoundExceptionHandler("verified archive not found");
     }
 
+    public ArchiveFileDownload downloadPdf(UUID archiveId, UUID studentId) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        if (studentId != null) {
+            ResultArchive archive = resultArchiveRepository.findById(archiveId)
+                    .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
+                            && isRetrievable(item.getStatus()))
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("verified archive not found"));
+            ResultArchiveStudent student = resultArchiveStudentRepository
+                    .findByArchiveIdAndStudentId(archive.getId(), studentId)
+                    .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("archived student not found"));
+            return verifiedPdf(
+                    student.getDocumentKey(), student.getDocumentSha256(), student.getDocumentSize(),
+                    "student-results-" + studentId + ".pdf");
+        }
+
+        ResultArchive result = resultArchiveRepository.findById(archiveId)
+                .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
+                        && isRetrievable(item.getStatus()))
+                .orElse(null);
+        if (result != null) {
+            return verifiedPdf(
+                    result.getDocumentKey(), result.getDocumentSha256(), result.getDocumentSize(),
+                    "results-" + archiveId + ".pdf");
+        }
+        AttendanceArchive attendance = attendanceArchiveRepository.findById(archiveId)
+                .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
+                        && isRetrievable(item.getStatus()))
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("verified archive not found"));
+        return verifiedPdf(
+                attendance.getDocumentKey(), attendance.getDocumentSha256(), attendance.getDocumentSize(),
+                "attendance-" + archiveId + ".pdf");
+    }
+
+    public ArchiveDownload downloadStudent(
+            UUID archiveId, UUID studentId, String kind) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        ResultArchive archive = resultArchiveRepository.findById(archiveId)
+                .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
+                        && isRetrievable(item.getStatus()))
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("verified archive not found"));
+        ResultArchiveStudent student = resultArchiveStudentRepository
+                .findByArchiveIdAndStudentId(archive.getId(), studentId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("archived student not found"));
+        if ("pdf".equalsIgnoreCase(kind)) {
+            return new ArchiveDownload(verifiedObject(
+                    student.getDocumentKey(), student.getDocumentSha256(), student.getDocumentSize()),
+                    "application/pdf", "student-results-" + studentId + ".pdf");
+        }
+        if ("snapshot".equalsIgnoreCase(kind)) {
+            return new ArchiveDownload(verifiedObject(
+                    student.getSnapshotKey(), student.getSnapshotSha256(), student.getSnapshotSize()),
+                    "application/json", "student-results-" + studentId + ".json");
+        }
+        throw new SchoolResourceNotFoundExceptionHandler("archived student artifact not found");
+    }
+
+    public ArchiveStudentsPageResponse listStudentArtifacts(UUID archiveId, int page, int size) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        ResultArchive archive = resultArchiveRepository.findById(archiveId)
+                .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
+                        && isRetrievable(item.getStatus()))
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("verified archive not found"));
+        int normalizedPage = Math.max(0, Math.min(page, 100));
+        int normalizedSize = Math.max(1, Math.min(size, 100));
+        var studentPage = resultArchiveStudentRepository
+                .findAllByArchiveIdOrderByStudentNameAsc(archive.getId(),
+                        PageRequest.of(normalizedPage, normalizedSize));
+        return new ArchiveStudentsPageResponse(
+                studentPage.getContent().stream()
+                        .map(student -> new ArchiveStudentArtifact(
+                                student.getStudentId(), student.getStudentName(), student.getAdmissionNumber()))
+                        .toList(),
+                studentPage.getNumber(),
+                studentPage.getSize(),
+                studentPage.hasNext());
+    }
+
+    private boolean isRetrievable(ArchiveStatus status) {
+        return status == ArchiveStatus.VERIFIED || status == ArchiveStatus.SUPERSEDED;
+    }
+
+    private boolean belongsToSchool(UUID archiveSchoolId, UUID authenticatedSchoolId) {
+        return archiveSchoolId != null
+                && authenticatedSchoolId != null
+                && archiveSchoolId.equals(authenticatedSchoolId);
+    }
+
     private byte[] verifiedObject(String key, String sha256, Long expectedSize) {
+        if (key == null || sha256 == null || expectedSize == null) {
+            throw new ArchiveStorageUnavailableException();
+        }
         byte[] content = objectStorage.get(key);
-        if (expectedSize == null || content.length != expectedSize || !ArchiveHash.sha256(content).equals(sha256)) {
-            throw new IllegalStateException("Archived object integrity check failed");
+        if (content.length != expectedSize || !ArchiveHash.sha256(content).equals(sha256)) {
+            throw new ArchiveStorageUnavailableException();
         }
         return content;
+    }
+
+    private ArchiveFileDownload verifiedPdf(String key, String sha256, Long expectedSize, String fileName) {
+        if (key == null || sha256 == null || expectedSize == null) {
+            throw new ArchiveStorageUnavailableException();
+        }
+        Path file = objectStorage.getVerifiedTemporaryFile(key, sha256, expectedSize);
+        return new ArchiveFileDownload(file, expectedSize, "application/pdf", fileName);
     }
 }

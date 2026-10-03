@@ -48,8 +48,10 @@ import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
+import com.example.school.system.repository.ResultArchiveStudentRepository;
 import com.example.school.system.repository.ResultSmsNotificationRepository;
 import com.example.school.system.services.archive.ArchivedResultSnapshotReader;
+import com.example.school.system.services.archive.ArchiveStorageUnavailableException;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
@@ -85,6 +87,8 @@ class ResultAccessServiceTest {
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private ArchivedResultSnapshotReader archivedResultSnapshotReader;
+    @Mock
+    private ResultArchiveStudentRepository resultArchiveStudentRepository;
 
     private ResultAccessService service;
 
@@ -103,7 +107,8 @@ class ResultAccessServiceTest {
                 studentRepository,
                 resultSmsNotificationRepository,
                 eventPublisher,
-                archivedResultSnapshotReader);
+                archivedResultSnapshotReader,
+                resultArchiveStudentRepository);
     }
 
     private void stubCurrentAcademicCycle(UUID schoolId) {
@@ -235,6 +240,42 @@ class ResultAccessServiceTest {
     }
 
     @Test
+    void renewsHistoricalLinkFromArchiveAfterPublishedRowsAreGone() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        ResultAccess access = access("expired-historical-token");
+        access.setId(accessId);
+        access.setResultSchoolId(schoolId);
+        access.setResultClassId(classId);
+        access.setExpiresAt(Instant.now().minusSeconds(1));
+        when(authenticatedUserService.currentUser())
+                .thenReturn(new AuthenticatedUserContext(UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(authenticatedUserService.currentUserId()).thenReturn(UUID.randomUUID());
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+        when(classTermResultsRepo.findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                access.getStudentProfile().getId(), "2026", 2, ExamType.ENDTERM))
+                .thenReturn(Optional.empty());
+        when(resultArchiveStudentRepository.existsForHistoricalAccess(
+                access.getStudentProfile().getId(), schoolId, classId, "2026", 2, ExamType.ENDTERM,
+                List.of(com.example.school.system.types.ArchiveStatus.VERIFIED,
+                        com.example.school.system.types.ArchiveStatus.SUPERSEDED)))
+                .thenReturn(true);
+        when(accessRepository.save(access)).thenReturn(access);
+
+        var renewed = service.renewLink(accessId);
+
+        assertEquals("ACTIVE", renewed.status());
+        assertNotEquals(
+                "expired-historical-token",
+                renewed.resultsUrl().substring(renewed.resultsUrl().lastIndexOf('/') + 1));
+        verify(resultArchiveStudentRepository).existsForHistoricalAccess(
+                access.getStudentProfile().getId(), schoolId, classId, "2026", 2, ExamType.ENDTERM,
+                List.of(com.example.school.system.types.ArchiveStatus.VERIFIED,
+                        com.example.school.system.types.ArchiveStatus.SUPERSEDED));
+    }
+
+    @Test
     void rejectsRenewalOfAnActiveLink() {
         UUID accessId = UUID.randomUUID();
         UUID schoolId = UUID.randomUUID();
@@ -287,7 +328,9 @@ class ResultAccessServiceTest {
         PublicResultRow row = org.mockito.Mockito.mock(PublicResultRow.class);
         UUID studentId = UUID.randomUUID();
         UUID subjectId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
         access.getStudentProfile().setId(studentId);
+        access.setResultClassId(classId);
         when(row.getStudentId()).thenReturn(studentId.toString().replace("-", ""));
         when(row.getStudentName()).thenReturn("student");
         when(row.getStudentAdm()).thenReturn("ADM001");
@@ -307,8 +350,11 @@ class ResultAccessServiceTest {
         when(row.getSubjectGrade()).thenReturn("EE1");
         when(row.getPoints()).thenReturn(8d);
         when(row.getTeacherName()).thenReturn("teacher");
+        when(archivedResultSnapshotReader.read(
+                studentId, classId, access.getResultSchoolId(), "2026", 2, ExamType.ENDTERM))
+                .thenReturn(Optional.empty());
         when(publicResultsRepository.findPublishedResults(
-                studentId, "2026", 2, ExamType.ENDTERM.name(), null)).thenReturn(List.of(row));
+                List.of(studentId), "2026", 2, ExamType.ENDTERM.name(), null)).thenReturn(List.of(row));
 
         var response = service.getPublishedResults("valid-token");
 
@@ -316,6 +362,26 @@ class ResultAccessServiceTest {
         assertEquals(1, response.subjects().size());
         assertEquals("Mathematics", response.subjects().get(0).name());
         assertEquals(78d, response.summary().average());
+    }
+
+    @Test
+    void returnsServiceUnavailableWhenArchiveAndLiveResultsAreBothUnavailable() {
+        ResultAccess access = access("valid-token");
+        UUID studentId = access.getStudentProfile().getId();
+        UUID classId = UUID.randomUUID();
+        access.setResultClassId(classId);
+        when(accessRepository.findByTokenHash(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(Optional.of(access));
+        when(archivedResultSnapshotReader.read(
+                studentId, classId, access.getResultSchoolId(), "2026", 2, ExamType.ENDTERM))
+                .thenThrow(new ArchiveStorageUnavailableException());
+        when(publicResultsRepository.findPublishedResults(
+                List.of(studentId), "2026", 2, ExamType.ENDTERM.name(), null))
+                .thenReturn(List.of());
+
+        assertThrows(
+                ArchiveStorageUnavailableException.class,
+                () -> service.getPublishedResults("valid-token"));
     }
 
     @Test
@@ -345,7 +411,7 @@ class ResultAccessServiceTest {
                 studentId, "2026", 2, ExamType.ENDTERM))
                 .thenReturn(Optional.of(publication));
         when(publicResultsRepository.findPublishedResults(
-                studentId, "2026", 2, ExamType.ENDTERM.name(), null))
+                List.of(studentId), "2026", 2, ExamType.ENDTERM.name(), null))
                 .thenReturn(List.of(row));
         when(resultSmsNotificationRepository.save(org.mockito.ArgumentMatchers.any()))
                 .thenAnswer(invocation -> {

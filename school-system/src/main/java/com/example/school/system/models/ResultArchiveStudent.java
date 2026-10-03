@@ -37,6 +37,12 @@ public class ResultArchiveStudent {
     @Column(name = "student_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID studentId;
 
+    @Column(name = "student_name", nullable = false, length = 255)
+    private String studentName;
+
+    @Column(name = "admission_number", length = 64)
+    private String admissionNumber;
+
     @Column(name = "snapshot_key", nullable = false, length = 1024)
     private String snapshotKey;
 
@@ -45,6 +51,15 @@ public class ResultArchiveStudent {
 
     @Column(name = "snapshot_size", nullable = false)
     private Long snapshotSize;
+
+    @Column(name = "document_key", length = 1024)
+    private String documentKey;
+
+    @Column(name = "document_sha256", length = 64)
+    private String documentSha256;
+
+    @Column(name = "document_size")
+    private Long documentSize;
 
     @PrePersist
     private void initialize() {

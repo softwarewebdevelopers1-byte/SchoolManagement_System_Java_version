@@ -17,12 +17,33 @@ interface Archive {
   startDate: string | null;
   endDate: string | null;
   version: number;
-  status: "PENDING" | "PROCESSING" | "VERIFIED" | "FAILED" | "SUPERSEDED";
+  status: "PENDING" | "PROCESSING" | "CORRECTION" | "VERIFIED" | "FAILED" | "SUPERSEDED";
   requestedAt: string;
   verifiedAt: string | null;
   documentSize: number | null;
   cleanupEligible: boolean;
   lastError: string | null;
+  correctionReason: string | null;
+}
+
+interface ArchivePage {
+  content: Archive[];
+  page: number;
+  size: number;
+  hasNext: boolean;
+}
+
+interface ArchiveStudent {
+  studentId: string;
+  studentName: string;
+  admissionNumber: string | null;
+}
+
+interface ArchiveStudentsPage {
+  content: ArchiveStudent[];
+  page: number;
+  size: number;
+  hasNext: boolean;
 }
 
 interface SchoolClass {
@@ -85,24 +106,43 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
   const [selectedClass, setSelectedClass] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [confirmMissingDates, setConfirmMissingDates] = useState(false);
   const [preview, setPreview] = useState<AttendancePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [retryingId, setRetryingId] = useState("");
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [studentArchiveId, setStudentArchiveId] = useState("");
+  const [studentArtifacts, setStudentArtifacts] = useState<ArchiveStudent[]>([]);
+  const [studentPage, setStudentPage] = useState(0);
+  const [studentHasNext, setStudentHasNext] = useState(false);
+  const [studentLoading, setStudentLoading] = useState(false);
+  const [correctionArchive, setCorrectionArchive] = useState<Archive | null>(null);
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionLoading, setCorrectionLoading] = useState(false);
 
   const fetchArchives = useCallback(async () => {
     setLoading(true);
     try {
-      const items = await api.get<Archive[]>("/school/archives");
-      setArchives(Array.isArray(items) ? items : []);
+      const result = await api.get<ArchivePage | Archive[]>(
+        `/school/archives?page=${page}&size=50`,
+      );
+      if (Array.isArray(result)) {
+        setArchives(result);
+        setHasNext(false);
+      } else {
+        setArchives(result.content || []);
+        setHasNext(result.hasNext);
+      }
     } catch (error) {
       toast.error(friendlyErrorMessage(error, "Unable to load archives right now."));
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [page, toast]);
 
   useEffect(() => {
     void fetchArchives();
@@ -139,12 +179,17 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
       toast.warning("Preview the range and confirm that every existing sheet is locked first.");
       return;
     }
+    if (preview.missingCalendarDates > 0 && !confirmMissingDates) {
+      toast.warning("Confirm that dates without attendance sheets are intentionally excluded.");
+      return;
+    }
     setSubmitting(true);
     try {
       await api.post("/admin/archives/attendance", {
         classId: selectedClass,
         startDate,
         endDate,
+        confirmMissingDates,
       });
       toast.success("Attendance archive queued. Source records remain in MySQL.");
       await fetchArchives();
@@ -188,14 +233,67 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
     }
   };
 
-  const download = async (archive: Archive, kind: "pdf" | "snapshot") => {
+  const download = async (archive: Archive, kind: "pdf" | "snapshot" | "manifest") => {
     try {
       await downloadApiFile(
         `/school/archives/${encodeURIComponent(archive.id)}/${kind}`,
-        `${archive.type.toLowerCase()}-${archive.id}.${kind === "pdf" ? "pdf" : "json"}`,
+        `${archive.type.toLowerCase()}-${archive.id}${kind === "manifest" ? "-manifest" : ""}.${kind === "pdf" ? "pdf" : "json"}`,
       );
     } catch (error) {
       toast.error(friendlyErrorMessage(error, "Unable to download this archive."));
+    }
+  };
+
+  const loadStudentArtifacts = async (archiveId: string, requestedPage: number) => {
+    setStudentLoading(true);
+    try {
+      const result = await api.get<ArchiveStudentsPage>(
+        `/school/archives/${encodeURIComponent(archiveId)}/students?page=${requestedPage}&size=50`,
+      );
+      setStudentArtifacts(result.content || []);
+      setStudentPage(result.page);
+      setStudentHasNext(result.hasNext);
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to load archived students."));
+    } finally {
+      setStudentLoading(false);
+    }
+  };
+
+  const downloadStudentArtifact = async (
+    archiveId: string,
+    studentId: string,
+    kind: "pdf" | "snapshot",
+  ) => {
+    try {
+      await downloadApiFile(
+        `/school/archives/${encodeURIComponent(archiveId)}/students/${encodeURIComponent(studentId)}/${kind}`,
+        `student-results-${studentId}.${kind === "pdf" ? "pdf" : "json"}`,
+      );
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to download this student archive."));
+    }
+  };
+
+  const requestResultCorrection = async (archive: Archive) => {
+    if (!correctionReason.trim()) {
+      toast.warning("Provide a reason for the correction.");
+      return;
+    }
+    setCorrectionLoading(true);
+    try {
+      await api.post(
+        `/admin/archives/results/${encodeURIComponent(archive.id)}/corrections`,
+        { reason: correctionReason.trim() },
+      );
+      toast.success("Correction enabled. Edit and republish marks, then finalize the new archive version.");
+      setCorrectionArchive(null);
+      setCorrectionReason("");
+      await fetchArchives();
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to request this result correction."));
+    } finally {
+      setCorrectionLoading(false);
     }
   };
 
@@ -239,7 +337,7 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
         }}>
           <label style={{ display: "grid", gap: 5, fontSize: 12, color: C.textMuted }}>
             Attendance class
-            <select style={inputStyle} value={selectedClass} onChange={(event) => { setSelectedClass(event.target.value); setPreview(null); }}>
+            <select style={inputStyle} value={selectedClass} onChange={(event) => { setSelectedClass(event.target.value); setPreview(null); setConfirmMissingDates(false); }}>
               <option value="">Select class</option>
               {classes.map((schoolClass) => (
                 <option key={schoolClass.classId} value={schoolClass.classId}>{schoolClass.className}</option>
@@ -248,16 +346,16 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
           </label>
           <label style={{ display: "grid", gap: 5, fontSize: 12, color: C.textMuted }}>
             Start date
-            <input required type="date" style={inputStyle} value={startDate} onChange={(event) => { setStartDate(event.target.value); setPreview(null); }} />
+            <input required type="date" style={inputStyle} value={startDate} onChange={(event) => { setStartDate(event.target.value); setPreview(null); setConfirmMissingDates(false); }} />
           </label>
           <label style={{ display: "grid", gap: 5, fontSize: 12, color: C.textMuted }}>
             End date
-            <input required type="date" style={inputStyle} value={endDate} onChange={(event) => { setEndDate(event.target.value); setPreview(null); }} />
+            <input required type="date" style={inputStyle} value={endDate} onChange={(event) => { setEndDate(event.target.value); setPreview(null); setConfirmMissingDates(false); }} />
           </label>
           <button type="button" style={buttonStyle} onClick={() => void previewAttendanceArchive()} disabled={previewLoading || submitting}>
             {previewLoading ? "Checking..." : "Preview"}
           </button>
-          <button type="submit" style={buttonStyle} disabled={submitting || !preview?.ready}>
+          <button type="submit" style={buttonStyle} disabled={submitting || !preview?.ready || (preview.missingCalendarDates > 0 && !confirmMissingDates)}>
             {submitting ? "Queueing..." : "Archive Locked Attendance"}
           </button>
           {preview && (
@@ -268,6 +366,16 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
               {preview.ready ? " Ready to archive." : " Not ready: existing sheets must be locked and duplicate dates resolved."}
             </p>
           )}
+          {preview?.missingCalendarDates ? (
+            <label style={{ gridColumn: "1 / -1", display: "flex", gap: 8, alignItems: "center", fontSize: 12, color: C.textMuted }}>
+              <input
+                type="checkbox"
+                checked={confirmMissingDates}
+                onChange={(event) => setConfirmMissingDates(event.target.checked)}
+              />
+              I confirm that dates without attendance sheets are intentionally excluded from this archive.
+            </label>
+          ) : null}
           <p style={{ gridColumn: "1 / -1", margin: 0, color: C.textFaint, fontSize: 12 }}>
             Only existing locked sheets in the selected range are archived. The current system has no school-day calendar,
             so missing dates are not inferred.
@@ -279,7 +387,7 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
         <input
           type="search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => { setSearch(event.target.value); setPage(0); }}
           placeholder="Search type, class, period, or status"
           aria-label="Search archives"
           style={{ ...inputStyle, flex: 1 }}
@@ -316,12 +424,49 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
                 </p>
               </div>
               {archive.lastError && <p role="alert" style={{ margin: 0, color: "#9a2d2d", fontSize: 12 }}>{archive.lastError}</p>}
+              {archive.status === "CORRECTION" && (
+                <p style={{ margin: 0, color: C.textMuted, fontSize: 12 }}>
+                  Correction requested: edit marks, republish results, then finalize this version.
+                  {archive.correctionReason ? ` Reason: ${archive.correctionReason}` : ""}
+                </p>
+              )}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {archive.status === "VERIFIED" && (
+                {(archive.status === "VERIFIED" || archive.status === "SUPERSEDED") && (
                   <>
                     <button type="button" style={buttonStyle} onClick={() => void download(archive, "pdf")}>Download PDF</button>
                     <button type="button" style={buttonStyle} onClick={() => void download(archive, "snapshot")}>Download snapshot</button>
+                    <button type="button" style={buttonStyle} onClick={() => void download(archive, "manifest")}>Download manifest</button>
+                    {archive.type === "RESULT" && (
+                      <button
+                        type="button"
+                        style={buttonStyle}
+                        onClick={() => {
+                          if (studentArchiveId === archive.id) {
+                            setStudentArchiveId("");
+                            return;
+                          }
+                          setStudentArchiveId(archive.id);
+                          setStudentArtifacts([]);
+                          setStudentPage(0);
+                          void loadStudentArtifacts(archive.id, 0);
+                        }}
+                      >
+                        {studentArchiveId === archive.id ? "Hide student PDFs" : "Student PDFs"}
+                      </button>
+                    )}
                   </>
+                )}
+                {allowManagement && archive.type === "RESULT" && archive.status === "VERIFIED" && (
+                  <button
+                    type="button"
+                    style={buttonStyle}
+                    onClick={() => {
+                      setCorrectionArchive(archive);
+                      setCorrectionReason("");
+                    }}
+                  >
+                    Request correction
+                  </button>
                 )}
                 {archive.status === "FAILED" && allowManagement && (
                   <button type="button" style={buttonStyle} disabled={retryingId === archive.id} onClick={() => void retry(archive)}>
@@ -332,8 +477,117 @@ export const ArchivesView: React.FC<ArchivesViewProps> = ({
                   {archive.cleanupEligible ? "Cleanup eligible" : "Source records retained"}
                 </span>
               </div>
+              {studentArchiveId === archive.id && (
+                <div style={{ display: "grid", gap: 8, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+                  {studentLoading ? (
+                    <span style={{ color: C.textMuted, fontSize: 12 }}>Loading archived students...</span>
+                  ) : studentArtifacts.length === 0 ? (
+                    <span style={{ color: C.textMuted, fontSize: 12 }}>No student result artifacts found.</span>
+                  ) : studentArtifacts.map((student) => (
+                    <div key={student.studentId} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <span style={{ color: C.text, fontSize: 12 }}>
+                        {student.studentName}{student.admissionNumber ? ` · ${student.admissionNumber}` : ""}
+                      </span>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          style={buttonStyle}
+                          onClick={() => void downloadStudentArtifact(archive.id, student.studentId, "pdf")}
+                        >
+                          Download PDF
+                        </button>
+                        <button
+                          type="button"
+                          style={buttonStyle}
+                          onClick={() => void downloadStudentArtifact(archive.id, student.studentId, "snapshot")}
+                        >
+                          Download JSON
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {!studentLoading && studentArtifacts.length > 0 && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button
+                        type="button"
+                        style={buttonStyle}
+                        disabled={studentPage === 0}
+                        onClick={() => void loadStudentArtifacts(archive.id, studentPage - 1)}
+                      >
+                        Previous students
+                      </button>
+                      <span style={{ color: C.textMuted, fontSize: 11 }}>Page {studentPage + 1}</span>
+                      <button
+                        type="button"
+                        style={buttonStyle}
+                        disabled={!studentHasNext}
+                        onClick={() => void loadStudentArtifacts(archive.id, studentPage + 1)}
+                      >
+                        More students
+                      </button>
+                    </div>
+                  )}
+                  {correctionArchive?.id === archive.id && (
+                    <div style={{ display: "grid", gap: 8, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+                      <label style={{ display: "grid", gap: 5, color: C.textMuted, fontSize: 12 }}>
+                        Correction reason
+                        <textarea
+                          rows={3}
+                          maxLength={500}
+                          value={correctionReason}
+                          onChange={(event) => setCorrectionReason(event.target.value)}
+                          style={{ ...inputStyle, resize: "vertical" }}
+                        />
+                      </label>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          style={buttonStyle}
+                          disabled={correctionLoading}
+                          onClick={() => void requestResultCorrection(archive)}
+                        >
+                          {correctionLoading ? "Requesting..." : `Create v${archive.version + 1} correction`}
+                        </button>
+                        <button
+                          type="button"
+                          style={buttonStyle}
+                          disabled={correctionLoading}
+                          onClick={() => setCorrectionArchive(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <p style={{ margin: 0, color: C.textFaint, fontSize: 11 }}>
+                        This unlocks marks only for the current academic cycle. Version {archive.version} stays available
+                        until the corrected version has been archived and verified.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </article>
           ))}
+        </div>
+      )}
+      {!loading && (page > 0 || hasNext) && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 18 }}>
+          <button
+            type="button"
+            style={buttonStyle}
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            Previous
+          </button>
+          <span style={{ color: C.textMuted, fontSize: 12 }}>Page {page + 1}</span>
+          <button
+            type="button"
+            style={buttonStyle}
+            disabled={!hasNext}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

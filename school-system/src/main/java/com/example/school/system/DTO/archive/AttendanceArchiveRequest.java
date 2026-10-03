@@ -8,5 +8,9 @@ import jakarta.validation.constraints.NotNull;
 public record AttendanceArchiveRequest(
         @NotNull UUID classId,
         @NotNull LocalDate startDate,
-        @NotNull LocalDate endDate) {
+        @NotNull LocalDate endDate,
+        boolean confirmMissingDates) {
+    public AttendanceArchiveRequest(UUID classId, LocalDate startDate, LocalDate endDate) {
+        this(classId, startDate, endDate, false);
+    }
 }

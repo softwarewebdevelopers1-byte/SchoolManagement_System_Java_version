@@ -1,6 +1,5 @@
 package com.example.school.system.services.archive;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,15 +24,23 @@ public class ArchivedResultSnapshotReader {
     private final ObjectMapper objectMapper;
 
     public Optional<ParentResultsResponse> read(
-            UUID studentId, UUID classId, String academicYear, Integer term, ExamType examType) {
+            UUID studentId,
+            UUID classId,
+            UUID schoolId,
+            String academicYear,
+            Integer term,
+            ExamType examType) {
+        if (classId == null || schoolId == null) {
+            return Optional.empty();
+        }
         R2ObjectStorage storage = storageProvider.getIfAvailable();
         if (storage == null) {
             return Optional.empty();
         }
-        List<ResultArchiveStudent> candidates =
+        var candidates =
                 studentArchiveRepository
-                        .findAllByStudentIdAndArchive_ClassIdAndArchive_AcademicYearAndArchive_TermAndArchive_ExamTypeAndArchive_StatusOrderByArchive_VersionDesc(
-                                studentId, classId, academicYear, term, examType, ArchiveStatus.VERIFIED);
+                        .findAuthorizedSnapshot(
+                                studentId, classId, schoolId, academicYear, term, examType, ArchiveStatus.VERIFIED);
         if (candidates.isEmpty()) {
             return Optional.empty();
         }

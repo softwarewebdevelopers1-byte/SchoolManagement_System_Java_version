@@ -5,14 +5,32 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.example.school.system.models.MarksSheet;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.types.MarksSheetStatus;
+import jakarta.persistence.LockModeType;
 
 public interface MarksSheetRepo extends JpaRepository<MarksSheet, UUID> {
         @EntityGraph(attributePaths = { "marks", "marks.StudentProfile" })
         Optional<MarksSheet> findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(UUID subjectJointId,
                         String academicYear, Integer currentSchoolTerm, ExamType examType);
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("""
+                SELECT sheet FROM MarksSheet sheet
+                WHERE sheet.subjectJoint.id = :subjectJointId
+                  AND sheet.academicYear = :academicYear
+                  AND sheet.currentSchoolTerm = :term
+                  AND sheet.examType = :examType
+                """)
+        Optional<MarksSheet> findForUpdateBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                        @Param("subjectJointId") UUID subjectJointId,
+                        @Param("academicYear") String academicYear,
+                        @Param("term") Integer currentSchoolTerm,
+                        @Param("examType") ExamType examType);
 
         Integer countByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(UUID classId,
                         String academicYear, Integer currentSchoolTerm, ExamType examType, MarksSheetStatus status);

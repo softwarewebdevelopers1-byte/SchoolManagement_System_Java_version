@@ -43,6 +43,12 @@ public class ResultAccess {
             foreignKey = @ForeignKey(name = "fk_result_access_student"))
     private StudentProfile studentProfile;
 
+    @Column(name = "result_school_id", columnDefinition = "BINARY(16)")
+    private UUID resultSchoolId;
+
+    @Column(name = "result_class_id", columnDefinition = "BINARY(16)")
+    private UUID resultClassId;
+
     @Column(name = "academic_year", nullable = false, length = 32)
     private String academicYear;
 

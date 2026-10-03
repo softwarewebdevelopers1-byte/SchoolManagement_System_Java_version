@@ -3,6 +3,7 @@ package com.example.school.system.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,10 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.school.system.DTO.archive.ArchiveDownload;
+import com.example.school.system.DTO.archive.ArchivePageResponse;
 import com.example.school.system.DTO.archive.ArchiveRecordResponse;
+import com.example.school.system.DTO.archive.ArchiveStudentsPageResponse;
 import com.example.school.system.DTO.archive.AttendanceArchivePreview;
 import com.example.school.system.DTO.archive.AttendanceArchiveRequest;
 import com.example.school.system.DTO.archive.ResultArchiveRequest;
+import com.example.school.system.DTO.archive.ResultArchiveCorrectionRequest;
 import com.example.school.system.DTO.DTOResponse.SchoolApiResponse;
 import com.example.school.system.services.archive.ArchiveDocumentService;
 import com.example.school.system.services.archive.ArchiveRequestService;
@@ -28,6 +32,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.InputStream;
 
 @RestController
 @RequestMapping("/api")
@@ -38,10 +45,11 @@ public class ArchiveController {
 
     @GetMapping("/school/archives")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
-    public ResponseEntity<?> getArchives() {
-        ArchiveRequestService service = archiveRequestServiceProvider.getIfAvailable();
-        return ResponseEntity.ok(SchoolApiResponse.success(
-                service == null ? java.util.List.of() : service.listArchives(), "archives loaded"));
+    public ResponseEntity<?> getArchives(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        ArchivePageResponse response = requireArchiveService().listArchives(page, size);
+        return ResponseEntity.ok(SchoolApiResponse.success(response, "archives loaded"));
     }
 
     @PostMapping("/admin/archives/results")
@@ -49,6 +57,15 @@ public class ArchiveController {
     public ResponseEntity<ArchiveRecordResponse> requestResultArchive(
             @Valid @RequestBody ResultArchiveRequest request) {
         return ResponseEntity.accepted().body(requireArchiveService().requestResultArchive(request));
+    }
+
+    @PostMapping("/admin/archives/results/{archiveId}/corrections")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ArchiveRecordResponse> requestResultCorrection(
+            @PathVariable UUID archiveId,
+            @Valid @RequestBody ResultArchiveCorrectionRequest request) {
+        return ResponseEntity.accepted().body(
+                requireArchiveService().requestResultCorrection(archiveId, request.reason()));
     }
 
     @PostMapping("/admin/archives/attendance")
@@ -76,21 +93,88 @@ public class ArchiveController {
 
     @GetMapping("/school/archives/{archiveId}/{kind}")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
-    public ResponseEntity<ByteArrayResource> download(
+    public ResponseEntity<?> download(
             @PathVariable UUID archiveId,
-            @PathVariable String kind) {
-        if (!kind.equalsIgnoreCase("pdf") && !kind.equalsIgnoreCase("snapshot")) {
+            @PathVariable String kind,
+            @RequestParam(defaultValue = "attachment") String disposition) {
+        if (!kind.equalsIgnoreCase("pdf") && !kind.equalsIgnoreCase("snapshot")
+                && !kind.equalsIgnoreCase("manifest")) {
             return ResponseEntity.badRequest().build();
         }
         ArchiveDocumentService documentService = archiveDocumentServiceProvider.getIfAvailable();
         if (documentService == null) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Archival storage is not configured");
         }
+        if (kind.equalsIgnoreCase("pdf")) {
+            var file = documentService.downloadPdf(archiveId, null);
+            return stream(file.file(), file.size(), file.contentType(), file.fileName(), disposition);
+        }
         ArchiveDownload file = documentService.download(archiveId, kind);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(file.contentType()))
-                .header("Content-Disposition", "attachment; filename=\"" + file.fileName() + "\"")
+                .contentLength(file.content().length)
+                .header("Content-Disposition", contentDisposition(disposition, file.fileName()))
                 .body(new ByteArrayResource(file.content()));
+    }
+
+    @GetMapping("/school/archives/{archiveId}/students/{studentId}/{kind}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
+    public ResponseEntity<?> downloadStudent(
+            @PathVariable UUID archiveId,
+            @PathVariable UUID studentId,
+            @PathVariable String kind,
+            @RequestParam(defaultValue = "attachment") String disposition) {
+        if (!kind.equalsIgnoreCase("pdf") && !kind.equalsIgnoreCase("snapshot")) {
+            return ResponseEntity.badRequest().build();
+        }
+        ArchiveDocumentService documentService = archiveDocumentServiceProvider.getIfAvailable();
+        if (documentService == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Archive documents are temporarily unavailable");
+        }
+        if (kind.equalsIgnoreCase("pdf")) {
+            var file = documentService.downloadPdf(archiveId, studentId);
+            return stream(file.file(), file.size(), file.contentType(), file.fileName(), disposition);
+        }
+        ArchiveDownload file = documentService.downloadStudent(archiveId, studentId, kind);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .contentLength(file.content().length)
+                .header("Content-Disposition", contentDisposition(disposition, file.fileName()))
+                .body(new ByteArrayResource(file.content()));
+    }
+
+    @GetMapping("/school/archives/{archiveId}/students")
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
+    public ResponseEntity<ArchiveStudentsPageResponse> listArchiveStudents(
+            @PathVariable UUID archiveId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        ArchiveDocumentService documentService = archiveDocumentServiceProvider.getIfAvailable();
+        if (documentService == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Archive documents are temporarily unavailable");
+        }
+        return ResponseEntity.ok(documentService.listStudentArtifacts(archiveId, page, size));
+    }
+
+    private String contentDisposition(String disposition, String fileName) {
+        String mode = "inline".equalsIgnoreCase(disposition) ? "inline" : "attachment";
+        return mode + "; filename=\"" + fileName + "\"";
+    }
+
+    private ResponseEntity<StreamingResponseBody> stream(
+            Path file, long size, String contentType, String fileName, String disposition) {
+        StreamingResponseBody body = output -> {
+            try (InputStream input = Files.newInputStream(file)) {
+                input.transferTo(output);
+            } finally {
+                Files.deleteIfExists(file);
+            }
+        };
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .contentLength(size)
+                .header("Content-Disposition", contentDisposition(disposition, fileName))
+                .body(body);
     }
 
     private ArchiveRequestService requireArchiveService() {

@@ -278,14 +278,14 @@ public class MarksEntryService {
     public SchoolApiResponse<?> saveMarks(MarksheetSaveRequest marksheetSaveRequest) {
         SchoolSettings settings = settingsRepository.findBySchoolId(marksheetSaveRequest.schoolId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("school settings not found"));
-        SubjectJoint subjectJoint = subjectJointRepo.findById(marksheetSaveRequest.subjectJointId())
+        SubjectJoint subjectJoint = subjectJointRepo.findForUpdateById(marksheetSaveRequest.subjectJointId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("subject joint not found"));
         GradingScale gradingScale = gradingService.getOrCreateDefaultScale(marksheetSaveRequest.schoolId());
         UUID classId = subjectJoint.getSchoolClass().getClassId();
         Set<UUID> validStudentIds = getStudentsForSubject(subjectJoint.getId(), subjectJoint).stream()
                 .map(s -> s.getId()).collect(Collectors.toSet());
         MarksSheet marksSheet = marksSheetRepo
-                .findBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                .findForUpdateBySubjectJointIdAndAcademicYearAndCurrentSchoolTermAndExamType(
                         subjectJoint.getId(), settings.getAcademicYear(), settings.getCurrentSchoolTerm(),
                         settings.getExamSettings().getExamType())
                 .orElseGet(() -> {

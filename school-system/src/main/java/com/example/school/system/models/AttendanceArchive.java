@@ -53,6 +53,9 @@ public class AttendanceArchive {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
+    @Column(name = "missing_dates_confirmed", nullable = false)
+    private boolean missingDatesConfirmed;
+
     @Column(name = "archive_version", nullable = false)
     private Integer version = 1;
 
@@ -68,6 +71,15 @@ public class AttendanceArchive {
 
     @Column(name = "snapshot_size")
     private Long snapshotSize;
+
+    @Column(name = "manifest_key", length = 1024)
+    private String manifestKey;
+
+    @Column(name = "manifest_sha256", length = 64)
+    private String manifestSha256;
+
+    @Column(name = "manifest_size")
+    private Long manifestSize;
 
     @Column(name = "document_key", length = 1024)
     private String documentKey;
@@ -89,6 +101,12 @@ public class AttendanceArchive {
 
     @Column(name = "processing_started_at")
     private Instant processingStartedAt;
+
+    @Column(name = "lease_token", columnDefinition = "BINARY(16)")
+    private UUID leaseToken;
+
+    @Column(name = "lease_expires_at")
+    private Instant leaseExpiresAt;
 
     @Column(name = "attempt_count", nullable = false)
     private Integer attemptCount = 0;

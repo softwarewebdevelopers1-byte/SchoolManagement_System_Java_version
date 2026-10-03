@@ -60,8 +60,10 @@ public class AttendanceService {
                 .findBySchoolClassClassIdAndSchoolClassSchoolIdAndDate(
                         classAttendanceDTO.classId(), schoolId, timeNow)
                 .orElseGet(() -> createNewSheet(schoolClass, timeNow));
-        syncAllStudents(sheet);
-        sheet = attendanceSheetRepository.save(sheet);
+        if (sheet.getStatus() != WholeAttendanceSheetStatus.LOCKED) {
+            syncAllStudents(sheet);
+            sheet = attendanceSheetRepository.save(sheet);
+        }
         return toAttendanceSheetDto(sheet);
     }
 

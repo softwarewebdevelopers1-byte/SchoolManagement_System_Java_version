@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,7 @@ public interface ClassTermResultsRepo extends JpaRepository<ClassTermResults, UU
     Optional<ClassTermResults> findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
             UUID studentId, String academicYear, Integer term, ExamType examType);
 
+    @EntityGraph(attributePaths = "studentProfile")
     List<ClassTermResults> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamType(
             UUID classId, String academicYear, Integer term, ExamType examType);
 
@@ -39,6 +41,9 @@ public interface ClassTermResultsRepo extends JpaRepository<ClassTermResults, UU
 
     List<ClassTermResults> findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
             UUID studentId, String academicYear, Integer term);
+
+    List<ClassTermResults> findAllByStudentProfile_IdInAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
+            List<UUID> studentIds, String academicYear, Integer term);
 
     @Modifying
     @Query(value = """

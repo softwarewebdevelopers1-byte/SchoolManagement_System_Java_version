@@ -9,11 +9,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 import com.example.school.system.models.ResultAccess;
 import com.example.school.system.types.ExamType;
 
 public interface ResultAccessRepository extends JpaRepository<ResultAccess, UUID> {
+    @EntityGraph(attributePaths = { "studentProfile" })
     Optional<ResultAccess> findByTokenHash(String tokenHash);
 
     Optional<ResultAccess> findByStudentProfileIdAndAcademicYearAndCurrentSchoolTermAndExamType(
@@ -27,7 +29,7 @@ public interface ResultAccessRepository extends JpaRepository<ResultAccess, UUID
             FROM ResultAccess access
             JOIN FETCH access.studentProfile student
             LEFT JOIN FETCH student.schoolClass schoolClass
-            WHERE schoolClass.school.id = :schoolId
+            WHERE access.resultSchoolId = :schoolId
               AND (
                     :search IS NULL
                     OR LOWER(student.studentFullName) LIKE LOWER(CONCAT('%', :search, '%'))
@@ -49,7 +51,7 @@ public interface ResultAccessRepository extends JpaRepository<ResultAccess, UUID
             FROM ResultAccess access
             JOIN access.studentProfile student
             LEFT JOIN student.schoolClass schoolClass
-            WHERE schoolClass.school.id = :schoolId
+            WHERE access.resultSchoolId = :schoolId
               AND (
                     :search IS NULL
                     OR LOWER(student.studentFullName) LIKE LOWER(CONCAT('%', :search, '%'))
@@ -77,7 +79,7 @@ public interface ResultAccessRepository extends JpaRepository<ResultAccess, UUID
             FROM ResultAccess access
             JOIN FETCH access.studentProfile student
             LEFT JOIN FETCH student.schoolClass schoolClass
-            WHERE access.id = :accessId AND schoolClass.school.id = :schoolId
+            WHERE access.id = :accessId AND access.resultSchoolId = :schoolId
             """)
     Optional<ResultAccess> findByIdForSchool(@Param("accessId") UUID accessId, @Param("schoolId") UUID schoolId);
 }

@@ -65,7 +65,9 @@ public interface AttendanceSheetRepository extends JpaRepository<AttendanceSheet
             """)
     int lockSubmittedByIds(@Param("ids") List<UUID> ids);
 
-    @EntityGraph(attributePaths = { "schoolClass", "attendanceRecords", "attendanceRecords.student" })
+    @EntityGraph(attributePaths = {
+            "schoolClass", "schoolClass.school", "attendanceRecords", "attendanceRecords.student"
+    })
     List<AttendanceSheet> findAllBySchoolClassClassIdAndDateBetweenOrderByDate(
             UUID classId, LocalDate startDate, LocalDate endDate);
 
