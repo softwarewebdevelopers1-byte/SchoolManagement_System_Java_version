@@ -1,0 +1,75 @@
+/* Base button tokens used across the app */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.btnPrimary {
+  background: var(--edunex-primary);
+  color: #fff;
+}
+.btnPrimary:hover {
+  background: var(--edunex-primary-dark);
+}
+.btnGhost {
+  background: var(--edunex-surface);
+  color: var(--edunex-text-soft);
+  border-color: var(--edunex-border);
+}
+.btnGhost:hover {
+  border-color: var(--edunex-border-strong);
+  background: var(--edunex-surface-2);
+}
+.btnDanger {
+  background: var(--edunex-danger);
+  color: #fff;
+}
+
+/* Field tokens */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--edunex-text-soft);
+}
+.fieldInput,
+.fieldSelect,
+.fieldTextarea {
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edunex-border);
+  background: var(--edunex-surface);
+  font-size: 13px;
+  transition:
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+  width: 100%;
+}
+.fieldInput:focus,
+.fieldSelect:focus,
+.fieldTextarea:focus {
+  outline: none;
+  border-color: var(--edunex-primary);
+  box-shadow: 0 0 0 3px var(--edunex-primary-soft);
+}
+.fieldError {
+  border-color: var(--edunex-danger);
+}
+.fieldHint {
+  font-size: 11.5px;
+  color: var(--edunex-muted);
+}

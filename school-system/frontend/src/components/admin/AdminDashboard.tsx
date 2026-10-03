@@ -1520,7 +1520,7 @@ const AdminDashboard: React.FC = () => {
 
     if (activeTab === "archives") {
       return (
-        <ArchivesView title="Global Performance Archives" allowManagement />
+        <ArchivesView title="Archives" allowManagement />
       );
     }
 

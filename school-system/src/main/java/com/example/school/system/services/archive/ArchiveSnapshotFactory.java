@@ -294,11 +294,14 @@ public class ArchiveSnapshotFactory {
             throw new IllegalStateException(
                     "Attendance archive has dates without locked sheets; confirm and resolve its date coverage first");
         }
+        String archivedClassName = archive.getClassName() == null || archive.getClassName().isBlank()
+                ? schoolClass.getClassGrade() + " " + schoolClass.getClassStream()
+                : archive.getClassName();
         AttendanceSnapshot snapshot = new AttendanceSnapshot(
-                schoolClass.getSchool().getId(),
-                schoolClass.getSchool().getSchoolName(),
-                schoolClass.getClassId(),
-                schoolClass.getClassGrade() + " " + schoolClass.getClassStream(),
+                archive.getSchoolId(),
+                archive.getSchoolName() == null ? schoolClass.getSchool().getSchoolName() : archive.getSchoolName(),
+                archive.getClassId(),
+                archivedClassName,
                 archive.getStartDate(),
                 archive.getEndDate(),
                 archive.isMissingDatesConfirmed(),
@@ -309,35 +312,13 @@ public class ArchiveSnapshotFactory {
                                 AttendanceSnapshot.StudentSummary::name, String.CASE_INSENSITIVE_ORDER))
                         .toList());
         byte[] snapshotBytes = serialize(snapshot);
-        List<String[]> pdfRows = new ArrayList<>();
-        pdfRows.add(new String[] { "Date", "Student", "Admission", "Status", "Attendance %" });
-        for (AttendanceSnapshot.Day day : days) {
-            for (AttendanceSnapshot.StudentRecord student : day.students()) {
-                pdfRows.add(new String[] { day.date().toString(), student.name(),
-                        student.admissionNumber(), student.status().name(), "" });
-            }
-        }
-        for (AttendanceSnapshot.Day day : days) {
-            pdfRows.add(new String[] {
-                    day.date().toString(), "DAILY TOTALS",
-                    "Present: " + day.presentCount(), "Absent: " + day.absentCount(),
-                    String.format(java.util.Locale.ROOT, "%.2f%%", day.attendancePercentage())
-            });
-        }
-        for (LocalDate missingDate : missingDates) {
-            pdfRows.add(new String[] { missingDate.toString(), "", "", "NO SHEET", "" });
-        }
-        for (AttendanceSnapshot.StudentSummary summary : snapshot.studentSummaries()) {
-            pdfRows.add(new String[] { "STUDENT TOTAL", summary.name(),
-                    "Present: " + summary.presentDays(), "Absent: " + summary.absentDays(),
-                    String.format(java.util.Locale.ROOT, "%.2f", summary.attendancePercentage()) });
-        }
+        int presentCount = days.stream().mapToInt(AttendanceSnapshot.Day::presentCount).sum();
+        int absentCount = days.stream().mapToInt(AttendanceSnapshot.Day::absentCount).sum();
+        int statusCount = presentCount + absentCount;
+        Double attendanceRate = statusCount == 0 ? null : presentCount * 100.0 / statusCount;
         String prefix = "schools/" + archive.getSchoolId() + "/attendance/" + archive.getId()
                 + "/v" + archive.getVersion() + "/attempts/" + leaseToken;
-        byte[] pdf = pdfGenerator.generate(
-                "Attendance " + snapshot.schoolName() + " - " + snapshot.className() + " "
-                        + archive.getStartDate() + " to " + archive.getEndDate(),
-                pdfRows);
+        byte[] pdf = pdfGenerator.generateAttendanceReport(snapshot, archive.getVersion(), archive.getRequestedAt());
         String snapshotKey = prefix + "/snapshot.json";
         String documentKey = prefix + "/attendance-report.pdf";
         ArchiveManifest manifest = new ArchiveManifest(
@@ -352,7 +333,8 @@ public class ArchiveSnapshotFactory {
                                 ArchiveHash.sha256(pdf), pdf.length)));
         byte[] manifestBytes = serialize(manifest);
         return new AttendancePayload(snapshotBytes, pdf, manifestBytes,
-                snapshotKey, documentKey, prefix + "/manifest.json");
+                snapshotKey, documentKey, prefix + "/manifest.json",
+                snapshot.studentSummaries().size(), days.size(), missingDates.size(), attendanceRate);
     }
 
     public byte[] serialize(Object value) {
@@ -369,6 +351,10 @@ public class ArchiveSnapshotFactory {
             byte[] manifest,
             String snapshotKey,
             String documentKey,
-            String manifestKey) {
+            String manifestKey,
+            int studentCount,
+            int recordedDays,
+            int noSheetDays,
+            Double attendanceRate) {
     }
 }

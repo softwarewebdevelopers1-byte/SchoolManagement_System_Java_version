@@ -20,6 +20,26 @@ public interface AttendanceArchiveRepository extends JpaRepository<AttendanceArc
 
     List<AttendanceArchive> findAllBySchoolIdOrderByRequestedAtDesc(UUID schoolId, Pageable pageable);
 
+    @Query("""
+            SELECT archive
+            FROM AttendanceArchive archive
+            WHERE archive.schoolId = :schoolId
+              AND (:classId IS NULL OR archive.classId = :classId)
+              AND (:year IS NULL OR YEAR(archive.startDate) = :year)
+              AND (:status IS NULL OR archive.status = :status)
+              AND (:search IS NULL
+                   OR LOWER(archive.className) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(archive.schoolName) LIKE LOWER(CONCAT('%', :search, '%')))
+            ORDER BY archive.requestedAt DESC, archive.id DESC
+            """)
+    List<AttendanceArchive> searchArchives(
+            @Param("schoolId") UUID schoolId,
+            @Param("classId") UUID classId,
+            @Param("year") Integer year,
+            @Param("status") ArchiveStatus status,
+            @Param("search") String search,
+            Pageable pageable);
+
     List<AttendanceArchive> findTop20ByStatusInOrderByRequestedAtAsc(List<ArchiveStatus> statuses);
 
     @Modifying

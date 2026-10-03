@@ -1,0 +1,353 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pageHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sub {
+  font-size: 13px;
+  color: var(--edunex-muted);
+}
+.headActions {
+  display: flex;
+  gap: 8px;
+}
+
+.kpiRow {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 1180px) {
+  .kpiRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+}
+.grid3 {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.grid2 {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .grid,
+  .grid3,
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--edunex-surface);
+  border: 1px solid var(--edunex-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.cardTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+.cardSub {
+  font-size: 12px;
+  color: var(--edunex-muted);
+}
+.cardLink {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--edunex-primary);
+  text-decoration: none;
+}
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+/* Quick actions */
+.actionsGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.quickAction {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--edunex-border);
+  border-radius: var(--radius-md);
+  background: var(--edunex-surface);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--edunex-text);
+  text-align: left;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+.quickAction:hover {
+  border-color: var(--edunex-primary);
+  background: var(--edunex-primary-soft);
+}
+.quickActionIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--edunex-primary-soft);
+  color: var(--edunex-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* Alerts */
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edunex-border);
+  background: var(--edunex-surface);
+}
+.alertWarn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.alertDanger {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.alertInfo {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+.alertIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alertBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.alertTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.alertText {
+  font-size: 12.5px;
+  color: var(--edunex-text-soft);
+}
+
+/* Insights */
+.insightList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.insight {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--edunex-surface-2);
+  font-size: 12.5px;
+  color: var(--edunex-text-soft);
+}
+.insightBullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--edunex-secondary);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+/* Recent activity list */
+.activity {
+  display: flex;
+  flex-direction: column;
+}
+.activityRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--edunex-border);
+}
+.activityRow:last-child {
+  border-bottom: none;
+}
+.activityAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--edunex-primary-soft);
+  color: var(--edunex-primary);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.activityMeta {
+  flex: 1;
+  min-width: 0;
+}
+.activityName {
+  font-size: 13px;
+  font-weight: 600;
+}
+.activityDesc {
+  font-size: 12px;
+  color: var(--edunex-muted);
+}
+.activityAmt {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--edunex-success);
+}
+
+/* Outstanding accounts */
+.outstandingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--edunex-border);
+}
+.outstandingRow:last-child {
+  border-bottom: none;
+}
+.outstandingName {
+  font-size: 13px;
+  font-weight: 600;
+}
+.outstandingClass {
+  font-size: 11.5px;
+  color: var(--edunex-muted);
+}
+.outstandingAmt {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--edunex-danger);
+}
+
+/* Section heading */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.sectionSub {
+  font-size: 12.5px;
+  color: var(--edunex-muted);
+}
+
+/* Chart wrapper */
+.chartWrap {
+  width: 100%;
+  height: 260px;
+}
+.chartWrapSm {
+  width: 100%;
+  height: 220px;
+}
+
+/* Platform admin extras */
+.schoolRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--edunex-border);
+}
+.schoolRow:last-child {
+  border-bottom: none;
+}
+.schoolDot {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.schoolMeta {
+  flex: 1;
+}
+.schoolName {
+  font-size: 13px;
+  font-weight: 600;
+}
+.schoolCounty {
+  font-size: 11.5px;
+  color: var(--edunex-muted);
+}
+.schoolRevenue {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

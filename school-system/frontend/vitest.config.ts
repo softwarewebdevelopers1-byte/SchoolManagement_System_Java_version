@@ -10,6 +10,8 @@ export default defineConfig({
       "src/lib/api.subjects.test.ts",
       "src/lib/api.users.test.ts",
       "src/components/shared/notifications/NotificationContext.test.tsx",
+      "src/components/shared/ArchivesView.test.tsx",
+      "src/lib/api.download.test.ts",
     ],
   },
 });

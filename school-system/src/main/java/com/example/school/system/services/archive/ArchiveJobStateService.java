@@ -125,7 +125,11 @@ public class ArchiveJobStateService {
             UUID leaseToken,
             R2ObjectStorage.StoredObject manifest,
             R2ObjectStorage.StoredObject snapshot,
-            R2ObjectStorage.StoredObject document) {
+            R2ObjectStorage.StoredObject document,
+            int studentCount,
+            int recordedDays,
+            int noSheetDays,
+            Double attendanceRate) {
         AttendanceArchive archive = attendanceArchiveRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Attendance archive disappeared during processing"));
         if (archive.getStatus() != ArchiveStatus.PROCESSING || !leaseToken.equals(archive.getLeaseToken())) {
@@ -140,6 +144,10 @@ public class ArchiveJobStateService {
         archive.setDocumentKey(document.key());
         archive.setDocumentSha256(document.sha256());
         archive.setDocumentSize(document.size());
+        archive.setStudentCount(studentCount);
+        archive.setRecordedDays(recordedDays);
+        archive.setNoSheetDays(noSheetDays);
+        archive.setAttendanceRate(attendanceRate);
         archive.setVerifiedAt(Instant.now());
         archive.setStatus(ArchiveStatus.VERIFIED);
         archive.setLeaseToken(null);

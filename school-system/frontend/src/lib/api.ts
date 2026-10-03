@@ -367,7 +367,7 @@ export const request = async <T>(
   return data;
 };
 
-export const downloadApiFile = async (path: string, fileName: string): Promise<void> => {
+export const downloadApiFile = async (path: string, fileName?: string): Promise<void> => {
   const token = getStoredSession()?.token || "";
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -386,14 +386,61 @@ export const downloadApiFile = async (path: string, fileName: string): Promise<v
     throw new ApiError(message, response.status, null);
   }
   const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const quotedName = disposition.match(/filename="([^"]+)"/i)?.[1];
+  const plainName = disposition.match(/filename=([^;]+)/i)?.[1]?.trim();
+  const responseName = encodedName
+    ? decodeURIComponent(encodedName)
+    : quotedName || plainName;
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
-  link.download = fileName;
+  link.download = responseName || fileName || "archive-download";
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+};
+
+export const openApiFile = async (path: string, fallbackFileName: string): Promise<void> => {
+  const popup = window.open("", "_blank");
+  try {
+    const token = getStoredSession()?.token || "";
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: token ? { Authorization: "Bearer " + token } : {},
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      let message = "Unable to open archive report.";
+      if (text) {
+        try {
+          const body = JSON.parse(text);
+          message = body.message || message;
+        } catch {
+          message = text;
+        }
+      }
+      throw new ApiError(message, response.status, null);
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    if (popup) {
+      popup.location.href = objectUrl;
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } else {
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fallbackFileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+  } catch (error) {
+    popup?.close();
+    throw error;
+  }
 };
 
 const splitName = (name = "") => {
@@ -1062,8 +1109,8 @@ export const api = {
     if (path === "/school/classes") {
       return loadClasses() as Promise<T>;
     }
-    if (path === "/school/archives") {
-      return request<T>("/school/archives");
+    if (path.startsWith("/school/archives")) {
+      return request<T>(path);
     }
     if (path === "/school/timetables/my") {
       return request<T>("/timetables/my");

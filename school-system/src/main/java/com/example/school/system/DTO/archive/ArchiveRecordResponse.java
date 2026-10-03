@@ -26,5 +26,10 @@ public record ArchiveRecordResponse(
         List<String> cleanupBlockers,
         String lastError,
         UUID supersedesArchiveId,
-        String correctionReason) {
+        String correctionReason,
+        String schoolName,
+        Integer studentCount,
+        Integer recordedDays,
+        Integer noSheetDays,
+        Double attendanceRate) {
 }

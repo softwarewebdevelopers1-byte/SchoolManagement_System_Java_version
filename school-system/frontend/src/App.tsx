@@ -10,6 +10,7 @@ import {
 import { NotificationContainer } from "./components/shared/notifications/NotificationContainer";
 import { NotificationErrorBoundary } from "./components/shared/notifications/NotificationErrorBoundary";
 import { NotificationProvider } from "./components/shared/notifications/NotificationProvider";
+import { FinanceProvider } from "./context/FinanceContext";
 import "./App.css";
 
 const StudentDashboard = lazy(() => import("./components/students/StudentDashboard"));
@@ -72,6 +73,69 @@ const AcceptAdminInvite = lazy(
   () => import("./components/auth/AcceptAdminInvite"),
 );
 const StudentResults = lazy(() => import("./components/StudentsResultsPage"));
+const FinanceLayout = lazy(() =>
+  import("./components/layout/FinanceLayout").then((module) => ({
+    default: module.FinanceLayout,
+  })),
+);
+const FinanceDashboard = lazy(() => import("./pages/Dashboard"));
+const FinancePlaceholder = lazy(() =>
+  import("./pages/Placeholder").then((module) => ({
+    default: module.Placeholder,
+  })),
+);
+
+const FinanceRoutes = () => (
+  <FinanceProvider>
+    <Routes>
+      <Route element={<FinanceLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<FinanceDashboard />} />
+        <Route path="students" element={<FinancePlaceholder title="Students" />} />
+        <Route
+          path="students/:studentId"
+          element={<FinancePlaceholder title="Student finance" />}
+        />
+        <Route path="fees" element={<FinancePlaceholder title="Fee structures" />} />
+        <Route path="invoices" element={<FinancePlaceholder title="Invoices" />} />
+        <Route
+          path="outstanding"
+          element={<FinancePlaceholder title="Outstanding accounts" />}
+        />
+        <Route path="payments" element={<FinancePlaceholder title="Payments" />} />
+        <Route path="receipts" element={<FinancePlaceholder title="Receipts" />} />
+        <Route
+          path="statements"
+          element={<FinancePlaceholder title="Statements" />}
+        />
+        <Route path="pledges" element={<FinancePlaceholder title="Pledges" />} />
+        <Route
+          path="adjustments"
+          element={<FinancePlaceholder title="Discounts and waivers" />}
+        />
+        <Route path="expenses" element={<FinancePlaceholder title="Expenses" />} />
+        <Route path="vouchers" element={<FinancePlaceholder title="Payment vouchers" />} />
+        <Route path="lpos" element={<FinancePlaceholder title="LPOs" />} />
+        <Route path="lsos" element={<FinancePlaceholder title="LSOs" />} />
+        <Route path="cashbook" element={<FinancePlaceholder title="Cashbook" />} />
+        <Route path="cashflow" element={<FinancePlaceholder title="Cashflow" />} />
+        <Route
+          path="reconciliation"
+          element={<FinancePlaceholder title="Reconciliation" />}
+        />
+        <Route path="accounts" element={<FinancePlaceholder title="Accounts" />} />
+        <Route path="sms" element={<FinancePlaceholder title="Fee reminders" />} />
+        <Route
+          path="sms/history"
+          element={<FinancePlaceholder title="Message history" />}
+        />
+        <Route path="reports" element={<FinancePlaceholder title="Reports center" />} />
+        <Route path="settings" element={<FinancePlaceholder title="Settings" />} />
+        <Route path="audit" element={<FinancePlaceholder title="Audit log" />} />
+      </Route>
+    </Routes>
+  </FinanceProvider>
+);
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const saved = localStorage.getItem("user");
@@ -334,6 +398,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
         <Route path="/invite/:token" element={<AcceptAdminInvite />} />
+        <Route path="/finance/*" element={<FinanceRoutes />} />
         <Route
           path="/edunex-org/dashboard"
           element={

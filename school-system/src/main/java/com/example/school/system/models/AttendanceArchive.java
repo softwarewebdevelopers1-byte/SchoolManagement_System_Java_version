@@ -47,6 +47,21 @@ public class AttendanceArchive {
     @Column(name = "class_name", nullable = false, length = 128)
     private String className;
 
+    @Column(name = "school_name", length = 255)
+    private String schoolName;
+
+    @Column(name = "student_count")
+    private Integer studentCount;
+
+    @Column(name = "recorded_days")
+    private Integer recordedDays;
+
+    @Column(name = "no_sheet_days")
+    private Integer noSheetDays;
+
+    @Column(name = "attendance_rate")
+    private Double attendanceRate;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 

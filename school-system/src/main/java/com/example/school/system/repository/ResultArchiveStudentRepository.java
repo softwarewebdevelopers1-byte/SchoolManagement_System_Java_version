@@ -3,6 +3,7 @@ package com.example.school.system.repository;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
+import java.util.Collection;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
@@ -66,7 +67,21 @@ public interface ResultArchiveStudentRepository extends JpaRepository<ResultArch
 
     Page<ResultArchiveStudent> findAllByArchiveIdOrderByStudentNameAsc(UUID archiveId, Pageable pageable);
 
+    @Query("""
+            SELECT student.archive.id AS archiveId, COUNT(student) AS studentCount
+            FROM ResultArchiveStudent student
+            WHERE student.archive.id IN :archiveIds
+            GROUP BY student.archive.id
+            """)
+    List<ArchiveStudentCount> countByArchiveIds(@Param("archiveIds") Collection<UUID> archiveIds);
+
     @Modifying
     @Query("DELETE FROM ResultArchiveStudent student WHERE student.archive.id = :archiveId")
     int deleteAllForArchive(@Param("archiveId") UUID archiveId);
+
+    interface ArchiveStudentCount {
+        UUID getArchiveId();
+
+        Long getStudentCount();
+    }
 }

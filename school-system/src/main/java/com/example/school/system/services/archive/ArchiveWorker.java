@@ -141,10 +141,7 @@ public class ArchiveWorker {
             assertLease(archiveId, leaseToken, true, leaseLost);
             R2ObjectStorage.StoredObject classSnapshot = objectStorage.putAndVerify(
                     classSnapshotKey, classSnapshotBytes, "application/json", classSnapshotHash);
-            byte[] classPdfBytes = pdfGenerator.generateClassResults(
-                    "Edunex Results - " + payload.schoolName() + " - " + payload.academicYear()
-                            + " Term " + payload.term() + " " + payload.examType(),
-                    payload.students());
+            byte[] classPdfBytes = pdfGenerator.generateClassResults(payload);
             String classPdfKey = attemptPrefix + "/class-report.pdf";
             String classPdfHash = ArchiveHash.sha256(classPdfBytes);
             assertLease(archiveId, leaseToken, true, leaseLost);
@@ -198,7 +195,9 @@ public class ArchiveWorker {
             R2ObjectStorage.StoredObject manifest = objectStorage.putAndVerify(
                     payload.manifestKey(), payload.manifest(), "application/json", manifestHash);
             assertLease(archiveId, leaseToken, false, leaseLost);
-            stateService.completeAttendance(archiveId, leaseToken, manifest, snapshot, document);
+            stateService.completeAttendance(
+                    archiveId, leaseToken, manifest, snapshot, document,
+                    payload.studentCount(), payload.recordedDays(), payload.noSheetDays(), payload.attendanceRate());
             log.info("Verified attendance archive {}", archiveId);
         } catch (RuntimeException exception) {
             stateService.failAttendance(archiveId, leaseToken);

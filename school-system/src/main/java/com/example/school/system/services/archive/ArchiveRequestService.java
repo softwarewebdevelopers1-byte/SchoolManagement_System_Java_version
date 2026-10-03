@@ -31,6 +31,7 @@ import com.example.school.system.repository.ClassTermResultsRepo;
 import com.example.school.system.repository.MarksRepo;
 import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.ResultArchiveRepository;
+import com.example.school.system.repository.ResultArchiveStudentRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolSettingsRepository;
 import com.example.school.system.repository.StudentRepository;
@@ -58,6 +59,7 @@ public class ArchiveRequestService {
     private final MarksRepo marksRepo;
     private final ClassTermResultsRepo classTermResultsRepo;
     private final ResultArchiveRepository resultArchiveRepository;
+    private final ResultArchiveStudentRepository resultArchiveStudentRepository;
     private final AttendanceSheetRepository attendanceSheetRepository;
     private final AttendanceArchiveRepository attendanceArchiveRepository;
     private final ArchiveSnapshotFactory archiveSnapshotFactory;
@@ -249,7 +251,12 @@ public class ArchiveRequestService {
         AttendanceArchive archive = existing == null ? new AttendanceArchive() : existing;
         archive.setSchoolId(schoolId);
         archive.setClassId(request.classId());
-        archive.setClassName(schoolClass.getClassGrade() + " " + schoolClass.getClassStream());
+        if (archive.getClassName() == null || archive.getClassName().isBlank()) {
+            archive.setClassName(schoolClass.getClassGrade() + " " + schoolClass.getClassStream());
+        }
+        if (archive.getSchoolName() == null || archive.getSchoolName().isBlank()) {
+            archive.setSchoolName(schoolClass.getSchool().getSchoolName());
+        }
         archive.setStartDate(request.startDate());
         archive.setEndDate(request.endDate());
         archive.setMissingDatesConfirmed(request.confirmMissingDates());
@@ -289,21 +296,51 @@ public class ArchiveRequestService {
     }
 
     @Transactional(readOnly = true)
-    public ArchivePageResponse listArchives(int page, int size) {
+    public ArchivePageResponse listArchives(
+            int page, int size, String type, String year, Integer term,
+            UUID classId, String status, String search) {
         UUID schoolId = currentSchoolId();
         if (page < 0 || page > 99) {
             throw new SchoolResourceBadInputExceptionHandler("archive page must be between 0 and 99");
         }
         int normalizedSize = Math.max(1, Math.min(size, 100));
+        String normalizedType = type == null || type.isBlank() ? null : type.trim().toUpperCase(java.util.Locale.ROOT);
+        if (normalizedType != null && !normalizedType.equals("RESULT") && !normalizedType.equals("ATTENDANCE")) {
+            throw new SchoolResourceBadInputExceptionHandler("archive type must be RESULT or ATTENDANCE");
+        }
+        String normalizedYear = year == null || year.isBlank() ? null : year.trim();
+        if (normalizedYear != null && !normalizedYear.matches("\\d{4}")) {
+            throw new SchoolResourceBadInputExceptionHandler("archive year must use four digits");
+        }
+        if (term != null && (term < 1 || term > 3)) {
+            throw new SchoolResourceBadInputExceptionHandler("archive term must be between 1 and 3");
+        }
+        ArchiveStatus normalizedStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                normalizedStatus = ArchiveStatus.valueOf(status.trim().toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                throw new SchoolResourceBadInputExceptionHandler("archive status is invalid");
+            }
+        }
+        Integer attendanceYear = normalizedYear == null ? null : Integer.valueOf(normalizedYear);
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
         int windowSize = Math.min((page + 1) * normalizedSize + 1, 10001);
         PageRequest window = PageRequest.of(0, windowSize);
-        List<ArchiveRecordResponse> results = resultArchiveRepository
-                .findAllBySchoolIdOrderByRequestedAtDesc(schoolId, window)
-                .stream().map(this::toResponse).toList();
-        List<ArchiveRecordResponse> attendance = attendanceArchiveRepository
-                .findAllBySchoolIdOrderByRequestedAtDesc(schoolId, window).stream().map(this::toResponse).toList();
+        List<ArchiveRecordResponse> results = normalizedType != null && !normalizedType.equals("RESULT")
+                ? List.of()
+                : resultArchiveRepository.searchArchives(
+                        schoolId, classId, normalizedYear, term,
+                        normalizedStatus, normalizedSearch, window).stream().map(this::toResponse).toList();
+        List<ArchiveRecordResponse> attendance = normalizedType != null && !normalizedType.equals("ATTENDANCE")
+                || term != null
+                ? List.of()
+                : attendanceArchiveRepository.searchArchives(
+                        schoolId, classId, attendanceYear, normalizedStatus, normalizedSearch, window)
+                        .stream().map(this::toResponse).toList();
         List<ArchiveRecordResponse> ordered = java.util.stream.Stream.concat(results.stream(), attendance.stream())
-                .sorted(java.util.Comparator.comparing(ArchiveRecordResponse::requestedAt).reversed())
+                .sorted(java.util.Comparator.comparing(ArchiveRecordResponse::requestedAt).reversed()
+                        .thenComparing(ArchiveRecordResponse::id, java.util.Comparator.reverseOrder()))
                 .toList();
         int start = page * normalizedSize;
         boolean hasNext = ordered.size() > start + normalizedSize;
@@ -311,7 +348,34 @@ public class ArchiveRequestService {
                 .skip(start)
                 .limit(normalizedSize)
                 .toList();
+        List<UUID> resultArchiveIds = content.stream()
+                .filter(archive -> "RESULT".equals(archive.type()))
+                .map(ArchiveRecordResponse::id)
+                .toList();
+        if (!resultArchiveIds.isEmpty()) {
+            java.util.Map<UUID, Integer> studentCounts = resultArchiveStudentRepository
+                    .countByArchiveIds(resultArchiveIds).stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            com.example.school.system.repository.ResultArchiveStudentRepository.ArchiveStudentCount
+                                    ::getArchiveId,
+                            count -> Math.toIntExact(count.getStudentCount())));
+            content = content.stream()
+                    .map(archive -> "RESULT".equals(archive.type())
+                            ? withStudentCount(archive, studentCounts.getOrDefault(archive.id(), 0))
+                            : archive)
+                    .toList();
+        }
         return new ArchivePageResponse(content, page, normalizedSize, hasNext);
+    }
+
+    private ArchiveRecordResponse withStudentCount(ArchiveRecordResponse archive, Integer studentCount) {
+        return new ArchiveRecordResponse(
+                archive.id(), archive.type(), archive.classId(), archive.className(), archive.academicYear(),
+                archive.term(), archive.examType(), archive.startDate(), archive.endDate(), archive.version(),
+                archive.status(), archive.requestedAt(), archive.verifiedAt(), archive.documentSize(),
+                archive.cleanupEligible(), archive.cleanupBlockers(), archive.lastError(),
+                archive.supersedesArchiveId(), archive.correctionReason(), archive.schoolName(), studentCount,
+                archive.recordedDays(), archive.noSheetDays(), archive.attendanceRate());
     }
 
     @Transactional
@@ -391,7 +455,8 @@ public class ArchiveRequestService {
                 archive.getExamType() == null ? null : archive.getExamType().name(), null, null,
                 archive.getVersion(), archive.getStatus(), archive.getRequestedAt(), archive.getVerifiedAt(),
                 archive.getDocumentSize(), archive.isCleanupEligible(), cleanupBlockers(archive.isCleanupEligible()),
-                archive.getLastError(), archive.getSupersedesArchiveId(), archive.getCorrectionReason());
+                archive.getLastError(), archive.getSupersedesArchiveId(), archive.getCorrectionReason(),
+                null, null, null, null, null);
     }
 
     private ArchiveRecordResponse toResponse(AttendanceArchive archive) {
@@ -400,7 +465,8 @@ public class ArchiveRequestService {
                 archive.getStartDate(), archive.getEndDate(), archive.getVersion(), archive.getStatus(),
                 archive.getRequestedAt(), archive.getVerifiedAt(), archive.getDocumentSize(),
                 archive.isCleanupEligible(), cleanupBlockers(archive.isCleanupEligible()), archive.getLastError(),
-                null, null);
+                null, null, archive.getSchoolName(), archive.getStudentCount(), archive.getRecordedDays(),
+                archive.getNoSheetDays(), archive.getAttendanceRate());
     }
 
     private List<String> cleanupBlockers(boolean eligible) {

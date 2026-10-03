@@ -2,7 +2,6 @@ package com.example.school.system.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
@@ -47,8 +46,15 @@ public class ArchiveController {
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
     public ResponseEntity<?> getArchives(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        ArchivePageResponse response = requireArchiveService().listArchives(page, size);
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String year,
+            @RequestParam(required = false) Integer term,
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+        ArchivePageResponse response = requireArchiveService()
+                .listArchives(page, size, type, year, term, classId, status, search);
         return ResponseEntity.ok(SchoolApiResponse.success(response, "archives loaded"));
     }
 
@@ -93,7 +99,7 @@ public class ArchiveController {
 
     @GetMapping("/school/archives/{archiveId}/{kind}")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
-    public ResponseEntity<?> download(
+    public ResponseEntity<StreamingResponseBody> download(
             @PathVariable UUID archiveId,
             @PathVariable String kind,
             @RequestParam(defaultValue = "attachment") String disposition) {
@@ -110,16 +116,34 @@ public class ArchiveController {
             return stream(file.file(), file.size(), file.contentType(), file.fileName(), disposition);
         }
         ArchiveDownload file = documentService.download(archiveId, kind);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.contentType()))
-                .contentLength(file.content().length)
-                .header("Content-Disposition", contentDisposition(disposition, file.fileName()))
-                .body(new ByteArrayResource(file.content()));
+        return stream(file.content(), file.contentType(), file.fileName(), disposition);
+    }
+
+    @GetMapping("/school/attendance-archives/{archiveId}/{kind}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
+    public ResponseEntity<StreamingResponseBody> downloadAttendance(
+            @PathVariable UUID archiveId,
+            @PathVariable String kind,
+            @RequestParam(defaultValue = "attachment") String disposition) {
+        if (!kind.equalsIgnoreCase("pdf") && !kind.equalsIgnoreCase("snapshot")
+                && !kind.equalsIgnoreCase("manifest")) {
+            return ResponseEntity.badRequest().build();
+        }
+        ArchiveDocumentService documentService = archiveDocumentServiceProvider.getIfAvailable();
+        if (documentService == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Archive documents are temporarily unavailable");
+        }
+        if (kind.equalsIgnoreCase("pdf")) {
+            var file = documentService.downloadAttendancePdf(archiveId);
+            return stream(file.file(), file.size(), file.contentType(), file.fileName(), disposition);
+        }
+        ArchiveDownload file = documentService.downloadAttendance(archiveId, kind);
+        return stream(file.content(), file.contentType(), file.fileName(), "attachment");
     }
 
     @GetMapping("/school/archives/{archiveId}/students/{studentId}/{kind}")
     @PreAuthorize("hasAnyRole('ADMIN','CLASSTEACHER','DEPUTYTEACHER','HEADTEACHER')")
-    public ResponseEntity<?> downloadStudent(
+    public ResponseEntity<StreamingResponseBody> downloadStudent(
             @PathVariable UUID archiveId,
             @PathVariable UUID studentId,
             @PathVariable String kind,
@@ -136,11 +160,7 @@ public class ArchiveController {
             return stream(file.file(), file.size(), file.contentType(), file.fileName(), disposition);
         }
         ArchiveDownload file = documentService.downloadStudent(archiveId, studentId, kind);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.contentType()))
-                .contentLength(file.content().length)
-                .header("Content-Disposition", contentDisposition(disposition, file.fileName()))
-                .body(new ByteArrayResource(file.content()));
+        return stream(file.content(), file.contentType(), file.fileName(), disposition);
     }
 
     @GetMapping("/school/archives/{archiveId}/students")
@@ -173,6 +193,16 @@ public class ArchiveController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .contentLength(size)
+                .header("Content-Disposition", contentDisposition(disposition, fileName))
+                .body(body);
+    }
+
+    private ResponseEntity<StreamingResponseBody> stream(
+            byte[] content, String contentType, String fileName, String disposition) {
+        StreamingResponseBody body = output -> output.write(content);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .contentLength(content.length)
                 .header("Content-Disposition", contentDisposition(disposition, fileName))
                 .body(body);
     }

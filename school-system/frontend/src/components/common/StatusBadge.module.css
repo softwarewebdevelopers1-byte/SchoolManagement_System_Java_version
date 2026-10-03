@@ -1,0 +1,36 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.success {
+  background: var(--edunex-success-soft);
+  color: var(--edunex-success);
+}
+.warning {
+  background: var(--edunex-warning-soft);
+  color: var(--edunex-warning);
+}
+.danger {
+  background: var(--edunex-danger-soft);
+  color: var(--edunex-danger);
+}
+.info {
+  background: var(--edunex-info-soft);
+  color: var(--edunex-info);
+}
+.primary {
+  background: var(--edunex-primary-soft);
+  color: var(--edunex-primary);
+}
+.neutral {
+  background: var(--edunex-surface-2);
+  color: var(--edunex-muted);
+}

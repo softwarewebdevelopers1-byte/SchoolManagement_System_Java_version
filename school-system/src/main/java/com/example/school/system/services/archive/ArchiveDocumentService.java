@@ -43,7 +43,7 @@ public class ArchiveDocumentService {
             if ("pdf".equalsIgnoreCase(kind)) {
                 return new ArchiveDownload(verifiedObject(
                         result.getDocumentKey(), result.getDocumentSha256(), result.getDocumentSize()), "application/pdf",
-                        "results-" + archiveId + ".pdf");
+                        resultBaseName(result) + ".pdf");
             }
 
             if ("snapshot".equalsIgnoreCase(kind) || "manifest".equalsIgnoreCase(kind)) {
@@ -52,7 +52,7 @@ public class ArchiveDocumentService {
                         manifest ? result.getSnapshotKey() : result.getClassSnapshotKey(),
                         manifest ? result.getSnapshotSha256() : result.getClassSnapshotSha256(),
                         manifest ? result.getSnapshotSize() : result.getClassSnapshotSize()), "application/json",
-                        "results-" + archiveId + (manifest ? "-manifest.json" : "-snapshot.json"));
+                        resultBaseName(result) + (manifest ? "-manifest.json" : "-class-snapshot.json"));
             }
         }
 
@@ -78,6 +78,29 @@ public class ArchiveDocumentService {
         throw new SchoolResourceNotFoundExceptionHandler("verified archive not found");
     }
 
+    public ArchiveDownload downloadAttendance(UUID archiveId, String kind) {
+        if (!"snapshot".equalsIgnoreCase(kind) && !"manifest".equalsIgnoreCase(kind)) {
+            throw new SchoolResourceNotFoundExceptionHandler("attendance archive artifact not found");
+        }
+        AttendanceArchive archive = findOwnedAttendanceArchive(archiveId);
+        boolean manifest = "manifest".equalsIgnoreCase(kind);
+        String key = manifest ? archive.getManifestKey() : archive.getSnapshotKey();
+        String hash = manifest ? archive.getManifestSha256() : archive.getSnapshotSha256();
+        Long size = manifest ? archive.getManifestSize() : archive.getSnapshotSize();
+        String filename = attendanceBaseName(archive)
+                + (manifest ? "-manifest.json" : "-snapshot.json");
+        return new ArchiveDownload(verifiedObject(key, hash, size), "application/json", filename);
+    }
+
+    public ArchiveFileDownload downloadAttendancePdf(UUID archiveId) {
+        AttendanceArchive archive = findOwnedAttendanceArchive(archiveId);
+        return verifiedPdf(
+                archive.getDocumentKey(),
+                archive.getDocumentSha256(),
+                archive.getDocumentSize(),
+                attendanceBaseName(archive) + ".pdf");
+    }
+
     public ArchiveFileDownload downloadPdf(UUID archiveId, UUID studentId) {
         UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
         if (studentId != null) {
@@ -90,7 +113,7 @@ public class ArchiveDocumentService {
                     .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("archived student not found"));
             return verifiedPdf(
                     student.getDocumentKey(), student.getDocumentSha256(), student.getDocumentSize(),
-                    "student-results-" + studentId + ".pdf");
+                    studentResultBaseName(archive, student) + ".pdf");
         }
 
         ResultArchive result = resultArchiveRepository.findById(archiveId)
@@ -100,7 +123,7 @@ public class ArchiveDocumentService {
         if (result != null) {
             return verifiedPdf(
                     result.getDocumentKey(), result.getDocumentSha256(), result.getDocumentSize(),
-                    "results-" + archiveId + ".pdf");
+                    resultBaseName(result) + ".pdf");
         }
         AttendanceArchive attendance = attendanceArchiveRepository.findById(archiveId)
                 .filter(item -> belongsToSchool(item.getSchoolId(), schoolId)
@@ -124,12 +147,12 @@ public class ArchiveDocumentService {
         if ("pdf".equalsIgnoreCase(kind)) {
             return new ArchiveDownload(verifiedObject(
                     student.getDocumentKey(), student.getDocumentSha256(), student.getDocumentSize()),
-                    "application/pdf", "student-results-" + studentId + ".pdf");
+                    "application/pdf", studentResultBaseName(archive, student) + ".pdf");
         }
         if ("snapshot".equalsIgnoreCase(kind)) {
             return new ArchiveDownload(verifiedObject(
                     student.getSnapshotKey(), student.getSnapshotSha256(), student.getSnapshotSize()),
-                    "application/json", "student-results-" + studentId + ".json");
+                    "application/json", studentResultBaseName(archive, student) + ".json");
         }
         throw new SchoolResourceNotFoundExceptionHandler("archived student artifact not found");
     }
@@ -182,5 +205,37 @@ public class ArchiveDocumentService {
         }
         Path file = objectStorage.getVerifiedTemporaryFile(key, sha256, expectedSize);
         return new ArchiveFileDownload(file, expectedSize, "application/pdf", fileName);
+    }
+
+    private AttendanceArchive findOwnedAttendanceArchive(UUID archiveId) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        return attendanceArchiveRepository.findById(archiveId)
+                .filter(archive -> belongsToSchool(archive.getSchoolId(), schoolId)
+                        && isRetrievable(archive.getStatus()))
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("verified attendance archive not found"));
+    }
+
+    private String attendanceBaseName(AttendanceArchive archive) {
+        return safeFilePart(archive.getSchoolName()) + "-"
+                + safeFilePart(archive.getClassName()) + "-attendance-"
+                + archive.getStartDate() + "-to-" + archive.getEndDate();
+    }
+
+    private String resultBaseName(ResultArchive archive) {
+        return safeFilePart(archive.getClassName()) + "-"
+                + safeFilePart(archive.getAcademicYear()) + "-term-" + archive.getTerm() + "-"
+                + safeFilePart(archive.getExamType() == null ? null : archive.getExamType().name())
+                + "-results-v" + archive.getVersion();
+    }
+
+    private String studentResultBaseName(ResultArchive archive, ResultArchiveStudent student) {
+        return safeFilePart(student.getStudentName()) + "-" + resultBaseName(archive);
+    }
+
+    private String safeFilePart(String value) {
+        String safe = value == null ? "" : value.toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-+|-+$)", "");
+        return safe.isBlank() ? "school" : safe;
     }
 }

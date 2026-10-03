@@ -1,0 +1,83 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.5);
+  animation: fade 160ms var(--ease);
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(300px, 82vw);
+  background: var(--edunex-surface);
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 220ms var(--ease);
+  box-shadow: var(--shadow-lg);
+}
+.open {
+  transform: translateX(0);
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--edunex-border);
+}
+.schoolName {
+  font-weight: 700;
+  font-size: 14px;
+}
+.sub {
+  font-size: 11px;
+  color: var(--edunex-muted);
+}
+.closeBtn {
+  border: none;
+  background: var(--edunex-surface-2);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  color: var(--edunex-text-soft);
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 2px;
+}
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--edunex-text-soft);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.link:hover {
+  background: var(--edunex-surface-2);
+  text-decoration: none;
+}
+.active {
+  background: var(--edunex-primary-soft);
+  color: var(--edunex-primary);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
