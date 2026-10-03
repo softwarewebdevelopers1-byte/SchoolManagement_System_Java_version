@@ -9,18 +9,18 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { ChartContainer } from "../../shared/analytics/ChartContainer";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
 import {
   analyticsGridProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../../shared/analytics/chartDefaults";
+} from "../../../components/shared/analytics/chartDefaults";
 import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 import {
   friendlyErrorMessage,
   useNotifications,
-} from "../../shared/notifications/NotificationContext";
+} from "../../../components/shared/notifications/NotificationContext";
 
 interface MonthlyAttendanceViewProps {
   classes: { classId: string; name: string }[];

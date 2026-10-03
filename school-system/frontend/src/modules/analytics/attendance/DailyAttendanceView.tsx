@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-import { ChartContainer } from "../../shared/analytics/ChartContainer";
-import { KpiCard } from "../../shared/analytics/KpiCard";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
+import { KpiCard } from "../../../components/shared/analytics/KpiCard";
 import {
   analyticsLegendProps,
   analyticsTooltipProps,
-} from "../../shared/analytics/chartDefaults";
+} from "../../../components/shared/analytics/chartDefaults";
 import { analyticsColors } from "../../../lib/analyticsTheme";
 import {
   friendlyErrorMessage,
   useNotifications,
-} from "../../shared/notifications/NotificationContext";
+} from "../../../components/shared/notifications/NotificationContext";
 
 interface DailyAttendanceViewProps {
   classes: { classId: string; name: string }[];

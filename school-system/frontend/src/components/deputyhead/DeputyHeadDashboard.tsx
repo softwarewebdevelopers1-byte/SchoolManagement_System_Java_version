@@ -7,7 +7,7 @@ import { SchoolOverview } from "./SchoolOverview";
 import { TeacherManagement } from "./TeacherManagement";
 import { ClassManagement } from "./ClassManagement";
 import { StudentManagement } from "./StudentManagement";
-import { Analytics } from "./Analytics";
+import { SchoolwideAnalytics as Analytics } from "../../modules/analytics";
 import { TopStudents } from "./TopStudents";
 import { Reports } from "./Reports";
 import { ParentConcerns } from "./ParentConcerns";

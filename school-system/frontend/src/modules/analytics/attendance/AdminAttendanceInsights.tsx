@@ -5,7 +5,7 @@ import { MonthlyAttendanceView } from "./MonthlyAttendanceView";
 import {
   friendlyErrorMessage,
   useNotifications,
-} from "../../shared/notifications/NotificationContext";
+} from "../../../components/shared/notifications/NotificationContext";
 
 type TabId = "daily" | "monthly";
 

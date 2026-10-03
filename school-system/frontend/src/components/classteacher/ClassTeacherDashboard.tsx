@@ -8,8 +8,11 @@ import { StudentRecords } from "./StudentRecords";
 import { StudentDetails } from "./StudentDetails";
 import { MarksManagement } from "./MarksManagement";
 import { ResultsReports } from "./ResultsReports";
-import { StudentPerformance } from "./StudentPerformance";
-import { Analytics } from "./Analytics";
+import {
+  StudentPerformance,
+  ClassAnalytics as Analytics,
+  ClassTeacherAttendanceHistory,
+} from "../../modules/analytics";
 import { Settings } from "./Settings";
 import { ArchivesView } from "../shared/ArchivesView";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
@@ -36,7 +39,6 @@ import {
   LayoutDashboard,
   History,
 } from "lucide-react";
-import ClassTeacherAttendanceHistory from "./ClassTeacherAttendanceHistory";
 import OverviewSkeleton from "../skeletons/OverviewSkeletons";
 import {
   friendlyErrorMessage,

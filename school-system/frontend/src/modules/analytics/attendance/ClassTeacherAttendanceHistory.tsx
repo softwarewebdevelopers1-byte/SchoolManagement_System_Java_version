@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getClassId, getCurrentTeacherProfileId, request, api } from "../../lib/api";
+import { getClassId, getCurrentTeacherProfileId, request, api } from "../../../lib/api";
 import {
   LineChart,
   Line,
@@ -9,21 +9,21 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { FONT } from "./shared/constants";
-import { ChartContainer } from "../shared/analytics/ChartContainer";
-import { KpiCard } from "../shared/analytics/KpiCard";
+import { FONT } from "../../../components/classteacher/shared/constants";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
+import { KpiCard } from "../../../components/shared/analytics/KpiCard";
 import {
   analyticsGridProps,
   analyticsLegendProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../shared/analytics/chartDefaults";
-import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+} from "../../../components/shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 import {
   friendlyErrorMessage,
   useNotifications,
-} from "../shared/notifications/NotificationContext";
+} from "../../../components/shared/notifications/NotificationContext";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | string;
 

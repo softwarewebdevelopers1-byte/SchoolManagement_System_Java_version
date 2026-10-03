@@ -1,9 +1,8 @@
-// components/deputyhead/Analytics.tsx
 import React, { useMemo, useState, useEffect } from "react";
-import { SectionHeader } from "./shared/SectionHeader";
-import { Avatar } from "./shared/Avatar";
-import { C, F } from "./shared/constants";
-import { api } from "../../lib/api";
+import { SectionHeader } from "../../../components/deputyhead/shared/SectionHeader";
+import { Avatar } from "../../../components/deputyhead/shared/Avatar";
+import { C, F } from "../../../components/deputyhead/shared/constants";
+import { api } from "../../../lib/api";
 import {
   BarChart,
   Bar,
@@ -15,16 +14,16 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { ChartContainer } from "../shared/analytics/ChartContainer";
-import { KpiCard } from "../shared/analytics/KpiCard";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
+import { KpiCard } from "../../../components/shared/analytics/KpiCard";
 import {
   analyticsGridProps,
   analyticsLegendProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../shared/analytics/chartDefaults";
-import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+} from "../../../components/shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 
 interface AnalyticsProps {
   classes?: any[];

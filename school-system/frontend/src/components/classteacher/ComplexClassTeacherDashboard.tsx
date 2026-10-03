@@ -13,7 +13,7 @@ import { MarksManagement } from "./MarksManagement";
 import { SubjectJointTab } from "./SubjectJointTab";
 import { ElectiveEnrollmentTab } from "./ElectiveEnrollmentTab";
 import { ResultsReports } from "./ResultsReports";
-import { Analytics } from "./Analytics";
+import { ClassAnalytics as Analytics } from "../../modules/analytics";
 import { TimetableLibrary } from "../shared/TimetableLibrary";
 import type { NavItem } from "./types";
 import {

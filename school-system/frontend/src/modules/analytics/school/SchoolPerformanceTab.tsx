@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { api, getSchoolId, normalizeSubjectJoints, request } from "../../lib/api";
-import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../lib/cbcGrading";
-import { Class, Subject } from "./types";
+import { api, getSchoolId, normalizeSubjectJoints, request } from "../../../lib/api";
+import { resolveCbcBand, useCbcGradingBands, type CbcGradingBand } from "../../../lib/cbcGrading";
+import type { Class, Subject } from "../../../components/admin/types";
 import {
   BarChart,
   Bar,
@@ -16,19 +16,19 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { ChartContainer } from "../shared/analytics/ChartContainer";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
 import {
   analyticsGridProps,
   analyticsLegendProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../shared/analytics/chartDefaults";
-import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+} from "../../../components/shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 import {
   friendlyErrorMessage,
   useNotifications,
-} from "../shared/notifications/NotificationContext";
+} from "../../../components/shared/notifications/NotificationContext";
 
 interface PerformanceTabProps {
   classes: Class[];

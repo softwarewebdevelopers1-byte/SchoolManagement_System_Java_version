@@ -12,13 +12,12 @@ import { CycleTab } from "./CycleTab";
 import { TimetableTab } from "./TimetableTab";
 // import { AdminMarksTab } from "./AdminMarksTab";
 // import { BulkElectiveEnrollmentTab } from "./BulkElectiveEnrollmentTab";
-import { PerformanceTab } from "./PerformanceTab";
+import { PerformanceTab, AdminAttendanceInsights } from "../../modules/analytics";
 import { CbcGradingConfigTab } from "./CbcGradingConfigTab";
 import { SchoolSettingsTab } from "./SchoolSettingsTab";
 import { UserApprovalsTab } from "./UserApprovalsTab";
 import { ArchivesView } from "../shared/ArchivesView";
 import { ExitedStudentsView } from "../shared/ExitedStudentsView";
-import { AdminAttendanceInsights } from "./attendance-insights/AdminAttendanceInsights";
 import { ResultsPublishingTab } from "./ResultsPublishingTab";
 import {
   ApiStudent,

@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Avatar } from "./shared/Avatar";
-import { C, FONT } from "./shared/constants";
+import { Avatar } from "../../../components/classteacher/shared/Avatar";
+import { C, FONT } from "../../../components/classteacher/shared/constants";
 import {
   marksForStudentSubjects,
   getSubId,
   sumPoints,
-} from "./shared/helpers";
-import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
-import { api } from "../../lib/api";
+} from "../../../components/classteacher/shared/helpers";
+import { resolveCbcBand, useCbcGradingBands } from "../../../lib/cbcGrading";
+import { api } from "../../../lib/api";
 import {
   BarChart,
   Bar,
@@ -22,15 +22,15 @@ import {
   PolarRadiusAxis,
   Cell,
 } from "recharts";
-import { ChartContainer } from "../shared/analytics/ChartContainer";
-import { KpiCard } from "../shared/analytics/KpiCard";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
+import { KpiCard } from "../../../components/shared/analytics/KpiCard";
 import {
   analyticsGridProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../shared/analytics/chartDefaults";
-import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+} from "../../../components/shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 
 interface AnalyticsProps {
   students: any[];

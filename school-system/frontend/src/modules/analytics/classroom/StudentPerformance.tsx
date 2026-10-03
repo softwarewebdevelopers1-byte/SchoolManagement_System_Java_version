@@ -16,7 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { C, FONT } from "./shared/constants";
+import { C, FONT } from "../../../components/classteacher/shared/constants";
 import {
   gradeBg,
   gradeColor,
@@ -28,20 +28,20 @@ import {
   getSubjectRemark,
   initials,
   avatarBg,
-} from "./shared/helpers";
-import { resolveCbcBand, useCbcGradingBands } from "../../lib/cbcGrading";
+} from "../../../components/classteacher/shared/helpers";
+import { resolveCbcBand, useCbcGradingBands } from "../../../lib/cbcGrading";
 import { ArrowLeft, TrendingUp, Award, Target } from "lucide-react";
-import { api, getSchoolId } from "../../lib/api";
-import { ChartContainer } from "../shared/analytics/ChartContainer";
-import { KpiCard } from "../shared/analytics/KpiCard";
+import { api, getSchoolId } from "../../../lib/api";
+import { ChartContainer } from "../../../components/shared/analytics/ChartContainer";
+import { KpiCard } from "../../../components/shared/analytics/KpiCard";
 import {
   analyticsGridProps,
   analyticsLegendProps,
   analyticsTooltipProps,
   analyticsXAxisProps,
   analyticsYAxisProps,
-} from "../shared/analytics/chartDefaults";
-import { analyticsChartDefaults, analyticsColors } from "../../lib/analyticsTheme";
+} from "../../../components/shared/analytics/chartDefaults";
+import { analyticsChartDefaults, analyticsColors } from "../../../lib/analyticsTheme";
 
 interface StudentPerformanceProps {
   student: any;
