@@ -59,6 +59,7 @@ import com.example.school.system.services.sms.events.ResultSmsNotificationEvent;
 import com.example.school.system.services.sms.ResultSmsMessageBuilder;
 import com.example.school.system.services.sms.ResultSmsMessageBuilder.SubjectMark;
 import com.example.school.system.services.sms.SmsMessageMetrics;
+import com.example.school.system.services.archive.ArchivedResultSnapshotReader;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
@@ -88,6 +89,7 @@ public class ResultAccessService {
     private final StudentRepository studentRepository;
     private final ResultSmsNotificationRepository resultSmsNotificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ArchivedResultSnapshotReader archivedResultSnapshotReader;
 
     @Value("${frontend.url}")
     private String publicResultsUrl;
@@ -108,6 +110,9 @@ public class ResultAccessService {
         if (!publication.isPublished()) {
             throw new SchoolResourceNotFoundExceptionHandler("results have not been published");
         }
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        schoolClassRepository.findByClassIdAndSchoolId(publication.getClassId(), schoolId)
+                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("published results not found"));
 
         ResultAccess existing = accessRepository
                 .findByStudentProfileIdAndAcademicYearAndCurrentSchoolTermAndExamType(
@@ -370,8 +375,7 @@ public class ResultAccessService {
 
     @Transactional
     public void revokeAccess(UUID accessId) {
-        ResultAccess access = accessRepository.findById(accessId)
-                .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("results link not found"));
+        ResultAccess access = findSchoolAccess(accessId);
         access.setRevokedAt(Instant.now());
         accessRepository.save(access);
     }
@@ -503,6 +507,19 @@ public class ResultAccessService {
         List<ClassTermResults> publishedExams =
                 classTermResultsRepo.findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
                         studentId, access.getAcademicYear(), access.getCurrentSchoolTerm());
+        UUID publishedClassId = publishedExams.stream()
+                .filter(result -> result.getExamType() == access.getExamType())
+                .map(ClassTermResults::getClassId)
+                .findFirst()
+                .orElse(null);
+        if (publishedClassId != null) {
+            var archivedResult = archivedResultSnapshotReader.read(
+                    studentId, publishedClassId, access.getAcademicYear(),
+                    access.getCurrentSchoolTerm(), access.getExamType());
+            if (archivedResult.isPresent()) {
+                return archivedResult.get();
+            }
+        }
         ExamType previousExam = publishedExams.stream()
                 .map(ClassTermResults::getExamType)
                 .filter(exam -> exam != null && exam.ordinal() < access.getExamType().ordinal())
@@ -519,6 +536,34 @@ public class ResultAccessService {
             throw new SchoolResourceNotFoundExceptionHandler("published results not found");
         }
 
+        return mapPublishedResults(access.getExamType(), previousExam, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public ParentResultsResponse buildSnapshotFor(UUID studentId, String academicYear, Integer term,
+            ExamType examType) {
+        List<ClassTermResults> publishedExams =
+                classTermResultsRepo.findAllByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndPublishedTrue(
+                        studentId, academicYear, term);
+        ExamType previousExam = publishedExams.stream()
+                .map(ClassTermResults::getExamType)
+                .filter(exam -> exam != null && exam.ordinal() < examType.ordinal())
+                .max(Comparator.comparingInt(Enum::ordinal))
+                .orElse(null);
+        List<PublicResultRow> rows = publicResultsRepository.findPublishedResults(
+                studentId,
+                academicYear,
+                term,
+                examType.name(),
+                previousExam == null ? null : previousExam.name());
+        if (rows.isEmpty()) {
+            throw new SchoolResourceNotFoundExceptionHandler("published results not found");
+        }
+        return mapPublishedResults(examType, previousExam, rows);
+    }
+
+    private ParentResultsResponse mapPublishedResults(ExamType examType, ExamType previousExam,
+            List<PublicResultRow> rows) {
         PublicResultRow first = rows.get(0);
         List<ParentResultsResponse.SubjectResult> subjects = rows.stream()
                 .filter(row -> row.getSubjectId() != null)
@@ -574,7 +619,7 @@ public class ResultAccessService {
                         termName,
                         null,
                         null,
-                        access.getExamType().name(),
+                        examType.name(),
                         previousExam == null ? null : previousExam.name()),
                 subjects,
                 new ParentResultsResponse.Summary(totalMarks, average, overallGrade),

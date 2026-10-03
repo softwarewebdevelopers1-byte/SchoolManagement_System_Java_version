@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -19,7 +20,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "marks")
+@Table(name = "marks", indexes = {
+        @Index(name = "idx_marks_sheet_student", columnList = "marks_sheet_id, student_id"),
+        @Index(name = "idx_marks_student", columnList = "student_id")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

@@ -48,6 +48,7 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
   const [classId, setClassId] = useState("");
   const toast = useNotifications();
   const [publishing, setPublishing] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [publicationStatusState, setPublicationStatusState] = useState<
     "loading" | "loaded" | "error"
   >("loading");
@@ -178,6 +179,32 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
       toast.error(friendlyErrorMessage(error, "Unable to publish results."));
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const finalizeAndArchive = async () => {
+    if (!classId || !currentCycle || !publishedClassIds?.has(classId)) {
+      toast.warning("Publish the selected class before finalizing its results.");
+      return;
+    }
+    setArchiving(true);
+    try {
+      const archive = await request<{ status: string }>("/admin/archives/results", {
+        method: "POST",
+        body: JSON.stringify({
+          classId,
+          academicYear: currentCycle.academicYear,
+          term: currentCycle.term,
+          examType: currentCycle.examType,
+        }),
+      });
+      toast.success(
+        `Results finalized and locked. Archive status: ${archive.status}. Source marks remain in MySQL.`,
+      );
+    } catch (error) {
+      toast.error(friendlyErrorMessage(error, "Unable to finalize and archive results."));
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -314,6 +341,15 @@ export const ResultsPublishingTab = ({ classes }: Props) => {
       <div className={styles.actions}>
         <button className={styles.publishButton} type="button" onClick={() => void publish()} disabled={publishing}>
           {publishing ? "Publishing..." : "Publish Results"}
+        </button>
+        <button
+          className={styles.secondaryButton}
+          type="button"
+          onClick={() => void finalizeAndArchive()}
+          disabled={archiving || !classId || !publishedClassIds?.has(classId)}
+          title="Finalization locks submitted marks and queues a versioned archive. It does not delete source data."
+        >
+          {archiving ? "Finalizing..." : "Finalize & Archive"}
         </button>
       </div>
 

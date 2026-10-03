@@ -15,15 +15,21 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "attendance_sheet", indexes = {
+        @Index(name = "idx_attendance_sheet_class_date", columnList = "class_id, date"),
+        @Index(name = "idx_attendance_sheet_status_date", columnList = "status, date")
+})
 @Getter
 @Setter
 @BatchSize(size = 50)

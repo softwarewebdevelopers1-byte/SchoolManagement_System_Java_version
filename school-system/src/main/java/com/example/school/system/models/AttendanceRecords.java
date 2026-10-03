@@ -13,14 +13,20 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "attendance_records", indexes = {
+        @Index(name = "idx_attendance_record_student_date", columnList = "student_id, date"),
+        @Index(name = "idx_attendance_record_sheet_date", columnList = "attendance_sheet_id, date")
+})
 @Getter
 @Setter
 @RequiredArgsConstructor

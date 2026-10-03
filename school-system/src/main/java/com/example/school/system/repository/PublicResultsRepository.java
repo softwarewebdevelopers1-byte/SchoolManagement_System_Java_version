@@ -65,7 +65,7 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
                     WHEN 'MIDTERM' THEN 1
                     WHEN 'ENDTERM' THEN 2
                 END
-                AND ms.status = 'SUBMITTED'
+                AND ms.status IN ('SUBMITTED', 'LOCKED')
             LEFT JOIN marks m
                 ON m.student_id = sp.student_id
                 AND m.marks_sheet_id = ms.id
@@ -83,7 +83,7 @@ public interface PublicResultsRepository extends Repository<com.example.school.s
                     WHEN 'MIDTERM' THEN 1
                     WHEN 'ENDTERM' THEN 2
                 END
-                AND prev_ms.status = 'SUBMITTED'
+                AND prev_ms.status IN ('SUBMITTED', 'LOCKED')
                 AND prev_ms.subject_joint_id = ms.subject_joint_id
             LEFT JOIN marks prev_m
                 ON prev_m.student_id = sp.student_id

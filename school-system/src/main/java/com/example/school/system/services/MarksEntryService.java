@@ -301,6 +301,9 @@ public class MarksEntryService {
                     marksSheetRepo.save(newMarksSheet);
                     return newMarksSheet;
                 });
+        if (marksSheet.getStatus() == MarksSheetStatus.LOCKED) {
+            throw new SchoolResourceBadInputExceptionHandler("marksheet is locked and cannot be modified");
+        }
         boolean rubricChanged = marksheetSaveRequest.maxCat1() != null
                 && !Objects.equals(marksSheet.getMaxCat1(), marksheetSaveRequest.maxCat1())
                 || marksheetSaveRequest.maxCat2() != null

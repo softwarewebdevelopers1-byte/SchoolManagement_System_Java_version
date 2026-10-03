@@ -24,4 +24,12 @@ public interface MarksSheetRepo extends JpaRepository<MarksSheet, UUID> {
         @EntityGraph(attributePaths = { "marks", "marks.studentProfile", "marks.StudentProfile.schoolClass" })
         List<MarksSheet> findAllBySchoolIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatus(UUID schoolId,
                         String academicYear, Integer currentSchoolTerm, ExamType examType,MarksSheetStatus status);
+
+        @EntityGraph(attributePaths = {
+                "subjectJoint", "subjectJoint.subject", "subjectJoint.teacherProfile",
+                "marks", "marks.StudentProfile"
+        })
+        List<MarksSheet> findAllByClassIdAndAcademicYearAndCurrentSchoolTermAndExamTypeAndStatusIn(
+                        UUID classId, String academicYear, Integer currentSchoolTerm, ExamType examType,
+                        List<MarksSheetStatus> statuses);
 }

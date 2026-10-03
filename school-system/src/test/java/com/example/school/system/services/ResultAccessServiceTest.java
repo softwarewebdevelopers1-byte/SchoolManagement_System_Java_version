@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import java.time.Instant;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -46,6 +49,7 @@ import com.example.school.system.repository.MarksSheetRepo;
 import com.example.school.system.repository.PublicResultsRepository;
 import com.example.school.system.repository.ResultAccessRepository;
 import com.example.school.system.repository.ResultSmsNotificationRepository;
+import com.example.school.system.services.archive.ArchivedResultSnapshotReader;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
 import com.example.school.system.repository.StudentRepository;
@@ -79,6 +83,8 @@ class ResultAccessServiceTest {
     private ResultSmsNotificationRepository resultSmsNotificationRepository;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private ArchivedResultSnapshotReader archivedResultSnapshotReader;
 
     private ResultAccessService service;
 
@@ -96,7 +102,8 @@ class ResultAccessServiceTest {
                 rankingService,
                 studentRepository,
                 resultSmsNotificationRepository,
-                eventPublisher);
+                eventPublisher,
+                archivedResultSnapshotReader);
     }
 
     private void stubCurrentAcademicCycle(UUID schoolId) {
@@ -144,6 +151,43 @@ class ResultAccessServiceTest {
 
         assertThrows(SchoolResourceNotFoundExceptionHandler.class,
                 () -> service.getPublishedResults("not-a-token"));
+    }
+
+    @Test
+    void refusesToCreateAccessForAResultOutsideTheAuthenticatedSchool() {
+        UUID studentId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID authenticatedSchoolId = UUID.randomUUID();
+        ClassTermResults publication = new ClassTermResults();
+        publication.setClassId(classId);
+        publication.setPublished(true);
+        when(classTermResultsRepo.findByStudentProfile_IdAndAcademicYearAndCurrentSchoolTermAndExamType(
+                studentId, "2026", 1, ExamType.ENDTERM)).thenReturn(Optional.of(publication));
+        when(authenticatedUserService.currentUser()).thenReturn(new AuthenticatedUserContext(
+                UserDto.builder().schoolId(authenticatedSchoolId).build(), List.of()));
+        when(schoolClassRepository.findByClassIdAndSchoolId(classId, authenticatedSchoolId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(SchoolResourceNotFoundExceptionHandler.class,
+                () -> service.createAccess(new com.example.school.system.DTO.ResultAccessRequest(
+                        studentId, "2026", 1, ExamType.ENDTERM, null)));
+        verify(accessRepository, never()).save(Mockito.any());
+    }
+
+    @Test
+    void revocationUsesSchoolScopedAccessLookup() {
+        UUID accessId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        ResultAccess access = access("revokable-token");
+        when(authenticatedUserService.currentUser()).thenReturn(new AuthenticatedUserContext(
+                UserDto.builder().schoolId(schoolId).build(), List.of()));
+        when(accessRepository.findByIdForSchool(accessId, schoolId)).thenReturn(Optional.of(access));
+
+        service.revokeAccess(accessId);
+
+        verify(accessRepository).findByIdForSchool(accessId, schoolId);
+        verify(accessRepository, never()).findById(accessId);
+        assertNotNull(access.getRevokedAt());
     }
 
     @Test

@@ -5,8 +5,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 import com.example.school.system.models.SchoolClass;
 import com.example.school.system.projection.ClassHeaderProjection;
 import com.example.school.system.projection.ClassTeacherProjection;
@@ -23,6 +25,11 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     Optional<SchoolClass> findByClassGradeAndClassStream(Integer classGrade, String stream);
 
     Optional<SchoolClass> findByClassIdAndSchoolId(UUID classId, UUID schoolId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM SchoolClass c WHERE c.classId = :classId AND c.school.id = :schoolId")
+    Optional<SchoolClass> findByClassIdAndSchoolIdForUpdate(
+            @Param("classId") UUID classId, @Param("schoolId") UUID schoolId);
 
     @EntityGraph(attributePaths = { "teacher", "teacher.teacher", "student" })
     Optional<SchoolClass> findByClassId(UUID classId);
@@ -91,7 +98,7 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
                 AND ms.academic_year = :academicYear
                 AND ms.current_school_term = :term
                 AND ms.exam_type = :examType
-                AND ms.status = 'SUBMITTED'
+                AND ms.status IN ('SUBMITTED', 'LOCKED')
             LEFT JOIN marks m ON m.marks_sheet_id = ms.id
                 AND m.`average_marks%` IS NOT NULL
             LEFT JOIN students_profile sp ON sp.class_id = c.class_id

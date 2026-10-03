@@ -26,6 +26,7 @@ import com.example.school.system.repository.AttendanceRecordRepository;
 import com.example.school.system.repository.AttendanceSheetRepository;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.StudentRepository;
+import com.example.school.system.services.AuthenticatedUserService;
 import com.example.school.system.types.ClassAttendanceStatus;
 import com.example.school.system.types.WholeAttendanceSheetStatus;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +40,12 @@ public class AttendanceService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final StudentRepository studentRepository;
+    private final AuthenticatedUserService authenticatedUserService;
 
     @Transactional
     public AttendanceSheetDTO getOrCreateSheet(ClassAttendanceDTO classAttendanceDTO) {
-        SchoolClass schoolClass = schoolClassRepository.findByClassId(classAttendanceDTO.classId())
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        SchoolClass schoolClass = schoolClassRepository.findByClassIdAndSchoolId(classAttendanceDTO.classId(), schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
         // studentsExistence(schoolClass);
         // if (classAttendanceDTO.teacherId() != null
@@ -54,7 +57,8 @@ public class AttendanceService {
         // }
         LocalDate timeNow = LocalDate.now();
         AttendanceSheet sheet = attendanceSheetRepository
-                .findBySchoolClassClassIdAndDate(classAttendanceDTO.classId(), timeNow)
+                .findBySchoolClassClassIdAndSchoolClassSchoolIdAndDate(
+                        classAttendanceDTO.classId(), schoolId, timeNow)
                 .orElseGet(() -> createNewSheet(schoolClass, timeNow));
         syncAllStudents(sheet);
         sheet = attendanceSheetRepository.save(sheet);
@@ -142,6 +146,11 @@ public class AttendanceService {
         StudentProfile student = studentRepository
                 .findByStudentAdm(fetchSingleDayStudentAttendance.studentAdm())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("student not found"));
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        if (student.getSchoolClass() == null || student.getSchoolClass().getSchool() == null
+                || !student.getSchoolClass().getSchool().getId().equals(schoolId)) {
+            throw new SchoolResourceNotFoundExceptionHandler("student not found");
+        }
         if (student.getSchoolClass().getTeacher() == null) {
             throw new SchoolResourceLockedExceptionHandler("assign class teacher first");
         }
@@ -165,6 +174,10 @@ public class AttendanceService {
         dateValidator(attendaceSheetSpecificDate.date());
         SchoolClass classFound = schoolClassRepository.findById(attendaceSheetSpecificDate.classId())
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+        if (!classFound.getSchool().getId().equals(schoolId)) {
+            throw new SchoolResourceNotFoundExceptionHandler("class not found");
+        }
 
         if (attendaceSheetSpecificDate.teacherId() != null
                 && classFound.getTeacher() != null
@@ -181,6 +194,9 @@ public class AttendanceService {
 
     public AttendanceRecordCountDTO getAttendanceRecordCountForDate(UUID classId, LocalDate date) {
                 dateValidator(date);
+                UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
+                schoolClassRepository.findByClassIdAndSchoolId(classId, schoolId)
+                        .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler("class not found"));
                 log.info("Getting attendance record count for class {} on date {}", classId, date);     
                 Object[] result = attendanceRecordRepository.countRecordsByClassAndDateExcludingDraft(classId, date);
                 log.info("Raw query result: {}", (Object) result);
@@ -216,8 +232,9 @@ public class AttendanceService {
     }
 
     public void updateSheet(AttendanceSheetSubmit sheetDTO) {
+        UUID schoolId = authenticatedUserService.currentUser().user().getSchoolId();
         AttendanceSheet attendanceSheet = attendanceSheetRepository
-                .findEditableSheet(sheetDTO.attendanceSheetId(), sheetDTO.classId())
+                .findEditableSheetForSchool(sheetDTO.attendanceSheetId(), sheetDTO.classId(), schoolId)
                 .orElseThrow(() -> new SchoolResourceNotFoundExceptionHandler(
                         "attendance sheet not found or already locked"));
         Map<UUID, ClassAttendanceStatus> map = sheetDTO.attendanceRecordDTOs().stream()

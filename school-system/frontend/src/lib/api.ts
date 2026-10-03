@@ -6,8 +6,7 @@ export interface LoginResponse {
 import { buildClassId } from "./subjectEnrollment";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://schoolmanagement-system-java-version-2oh4.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://backend/api";
 const GET_CACHE_TTL_MS = 10_000;
 const getResponseCache = new Map<
   string,
@@ -95,9 +94,7 @@ const RESOURCE_BY_PATH: Array<[RegExp, string]> = [
 // invalidation. Used both to tag cache entries at write time and
 // (via caller-supplied keys) to invalidate them.
 function resourceForPath(path: string): string | null {
-  const cleaned = path
-    .replace(/^https?:\/\/[^/]+/, "")
-    .replace(/^\/api/, "");
+  const cleaned = path.replace(/^https?:\/\/[^/]+/, "").replace(/^\/api/, "");
   for (const [re, key] of RESOURCE_BY_PATH) {
     if (re.test(cleaned)) return key;
   }
@@ -109,9 +106,7 @@ function resourcesForMutation(path: string): string[] {
   const resource = resourceForPath(path);
   if (resource) resources.add(resource);
 
-  const cleaned = path
-    .replace(/^https?:\/\/[^/]+/, "")
-    .replace(/^\/api/, "");
+  const cleaned = path.replace(/^https?:\/\/[^/]+/, "").replace(/^\/api/, "");
   if (/^\/users\/update(?:\/|$)/.test(cleaned)) {
     resources.add("teachers");
   } else if (/^\/delete\/user(?:\/|$)/.test(cleaned)) {
@@ -370,6 +365,35 @@ export const request = async <T>(
     }
   }
   return data;
+};
+
+export const downloadApiFile = async (path: string, fileName: string): Promise<void> => {
+  const token = getStoredSession()?.token || "";
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    let message = "Unable to download archive.";
+    if (text) {
+      try {
+        const body = JSON.parse(text);
+        message = body.message || message;
+      } catch {
+        message = text;
+      }
+    }
+    throw new ApiError(message, response.status, null);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 };
 
 const splitName = (name = "") => {
@@ -775,7 +799,10 @@ const composeUsersDashboard = async <T>(): Promise<T> => {
       const classGrade = String(student.grade ?? student.classGrade ?? "");
       const classStream = String(student.stream ?? student.classStream ?? "");
       const name =
-        student.studentFullName || student.fullName || student.name || "Unknown student";
+        student.studentFullName ||
+        student.fullName ||
+        student.name ||
+        "Unknown student";
       return {
         id: student.studentId || student.id,
         userId: student.studentId || student.id,
@@ -1171,10 +1198,7 @@ export const api = {
       body: JSON.stringify(body),
       ...init,
     }),
-  delete: <T>(
-    path: string,
-    init?: RequestInit & { invalidate?: string[] },
-  ) => {
+  delete: <T>(path: string, init?: RequestInit & { invalidate?: string[] }) => {
     if (/^\/users\/[^/]+$/.test(path)) {
       const userId = path.split("/").pop();
       return request<T>(`/delete/user?id=${encodeURIComponent(userId || "")}`, {

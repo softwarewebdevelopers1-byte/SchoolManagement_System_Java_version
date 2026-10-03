@@ -45,7 +45,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY sp.student_id, sp.student_name, sp.student_adm, c.stream
                 ORDER BY sp.student_name ASC
                 """, nativeQuery = true)
@@ -123,7 +123,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY s.id, s.subject_name
                 """, nativeQuery = true)
         List<SubjectAnalyticsProjection> findSubjectAnalyticsByClass(
@@ -153,7 +153,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, m.grade
                 """, nativeQuery = true)
@@ -185,7 +185,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY s.id, s.subject_name
                 """, nativeQuery = true)
         List<SubjectAnalyticsProjection> findSubjectPerformanceBySchool(
@@ -220,7 +220,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY s.id, s.subject_name, c.stream
                 """, nativeQuery = true)
         List<SubjectAnalyticsGradeProjection> findSubjectAnalyticsByGrade(
@@ -256,7 +256,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, s.subject_name, m.grade
                 """, nativeQuery = true)
@@ -291,7 +291,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.grade IS NOT NULL
                 GROUP BY s.id, s.subject_name, m.grade
                 """, nativeQuery = true)
@@ -320,7 +320,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.grade IS NOT NULL
                 GROUP BY m.grade
                 """, nativeQuery = true)
@@ -351,7 +351,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.grade IS NOT NULL
                 GROUP BY m.grade
                 """, nativeQuery = true)
@@ -381,7 +381,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY ms.current_school_term
                 ORDER BY ms.current_school_term ASC
                 """, nativeQuery = true)
@@ -411,7 +411,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                       WHEN '2' THEN 2
                       ELSE -1
                   END
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                 GROUP BY ms.current_school_term
                 ORDER BY ms.current_school_term ASC
                 """, nativeQuery = true)
@@ -431,7 +431,7 @@ public interface MarksRepo extends JpaRepository<MarksRow, UUID> {
                 JOIN students_profile sp ON m.student_id = sp.student_id
                 WHERE sp.class_id = :classId
                   AND ms.academic_year = :academicYear
-                  AND ms.status = 'SUBMITTED'
+                  AND ms.status IN ('SUBMITTED', 'LOCKED')
                   AND m.`average_marks%` IS NOT NULL
                 GROUP BY sp.student_id, sp.student_name, sp.student_adm
                 HAVING AVG(m.`average_marks%`) < :threshold
