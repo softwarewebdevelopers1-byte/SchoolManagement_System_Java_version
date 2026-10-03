@@ -56,6 +56,9 @@ import com.example.school.system.repository.ResultAccessRepository;
 import com.example.school.system.repository.ResultSmsNotificationRepository;
 import com.example.school.system.repository.StudentRepository;
 import com.example.school.system.services.sms.events.ResultSmsNotificationEvent;
+import com.example.school.system.services.sms.ResultSmsMessageBuilder;
+import com.example.school.system.services.sms.ResultSmsMessageBuilder.SubjectMark;
+import com.example.school.system.services.sms.SmsMessageMetrics;
 import com.example.school.system.types.ExamType;
 import com.example.school.system.repository.SchoolClassRepository;
 import com.example.school.system.repository.SchoolRepository;
@@ -64,12 +67,14 @@ import com.example.school.system.DTO.GradingClassStudents;
 import com.example.school.system.services.AuthenticatedUserService;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ResultAccessService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
+    private static final int PUBLIC_TOKEN_BYTES = 16;
 
     private final ResultAccessRepository accessRepository;
     private final ClassTermResultsRepo classTermResultsRepo;
@@ -289,7 +294,7 @@ public class ResultAccessService {
 
     private void queueResultNotifications(String academicYear, Integer term, ExamType examType,
             List<ResultAccessResponse> links, List<UUID> studentIds,
-            Map<UUID, StudentProfile> studentsById, Map<UUID, List<String>> marksByStudent) {
+            Map<UUID, StudentProfile> studentsById, Map<UUID, List<SubjectMark>> marksByStudent) {
         if (links.isEmpty()) {
             return;
         }
@@ -320,9 +325,6 @@ public class ResultAccessService {
             notification.setRecipientPhone(contact.getPhoneNumber().trim());
             notification.setMessage(buildResultNotificationMessage(
                     contact.getStudentName(),
-                    academicYear,
-                    term,
-                    examType,
                     marksByStudent.getOrDefault(link.studentId(), List.of()),
                     link.url()));
             notifications.add(notification);
@@ -335,8 +337,8 @@ public class ResultAccessService {
                 saved.stream().map(ResultSmsNotification::getId).toList()));
     }
 
-    private Map<UUID, List<String>> buildMarksByStudent(List<MarksSheet> markSheets) {
-        Map<UUID, List<String>> marksByStudent = new java.util.HashMap<>();
+    private Map<UUID, List<SubjectMark>> buildMarksByStudent(List<MarksSheet> markSheets) {
+        Map<UUID, List<SubjectMark>> marksByStudent = new java.util.HashMap<>();
         for (MarksSheet markSheet : markSheets) {
             if (markSheet.getSubjectJoint() == null || markSheet.getSubjectJoint().getSubject() == null
                     || markSheet.getMarks() == null) {
@@ -350,21 +352,20 @@ public class ResultAccessService {
                 if (mark.getStudentProfile() == null) {
                     continue;
                 }
-                String score = mark.getAverageMarksPercentage() == null
-                        ? "N/A"
-                        : mark.getAverageMarksPercentage() + "%";
                 marksByStudent.computeIfAbsent(mark.getStudentProfile().getId(), ignored -> new ArrayList<>())
-                        .add(subjectName + ": " + score);
+                        .add(new SubjectMark(subjectName, mark.getAverageMarksPercentage()));
             }
         }
         return marksByStudent;
     }
 
-    private String buildResultNotificationMessage(String studentName, String academicYear, Integer term,
-            ExamType examType, List<String> subjectMarks, String resultsUrl) {
-        String marks = subjectMarks.isEmpty() ? "not available" : String.join(", ", subjectMarks);
-        return "Results for " + studentName + " (" + academicYear + " Term " + term + " "
-                + examType.name() + "). Marks: " + marks + ". Full results: " + resultsUrl;
+    private String buildResultNotificationMessage(String studentName, List<SubjectMark> subjectMarks,
+            String resultsUrl) {
+        String message = ResultSmsMessageBuilder.build(studentName, subjectMarks, resultsUrl);
+        SmsMessageMetrics.Metrics metrics = SmsMessageMetrics.measure(message);
+        log.debug("Result SMS length: characters={}, encoding={}, encodedUnits={}, segments={}",
+                metrics.characters(), metrics.encoding(), metrics.encodedUnits(), metrics.segments());
+        return message;
     }
 
     @Transactional
@@ -474,16 +475,12 @@ public class ResultAccessService {
                 access.getCurrentSchoolTerm(),
                 access.getExamType().name(),
                 null);
-        List<String> subjectMarks = resultRows.stream()
+        List<SubjectMark> subjectMarks = resultRows.stream()
                 .filter(row -> row.getSubjectId() != null)
-                .map(row -> row.getSubjectName() + ": "
-                        + (row.getScore() == null ? "N/A" : row.getScore() + "%"))
+                .map(row -> new SubjectMark(row.getSubjectName(), row.getScore()))
                 .toList();
         notification.setMessage(buildResultNotificationMessage(
                 access.getStudentProfile().getStudentFullName(),
-                access.getAcademicYear(),
-                access.getCurrentSchoolTerm(),
-                access.getExamType(),
                 subjectMarks,
                 toLinkResponse(access).resultsUrl()));
         ResultSmsNotification saved = resultSmsNotificationRepository.save(notification);
@@ -600,7 +597,7 @@ public class ResultAccessService {
     }
 
     private static String generateToken() {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[PUBLIC_TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         return TOKEN_ENCODER.encodeToString(bytes);
     }

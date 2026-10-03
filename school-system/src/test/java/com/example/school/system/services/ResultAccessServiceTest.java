@@ -1,6 +1,7 @@
 package com.example.school.system.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -184,6 +185,9 @@ class ResultAccessServiceTest {
         assertNotNull(access.getEncryptedToken());
         assertEquals(adminId, access.getRenewedBy());
         assertNotNull(response.resultsUrl());
+        String renewedToken = response.resultsUrl().substring(response.resultsUrl().lastIndexOf('/') + 1);
+        assertEquals(22, renewedToken.length());
+        assertNotEquals("expired-token", renewedToken);
     }
 
     @Test
@@ -313,8 +317,9 @@ class ResultAccessServiceTest {
                 org.mockito.ArgumentCaptor.forClass(com.example.school.system.models.ResultSmsNotification.class);
         org.mockito.Mockito.verify(resultSmsNotificationRepository).save(notification.capture());
         String message = notification.getValue().getMessage();
-        assertTrue(message.contains("Mathematics: 78%"));
-        assertTrue(message.contains("2026 Term 2 ENDTERM"));
+        assertTrue(message.contains("Mat 78%"));
+        assertFalse(message.contains("2026"));
+        assertFalse(message.contains("ENDTERM"));
         assertTrue(message.contains("http://localhost:5173/results/valid-token"));
     }
 
@@ -385,8 +390,10 @@ class ResultAccessServiceTest {
                 org.mockito.ArgumentCaptor.forClass(List.class);
         org.mockito.Mockito.verify(resultSmsNotificationRepository).saveAll(notifications.capture());
         String message = notifications.getValue().get(0).getMessage();
-        org.junit.jupiter.api.Assertions.assertTrue(message.contains("Mathematics: 78%"));
+        org.junit.jupiter.api.Assertions.assertTrue(message.startsWith("Results for student. Mat 78%. Full results: "));
         org.junit.jupiter.api.Assertions.assertTrue(message.contains("Full results: "));
+        assertEquals(22, response.accessLinks().get(0).token().length());
+        assertTrue(response.accessLinks().get(0).url().endsWith("/" + response.accessLinks().get(0).token()));
 
         ResultPublicationResponse republishedResponse = service.publishResults(request);
         assertEquals(true, republishedResponse.previouslyPublished());
